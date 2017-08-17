@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 #SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
 #SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
 
-set(SOURCE_FILES main.cpp screen.cpp screen.h Marker.cpp Marker.h)
+set(SOURCE_FILES main.cpp screen.cpp screen.h Marker.cpp Marker.h Fumen.cpp Fumen.h Note.cpp Note.h)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 

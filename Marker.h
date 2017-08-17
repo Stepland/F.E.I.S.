@@ -1,6 +1,9 @@
 //
 // Created by Syméon on 17/08/2017.
 //
+//
+//  Un objet marker contient les différentes textures d'un marker choisi
+//
 
 #ifndef FEIS_MARKER_H
 #define FEIS_MARKER_H
@@ -21,7 +24,7 @@ class Marker {
 
 public:
 
-	Marker(std::string folder = "mk0004");
+	Marker(std::string folder = "mk0013");
 	sf::Sprite getSprite(Etat etat, int frame);
 
 private:
