@@ -8,6 +8,8 @@
 #include <iostream>
 #include <map>
 
+#include "Note.h"
+
 
 class Fumen {
 public:
