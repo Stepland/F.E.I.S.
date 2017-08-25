@@ -17,9 +17,18 @@ class Note {
 
 public:
 
-	Note(int pos,int length,int trail_pos);
+
+	Note(int timing,int pos,int length,int trail_pos);
 	static bool trail_pos_correct(int pos,int trail_pos);
 
+	bool operator==(const Note &rhs) const;
+	bool operator!=(const Note &rhs) const;
+	bool operator<(const Note &rhs) const;
+	bool operator>(const Note &rhs) const;
+	bool operator<=(const Note &rhs) const;
+	bool operator>=(const Note &rhs) const;
+
+	int getTiming() const;
 	int getPos() const;
 	int getLength() const;
 	int getTrail_pos() const;
@@ -28,6 +37,7 @@ public:
 
 private:
 
+	int timing;
 	int pos;
 	int length;
 	int trail_pos;

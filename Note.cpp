@@ -5,16 +5,23 @@
 #include <stdexcept>
 #include "Note.h"
 
-Note::Note(int pos, int length, int trail_pos) : {
+Note::Note(int timing, int pos, int length, int trail_pos) {
+	if (timing<0) {
+		throw std::runtime_error("Tried creating a note with negative timing : "+std::to_string(timing));
+	}
 	if (!(pos>=0 and pos<=15)) {
 		throw std::runtime_error("Tried creating a note with invalid position : "+std::to_string(pos));
 	}
 	if (length<0) {
 		throw std::runtime_error("Tried creating a note with invalid length : "+std::to_string(length));
 	}
-	if (length>0 and !trail_pos_correct(pos,trail_pos)) {
-		throw std::runtime_error("Tried creating a long note with invalid trail position : "+std::to_string(trail_pos));
+	if (length > 0) {
+		if (!(trail_pos >= 0 and trail_pos <= 11) or !trail_pos_correct(pos, trail_pos)) {
+			throw std::runtime_error(
+					"Tried creating a long note with invalid trail position : " + std::to_string(trail_pos));
+		}
 	}
+	this->timing = timing;
 	this->pos = pos;
 	this->length = length;
 	this->trail_pos = trail_pos;
@@ -75,4 +82,37 @@ void Note::setLength(int length) {
 
 void Note::setTrail_pos(int trail_pos) {
 	Note::trail_pos = trail_pos;
+}
+
+int Note::getTiming() const {
+	return timing;
+}
+
+bool Note::operator==(const Note &rhs) const {
+	return timing == rhs.timing &&
+	       pos == rhs.pos;
+}
+
+bool Note::operator!=(const Note &rhs) const {
+	return !(rhs == *this);
+}
+
+bool Note::operator<(const Note &rhs) const {
+	if (timing < rhs.timing)
+		return true;
+	if (rhs.timing < timing)
+		return false;
+	return pos < rhs.pos;
+}
+
+bool Note::operator>(const Note &rhs) const {
+	return rhs < *this;
+}
+
+bool Note::operator<=(const Note &rhs) const {
+	return !(rhs < *this);
+}
+
+bool Note::operator>=(const Note &rhs) const {
+	return !(*this < rhs);
 }
