@@ -12,7 +12,9 @@
 #include <json/json.hpp>
 
 #include "Note.h"
+#include "Chart.h"
 
+// TODO : trouver une manière ÉLÉGANTE d'acceder aux différentes charts
 
 class Fumen {
 
@@ -26,16 +28,21 @@ public:
 	      float offset = 0);
 
 	void loadFromMemon(std::string path);
-	void loadFromMemo(std::string path);
-	void loadFromEve(std::string path);
+	// TODO : implementer ça
+	//void loadFromMemo(std::string path);
+	//void loadFromEve(std::string path);
 
 	void saveAsMemon(std::string path);
-	void saveAsMemo(std::string path);
-	void saveAsEve(std::string path);
+	// TODO : implementer ça
+	//void saveAsMemo(std::string path);
+	//void saveAsEve(std::string path);
 
-	void addNote(Note note);
-	void removeNote(Note note);
-	bool hasNote(Note note);
+	void addChart(Chart chart);
+	void removeChartByIndex(int index);
+	void removeAllChartsWithName(std::string dif);
+	bool hasChartWithName(std::string name);
+	Chart& getChartByIndex(int index);
+	Chart& getFirstChartWithName(std::string name);
 
 	const std::string &getSongTitle() const;
 	void setSongTitle(const std::string &songTitle);
@@ -57,7 +64,7 @@ public:
 
 private:
 
-	std::set<Note> Notes;
+	std::vector<Chart> Charts;
 	std::string songTitle;
 	std::string artist;
 	std::string musicPath;

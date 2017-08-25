@@ -89,22 +89,97 @@ void Fumen::loadFromMemon(std::string path) {
 		this->setJacketPath(j["metadata"]["jacket_path"]);
 		this->setBPM(j["metadata"]["BPM"]);
 		this->setOffset(j["metadata"]["offset"]);
-		// TODO : finir la désérialisation depuis un memon
+		for (auto& chart_json : j["data"]) {
+			this->addChart(Chart(chart_json["dif"],chart_json["level"],chart_json["resolution"]));
+			Chart& chart = this->getFirstChartWithName(chart_json["dif"]);
+			for (auto& note : chart["notes"]) {
+				chart.addNote(Note(note["n"],note["t"],note["l"],note["p"]));
+			}
+		}
+	} else {
+		throw std::runtime_error("Memon file looks invalid : " + path);
 	}
 }
 
-void Fumen::addNote(Note note) {
-	this->Notes.insert(note);
+void Fumen::saveAsMemon(std::string path) {
+
+	std::ofstream fichier(path);
+	using json = nlohmann::json;
+	json j;
+	j["metadata"] = json::object();
+	j["metadata"]["song_title"] = this->getSongTitle();
+	j["metadata"]["artist"] = this->getArtist();
+	j["metadata"]["music_path"] = this->getMusicPath();
+	j["metadata"]["jacket_path"] = this->getJacketPath();
+	j["metadata"]["BPM"] = this->getBPM();
+	j["metadata"]["offset"] = this->getOffset();
+	j["data"] = json::array();
+	for (auto& chart : this->Charts) {
+		json chart_json;
+		chart_json["dif"] = chart.getDif();
+		chart_json["level"] = chart.getLevel();
+		chart_json["resolution"] = chart.getResolution();
+		chart_json["notes"] = json::array();
+		for (auto& note : chart.getNotes()) {
+			json note_json;
+			note_json["n"] = note.getPos();
+			note_json["t"] = note.getTiming();
+			note_json["l"] = note.getLength();
+			note_json["p"] = note.getTrail_pos();
+			chart_json["notes"].push_back(note_json);
+		}
+		j["data"].push_back(chart_json);
+	}
+
+	fichier << std::setw(4) << j << std::endl;
+
 }
 
-void Fumen::removeNote(Note note) {
-	if (hasNote(note)) {
-		Notes.erase(Notes.find(note));
+void Fumen::addChart(Chart chart) {
+	if (!this->hasChartWithName(chart.getDif())) {
+		this->Charts.push_back(chart);
+	} else {
+		throw std::runtime_error("Tried adding chart with already existing name : " + chart.getDif());
 	}
 }
 
-bool Fumen::hasNote(Note note) {
-	return this->Notes.find(note) != Notes.end();
+void Fumen::removeChartByIndex(int index) {
+	this->Charts.erase(this->Charts.begin()+index);
+}
+
+void Fumen::removeAllChartsWithName(std::string dif) {
+	auto & chart;
+	for(chart = this->Charts.begin(); chart != this->Charts.end();)
+	{
+		if(chart.getDif() == dif) {
+			chart = this->Charts.erase(chart);
+		}
+		else {
+			++chart;
+		}
+	}
+}
+
+bool Fumen::hasChartWithName(std::string name) {
+	for (auto& chart : this->Charts) {
+		if (chart.getDif() == name) {
+			return true;
+		}
+	}
+	return false;
+}
+
+Chart& Fumen::getChartByIndex(int index) {
+	return this->Charts.at(index);
+}
+
+Chart& Fumen::getFirstChartWithName(std::string name) {
+	for (auto& chart: this->Charts) {
+		if (chart.getDif() == name) {
+			return chart;
+		}
+	}
+	throw std::runtime_error("Unable to find chart with name : " + name);
 }
 
 const std::string &Fumen::getSongTitle() const {
@@ -165,5 +240,4 @@ Fumen::Fumen(const std::string &songTitle,
                              musicPath(musicPath),
                              jacketPath(jacketPath),
                              BPM(BPM),
-                             offset(offset),
-							 Notes({}) {}
+                             offset(offset) {}
