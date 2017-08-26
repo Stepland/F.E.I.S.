@@ -60,7 +60,7 @@ bool Fumen::checkMemon(nlohmann::json j) {
 				                 note["n"] <= 15);
 				data_correct &= (note.find("t") != note.end() and note["t"].is_number_integer() and note["t"] >= 0);
 				data_correct &= (note.find("l") != note.end() and note["l"].is_number_integer() and note["l"] >= 0);
-				data_correct &= (note.find("p") != note.end() and note["p"].is_number_integer() and note["p"]%12 == note["p"]);
+				data_correct &= (note.find("p") != note.end() and note["p"].is_number_integer() and note["p"] >=0 and note["p"] <= 11);
 				if (data_correct and note["l"] > 0) {
 					data_correct &= Note::trail_pos_correct(note["n"],note["p"]);
 				}
@@ -92,7 +92,7 @@ void Fumen::loadFromMemon(std::string path) {
 		for (auto& chart_json : j["data"]) {
 			this->addChart(Chart(chart_json["dif"],chart_json["level"],chart_json["resolution"]));
 			Chart& chart = this->getFirstChartWithName(chart_json["dif"]);
-			for (auto& note : chart["notes"]) {
+			for (auto& note : chart_json["notes"]) {
 				chart.addNote(Note(note["n"],note["t"],note["l"],note["p"]));
 			}
 		}
@@ -148,10 +148,10 @@ void Fumen::removeChartByIndex(int index) {
 }
 
 void Fumen::removeAllChartsWithName(std::string dif) {
-	auto & chart;
+	std::vector<Chart>::iterator chart;
 	for(chart = this->Charts.begin(); chart != this->Charts.end();)
 	{
-		if(chart.getDif() == dif) {
+		if(chart->getDif() == dif) {
 			chart = this->Charts.erase(chart);
 		}
 		else {
