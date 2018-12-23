@@ -19,27 +19,16 @@ public:
 	      int level = 1,
 	      int resolution = 240);
 
-	const std::string &getDif() const;
-	void setDif(const std::string &dif);
-
-	int getLevel() const;
-	void setLevel(int level);
-
 	int getResolution() const;
 	void setResolution(int resolution);
 
-	void addNote(Note note);
-	void removeNote(Note note);
-	bool hasNote(Note note);
-	int getNoteCount();
-	const std::set<Note> &getNotes() const;
+	std::string dif_name;
+	int level;
+	std::set<Note> Notes;
 
 private:
 
-	std::string dif;
-	int level;
 	int resolution;
-	std::set<Note> Notes;
 
 };
 

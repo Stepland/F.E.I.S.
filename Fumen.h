@@ -16,6 +16,8 @@
 
 // TODO : trouver une manière ÉLÉGANTE d'acceder aux différentes charts
 
+
+
 class Fumen {
 
 public:
@@ -37,41 +39,13 @@ public:
 	//void saveAsMemo(std::string path);
 	//void saveAsEve(std::string path);
 
-	void addChart(Chart chart);
-	void removeChartByIndex(int index);
-	void removeAllChartsWithName(std::string dif);
-	bool hasChartWithName(std::string name);
-	Chart& getChartByIndex(int index);
-	Chart& getFirstChartWithName(std::string name);
-
-	const std::string &getSongTitle() const;
-	void setSongTitle(const std::string &songTitle);
-
-	const std::string &getArtist() const;
-	void setArtist(const std::string &artist);
-
-	const std::string &getMusicPath() const;
-	void setMusicPath(const std::string &musicPath);
-
-	const std::string &getJacketPath() const;
-	void setJacketPath(const std::string &jacketPath);
-
-	float getBPM() const;
-	void setBPM(float BPM);
-
-	float getOffset() const;
-	void setOffset(float offset);
-
-private:
-
-	std::vector<Chart> Charts;
+	std::map<std::string,Chart> Charts;
 	std::string songTitle;
 	std::string artist;
 	std::string musicPath;
 	std::string jacketPath;
 	float BPM;
 	float offset;
-	bool checkMemon(nlohmann::json j);
 
 };
 
