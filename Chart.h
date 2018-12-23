@@ -10,6 +10,7 @@
 #include "Note.h"
 
 // TODO : finir la classe Chart
+// ?
 
 class Chart {
 
