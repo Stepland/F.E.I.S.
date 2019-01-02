@@ -14,10 +14,6 @@
 #include "Note.h"
 #include "Chart.h"
 
-// TODO : trouver une manière ÉLÉGANTE d'acceder aux différentes charts
-
-
-
 class Fumen {
 
 public:

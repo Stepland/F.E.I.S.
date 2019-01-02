@@ -7,21 +7,22 @@
 
 #include <SFML/Graphics.hpp>
 #include "Marker.h"
+#include "EditorState.h"
 
 class Screen {
 
 public:
 
-	virtual void run(sf::RenderWindow& window) = 0;
+	virtual void render(sf::RenderWindow &window, EditorState editorState) = 0;
 
 };
 
-class Ecran_attente : public Screen {
+class Ecran_attente {
 
 public:
 
 	Ecran_attente();
-	void run(sf::RenderWindow& window);
+	void render(sf::RenderWindow &window);
 
 private:
 
@@ -36,7 +37,7 @@ class Ecran_edition : public Screen {
 public:
 
 	Ecran_edition();
-	void run(sf::RenderWindow& window);
+	void render(sf::RenderWindow &window, EditorState editorState);
 
 private:
 

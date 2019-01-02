@@ -10,39 +10,20 @@ Ecran_attente::Ecran_attente() : gris_de_fond(sf::Color(38,38,38)) {
 	{
 		throw std::string("Unable to load textures/FEIS_logo.png");
 	}
+	tex_FEIS_logo.setSmooth(true);
 	FEIS_logo.setTexture(tex_FEIS_logo);
 	FEIS_logo.setColor(sf::Color(255, 255, 255, 32)); // un huitième opaque
 
 }
 
-void Ecran_attente::run(sf::RenderWindow& window) {
-	// on fait tourner le programme jusqu'à ce que la fenêtre soit fermée
-	bool fini = false;
-	while (!fini)
-	{
-		// on inspecte tous les évènements de la fenêtre qui ont été émis depuis la précédente itération
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			// évènement "fermeture demandée" : on ferme la fenêtre
-			if (event.type == sf::Event::Closed) {
-				fini = true;
-			} else if (event.type == sf::Event::Resized) {
-				window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
-			}
-		}
+void Ecran_attente::render(sf::RenderWindow& window) {
+    // effacement de la fenêtre en noir
+    window.clear(gris_de_fond);
 
-		// effacement de la fenêtre en noir
-		window.clear(gris_de_fond);
-
-		// c'est ici qu'on dessine tout
-		FEIS_logo.setPosition(sf::Vector2f((window.getSize().x-tex_FEIS_logo.getSize().x)/2,
-		                                   (window.getSize().y-tex_FEIS_logo.getSize().y)/2));
-		window.draw(FEIS_logo);
-
-		// fin de la frame courante, affichage de tout ce qu'on a dessiné
-		window.display();
-	}
+    // c'est ici qu'on dessine tout
+    FEIS_logo.setPosition(sf::Vector2f(static_cast<float>((window.getSize().x-tex_FEIS_logo.getSize().x)/2),
+                                       static_cast<float>((window.getSize().y-tex_FEIS_logo.getSize().y)/2)));
+    window.draw(FEIS_logo);
 }
 
 Ecran_edition::Ecran_edition() : couleur_de_fond(sf::Color(0,0,0)) {
@@ -51,7 +32,7 @@ Ecran_edition::Ecran_edition() : couleur_de_fond(sf::Color(0,0,0)) {
 
 }
 
-void Ecran_edition::run(sf::RenderWindow &window) {
+void Ecran_edition::render(sf::RenderWindow &window, EditorState editorState) {
 
 	sf::Clock clock;
 	bool fini = false;

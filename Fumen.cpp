@@ -18,11 +18,11 @@ void Fumen::loadFromMemon(std::string path) {
 	this->musicPath = j.at("metadata").value("music path","");
 	this->jacketPath = j.at("metadata").value("jacket path","");
 	for (auto& chart_json : j.at("data")) {
-		Chart chart = Chart(chart_json.at("dif_name"),chart_json.value("level",0),chart_json.at("resolution"));
+		Chart chart(chart_json.at("dif_name"),chart_json.value("level",0),chart_json.at("resolution"));
 		for (auto& note : chart_json.at("notes")) {
 			chart.Notes.emplace(note.at("n"),note.at("t"),note.at("l"),note.at("p"));
 		}
-		this->Charts[chart.dif_name] = chart;
+		this->Charts.insert(std::pair<std::string,Chart>(chart.dif_name,chart));
 	}
 }
 
