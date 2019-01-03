@@ -24,12 +24,14 @@ set(SOURCE_FILES
         Chart.h
         EditorState.cpp
         EditorState.h
-        imgui/imgui.cpp
-        imgui/imgui_draw.cpp
-        imgui/imgui_widgets.cpp
-        imgui/imgui-SFML.cpp
-        imgui/imgui_demo.cpp
-        )
+        include/imgui/imgui.cpp
+        include/imgui/imgui_draw.cpp
+        include/imgui/imgui_widgets.cpp
+        include/imgui/imgui-SFML.cpp
+        include/imgui/imgui_demo.cpp
+        include/imgui/imgui_stdlib.cpp
+        tinyfiledialogs.c
+        tinyfiledialogs.h)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 
@@ -37,7 +39,7 @@ set(SFML_ROOT ${FEIS_SOURCE_DIR})
 
 find_package(SFML REQUIRED system window graphics network audio)
 find_package (OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR} ${SFML_INCLUDE_DIR} imgui)
+include_directories(${OPENGL_INCLUDE_DIR} ${SFML_INCLUDE_DIR} include/imgui)
 
 add_executable(FEIS ${SOURCE_FILES})
 

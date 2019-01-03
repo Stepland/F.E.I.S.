@@ -32,10 +32,10 @@ void Fumen::saveAsMemon(std::string path) {
 	using json = nlohmann::json;
 	json j;
 	j["metadata"] = json::object();
-	j["metadata"]["song_title"] = this->songTitle;
+	j["metadata"]["song title"] = this->songTitle;
 	j["metadata"]["artist"] = this->artist;
-	j["metadata"]["music_path"] = this->musicPath;
-	j["metadata"]["jacket_path"] = this->jacketPath;
+	j["metadata"]["music path"] = this->musicPath;
+	j["metadata"]["jacket path"] = this->jacketPath;
 	j["metadata"]["BPM"] = this->BPM;
 	j["metadata"]["offset"] = this->offset;
 	j["data"] = json::array();
@@ -57,6 +57,7 @@ void Fumen::saveAsMemon(std::string path) {
 	}
 
 	fichier << j.dump(4) << std::endl;
+	fichier.close();
 
 }
 
