@@ -61,12 +61,14 @@ void Fumen::saveAsMemon(std::string path) {
 
 }
 
-Fumen::Fumen(const std::string &songTitle,
+Fumen::Fumen(const std::string &folder,
+			 const std::string &songTitle,
              const std::string &artist,
              const std::string &musicPath,
              const std::string &jacketPath,
              float BPM,
-             float offset) : songTitle(songTitle),
+             float offset) : folder(folder),
+             				 songTitle(songTitle),
                              artist(artist),
                              musicPath(musicPath),
                              jacketPath(jacketPath),

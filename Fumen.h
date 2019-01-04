@@ -9,8 +9,8 @@
 #include <map>
 #include <set>
 #include <fstream>
-#include <json/json.hpp>
 
+#include "json.hpp"
 #include "Note.h"
 #include "Chart.h"
 
@@ -18,7 +18,8 @@ class Fumen {
 
 public:
 
-	Fumen(const std::string &songTitle = "",
+	Fumen(const std::string &folder,
+          const std::string &songTitle = "",
 	      const std::string &artist = "",
 	      const std::string &musicPath = "",
 	      const std::string &jacketPath = "",
@@ -36,6 +37,7 @@ public:
 	//void saveAsEve(std::string path);
 
 	std::map<std::string,Chart> Charts;
+	std::string folder;
 	std::string songTitle;
 	std::string artist;
 	std::string musicPath;

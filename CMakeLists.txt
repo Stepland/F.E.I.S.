@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.7)
 project(FEIS)
 
+cmake_policy(SET CMP0074 NEW)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -24,12 +26,12 @@ set(SOURCE_FILES
         Chart.h
         EditorState.cpp
         EditorState.h
-        include/imgui/imgui.cpp
-        include/imgui/imgui_draw.cpp
-        include/imgui/imgui_widgets.cpp
-        include/imgui/imgui-SFML.cpp
-        include/imgui/imgui_demo.cpp
-        include/imgui/imgui_stdlib.cpp
+        imgui/imgui.cpp
+        imgui/imgui_draw.cpp
+        imgui/imgui_widgets.cpp
+        imgui/imgui-SFML.cpp
+        imgui/imgui_demo.cpp
+        imgui/imgui_stdlib.cpp
         tinyfiledialogs.c
         tinyfiledialogs.h)
 
@@ -39,7 +41,7 @@ set(SFML_ROOT ${FEIS_SOURCE_DIR})
 
 find_package(SFML REQUIRED system window graphics network audio)
 find_package (OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR} ${SFML_INCLUDE_DIR} include/imgui)
+include_directories(${OPENGL_INCLUDE_DIR} ${SFML_INCLUDE_DIR} imgui/)
 
 add_executable(FEIS ${SOURCE_FILES})
 

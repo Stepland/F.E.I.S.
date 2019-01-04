@@ -10,7 +10,7 @@ EditorState::EditorState(Fumen &fumen) : fumen(fumen) {
     }
     if (this->fumen.musicPath != "") {
         this->music.emplace();
-        if (!this->music.value().openFromFile(this->fumen.musicPath))
+        if (!this->music.value().openFromFile(this->fumen.folder+"/"+this->fumen.musicPath))
         {
             throw std::invalid_argument("Error loading audio file : "+this->fumen.musicPath);
         }

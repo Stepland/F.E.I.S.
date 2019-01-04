@@ -54,22 +54,30 @@ int main(int argc, char** argv) {
 		{
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
-                    Fumen f;
-                    editorState.emplace(f);
+                    const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
+                    if (_filepath != nullptr) {
+                        std::string filepath(_filepath);
+                        std::string folder = filepath.substr(0, filepath.find_last_of("/\\"));
+                        try {
+                            Fumen f(folder);
+                            editorState.emplace(f);
+                        } catch (const std::exception& e) {
+                            tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                        }
+                    }
                 }
                 ImGui::Separator();
 				if (ImGui::MenuItem("Open")) {
 				    const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
 				    if (_filepath != nullptr) {
 				        std::string filepath(_filepath);
-                        Fumen f;
-                        std::optional<std::string> error_message;
+                        std::string folder = filepath.substr(0, filepath.find_last_of("/\\"));
                         try {
+                            Fumen f(folder);
                             f.loadFromMemon(filepath);
                             editorState.emplace(f);
                         } catch (const std::exception& e) {
-                            std::string message(e.what());
-                            tinyfd_messageBox("Error",message.c_str(),"ok","error",1);
+                            tinyfd_messageBox("Error",e.what(),"ok","error",1);
                         }
                     }
                 }
@@ -89,7 +97,11 @@ int main(int argc, char** argv) {
                     const char* _filepath(tinyfd_saveFileDialog("Save File",nullptr,1,options,nullptr));
                     if (_filepath != nullptr) {
                         std::string filepath(_filepath);
-                        editorState->fumen.saveAsMemon(filepath);
+                        try {
+                            editorState->fumen.saveAsMemon(filepath);
+                        } catch (const std::exception& e) {
+                            tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                        }
                     }
 				}
 				ImGui::EndMenu();
