@@ -6,9 +6,9 @@
 
 Ecran_attente::Ecran_attente() : gris_de_fond(sf::Color(38,38,38)) {
 
-	if(!tex_FEIS_logo.loadFromFile("textures/FEIS_logo.png"))
+	if(!tex_FEIS_logo.loadFromFile("assets/textures/FEIS_logo.png"))
 	{
-		throw std::string("Unable to load textures/FEIS_logo.png");
+		throw std::string("Unable to load assets/textures/FEIS_logo.png");
 	}
 	tex_FEIS_logo.setSmooth(true);
 	FEIS_logo.setTexture(tex_FEIS_logo);

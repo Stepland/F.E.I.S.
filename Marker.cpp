@@ -6,7 +6,7 @@
 
 Marker::Marker(std::string folder) {
 
-	path = "textures/markers/" + folder;
+	path = "assets/textures/markers/" + folder;
 
 	// Chargement des h100~115 / h200~215 / h300~h315 / h400~415
 	for (int sup = 1; sup<=4; sup++) {

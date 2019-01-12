@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <SFML/Audio.hpp>
+#include <SFML/Graphics.hpp>
 #include "Fumen.h"
 
 class EditorState {
@@ -14,11 +15,20 @@ class EditorState {
 public:
     Fumen fumen;
     std::optional<sf::Music> music;
+    std::optional<sf::Texture> jacket;
     std::optional<std::string> selectedChart;
-    bool showProperties;
-    bool showStatus;
 
     void reloadMusic();
+    void reloadJacket();
+
+    bool showProperties;
+    bool showStatus;
+    bool showPlaybackStatus = true;
+
+    void displayProperties();
+    void displayStatus();
+    void displayPlaybackStatus();
+
 
     explicit EditorState(Fumen& fumen);
 };

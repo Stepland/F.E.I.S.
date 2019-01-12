@@ -13,7 +13,14 @@ int main(int argc, char** argv) {
 	sf::RenderWindow & ref_window = window;
 	window.setVerticalSyncEnabled(true);
 	window.setFramerateLimit(60);
-    ImGui::SFML::Init(window);
+
+    ImGui::SFML::Init(window, false);
+
+    ImGuiIO& IO = ImGui::GetIO();
+    IO.Fonts->Clear();
+    IO.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-Medium.ttf", 16.f);
+    ImGui::SFML::UpdateFontTexture();
+
 
 	Ecran_attente bg;
 	std::optional<EditorState> editorState;
@@ -33,16 +40,18 @@ int main(int argc, char** argv) {
 			        break;
 			    case sf::Event::KeyPressed:
 			        if (event.key.code == sf::Keyboard::Space) {
-			            if (editorState and editorState->music) {
-			                switch (editorState->music->getStatus()) {
-			                    case sf::Music::Stopped:
-			                    case sf::Music::Paused:
-			                        editorState->music->play();
-			                        break;
-			                    case sf::Music::Playing:
-			                        editorState->music->pause();
-			                        break;
-			                }
+			            if (not ImGui::IsAnyWindowFocused()) {
+                            if (editorState and editorState->music) {
+                                switch (editorState->music->getStatus()) {
+                                    case sf::Music::Stopped:
+                                    case sf::Music::Paused:
+                                        editorState->music->play();
+                                        break;
+                                    case sf::Music::Playing:
+                                        editorState->music->pause();
+                                        break;
+                                }
+                            }
 			            }
 			        }
 			        break;
@@ -54,26 +63,15 @@ int main(int argc, char** argv) {
 		// Dessin du fond
 		if (editorState) {
 		    if (editorState->showProperties) {
-                ImGui::Begin("Properties",&editorState->showProperties);
-                ImGui::InputText("Title",&editorState->fumen.songTitle);
-                ImGui::InputText("Artist",&editorState->fumen.artist);
-                if (ImGui::InputText("Music",&editorState->fumen.musicPath)) {
-                    editorState->reloadMusic();
-                };
-                ImGui::InputText("Jacket Path",&editorState->fumen.jacketPath);
-                ImGui::End();
+		        editorState->displayProperties();
 		    }
 		    if (editorState->showStatus) {
-		        ImGui::Begin("Status",&editorState->showStatus);
-		        if (not editorState->music) {
-		            if (not editorState->fumen.musicPath.empty()) {
-                        ImGui::TextColored(ImVec4(1,0.42,0.41,1),"Invalid music path : %s",editorState->fumen.musicPath.c_str());
-		            } else {
-                        ImGui::TextColored(ImVec4(1,0.42,0.41,1),"No music file loaded");
-		            }
-		        }
-                ImGui::End();
+		        editorState->displayStatus();
 		    }
+            if (editorState->showPlaybackStatus) {
+                editorState->displayPlaybackStatus();
+            }
+
 			window.clear(sf::Color(0, 0, 0));
 		} else {
 			bg.render(window);
@@ -144,14 +142,17 @@ int main(int argc, char** argv) {
 				ImGui::EndMenu();
 			}
             if (ImGui::BeginMenu("Edit")) {
-                if (ImGui::MenuItem("Properties",NULL,false,editorState.has_value())) {
+                if (ImGui::MenuItem("Properties",nullptr,false,editorState.has_value())) {
                     editorState->showProperties = true;
                 }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("View",editorState.has_value())) {
-                if (ImGui::MenuItem("Editor Status",NULL,editorState->showStatus)) {
-                    editorState->showStatus = true;
+                if (ImGui::MenuItem("Editor Status",nullptr,editorState->showStatus)) {
+                    editorState->showStatus = not editorState->showStatus;
+                }
+                if (ImGui::MenuItem("Playback Status",nullptr,editorState->showPlaybackStatus)) {
+                    editorState->showStatus = not editorState->showPlaybackStatus;
                 }
                 ImGui::EndMenu();
             }
