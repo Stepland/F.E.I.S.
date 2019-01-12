@@ -16,9 +16,11 @@ public:
     std::optional<sf::Music> music;
     std::optional<std::string> selectedChart;
     bool showProperties;
+    bool showStatus;
 
-    EditorState() = default;
-    EditorState(Fumen& fumen);
+    void reloadMusic();
+
+    explicit EditorState(Fumen& fumen);
 };
 
 

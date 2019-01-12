@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <fstream>
+#include <filesystem>
 
 #include "json.hpp"
 #include "Note.h"
@@ -18,26 +19,31 @@ class Fumen {
 
 public:
 
-	Fumen(const std::string &folder,
-          const std::string &songTitle = "",
-	      const std::string &artist = "",
-	      const std::string &musicPath = "",
-	      const std::string &jacketPath = "",
-	      float BPM = 120,
-	      float offset = 0);
+	explicit Fumen(
+			const std::filesystem::path &path,
+          	const std::string &songTitle = "",
+          	const std::string &artist = "",
+	      	const std::string &musicPath = "",
+	      	const std::string &jacketPath = "",
+	      	float BPM = 120,
+	      	float offset = 0
+	      			);
 
-	void loadFromMemon(std::string path);
+	void loadFromMemon(std::filesystem::path path);
 	// TODO : implementer ça
 	//void loadFromMemo(std::string path);
 	//void loadFromEve(std::string path);
 
-	void saveAsMemon(std::string path);
+	void saveAsMemon(std::filesystem::path path);
 	// TODO : implementer ça
 	//void saveAsMemo(std::string path);
 	//void saveAsEve(std::string path);
 
+	void autoLoadFromMemon() {loadFromMemon(path);};
+	void autoSaveAsMemon() {saveAsMemon(path);};
+
 	std::map<std::string,Chart> Charts;
-	std::string folder;
+	std::filesystem::path path;
 	std::string songTitle;
 	std::string artist;
 	std::string musicPath;

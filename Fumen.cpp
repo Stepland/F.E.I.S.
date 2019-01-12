@@ -4,7 +4,7 @@
 
 #include "Fumen.h"
 
-void Fumen::loadFromMemon(std::string path) {
+void Fumen::loadFromMemon(std::filesystem::path path) {
 
 	// for convenience
 	using json = nlohmann::json;
@@ -26,7 +26,7 @@ void Fumen::loadFromMemon(std::string path) {
 	}
 }
 
-void Fumen::saveAsMemon(std::string path) {
+void Fumen::saveAsMemon(std::filesystem::path path) {
 
 	std::ofstream fichier(path);
 	using json = nlohmann::json;
@@ -61,13 +61,13 @@ void Fumen::saveAsMemon(std::string path) {
 
 }
 
-Fumen::Fumen(const std::string &folder,
+Fumen::Fumen(const std::filesystem::path &path,
 			 const std::string &songTitle,
              const std::string &artist,
              const std::string &musicPath,
              const std::string &jacketPath,
              float BPM,
-             float offset) : folder(folder),
+             float offset) : path(path),
              				 songTitle(songTitle),
                              artist(artist),
                              musicPath(musicPath),

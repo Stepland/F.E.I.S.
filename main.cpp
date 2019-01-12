@@ -24,11 +24,29 @@ int main(int argc, char** argv) {
 		while (window.pollEvent(event)) {
 			ImGui::SFML::ProcessEvent(event);
 
-			if (event.type == sf::Event::Closed) {
-				window.close();
-			} else if (event.type == sf::Event::Resized) {
-			    window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
-			};
+			switch (event.type) {
+			    case sf::Event::Closed:
+                    window.close();
+			        break;
+			    case sf::Event::Resized:
+                    window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
+			        break;
+			    case sf::Event::KeyPressed:
+			        if (event.key.code == sf::Keyboard::Space) {
+			            if (editorState and editorState->music) {
+			                switch (editorState->music->getStatus()) {
+			                    case sf::Music::Stopped:
+			                    case sf::Music::Paused:
+			                        editorState->music->play();
+			                        break;
+			                    case sf::Music::Playing:
+			                        editorState->music->pause();
+			                        break;
+			                }
+			            }
+			        }
+			        break;
+			}
 		}
 
 		ImGui::SFML::Update(window, deltaClock.restart());
@@ -39,8 +57,21 @@ int main(int argc, char** argv) {
                 ImGui::Begin("Properties",&editorState->showProperties);
                 ImGui::InputText("Title",&editorState->fumen.songTitle);
                 ImGui::InputText("Artist",&editorState->fumen.artist);
-                ImGui::InputText("Music Path",&editorState->fumen.musicPath);
+                if (ImGui::InputText("Music",&editorState->fumen.musicPath)) {
+                    editorState->reloadMusic();
+                };
                 ImGui::InputText("Jacket Path",&editorState->fumen.jacketPath);
+                ImGui::End();
+		    }
+		    if (editorState->showStatus) {
+		        ImGui::Begin("Status",&editorState->showStatus);
+		        if (not editorState->music) {
+		            if (not editorState->fumen.musicPath.empty()) {
+                        ImGui::TextColored(ImVec4(1,0.42,0.41,1),"Invalid music path : %s",editorState->fumen.musicPath.c_str());
+		            } else {
+                        ImGui::TextColored(ImVec4(1,0.42,0.41,1),"No music file loaded");
+		            }
+		        }
                 ImGui::End();
 		    }
 			window.clear(sf::Color(0, 0, 0));
@@ -54,12 +85,12 @@ int main(int argc, char** argv) {
 		{
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
-                    const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
+                    const char* _filepath = tinyfd_saveFileDialog("New File",nullptr,0,nullptr,nullptr);
                     if (_filepath != nullptr) {
-                        std::string filepath(_filepath);
-                        std::string folder = filepath.substr(0, filepath.find_last_of("/\\"));
+                        std::filesystem::path filepath(_filepath);
                         try {
-                            Fumen f(folder);
+                            Fumen f(filepath);
+                            f.autoSaveAsMemon();
                             editorState.emplace(f);
                         } catch (const std::exception& e) {
                             tinyfd_messageBox("Error",e.what(),"ok","error",1);
@@ -70,11 +101,10 @@ int main(int argc, char** argv) {
 				if (ImGui::MenuItem("Open")) {
 				    const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
 				    if (_filepath != nullptr) {
-				        std::string filepath(_filepath);
-                        std::string folder = filepath.substr(0, filepath.find_last_of("/\\"));
+                        std::filesystem::path filepath(_filepath);
                         try {
-                            Fumen f(folder);
-                            f.loadFromMemon(filepath);
+                            Fumen f(filepath);
+                            f.autoLoadFromMemon();
                             editorState.emplace(f);
                         } catch (const std::exception& e) {
                             tinyfd_messageBox("Error",e.what(),"ok","error",1);
@@ -93,10 +123,17 @@ int main(int argc, char** argv) {
 				    ImGui::EndMenu();
 				}
 				if (ImGui::MenuItem("Save")) {
+                    try {
+                        editorState->fumen.autoSaveAsMemon();
+                    } catch (const std::exception& e) {
+                        tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                    }
+				}
+				if (ImGui::MenuItem("Save As")) {
                     char const * options[1] = {"*.memon"};
                     const char* _filepath(tinyfd_saveFileDialog("Save File",nullptr,1,options,nullptr));
                     if (_filepath != nullptr) {
-                        std::string filepath(_filepath);
+                        std::filesystem::path filepath(_filepath);
                         try {
                             editorState->fumen.saveAsMemon(filepath);
                         } catch (const std::exception& e) {
@@ -108,7 +145,13 @@ int main(int argc, char** argv) {
 			}
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Properties",NULL,false,editorState.has_value())) {
-                    editorState.value().showProperties = true;
+                    editorState->showProperties = true;
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("View",editorState.has_value())) {
+                if (ImGui::MenuItem("Editor Status",NULL,editorState->showStatus)) {
+                    editorState->showStatus = true;
                 }
                 ImGui::EndMenu();
             }
