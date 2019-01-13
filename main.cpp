@@ -5,6 +5,7 @@
 #include "screen.h"
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
+#include "Toolbox.h"
 
 int main(int argc, char** argv) {
 
@@ -71,12 +72,20 @@ int main(int argc, char** argv) {
             if (editorState->showPlaybackStatus) {
                 editorState->displayPlaybackStatus();
             }
-
+            if (editorState->showTimeline) {
+                editorState->displayTimeline();
+            }
 			window.clear(sf::Color(0, 0, 0));
 		} else {
 			bg.render(window);
 		}
 
+		// Gestion des Raccourcis Clavier
+		if (Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::S})) {
+		    editorState->save();
+		} else if (Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::O})) {
+
+		}
 		// Dessin de l'interface
 
 		ImGui::BeginMainMenuBar();
@@ -90,42 +99,30 @@ int main(int argc, char** argv) {
                             Fumen f(filepath);
                             f.autoSaveAsMemon();
                             editorState.emplace(f);
+                            Toolbox::pushNewRecentFile(std::filesystem::canonical(editorState->fumen.path));
                         } catch (const std::exception& e) {
                             tinyfd_messageBox("Error",e.what(),"ok","error",1);
                         }
                     }
                 }
                 ImGui::Separator();
-				if (ImGui::MenuItem("Open")) {
-				    const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
-				    if (_filepath != nullptr) {
-                        std::filesystem::path filepath(_filepath);
-                        try {
-                            Fumen f(filepath);
-                            f.autoLoadFromMemon();
-                            editorState.emplace(f);
-                        } catch (const std::exception& e) {
-                            tinyfd_messageBox("Error",e.what(),"ok","error",1);
-                        }
-                    }
+				if (ImGui::MenuItem("Open","Ctrl+O") or Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::O})) {
+                    editorState->open();
                 }
 				if (ImGui::BeginMenu("Recent Files")) {
-				    for (int i = 1; i<=10; i++) {
-				        ImGui::PushID(i);
-                        std::ostringstream stringStream;
-                        stringStream << i << ". fichier blabla";
-                        std::string copyOfStr = stringStream.str();
-                        ImGui::MenuItem(copyOfStr.c_str());
+				    int i = 0;
+				    for (const auto& file : Toolbox::getRecentFiles()) {
+                        ImGui::PushID(i);
+                        if (ImGui::MenuItem(file.c_str())) {
+                            editorState->openFromFile(file);
+                        }
                         ImGui::PopID();
+                        ++i;
 				    }
 				    ImGui::EndMenu();
 				}
-				if (ImGui::MenuItem("Save")) {
-                    try {
-                        editorState->fumen.autoSaveAsMemon();
-                    } catch (const std::exception& e) {
-                        tinyfd_messageBox("Error",e.what(),"ok","error",1);
-                    }
+				if (ImGui::MenuItem("Save","Ctrl+S")) {
+                    editorState->save();
 				}
 				if (ImGui::MenuItem("Save As")) {
                     char const * options[1] = {"*.memon"};
@@ -152,7 +149,10 @@ int main(int argc, char** argv) {
                     editorState->showStatus = not editorState->showStatus;
                 }
                 if (ImGui::MenuItem("Playback Status",nullptr,editorState->showPlaybackStatus)) {
-                    editorState->showStatus = not editorState->showPlaybackStatus;
+                    editorState->showPlaybackStatus = not editorState->showPlaybackStatus;
+                }
+                if (ImGui::MenuItem("Timeline",nullptr,editorState->showTimeline)) {
+                    editorState->showTimeline = not editorState->showTimeline;
                 }
                 ImGui::EndMenu();
             }

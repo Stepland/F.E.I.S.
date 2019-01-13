@@ -18,17 +18,23 @@ public:
     std::optional<sf::Texture> jacket;
     std::optional<std::string> selectedChart;
 
+    void reloadFromFumen();
     void reloadMusic();
     void reloadJacket();
 
     bool showProperties;
     bool showStatus;
     bool showPlaybackStatus = true;
+    bool showTimeline = true;
 
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();
+    void displayTimeline();
 
+    void save();
+    void open();
+    void openFromFile(std::filesystem::path path);
 
     explicit EditorState(Fumen& fumen);
 };

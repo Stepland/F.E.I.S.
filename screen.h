@@ -6,6 +6,7 @@
 #define FEIS_SCREEN_H
 
 #include <SFML/Graphics.hpp>
+#include <imgui.h>
 #include "Marker.h"
 #include "EditorState.h"
 

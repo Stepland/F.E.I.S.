@@ -7,8 +7,14 @@
 #include <imgui-SFML.h>
 #include <imgui_stdlib.h>
 #include "EditorState.h"
+#include "tinyfiledialogs.h"
+#include "Toolbox.h"
 
 EditorState::EditorState(Fumen &fumen) : fumen(fumen) {
+    reloadFromFumen();
+}
+
+void EditorState::reloadFromFumen() {
     if (not this->fumen.Charts.empty()) {
         this->selectedChart = this->fumen.Charts.begin()->first;
     }
@@ -133,4 +139,60 @@ void EditorState::displayPlaybackStatus() {
     }
     ImGui::End();
     ImGui::PopStyleVar();
+}
+
+void EditorState::displayTimeline() {
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 25, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+    ImGui::SetNextWindowSize({20,io.DisplaySize.y * 0.9f},ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);
+    ImGui::Begin(
+            "Timeline",
+            &showTimeline,
+            ImGuiWindowFlags_NoNav
+            |ImGuiWindowFlags_NoDecoration
+            |ImGuiWindowFlags_NoTitleBar
+            |ImGuiWindowFlags_NoMove
+            );
+    {
+        if (music) {
+            float slider_pos = 1.f - (music->getPlayingOffset().asSeconds()) / music->getDuration().asSeconds();
+            ImGui::SetCursorPos({0,0});
+            if(ImGui::VSliderFloat("",ImGui::GetContentRegionMax(),&slider_pos,0.f,1.f,"")) {
+                music->setPlayingOffset(sf::seconds((1.f-slider_pos)*music->getDuration().asSeconds()));
+            }
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(3);
+}
+
+void EditorState::save() {
+    try {
+        fumen.autoSaveAsMemon();
+    } catch (const std::exception& e) {
+        tinyfd_messageBox("Error",e.what(),"ok","error",1);
+    }
+}
+
+void EditorState::open() {
+    const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
+    if (_filepath != nullptr) {
+        openFromFile(_filepath);
+    }
+}
+
+void EditorState::openFromFile(std::filesystem::path path) {
+    try {
+        Fumen f(path);
+        f.autoLoadFromMemon();
+        fumen = f;
+        reloadFromFumen();
+        Toolbox::pushNewRecentFile(std::filesystem::canonical(fumen.path));
+    } catch (const std::exception &e) {
+        tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
+    }
 }
