@@ -7,16 +7,9 @@
 
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
+#include <imgui-SFML.h>
 #include "Marker.h"
 #include "EditorState.h"
-
-class Screen {
-
-public:
-
-	virtual void render(sf::RenderWindow &window, EditorState editorState) = 0;
-
-};
 
 class Ecran_attente {
 
@@ -33,18 +26,19 @@ private:
 
 };
 
-class Ecran_edition : public Screen {
+class Playfield {
 
 public:
 
-	Ecran_edition();
-	void render(sf::RenderWindow &window, EditorState editorState);
+	Playfield();
+	void render(sf::RenderWindow &window, EditorState& editorState);
+
+	Marker marker;
+	sf::Texture button;
+	sf::Texture button_pressed;
 
 private:
-
-	sf::Color couleur_de_fond;
-	Marker marker;
-
+	std::string button_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
 };
 
 #endif //FEIS_SCREEN_H

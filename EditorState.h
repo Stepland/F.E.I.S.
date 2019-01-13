@@ -9,11 +9,13 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include "Fumen.h"
+#include "Marker.h"
 
 class EditorState {
 
 public:
     Fumen fumen;
+    Marker marker;
     std::optional<sf::Music> music;
     std::optional<sf::Texture> jacket;
     std::optional<std::string> selectedChart;
@@ -22,22 +24,26 @@ public:
     void reloadMusic();
     void reloadJacket();
 
+    bool showPlayfield = true;
     bool showProperties;
     bool showStatus;
     bool showPlaybackStatus = true;
     bool showTimeline = true;
 
+    void displayPlayfield();
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();
     void displayTimeline();
 
-    void save();
-    void open();
-    void openFromFile(std::filesystem::path path);
-
     explicit EditorState(Fumen& fumen);
 };
+
+namespace ESHelper {
+    void save(EditorState& ed);
+    void open(std::optional<EditorState>& ed);
+    void openFromFile(std::optional<EditorState>& ed, std::filesystem::path path);
+}
 
 
 #endif //FEIS_EDITORSTATE_H

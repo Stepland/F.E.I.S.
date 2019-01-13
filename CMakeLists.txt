@@ -12,7 +12,7 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS
 
 set(SOURCE_FILES
         main.cpp
-        screen.cpp
+        Widgets.cpp
         Marker.cpp
         Fumen.cpp
         Note.cpp

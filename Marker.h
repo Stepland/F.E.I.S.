@@ -25,7 +25,7 @@ class Marker {
 public:
 
 	Marker(std::string folder = "mk0013");
-	sf::Sprite getSprite(Etat etat, int frame);
+	sf::Texture getSprite(Etat etat, int frame);
 
 private:
 

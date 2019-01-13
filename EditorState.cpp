@@ -55,6 +55,9 @@ void EditorState::reloadJacket() {
 
 }
 
+void EditorState::displayPlayfield() {
+}
+
 /*
  * Display all metadata in an editable form
  */
@@ -170,28 +173,27 @@ void EditorState::displayTimeline() {
     ImGui::PopStyleVar(3);
 }
 
-void EditorState::save() {
+void ESHelper::save(EditorState& ed) {
     try {
-        fumen.autoSaveAsMemon();
+        ed.fumen.autoSaveAsMemon();
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error",e.what(),"ok","error",1);
     }
 }
 
-void EditorState::open() {
+void ESHelper::open(std::optional<EditorState> &ed) {
     const char* _filepath = tinyfd_openFileDialog("Open File",nullptr,0,nullptr,nullptr,false);
     if (_filepath != nullptr) {
-        openFromFile(_filepath);
+        ESHelper::openFromFile(ed,_filepath);
     }
 }
 
-void EditorState::openFromFile(std::filesystem::path path) {
+void ESHelper::openFromFile(std::optional<EditorState> &ed, std::filesystem::path path) {
     try {
         Fumen f(path);
         f.autoLoadFromMemon();
-        fumen = f;
-        reloadFromFumen();
-        Toolbox::pushNewRecentFile(std::filesystem::canonical(fumen.path));
+        ed.emplace(f);
+        Toolbox::pushNewRecentFile(std::filesystem::canonical(ed->fumen.path));
     } catch (const std::exception &e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }

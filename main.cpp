@@ -2,7 +2,7 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include <imgui_stdlib.h>
-#include "screen.h"
+#include "Widgets.h"
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
 
 
 	Ecran_attente bg;
+	Playfield playfield;
 	std::optional<EditorState> editorState;
 
 	sf::Clock deltaClock;
@@ -63,6 +64,9 @@ int main(int argc, char** argv) {
 
 		// Dessin du fond
 		if (editorState) {
+		    if (editorState->showPlayfield) {
+		        playfield.render(window,*editorState);
+		    }
 		    if (editorState->showProperties) {
 		        editorState->displayProperties();
 		    }
@@ -81,13 +85,21 @@ int main(int argc, char** argv) {
 		}
 
 		// Gestion des Raccourcis Clavier
-		if (Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::S})) {
-		    editorState->save();
+
+		// Ctrl+S
+		if (editorState and Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::S})) {
+            ESHelper::save(*editorState);
+
+        // Ctrl+O
 		} else if (Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::O})) {
+            ESHelper::open(editorState);
 
+        // Shift+P
+		} else if (editorState and Toolbox::isShortcutPressed({sf::Keyboard::LShift,sf::Keyboard::RShift},{sf::Keyboard::P})) {
+            editorState->showProperties = true;
 		}
-		// Dessin de l'interface
 
+		// Dessin de l'interface
 		ImGui::BeginMainMenuBar();
 		{
             if (ImGui::BeginMenu("File")) {
@@ -106,25 +118,29 @@ int main(int argc, char** argv) {
                     }
                 }
                 ImGui::Separator();
-				if (ImGui::MenuItem("Open","Ctrl+O") or Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::O})) {
-                    editorState->open();
+				if (ImGui::MenuItem("Open","Ctrl+O")) {
+                    ESHelper::open(editorState);
                 }
 				if (ImGui::BeginMenu("Recent Files")) {
 				    int i = 0;
 				    for (const auto& file : Toolbox::getRecentFiles()) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
-                            editorState->openFromFile(file);
+                            ESHelper::openFromFile(editorState,file);
                         }
                         ImGui::PopID();
                         ++i;
 				    }
 				    ImGui::EndMenu();
 				}
-				if (ImGui::MenuItem("Save","Ctrl+S")) {
-                    editorState->save();
+				if (ImGui::MenuItem("Close","",false,editorState.has_value())) {
+				    editorState.reset();
 				}
-				if (ImGui::MenuItem("Save As")) {
+				ImGui::Separator();
+				if (ImGui::MenuItem("Save","Ctrl+S",false,editorState.has_value())) {
+                    ESHelper::save(*editorState);
+				}
+				if (ImGui::MenuItem("Save As","",false,editorState.has_value())) {
                     char const * options[1] = {"*.memon"};
                     const char* _filepath(tinyfd_saveFileDialog("Save File",nullptr,1,options,nullptr));
                     if (_filepath != nullptr) {
@@ -136,23 +152,27 @@ int main(int argc, char** argv) {
                         }
                     }
 				}
+                ImGui::Separator();
+                if (ImGui::MenuItem("Properties","Shift+P",false,editorState.has_value())) {
+                    editorState->showProperties = true;
+                }
 				ImGui::EndMenu();
 			}
             if (ImGui::BeginMenu("Edit")) {
-                if (ImGui::MenuItem("Properties",nullptr,false,editorState.has_value())) {
-                    editorState->showProperties = true;
-                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("View",editorState.has_value())) {
-                if (ImGui::MenuItem("Editor Status",nullptr,editorState->showStatus)) {
-                    editorState->showStatus = not editorState->showStatus;
+                if (ImGui::MenuItem("Playfield", nullptr,editorState->showPlayfield)) {
+                    editorState->showPlayfield = not editorState->showPlayfield;
                 }
                 if (ImGui::MenuItem("Playback Status",nullptr,editorState->showPlaybackStatus)) {
                     editorState->showPlaybackStatus = not editorState->showPlaybackStatus;
                 }
                 if (ImGui::MenuItem("Timeline",nullptr,editorState->showTimeline)) {
                     editorState->showTimeline = not editorState->showTimeline;
+                }
+                if (ImGui::MenuItem("Editor Status",nullptr,editorState->showStatus)) {
+                    editorState->showStatus = not editorState->showStatus;
                 }
                 ImGui::EndMenu();
             }

@@ -41,7 +41,7 @@ Marker::Marker(std::string folder) {
 	}
 }
 
-sf::Sprite Marker::getSprite(Etat etat, int frame) {
+sf::Texture Marker::getSprite(Etat etat, int frame) {
 
 	int lower;
 	int upper;
@@ -60,7 +60,6 @@ sf::Sprite Marker::getSprite(Etat etat, int frame) {
 		throw std::runtime_error("Requested access to a non-existent marker frame : " +std::to_string(frame));
 	}
 
-	sf::Sprite sprite;
 	std::string tex_key;
 	switch (etat) {
 		case APPROCHE:
@@ -84,8 +83,6 @@ sf::Sprite Marker::getSprite(Etat etat, int frame) {
 		tex_key += "0";
 	}
 
-	sprite.setTexture(textures[tex_key+std::to_string(frame)]);
-
-	return sprite;
+	return textures[tex_key+std::to_string(frame)];
 
 }
