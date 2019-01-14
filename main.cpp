@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 			        break;
 			    case sf::Event::KeyPressed:
 			        if (event.key.code == sf::Keyboard::Space) {
-			            if (not ImGui::IsAnyWindowFocused()) {
+			            if (not ImGui::GetIO().WantTextInput) {
                             if (editorState and editorState->music) {
                                 switch (editorState->music->getStatus()) {
                                     case sf::Music::Stopped:

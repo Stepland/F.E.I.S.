@@ -42,6 +42,7 @@ Playfield::Playfield() {
 
 void Playfield::render(sf::RenderWindow &window, EditorState& editorState) {
 
+	ImGui::SetNextWindowSize(ImVec2(400,400),ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(0,0),ImVec2(FLT_MAX,FLT_MAX),Toolbox::CustomConstraints::ContentSquare);
 	ImGui::Begin("Playfield",&editorState.showPlayfield,ImGuiWindowFlags_NoScrollbar);
 	{
