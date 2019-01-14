@@ -16,12 +16,14 @@ class EditorState {
 public:
     Fumen fumen;
     Marker marker;
-    sf::Time playbackPosition;
-    sf::Time chartRuntime; // Timing at which the playback stops
-    bool playing;
     std::optional<sf::Music> music;
     std::optional<sf::Texture> jacket;
     std::optional<Chart> selectedChart;
+
+    sf::Time playbackPosition;
+    sf::Time chartRuntime; // Timing at which the playback stops
+    bool playing;
+    float getBeats() {return ((playbackPosition.asSeconds()+fumen.offset)/60.f)* fumen.BPM;};
 
     void reloadFromFumen();
     void reloadMusic();

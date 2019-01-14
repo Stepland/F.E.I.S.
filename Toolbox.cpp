@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <list>
 #include <set>
+#include <cmath>
 #include <c++/8.2.1/fstream>
 #include "Toolbox.h"
 
@@ -58,5 +59,21 @@ std::vector<std::string> Toolbox::getRecentFiles() {
     }
     readFile.close();
     return recent;
+}
+
+std::string Toolbox::to_string(sf::Time time) {
+    std::ostringstream stringStream;
+    int minutes = static_cast<int>(std::abs(time.asSeconds()))/60;
+    int seconds = static_cast<int>(std::abs(time.asSeconds()))%60;
+    int miliseconds = static_cast<int>(std::abs(time.asMilliseconds()))%1000;
+    if (time.asSeconds() < 0) {
+        stringStream << "-";
+    } else {
+        stringStream << "+";
+    }
+    stringStream.fill('0');
+    stringStream << std::setw(2) << minutes << ":" << std::setw(2) << seconds << "." << std::setw(3) << miliseconds;
+    //("-%02d:%02d.%03d",minutes,seconds,miliseconds);
+    return stringStream.str();
 }
 

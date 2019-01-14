@@ -155,23 +155,37 @@ void EditorState::displayPlaybackStatus() {
             |ImGuiWindowFlags_AlwaysAutoResize
             );
     {
+        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Beats : ");
+        ImGui::SameLine();
+        ImGui::Text("%02.2f",this->getBeats());
+        ImGui::SameLine();
         if (music) {
             ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Music File Offset : ");
             ImGui::SameLine();
+            ImGui::TextUnformatted(Toolbox::to_string(music->getPlayingOffset()).c_str());
+            /*
             sf::Time time = music->getPlayingOffset();
-            int minutes = static_cast<int>(time.asSeconds())/60;
-            int seconds = static_cast<int>(time.asSeconds())%60;
-            int miliseconds = static_cast<int>(time.asMilliseconds())%1000;
-            ImGui::Text("%02d:%02d.%03d",minutes,seconds,miliseconds);
+            int minutes = static_cast<int>(std::abs(time.asSeconds()))/60;
+            int seconds = static_cast<int>(std::abs(time.asSeconds()))%60;
+            int miliseconds = static_cast<int>(std::abs(time.asMilliseconds()))%1000;
+            if (time.asSeconds() < 0) {
+                ImGui::Text("-%02d:%02d.%03d",minutes,seconds,miliseconds);
+            } else {
+                ImGui::Text("+%02d:%02d.%03d",minutes,seconds,miliseconds);
+            }
+             */
         }
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Timeline Position : ");
         ImGui::SameLine();
+        ImGui::TextUnformatted(Toolbox::to_string(playbackPosition).c_str());
+        /*
         sf::Time time = playbackPosition;
         int minutes = static_cast<int>(time.asSeconds())/60;
         int seconds = static_cast<int>(time.asSeconds())%60;
         int miliseconds = static_cast<int>(time.asMilliseconds())%1000;
         ImGui::Text("%02d:%02d.%03d",minutes,seconds,miliseconds);
+         */
     }
     ImGui::End();
     ImGui::PopStyleVar();

@@ -23,6 +23,7 @@ namespace Toolbox {
             data->DesiredSize = ImVec2(IM_MAX(x,y), IM_MAX(x,y) + TitlebarHeight);
         }
     };
+    std::string to_string(sf::Time time);
 }
 
 template<typename T>
