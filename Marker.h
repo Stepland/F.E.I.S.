@@ -11,8 +11,7 @@
 #include <SFML/Graphics.hpp>
 #include <map>
 
-enum Etat {
-	APPROCHE,
+enum MarkerEndingState {
 	MISS,
 	EARLY,
 	GOOD,
@@ -25,7 +24,7 @@ class Marker {
 public:
 
 	Marker(std::string folder = "mk0013");
-	sf::Texture getSprite(Etat etat, int frame);
+	std::optional<sf::Texture> getSprite(MarkerEndingState state, float seconds);
 
 private:
 

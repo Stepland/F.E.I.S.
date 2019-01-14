@@ -2,43 +2,41 @@
 // Created by Syméon on 17/08/2017.
 //
 
-#ifndef FEIS_SCREEN_H
-#define FEIS_SCREEN_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include "Marker.h"
-#include "EditorState.h"
 
-class Ecran_attente {
+namespace Widgets {
+	class Ecran_attente {
 
-public:
+	public:
 
-	Ecran_attente();
-	void render(sf::RenderWindow &window);
+		Ecran_attente();
+		void render(sf::RenderWindow &window);
 
-private:
+	private:
 
-	sf::Color gris_de_fond;
-	sf::Texture tex_FEIS_logo;
-	sf::Sprite FEIS_logo;
+		sf::Color gris_de_fond;
+		sf::Texture tex_FEIS_logo;
+		sf::Sprite FEIS_logo;
 
-};
+	};
 
-class Playfield {
+	class Playfield {
 
-public:
+	public:
 
-	Playfield();
-	void render(sf::RenderWindow &window, EditorState& editorState);
+		Playfield();
 
-	Marker marker;
-	sf::Texture button;
-	sf::Texture button_pressed;
+		Marker marker;
+		MarkerEndingState markerEndingState;
+		sf::Texture button;
+		sf::Texture button_pressed;
 
-private:
-	std::string button_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
-};
-
-#endif //FEIS_SCREEN_H
+	private:
+		std::string button_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
+	};
+}

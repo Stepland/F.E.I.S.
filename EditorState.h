@@ -10,12 +10,14 @@
 #include <SFML/Graphics.hpp>
 #include "Fumen.h"
 #include "Marker.h"
+#include "Widgets.h"
 
 class EditorState {
 
 public:
     Fumen fumen;
-    Marker marker;
+    Widgets::Playfield playfield;
+    MarkerEndingState markerEndingState;
     std::optional<sf::Music> music;
     std::optional<sf::Texture> jacket;
     std::optional<Chart> selectedChart;
@@ -23,7 +25,23 @@ public:
     sf::Time playbackPosition;
     sf::Time chartRuntime; // Timing at which the playback stops
     bool playing;
-    float getBeats() {return ((playbackPosition.asSeconds()+fumen.offset)/60.f)* fumen.BPM;};
+    float getBeats() {return getBeatsAt(playbackPosition.asSeconds());};
+    float getBeatsAt(float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
+    float getTicks() {return getTicksAt(playbackPosition.asSeconds());};
+    float getTicksAt(float seconds) {
+        if (selectedChart) {
+            return getBeatsAt(seconds)*selectedChart->getResolution();
+        } else {
+            return getBeatsAt(seconds)*240.f;
+        }
+    }
+    float getSecondsAt(int tick) {
+        if (selectedChart) {
+            return (60.f * tick)/(fumen.BPM * selectedChart->getResolution()) - fumen.offset;
+        } else {
+            return (60.f * tick)/(fumen.BPM * 240.f) - fumen.offset;
+        }
+    }
 
     void reloadFromFumen();
     void reloadMusic();
@@ -41,6 +59,11 @@ public:
     void displayStatus();
     void displayPlaybackStatus();
     void displayTimeline();
+
+    bool playBeatTick;
+    bool playNoteTick;
+
+    std::vector<Note> getVisibleNotes();
 
     explicit EditorState(Fumen& fumen);
 };

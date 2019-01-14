@@ -22,9 +22,25 @@ int main(int argc, char** argv) {
     IO.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-Medium.ttf", 16.f);
     ImGui::SFML::UpdateFontTexture();
 
+    std::string noteTickPath = "assets/sounds/sound note tick.wav";
+    sf::SoundBuffer noteTick;
+    if (!noteTick.loadFromFile(noteTickPath)) {
+        std::cerr << "Unable to load sound " << noteTickPath;
+        throw std::runtime_error("Unable to load sound " + noteTickPath);
+    }
+	sf::Sound noteTickSound(noteTick);
 
-	Ecran_attente bg;
-	Playfield playfield;
+    bool beatTicked = false;
+    std::string beatTickPath = "assets/sounds/sound beat tick.wav";
+    sf::SoundBuffer beatTick;
+    if (!beatTick.loadFromFile(beatTickPath)) {
+        std::cerr << "Unable to load sound " << beatTickPath;
+        throw std::runtime_error("Unable to load sound " + beatTickPath);
+    }
+    sf::Sound beatTickSound(beatTick);
+
+
+	Widgets::Ecran_attente bg;
 	std::optional<EditorState> editorState;
 
 	sf::Clock deltaClock;
@@ -41,31 +57,33 @@ int main(int argc, char** argv) {
                     window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
 			        break;
 			    case sf::Event::KeyPressed:
-			        if (event.key.code == sf::Keyboard::Space) {
-			            if (not ImGui::GetIO().WantTextInput) {
-			                if (editorState) {
-			                    editorState->playing = not editorState->playing;
-			                }
-			                /*
-                            if (editorState and editorState->music) {
-                                switch (editorState->music->getStatus()) {
-                                    case sf::Music::Stopped:
-                                    case sf::Music::Paused:
-                                        editorState->music->play();
-                                        break;
-                                    case sf::Music::Playing:
-                                        editorState->music->pause();
-                                        break;
-                                }
-                            }
-                            */
-			            }
-			        }
+			    	switch (event.key.code) {
+			    		case sf::Keyboard::F3:
+			    			if (editorState) {
+			    				editorState->playBeatTick = not editorState->playBeatTick;
+			    			}
+			    			break;
+			    		case sf::Keyboard::F4:
+							if (editorState) {
+								editorState->playNoteTick = not editorState->playNoteTick;
+							}
+			    			break;
+			    		case sf::Keyboard::Space:
+							if (not ImGui::GetIO().WantTextInput) {
+								if (editorState) {
+									editorState->playing = not editorState->playing;
+								}
+							}
+			    			break;
+			    	}
 			        break;
 			}
 		}
+
         sf::Time delta = deltaClock.restart();
 		ImGui::SFML::Update(window, delta);
+
+		// Gestion du playback
 		if (editorState->playing) {
 		    editorState->playbackPosition += delta;
 		    if (editorState->music) {
@@ -84,6 +102,16 @@ int main(int argc, char** argv) {
 						break;
 				}
 		    }
+		    if (editorState->playBeatTick) {
+		    	if (fmodf(editorState->getBeats(),1.f) < 0.5) {
+		    		if (not beatTicked) {
+						beatTickSound.play();
+						beatTicked = true;
+		    		}
+		    	} else {
+		    		beatTicked = false;
+		    	}
+		    }
 		    if (editorState->playbackPosition >= editorState->chartRuntime) {
 		        editorState->playing = false;
 		        editorState->playbackPosition = editorState->chartRuntime;
@@ -99,7 +127,7 @@ int main(int argc, char** argv) {
 		// Dessin du fond
 		if (editorState) {
 		    if (editorState->showPlayfield) {
-		        playfield.render(window,*editorState);
+		        editorState->displayPlayfield();
 		    }
 		    if (editorState->showProperties) {
 		        editorState->displayProperties();
@@ -118,6 +146,7 @@ int main(int argc, char** argv) {
 			bg.render(window);
 		}
 
+		// TODO : Use events instead
 		// Gestion des Raccourcis Clavier
 
 		// Ctrl+S

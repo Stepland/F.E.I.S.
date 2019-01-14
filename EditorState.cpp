@@ -10,7 +10,7 @@
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
 
-EditorState::EditorState(Fumen &fumen) : fumen(fumen) {
+EditorState::EditorState(Fumen &fumen) : fumen(fumen), markerEndingState(MISS) {
     reloadFromFumen();
 }
 
@@ -80,6 +80,42 @@ void EditorState::reloadJacket() {
 }
 
 void EditorState::displayPlayfield() {
+
+    ImGui::SetNextWindowSize(ImVec2(400,400),ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(0,0),ImVec2(FLT_MAX,FLT_MAX),Toolbox::CustomConstraints::ContentSquare);
+    if (ImGui::Begin("Playfield",&showPlayfield,ImGuiWindowFlags_NoScrollbar)) {
+        float squareSize = ImGui::GetWindowSize().x / 4.f;
+        float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
+        if (selectedChart) {
+            int ImGuiIndex = 0;
+            for (auto note : getVisibleNotes()) {
+                std::optional<sf::Texture> t;
+                if ((t = playfield.marker.getSprite(playfield.markerEndingState,getSecondsAt(note.getTiming())))) {
+                    int x = note.getPos()%4;
+                    int y = note.getPos()/4;
+                    ImGui::SetCursorPos({x*squareSize,TitlebarHeight + y*squareSize});
+                    ImGui::PushID(ImGuiIndex);
+                    ImGui::Image(*t,{squareSize,squareSize});
+                    ImGui::PopID();
+                }
+                ++ImGuiIndex;
+            }
+        }
+        for (int y = 0; y < 4; ++y) {
+            for (int x = 0; x < 4; ++x) {
+                ImGui::PushID(x+4*y);
+                ImGui::SetCursorPos({x*squareSize,TitlebarHeight + y*squareSize});
+                ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0,0,0,0));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0,0,1.f,0.1f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0,0,1.f,0.5f));
+                ImGui::ImageButton(playfield.button,{squareSize,squareSize},0);
+                ImGui::PopStyleColor(3);
+                ImGui::PopID();
+            }
+        }
+    }
+    ImGui::End();
+
 }
 
 /*
@@ -135,6 +171,8 @@ void EditorState::displayStatus() {
                 ImGui::TextColored(ImVec4(1,0.42,0.41,1),"No jacket loaded");
             }
         }
+        ImGui::Checkbox("Beat Tick",&playBeatTick);
+        ImGui::Checkbox("Note Tick",&playNoteTick);
     }
     ImGui::End();
 }
@@ -222,6 +260,36 @@ void EditorState::displayTimeline() {
     }
     ImGui::End();
     ImGui::PopStyleVar(3);
+}
+
+std::vector<Note> EditorState::getVisibleNotes() {
+    if (selectedChart) {
+
+        std::vector<Note> visibleNotes;
+
+        float minPos;
+        if (this->markerEndingState == MISS) {
+            minPos = playbackPosition.asSeconds() - 8.f/30.f;
+        } else {
+            minPos = playbackPosition.asSeconds() - 16.f/30.f;
+        }
+
+        float maxPos = playbackPosition.asSeconds() + 16.f/30.f;
+
+        int min_exclusive = static_cast<int>(getTicksAt(minPos));
+        int max_exclusive = static_cast<int>(getTicksAt(maxPos));
+
+        for (auto note : selectedChart->Notes) {
+            if (note.getTiming() > min_exclusive and note.getTiming() < max_exclusive) {
+                visibleNotes.push_back(note);
+            }
+        }
+
+        return visibleNotes;
+
+    } else {
+        return {};
+    }
 }
 
 void ESHelper::save(EditorState& ed) {

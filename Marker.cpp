@@ -2,6 +2,9 @@
 // Created by Syméon on 17/08/2017.
 //
 
+#include <cmath>
+#include <sstream>
+#include <iomanip>
 #include "Marker.h"
 
 Marker::Marker(std::string folder) {
@@ -41,11 +44,48 @@ Marker::Marker(std::string folder) {
 	}
 }
 
-sf::Texture Marker::getSprite(Etat etat, int frame) {
+std::optional<sf::Texture> Marker::getSprite(MarkerEndingState state, float seconds) {
+	std::ostringstream frameName;
+	int frame = static_cast<int>((seconds*30.f+16.f));
+	if (frame >= 0 and frame <= 15) {
+		frameName << "ma" << std::setfill('0') << std::setw(2) << frame;
+		return textures[frameName.str()];
+	} else {
+		if (state == MISS) {
+			if (frame >= 16 and frame <= 23) {
+				frameName << "ma" << std::setfill('0') << std::setw(2) << frame;
+				return textures[frameName.str()];
+			}
+		} else if (frame >= 16 and frame <= 32) {
+			switch (state) {
+				case EARLY:
+					frameName << "h1";
+					break;
+				case GOOD:
+					frameName << "h2";
+					break;
+				case GREAT:
+					frameName << "h3";
+					break;
+				case PERFECT:
+					frameName << "h4";
+					break;
+				default:
+					return {};
+			}
+			frameName << std::setfill('0') << std::setw(2) << frame-16;
+			return textures[frameName.str()];
+		}
+	}
+	return {};
+}
+
+/*
+sf::Texture Marker::getSprite(MarkerEndingState state, int frame) {
 
 	int lower;
 	int upper;
-	switch(etat) {
+	switch(state) {
 		case MISS:
 			lower = 16;
 			upper = 32;
@@ -61,8 +101,7 @@ sf::Texture Marker::getSprite(Etat etat, int frame) {
 	}
 
 	std::string tex_key;
-	switch (etat) {
-		case APPROCHE:
+	switch (state) {
 		case MISS:
 			tex_key += "ma";
 			break;
@@ -86,3 +125,4 @@ sf::Texture Marker::getSprite(Etat etat, int frame) {
 	return textures[tex_key+std::to_string(frame)];
 
 }
+ */
