@@ -25,4 +25,28 @@ namespace Toolbox {
     };
 }
 
+template<typename T>
+class AffineTransform {
+public:
+    AffineTransform(T low_input, T high_input, T low_output, T high_output)  {
+        if (low_input == high_input) {
+            throw std::invalid_argument("low and high input values for affine transform must be different !");
+        }
+        a = (high_output-low_output)/(high_input-low_input);
+        b = (high_input*low_output - high_output*low_input)/(high_input-low_input);
+    };
+    T transform(T val) {return a*val + b;};
+    T backwards_transform(T val) {
+        // if we're too close to zero
+        if (std::abs(a) < 10e-10) {
+            throw std::runtime_error("Can't apply backwards transformation, coefficient is too close to zero");
+        } else {
+            return (val-b)/a;
+        }
+    };
+private:
+    T a;
+    T b;
+};
+
 #endif //FEIS_TOOLBOX_H

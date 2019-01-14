@@ -16,7 +16,7 @@ EditorState::EditorState(Fumen &fumen) : fumen(fumen) {
 
 void EditorState::reloadFromFumen() {
     if (not this->fumen.Charts.empty()) {
-        this->selectedChart = this->fumen.Charts.begin()->first;
+        this->selectedChart = this->fumen.Charts.begin()->second;
     }
     reloadMusic();
     reloadJacket();
@@ -25,6 +25,7 @@ void EditorState::reloadFromFumen() {
 /*
  * Reloads music from what's indicated in the "music path" field of the fumen
  * Resets the music state in case anything fails
+ * Updates playbackPosition and the chartRuntime
  */
 void EditorState::reloadMusic() {
     music.emplace();
@@ -36,6 +37,29 @@ void EditorState::reloadMusic() {
         }
     } catch (const std::exception& e) {
         music.reset();
+    }
+    reloadPlaybackPositionAndChartRuntime();
+}
+
+/*
+ * NEVER CALL THAT YOURSELF,
+ * Let reloadMusic do it,
+ * you can end up with some strange stuff if you call it before reloadMusic
+ */
+void EditorState::reloadPlaybackPositionAndChartRuntime() {
+    playbackPosition = sf::seconds(-(fumen.offset));
+    if (music) {
+        if (selectedChart) {
+            chartRuntime = sf::seconds(std::max(music->getDuration().asSeconds(),fumen.getChartRuntime(*selectedChart)-fumen.offset)+2.f);
+        } else {
+            chartRuntime = sf::seconds(std::max(-fumen.offset,music->getDuration().asSeconds()));
+        }
+    } else {
+        if (selectedChart) {
+            chartRuntime = sf::seconds(std::max(fumen.getChartRuntime(*selectedChart)-fumen.offset,2.f));
+        } else {
+            chartRuntime = sf::seconds(std::max(-fumen.offset,2.f));
+        }
     }
 }
 
@@ -128,10 +152,11 @@ void EditorState::displayPlaybackStatus() {
             |ImGuiWindowFlags_NoInputs
             |ImGuiWindowFlags_NoTitleBar
             |ImGuiWindowFlags_NoMove
+            |ImGuiWindowFlags_AlwaysAutoResize
             );
     {
         if (music) {
-            ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Time : ");
+            ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Music File Offset : ");
             ImGui::SameLine();
             sf::Time time = music->getPlayingOffset();
             int minutes = static_cast<int>(time.asSeconds())/60;
@@ -139,6 +164,14 @@ void EditorState::displayPlaybackStatus() {
             int miliseconds = static_cast<int>(time.asMilliseconds())%1000;
             ImGui::Text("%02d:%02d.%03d",minutes,seconds,miliseconds);
         }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Timeline Position : ");
+        ImGui::SameLine();
+        sf::Time time = playbackPosition;
+        int minutes = static_cast<int>(time.asSeconds())/60;
+        int seconds = static_cast<int>(time.asSeconds())%60;
+        int miliseconds = static_cast<int>(time.asMilliseconds())%1000;
+        ImGui::Text("%02d:%02d.%03d",minutes,seconds,miliseconds);
     }
     ImGui::End();
     ImGui::PopStyleVar();
@@ -162,10 +195,14 @@ void EditorState::displayTimeline() {
             );
     {
         if (music) {
-            float slider_pos = 1.f - (music->getPlayingOffset().asSeconds()) / music->getDuration().asSeconds();
+            AffineTransform<float> scroll(-fumen.offset,chartRuntime.asSeconds(),1.f,0.f);
+            float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0,0});
             if(ImGui::VSliderFloat("",ImGui::GetContentRegionMax(),&slider_pos,0.f,1.f,"")) {
-                music->setPlayingOffset(sf::seconds((1.f-slider_pos)*music->getDuration().asSeconds()));
+                playbackPosition = sf::seconds(scroll.backwards_transform(slider_pos));
+                if (playbackPosition.asSeconds() >= 0 and playbackPosition < music->getDuration()) {
+                    music->setPlayingOffset(playbackPosition);
+                }
             }
         }
     }

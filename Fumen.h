@@ -51,6 +51,8 @@ public:
 	float BPM;
 	float offset;
 
+	float getChartRuntime(Chart c);
+
 };
 
 

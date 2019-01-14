@@ -59,3 +59,4 @@ std::vector<std::string> Toolbox::getRecentFiles() {
     readFile.close();
     return recent;
 }
+

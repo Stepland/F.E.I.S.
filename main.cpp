@@ -43,6 +43,10 @@ int main(int argc, char** argv) {
 			    case sf::Event::KeyPressed:
 			        if (event.key.code == sf::Keyboard::Space) {
 			            if (not ImGui::GetIO().WantTextInput) {
+			                if (editorState) {
+			                    editorState->playing = not editorState->playing;
+			                }
+			                /*
                             if (editorState and editorState->music) {
                                 switch (editorState->music->getStatus()) {
                                     case sf::Music::Stopped:
@@ -54,13 +58,43 @@ int main(int argc, char** argv) {
                                         break;
                                 }
                             }
+                            */
 			            }
 			        }
 			        break;
 			}
 		}
-
-		ImGui::SFML::Update(window, deltaClock.restart());
+        sf::Time delta = deltaClock.restart();
+		ImGui::SFML::Update(window, delta);
+		if (editorState->playing) {
+		    editorState->playbackPosition += delta;
+		    if (editorState->music) {
+				switch(editorState->music->getStatus()) {
+					case sf::Music::Stopped:
+					case sf::Music::Paused:
+						if (editorState->playbackPosition.asSeconds() >= 0 and editorState->playbackPosition < editorState->music->getDuration()) {
+							editorState->music->setPlayingOffset(editorState->playbackPosition);
+							editorState->music->play();
+						}
+						break;
+					case sf::Music::Playing:
+						editorState->playbackPosition = editorState->music->getPlayingOffset();
+						break;
+					default:
+						break;
+				}
+		    }
+		    if (editorState->playbackPosition >= editorState->chartRuntime) {
+		        editorState->playing = false;
+		        editorState->playbackPosition = editorState->chartRuntime;
+		    }
+		} else {
+			if (editorState->music) {
+				if (editorState->music->getStatus() == sf::Music::Playing) {
+					editorState->music->pause();
+				}
+			}
+		}
 
 		// Dessin du fond
 		if (editorState) {

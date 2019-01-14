@@ -17,6 +17,8 @@ void Fumen::loadFromMemon(std::filesystem::path path) {
 	this->artist = j.at("metadata").value("artist","");
 	this->musicPath = j.at("metadata").value("music path","");
 	this->jacketPath = j.at("metadata").value("jacket path","");
+	this->BPM = j.at("metadata").value("BPM",120.f);
+	this->offset = j.at("metadata").value("offset",0.f);
 	for (auto& chart_json : j.at("data")) {
 		Chart chart(chart_json.at("dif_name"),chart_json.value("level",0),chart_json.at("resolution"));
 		for (auto& note : chart_json.at("notes")) {
@@ -74,3 +76,15 @@ Fumen::Fumen(const std::filesystem::path &path,
                              jacketPath(jacketPath),
                              BPM(BPM),
                              offset(offset) {}
+
+/*
+ * Returns, in seconds as a float, how long the chart lasts according to the notes themselves
+ */
+float Fumen::getChartRuntime(Chart c) {
+	if (!c.Notes.empty()) {
+		Note last_note = *c.Notes.rbegin();
+		return ((static_cast<float>(last_note.getTiming())/c.getResolution())/this->BPM)*60.f;
+	} else {
+		return 0;
+	}
+}
