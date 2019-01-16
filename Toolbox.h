@@ -11,6 +11,15 @@
 #include <filesystem>
 
 namespace Toolbox {
+
+    struct CustomColors {
+        ImColor FrameBg_Green = {0.163f, 0.480f, 0.160f, 0.540f};
+        ImColor FrameBgHovered_Green = {0.261f, 0.980f, 0.261f, 0.400f};
+        ImColor FrameBgActive_Green = {0.261f, 0.980f, 0.261f, 0.671f};
+        ImColor FrameBg_Red = {0.480f, 0.160f, 0.160f, 0.540f};
+        ImColor FrameBgHovered_Red = {0.980f, 0.261f, 0.261f, 0.400f};
+        ImColor FrameBgActive_Red = {0.980f, 0.261f, 0.261f, 0.671f};
+    };
     bool isShortcutPressed(std::initializer_list<sf::Keyboard::Key> anyOf, std::initializer_list<sf::Keyboard::Key> allOf);
     void pushNewRecentFile(std::filesystem::path path);
     std::vector<std::string> getRecentFiles();
@@ -24,6 +33,7 @@ namespace Toolbox {
         }
     };
     std::string to_string(sf::Time time);
+    bool InputTextColored(bool isValid, const std::string& hoverHelpText, const char *label, std::string *str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
 }
 
 template<typename T>

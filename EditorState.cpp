@@ -137,13 +137,12 @@ void EditorState::displayProperties() {
 
 
         ImGui::NextColumn();
-
         ImGui::InputText("Title",&fumen.songTitle);
         ImGui::InputText("Artist",&fumen.artist);
-        if (ImGui::InputText("Music",&fumen.musicPath)) {
+        if (Toolbox::InputTextColored(music.has_value(),"Invalid Music Path","Music",&fumen.musicPath)) {
             reloadMusic();
-        };
-        if (ImGui::InputText("Jacket",&(fumen.jacketPath))) {
+        }
+        if (Toolbox::InputTextColored(jacket.has_value(),"Invalid Jacket Path","Jacket",&(fumen.jacketPath))) {
             reloadJacket();
         }
     }
@@ -193,12 +192,18 @@ void EditorState::displayPlaybackStatus() {
             |ImGuiWindowFlags_AlwaysAutoResize
             );
     {
-        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Beats : ");
+        if (selectedChart) {
+            ImGui::Text("%s %d",selectedChart->dif_name.c_str(),selectedChart->level);
+        } else {
+            ImGui::TextDisabled("No chart selected");
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Beats :");
         ImGui::SameLine();
         ImGui::Text("%02.2f",this->getBeats());
         ImGui::SameLine();
         if (music) {
-            ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Music File Offset : ");
+            ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Music File Offset :");
             ImGui::SameLine();
             ImGui::TextUnformatted(Toolbox::to_string(music->getPlayingOffset()).c_str());
             /*
@@ -214,7 +219,7 @@ void EditorState::displayPlaybackStatus() {
              */
         }
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Timeline Position : ");
+        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Timeline Position :");
         ImGui::SameLine();
         ImGui::TextUnformatted(Toolbox::to_string(playbackPosition).c_str());
         /*
@@ -276,14 +281,15 @@ void EditorState::displayChartList() {
             ImGui::TextDisabled("Level"); ImGui::NextColumn();
             ImGui::TextDisabled("Note Count"); ImGui::NextColumn();
             ImGui::Separator();
-            std::optional<Chart> selected;
             for (auto tuple : fumen.Charts) {
-                if (ImGui::Selectable(tuple.first.c_str(), selected ? *selected==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
-                    selected = tuple.second;
+                if (ImGui::Selectable(tuple.first.c_str(), selectedChart ? *selectedChart==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
+                    selectedChart = tuple.second;
                 }
                 ImGui::NextColumn();
                 ImGui::Text("%d",tuple.second.level); ImGui::NextColumn();
                 ImGui::Text("%d", static_cast<int>(tuple.second.Notes.size())); ImGui::NextColumn();
+                ImGui::PushID(&tuple);
+                ImGui::PopID();
             }
         }
     }
@@ -394,43 +400,35 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState &editorState)
             ImGui::EndCombo();
         }
         if (showCustomDifName) {
-            if (difficulty.empty()) {
-                ImGui::InputText("Difficulty Name",&difficulty);
-            } else {
-                // Si le nom custom est déjà trouvé, rouge, sinon, vert
-                if (editorState.fumen.Charts.find(difficulty) != editorState.fumen.Charts.end()) {
-                    ImGui::PushStyleColor(ImGuiCol_FrameBg, FrameBg_Red.Value);
-                    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, FrameBgHovered_Red.Value);
-                    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, FrameBgActive_Red.Value);
-                } else {
-                    ImGui::PushStyleColor(ImGuiCol_FrameBg, FrameBg_Green.Value);
-                    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, FrameBgHovered_Green.Value);
-                    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, FrameBgActive_Green.Value);
-                }
-                ImGui::InputText("Difficulty Name",&difficulty);
-                if (ImGui::IsItemHovered() and (editorState.fumen.Charts.find(difficulty) != editorState.fumen.Charts.end())) {
-                    ImGui::BeginTooltip();
-                    ImGui::TextUnformatted("Chart name has to be unique");
-                    ImGui::EndTooltip();
-                }
-                ImGui::PopStyleColor(3);
-            }
+            Toolbox::InputTextColored(
+                    editorState.fumen.Charts.find(difficulty) == editorState.fumen.Charts.end(),
+                    "Chart name has to be unique",
+                    "Difficulty Name",
+                    &difficulty
+                    );
         }
         ImGui::InputInt("Level",&level);
-        if (ImGui::InputInt("Resolution",&resolution)) {
-            if (resolution < 1) {
-                resolution = 1;
+        ImGui::Separator();
+        if (ImGui::TreeNode("Advanced##New Chart")) {
+            ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+            if (ImGui::InputInt("Resolution",&resolution)) {
+                if (resolution < 1) {
+                    resolution = 1;
+                }
             }
-        };
-        ImGui::SameLine();
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            ImGui::TextUnformatted("Number of ticks in a beat");
-            ImGui::BulletText("Has nothing to do with time signature");
-            ImGui::BulletText("Leave the default unless you know what you're doing");
-            ImGui::EndTooltip();
+            ImGui::SameLine();
+            ImGui::TextDisabled("(?)");
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted("Number of ticks in a beat");
+                ImGui::BulletText("Has nothing to do with time signature");
+                ImGui::BulletText("Leave the default unless you know what you're doing");
+                ImGui::EndTooltip();
+            }
+            ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+            ImGui::TreePop();
         }
+        ImGui::Separator();
         if (difficulty.empty() or (editorState.fumen.Charts.find(difficulty) != editorState.fumen.Charts.end())) {
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);

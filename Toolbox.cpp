@@ -3,12 +3,12 @@
 //
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <list>
 #include <set>
 #include <cmath>
 #include <c++/8.2.1/fstream>
 #include "Toolbox.h"
-
 
 bool Toolbox::isShortcutPressed(std::initializer_list<sf::Keyboard::Key> anyOf, std::initializer_list<sf::Keyboard::Key> allOf) {
     for (auto key : allOf) {
@@ -75,5 +75,37 @@ std::string Toolbox::to_string(sf::Time time) {
     stringStream << std::setw(2) << minutes << ":" << std::setw(2) << seconds << "." << std::setw(3) << miliseconds;
     //("-%02d:%02d.%03d",minutes,seconds,miliseconds);
     return stringStream.str();
+}
+
+/*
+ * InputText that gets colored Red when isValid is false and hoverTextHelp gets displayed when hovering over invalid input
+ * When input is valid InputText gets colored green
+ * Displays InputText without any style change if the input is empty;
+ */
+bool Toolbox::InputTextColored(bool isValid, const std::string& hoverHelpText, const char *label, std::string *str, ImGuiInputTextFlags flags,
+                               ImGuiInputTextCallback callback, void *user_data) {
+    bool return_value;
+    if (str->empty()) {
+        return_value = ImGui::InputText(label,str,flags,callback,user_data);
+    } else {
+        Toolbox::CustomColors colors;
+        if (not isValid) {
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, colors.FrameBg_Red.Value);
+            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors.FrameBgHovered_Red.Value);
+            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors.FrameBgActive_Red.Value);
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, colors.FrameBg_Green.Value);
+            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors.FrameBgHovered_Green.Value);
+            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors.FrameBgActive_Green.Value);
+        }
+        return_value = ImGui::InputText(label,str,flags,callback,user_data);
+        if (ImGui::IsItemHovered() and (not isValid)) {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(hoverHelpText.c_str());
+            ImGui::EndTooltip();
+        }
+        ImGui::PopStyleColor(3);
+    }
+    return return_value;
 }
 
