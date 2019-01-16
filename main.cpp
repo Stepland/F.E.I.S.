@@ -9,6 +9,12 @@
 
 int main(int argc, char** argv) {
 
+	// TODO : Suppression des charts
+	// TODO : Volume de la musique
+	// TODO : Volume des claps
+	// TODO : Bruit des notes
+	// TODO : Volume des notes
+
 	// Création de la fenêtre
 	sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
 	sf::RenderWindow & ref_window = window;
@@ -42,6 +48,7 @@ int main(int argc, char** argv) {
 
 	Widgets::Ecran_attente bg;
 	std::optional<EditorState> editorState;
+	ESHelper::NewChartDialog newChartDialog;
 
 	sf::Clock deltaClock;
 	while (window.isOpen()) {
@@ -141,6 +148,18 @@ int main(int argc, char** argv) {
             if (editorState->showTimeline) {
                 editorState->displayTimeline();
             }
+            if (editorState->showChartList) {
+            	editorState->displayChartList();
+            }
+            if (editorState->showNewChartDialog) {
+            	std::optional<Chart> c = newChartDialog.display(*editorState);
+            	if (c) {
+            		editorState->showNewChartDialog = false;
+            		editorState->fumen.Charts.try_emplace(c->dif_name,*c);
+            	}
+            } else {
+            	newChartDialog.resetValues();
+            }
 			window.clear(sf::Color(0, 0, 0));
 		} else {
 			bg.render(window);
@@ -223,6 +242,16 @@ int main(int argc, char** argv) {
 			}
             if (ImGui::BeginMenu("Edit")) {
                 ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Chart",editorState.has_value())) {
+            	if (ImGui::MenuItem("Chart List")) {
+            		editorState->showChartList = true;
+            	}
+            	ImGui::Separator();
+            	if (ImGui::MenuItem("New Chart")) {
+            		editorState->showNewChartDialog = true;
+            	}
+            	ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("View",editorState.has_value())) {
                 if (ImGui::MenuItem("Playfield", nullptr,editorState->showPlayfield)) {

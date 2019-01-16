@@ -23,6 +23,7 @@ set(SOURCE_FILES
         imgui/imgui_widgets.cpp
         imgui/imgui-SFML.cpp
         imgui/imgui_stdlib.cpp
+        imgui/imgui_demo.cpp
         tinyfiledialogs.c Toolbox.cpp Toolbox.h)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")

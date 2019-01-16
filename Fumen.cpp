@@ -4,6 +4,22 @@
 
 #include "Fumen.h"
 
+bool cmpDifName::operator()(const std::string &a, const std::string &b) const {
+	if (dif_names.find(a) != dif_names.end()) {
+		if (dif_names.find(b) != dif_names.end()) {
+			return dif_names.find(a)->second < dif_names.find(b)->second;
+		} else {
+			return true;
+		}
+	} else {
+		if (dif_names.find(b) != dif_names.end()) {
+			return false;
+		} else {
+			return a < b;
+		}
+	}
+}
+
 void Fumen::loadFromMemon(std::filesystem::path path) {
 
 	// for convenience

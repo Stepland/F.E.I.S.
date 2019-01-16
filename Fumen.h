@@ -15,6 +15,15 @@
 #include "Note.h"
 #include "Chart.h"
 
+struct cmpDifName {
+	std::map<std::string,int> dif_names;
+
+	cmpDifName() {
+		dif_names = {{"BSC",1},{"ADV",2},{"EXT",3}};
+	}
+	bool operator()(const std::string& a, const std::string& b) const;
+};
+
 class Fumen {
 
 public:
@@ -42,7 +51,7 @@ public:
 	void autoLoadFromMemon() {loadFromMemon(path);};
 	void autoSaveAsMemon() {saveAsMemon(path);};
 
-	std::map<std::string,Chart> Charts;
+	std::map<std::string,Chart,cmpDifName> Charts;
 	std::filesystem::path path;
 	std::string songTitle;
 	std::string artist;

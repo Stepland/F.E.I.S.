@@ -6,6 +6,7 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include <imgui_stdlib.h>
+#include <imgui_internal.h>
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
@@ -188,7 +189,6 @@ void EditorState::displayPlaybackStatus() {
             ImGuiWindowFlags_NoNav
             |ImGuiWindowFlags_NoDecoration
             |ImGuiWindowFlags_NoInputs
-            |ImGuiWindowFlags_NoTitleBar
             |ImGuiWindowFlags_NoMove
             |ImGuiWindowFlags_AlwaysAutoResize
             );
@@ -262,6 +262,34 @@ void EditorState::displayTimeline() {
     ImGui::PopStyleVar(3);
 }
 
+void EditorState::displayChartList() {
+
+    if (ImGui::Begin("Chart List",&showChartList,ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (this->fumen.Charts.empty()) {
+            ImGui::Dummy({100,0}); ImGui::SameLine();
+            ImGui::Text("- no charts -"); ImGui::SameLine();
+            ImGui::Dummy({100,0});
+        } else {
+            ImGui::Dummy(ImVec2(300,0));
+            ImGui::Columns(3, "mycolumns");
+            ImGui::TextDisabled("Difficulty"); ImGui::NextColumn();
+            ImGui::TextDisabled("Level"); ImGui::NextColumn();
+            ImGui::TextDisabled("Note Count"); ImGui::NextColumn();
+            ImGui::Separator();
+            std::optional<Chart> selected;
+            for (auto tuple : fumen.Charts) {
+                if (ImGui::Selectable(tuple.first.c_str(), selected ? *selected==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
+                    selected = tuple.second;
+                }
+                ImGui::NextColumn();
+                ImGui::Text("%d",tuple.second.level); ImGui::NextColumn();
+                ImGui::Text("%d", static_cast<int>(tuple.second.Notes.size())); ImGui::NextColumn();
+            }
+        }
+    }
+    ImGui::End();
+}
+
 std::vector<Note> EditorState::getVisibleNotes() {
     if (selectedChart) {
 
@@ -316,4 +344,109 @@ void ESHelper::openFromFile(std::optional<EditorState> &ed, std::filesystem::pat
     } catch (const std::exception &e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
+}
+
+/*
+ * Returns the newly created chart if there is
+ */
+std::optional<Chart> ESHelper::NewChartDialog::display(EditorState &editorState) {
+
+    std::optional<Chart> newChart;
+    if (ImGui::Begin(
+            "New Chart",
+            &editorState.showNewChartDialog,
+            ImGuiWindowFlags_NoResize
+            |ImGuiWindowFlags_AlwaysAutoResize))
+    {
+
+        ImColor FrameBg_Green = {0.163f, 0.480f, 0.160f, 0.540f};
+        ImColor FrameBgHovered_Green = {0.261f, 0.980f, 0.261f, 0.400f};
+        ImColor FrameBgActive_Green = {0.261f, 0.980f, 0.261f, 0.671f};
+
+        ImColor FrameBg_Red = {0.480f, 0.160f, 0.160f, 0.540f};
+        ImColor FrameBgHovered_Red = {0.980f, 0.261f, 0.261f, 0.400f};
+        ImColor FrameBgActive_Red = {0.980f, 0.261f, 0.261f, 0.671f};
+
+        if (showCustomDifName) {
+            comboPreview = "Custom";
+        } else {
+            if (difficulty.empty()) {
+                comboPreview = "Choose One";
+            } else {
+                comboPreview = difficulty;
+            }
+        }
+        if(ImGui::BeginCombo("Difficulty",comboPreview.c_str())) {
+            for (auto dif_name : {"BSC","ADV","EXT"}) {
+                if (editorState.fumen.Charts.find(dif_name) == editorState.fumen.Charts.end()) {
+                    if(ImGui::Selectable(dif_name,dif_name == difficulty)) {
+                        showCustomDifName = false;
+                        difficulty = dif_name;
+                    }
+                } else {
+                    ImGui::TextDisabled(dif_name);
+                }
+            }
+            ImGui::Separator();
+            if (ImGui::Selectable("Custom",&showCustomDifName)) {
+                difficulty = "";
+            }
+            ImGui::EndCombo();
+        }
+        if (showCustomDifName) {
+            if (difficulty.empty()) {
+                ImGui::InputText("Difficulty Name",&difficulty);
+            } else {
+                // Si le nom custom est déjà trouvé, rouge, sinon, vert
+                if (editorState.fumen.Charts.find(difficulty) != editorState.fumen.Charts.end()) {
+                    ImGui::PushStyleColor(ImGuiCol_FrameBg, FrameBg_Red.Value);
+                    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, FrameBgHovered_Red.Value);
+                    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, FrameBgActive_Red.Value);
+                } else {
+                    ImGui::PushStyleColor(ImGuiCol_FrameBg, FrameBg_Green.Value);
+                    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, FrameBgHovered_Green.Value);
+                    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, FrameBgActive_Green.Value);
+                }
+                ImGui::InputText("Difficulty Name",&difficulty);
+                if (ImGui::IsItemHovered() and (editorState.fumen.Charts.find(difficulty) != editorState.fumen.Charts.end())) {
+                    ImGui::BeginTooltip();
+                    ImGui::TextUnformatted("Chart name has to be unique");
+                    ImGui::EndTooltip();
+                }
+                ImGui::PopStyleColor(3);
+            }
+        }
+        ImGui::InputInt("Level",&level);
+        if (ImGui::InputInt("Resolution",&resolution)) {
+            if (resolution < 1) {
+                resolution = 1;
+            }
+        };
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted("Number of ticks in a beat");
+            ImGui::BulletText("Has nothing to do with time signature");
+            ImGui::BulletText("Leave the default unless you know what you're doing");
+            ImGui::EndTooltip();
+        }
+        if (difficulty.empty() or (editorState.fumen.Charts.find(difficulty) != editorState.fumen.Charts.end())) {
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            ImGui::Button("Create Chart##New Chart");
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
+        } else {
+            if (ImGui::Button("Create Chart##New Chart")) {
+                try {
+                    newChart.emplace(difficulty,level,resolution);
+                } catch (const std::exception& e) {
+                    tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                }
+            }
+        }
+    }
+    ImGui::End();
+    return newChart;
 }

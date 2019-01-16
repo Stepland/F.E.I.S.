@@ -24,3 +24,14 @@ Chart::Chart(const std::string &dif, int level, int resolution) : dif_name(dif),
 		throw std::invalid_argument("Can't set a resolution of "+std::to_string(resolution));
 	}
 }
+
+bool Chart::operator==(const Chart &rhs) const {
+    return dif_name == rhs.dif_name &&
+           level == rhs.level &&
+           Notes == rhs.Notes &&
+           resolution == rhs.resolution;
+}
+
+bool Chart::operator!=(const Chart &rhs) const {
+    return !(rhs == *this);
+}

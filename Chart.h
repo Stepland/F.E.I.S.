@@ -9,13 +9,11 @@
 #include <set>
 #include "Note.h"
 
-// TODO : finir la classe Chart
-
 class Chart {
 
 public:
 
-	Chart(const std::string &dif,
+	Chart(const std::string &dif = "Edit",
 	      int level = 1,
 	      int resolution = 240);
 
@@ -25,6 +23,10 @@ public:
 	std::string dif_name;
 	int level;
 	std::set<Note> Notes;
+
+	bool operator==(const Chart &rhs) const;
+
+	bool operator!=(const Chart &rhs) const;
 
 private:
 

@@ -53,12 +53,16 @@ public:
     bool showStatus;
     bool showPlaybackStatus = true;
     bool showTimeline = true;
+    bool showChartList;
+    bool showNewChartDialog;
 
     void displayPlayfield();
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();
     void displayTimeline();
+    void displayChartList();
+    void displayNewChartDialog();
 
     bool playBeatTick;
     bool playNoteTick;
@@ -72,6 +76,23 @@ namespace ESHelper {
     void save(EditorState& ed);
     void open(std::optional<EditorState>& ed);
     void openFromFile(std::optional<EditorState>& ed, std::filesystem::path path);
+
+    class NewChartDialog {
+
+    public:
+
+        std::optional<Chart> display(EditorState& editorState);
+        void resetValues() {level = 1; resolution = 240; difficulty = ""; comboPreview = ""; showCustomDifName = false;};
+
+    private:
+
+        int level = 1;
+        int resolution = 240;
+        std::string difficulty;
+        std::string comboPreview;
+        bool showCustomDifName = false;
+
+    };
 }
 
 
