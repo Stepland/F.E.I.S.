@@ -251,6 +251,11 @@ int main(int argc, char** argv) {
             	if (ImGui::MenuItem("New Chart")) {
             		editorState->showNewChartDialog = true;
             	}
+            	ImGui::Separator();
+            	if (ImGui::MenuItem("Delete Chart",nullptr,false,editorState->selectedChart.has_value())) {
+            	    editorState->fumen.Charts.erase(editorState->selectedChart->dif_name);
+            	    editorState->selectedChart.reset();
+            	}
             	ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("View",editorState.has_value())) {
