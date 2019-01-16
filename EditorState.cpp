@@ -18,6 +18,8 @@ EditorState::EditorState(Fumen &fumen) : fumen(fumen), markerEndingState(MISS) {
 void EditorState::reloadFromFumen() {
     if (not this->fumen.Charts.empty()) {
         this->selectedChart = this->fumen.Charts.begin()->second;
+    } else {
+        this->selectedChart.reset();
     }
     reloadMusic();
     reloadJacket();
@@ -365,14 +367,6 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState &editorState)
             |ImGuiWindowFlags_AlwaysAutoResize))
     {
 
-        ImColor FrameBg_Green = {0.163f, 0.480f, 0.160f, 0.540f};
-        ImColor FrameBgHovered_Green = {0.261f, 0.980f, 0.261f, 0.400f};
-        ImColor FrameBgActive_Green = {0.261f, 0.980f, 0.261f, 0.671f};
-
-        ImColor FrameBg_Red = {0.480f, 0.160f, 0.160f, 0.540f};
-        ImColor FrameBgHovered_Red = {0.980f, 0.261f, 0.261f, 0.400f};
-        ImColor FrameBgActive_Red = {0.980f, 0.261f, 0.261f, 0.671f};
-
         if (showCustomDifName) {
             comboPreview = "Custom";
         } else {
@@ -447,4 +441,95 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState &editorState)
     }
     ImGui::End();
     return newChart;
+}
+
+void ESHelper::ChartPropertiesDialog::display(EditorState &editorState) {
+
+    assert(editorState.selectedChart.has_value());
+
+    if (this->shouldRefreshValues) {
+
+        shouldRefreshValues = false;
+
+        difNamesInUse.clear();
+        this->level = editorState.selectedChart->level;
+        this->difficulty = editorState.selectedChart->dif_name;
+        std::set<std::string> difNames{"BSC","ADV","EXT"};
+        showCustomDifName = (difNames.find(difficulty) == difNames.end());
+
+        for (auto const& tuple : editorState.fumen.Charts) {
+            if (tuple.second != editorState.selectedChart) {
+                difNamesInUse.insert(tuple.first);
+            }
+        }
+    }
+
+    if (ImGui::Begin(
+            "Chart Properties",
+            &editorState.showChartProperties,
+            ImGuiWindowFlags_NoResize
+            |ImGuiWindowFlags_AlwaysAutoResize))
+    {
+
+        if (showCustomDifName) {
+            comboPreview = "Custom";
+        } else {
+            if (difficulty.empty()) {
+                comboPreview = "Choose One";
+            } else {
+                comboPreview = difficulty;
+            }
+        }
+        if(ImGui::BeginCombo("Difficulty",comboPreview.c_str())) {
+            for (auto dif_name : {"BSC","ADV","EXT"}) {
+                if (difNamesInUse.find(dif_name) == difNamesInUse.end()) {
+                    if(ImGui::Selectable(dif_name,dif_name == difficulty)) {
+                        showCustomDifName = false;
+                        difficulty = dif_name;
+                    }
+                } else {
+                    ImGui::TextDisabled(dif_name);
+                }
+            }
+            ImGui::Separator();
+            if (ImGui::Selectable("Custom",&showCustomDifName)) {
+                difficulty = "";
+            }
+            ImGui::EndCombo();
+        }
+        if (showCustomDifName) {
+            Toolbox::InputTextColored(
+                    difNamesInUse.find(difficulty) == difNamesInUse.end(),
+                    "Chart name has to be unique",
+                    "Difficulty Name",
+                    &difficulty
+            );
+        }
+        ImGui::InputInt("Level",&level);
+        ImGui::Separator();
+        if (difficulty.empty() or (difNamesInUse.find(difficulty) != difNamesInUse.end())) {
+            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            ImGui::Button("Apply##New Chart");
+            ImGui::PopItemFlag();
+            ImGui::PopStyleVar();
+        } else {
+            if (ImGui::Button("Apply##New Chart")) {
+                try {
+                    editorState.fumen.Charts.erase(editorState.selectedChart->dif_name);
+                    editorState.selectedChart->dif_name = this->difficulty;
+                    editorState.selectedChart->level = this->level;
+                    if (not (editorState.fumen.Charts.emplace(this->difficulty,editorState.selectedChart.value())).second) {
+                        throw std::runtime_error("Could not insert modified chart in fumen");
+                    } else {
+                        shouldRefreshValues = true;
+                    }
+                } catch (const std::exception& e) {
+                    tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                }
+            }
+        }
+    }
+    ImGui::End();
+
 }

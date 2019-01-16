@@ -20,7 +20,7 @@ public:
     MarkerEndingState markerEndingState;
     std::optional<sf::Music> music;
     std::optional<sf::Texture> jacket;
-    std::optional<Chart> selectedChart;
+    std::optional<Chart> selectedChart; // Ok this was a pretty terrible design choice, be EXTRA careful about this still being in sync with what's actually in the std::map of fumen
 
     sf::Time playbackPosition;
     sf::Time chartRuntime; // Timing at which the playback stops
@@ -55,6 +55,7 @@ public:
     bool showTimeline = true;
     bool showChartList;
     bool showNewChartDialog;
+    bool showChartProperties;
 
     void displayPlayfield();
     void displayProperties();
@@ -62,7 +63,7 @@ public:
     void displayPlaybackStatus();
     void displayTimeline();
     void displayChartList();
-    void displayNewChartDialog();
+    void displayChartProperties();
 
     bool playBeatTick;
     bool playNoteTick;
@@ -90,6 +91,23 @@ namespace ESHelper {
         int resolution = 240;
         std::string difficulty;
         std::string comboPreview;
+        bool showCustomDifName = false;
+
+    };
+
+    class ChartPropertiesDialog {
+
+    public:
+
+        void display(EditorState& editorState);
+        bool shouldRefreshValues = true;
+
+    private:
+
+        int level;
+        std::string difficulty;
+        std::string comboPreview;
+        std::set<std::string> difNamesInUse;
         bool showCustomDifName = false;
 
     };
