@@ -9,11 +9,15 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Menu Chart Properties
     // TODO : Volume de la musique
     // TODO : Volume des claps
     // TODO : Bruit des notes
     // TODO : Volume des notes
+    // TODO : Contrôles aux fleches (←→ snap, ↑↓ position)
+    // TODO : Affichage des notes
+    // TODO : Edition des notes à la souris (mode suppression / mode ajout)
+    // TODO : Bruit différent si clap simple ou chord
+    // TODO : Density graph sur la timeline
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
