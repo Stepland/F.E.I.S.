@@ -8,7 +8,9 @@
 #define IM_MAX(_A,_B)       (((_A) >= (_B)) ? (_A) : (_B))
 
 #include <SFML/Window.hpp>
+#include <functional>
 #include <filesystem>
+#include "EditorState.h"
 
 namespace Toolbox {
 
@@ -20,7 +22,6 @@ namespace Toolbox {
         ImColor FrameBgHovered_Red = {0.980f, 0.261f, 0.261f, 0.400f};
         ImColor FrameBgActive_Red = {0.980f, 0.261f, 0.261f, 0.671f};
     };
-    bool isShortcutPressed(std::initializer_list<sf::Keyboard::Key> anyOf, std::initializer_list<sf::Keyboard::Key> allOf);
     void pushNewRecentFile(std::filesystem::path path);
     std::vector<std::string> getRecentFiles();
 

@@ -11,7 +11,7 @@
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
 
-EditorState::EditorState(Fumen &fumen) : fumen(fumen), markerEndingState(MISS) {
+EditorState::EditorState(Fumen &fumen) : fumen(fumen) {
     reloadFromFumen();
 }
 
@@ -304,7 +304,7 @@ std::vector<Note> EditorState::getVisibleNotes() {
         std::vector<Note> visibleNotes;
 
         float minPos;
-        if (this->markerEndingState == MISS) {
+        if (this->playfield.markerEndingState == MISS) {
             minPos = playbackPosition.asSeconds() - 8.f/30.f;
         } else {
             minPos = playbackPosition.asSeconds() - 16.f/30.f;

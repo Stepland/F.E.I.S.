@@ -18,6 +18,9 @@ int main(int argc, char** argv) {
     // TODO : Edition des notes à la souris (mode suppression / mode ajout)
     // TODO : Bruit différent si clap simple ou chord
     // TODO : Density graph sur la timeline
+    // TODO : Système de notifs
+    // TODO : Undo / Redo
+    // TODO : set pitch
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
@@ -87,7 +90,26 @@ int main(int argc, char** argv) {
                                 }
                             }
                             break;
+                        case sf::Keyboard::O:
+                            if (event.key.control) {
+                                ESHelper::open(editorState);
+                            }
+                            break;
+                        case sf::Keyboard::P:
+                            if (event.key.shift) {
+                                editorState->showProperties = true;
+                            }
+                            break;
+                        case sf::Keyboard::S:
+                            if (event.key.control) {
+                                ESHelper::save(*editorState);
+                            }
+                            break;
+                        default:
+                            break;
                     }
+                    break;
+                default:
                     break;
             }
         }
@@ -175,22 +197,6 @@ int main(int argc, char** argv) {
             }
         } else {
             bg.render(window);
-        }
-
-        // TODO : Use events instead
-        // Gestion des Raccourcis Clavier
-
-        // Ctrl+S
-        if (editorState and Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::S})) {
-            ESHelper::save(*editorState);
-
-            // Ctrl+O
-        } else if (Toolbox::isShortcutPressed({sf::Keyboard::LControl,sf::Keyboard::RControl},{sf::Keyboard::O})) {
-            ESHelper::open(editorState);
-
-            // Shift+P
-        } else if (editorState and Toolbox::isShortcutPressed({sf::Keyboard::LShift,sf::Keyboard::RShift},{sf::Keyboard::P})) {
-            editorState->showProperties = true;
         }
 
         // Dessin de l'interface

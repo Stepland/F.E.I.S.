@@ -10,20 +10,6 @@
 #include <c++/8.2.1/fstream>
 #include "Toolbox.h"
 
-bool Toolbox::isShortcutPressed(std::initializer_list<sf::Keyboard::Key> anyOf, std::initializer_list<sf::Keyboard::Key> allOf) {
-    for (auto key : allOf) {
-        if (not sf::Keyboard::isKeyPressed(key)) {
-            return false;
-        }
-    }
-    for (auto key : anyOf) {
-        if (sf::Keyboard::isKeyPressed(key)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void Toolbox::pushNewRecentFile(std::filesystem::path path) {
     std::ifstream readFile(std::filesystem::path("settings/recent files.txt"));
     std::list<std::string> recent;
@@ -108,4 +94,3 @@ bool Toolbox::InputTextColored(bool isValid, const std::string& hoverHelpText, c
     }
     return return_value;
 }
-

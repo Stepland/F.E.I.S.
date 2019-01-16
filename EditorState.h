@@ -16,11 +16,13 @@ class EditorState {
 
 public:
     Fumen fumen;
-    Widgets::Playfield playfield;
-    MarkerEndingState markerEndingState;
-    std::optional<sf::Music> music;
-    std::optional<sf::Texture> jacket;
     std::optional<Chart> selectedChart; // Ok this was a pretty terrible design choice, be EXTRA careful about this still being in sync with what's actually in the std::map of fumen
+    Widgets::Playfield playfield;
+
+    std::optional<sf::Music> music;
+    float musicVolume = 100.f; // 0 -> 100
+
+    std::optional<sf::Texture> jacket;
 
     sf::Time playbackPosition;
     sf::Time chartRuntime; // Timing at which the playback stops
