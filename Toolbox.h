@@ -7,10 +7,9 @@
 
 #define IM_MAX(_A,_B)       (((_A) >= (_B)) ? (_A) : (_B))
 
-#include <SFML/Window.hpp>
+#include <SFML/Audio.hpp>
 #include <functional>
 #include <filesystem>
-#include "EditorState.h"
 
 namespace Toolbox {
 
@@ -35,6 +34,11 @@ namespace Toolbox {
     };
     std::string to_string(sf::Time time);
     bool InputTextColored(bool isValid, const std::string& hoverHelpText, const char *label, std::string *str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = NULL, void* user_data = NULL);
+    float convertToLogarithmicVolume(int);
+    void updateVolume(sf::SoundSource& soundSource,int volume);
+    int getNextDivisor(int number, int starting_point);
+    int getPreviousDivisor(int number, int starting_point);
+    std::string toOrdinal(int number);
 }
 
 template<typename T>

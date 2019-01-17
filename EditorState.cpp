@@ -2,6 +2,7 @@
 // Created by Symeon on 23/12/2018.
 //
 
+#include <cmath>
 #include <filesystem>
 #include <imgui.h>
 #include <imgui-SFML.h>
@@ -82,6 +83,27 @@ void EditorState::reloadJacket() {
 
 }
 
+void EditorState::updateMusicVolume() {
+    if (music) {
+        Toolbox::updateVolume(*music,musicVolume);
+    }
+}
+
+void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
+
+    if (newPosition.asSeconds() < -fumen.offset) {
+        newPosition = sf::seconds(-fumen.offset);
+    } else if (newPosition > chartRuntime) {
+        newPosition = chartRuntime;
+    }
+    playbackPosition = newPosition;
+    if (music) {
+        if (playbackPosition.asSeconds() >= 0 and playbackPosition < music->getDuration()) {
+            music->setPlayingOffset(playbackPosition);
+        }
+    }
+}
+
 void EditorState::displayPlayfield() {
 
     ImGui::SetNextWindowSize(ImVec2(400,400),ImGuiCond_FirstUseEver);
@@ -156,7 +178,7 @@ void EditorState::displayProperties() {
  * will appear in the "Editor Status" window
  */
 void EditorState::displayStatus() {
-    ImGui::Begin("Status",&showStatus);
+    ImGui::Begin("Status",&showStatus,ImGuiWindowFlags_AlwaysAutoResize);
     {
         if (not music) {
             if (not fumen.musicPath.empty()) {
@@ -173,8 +195,9 @@ void EditorState::displayStatus() {
                 ImGui::TextColored(ImVec4(1,0.42,0.41,1),"No jacket loaded");
             }
         }
-        ImGui::Checkbox("Beat Tick",&playBeatTick);
-        ImGui::Checkbox("Note Tick",&playNoteTick);
+        if (ImGui::SliderInt("Music Volume",&musicVolume,0,10)) {
+            updateMusicVolume();
+        }
     }
     ImGui::End();
 }
@@ -195,42 +218,20 @@ void EditorState::displayPlaybackStatus() {
             );
     {
         if (selectedChart) {
-            ImGui::Text("%s %d",selectedChart->dif_name.c_str(),selectedChart->level);
+            ImGui::Text("%s %d",selectedChart->dif_name.c_str(),selectedChart->level); ImGui::SameLine();
         } else {
-            ImGui::TextDisabled("No chart selected");
+            ImGui::TextDisabled("No chart selected"); ImGui::SameLine();
         }
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Beats :");
-        ImGui::SameLine();
-        ImGui::Text("%02.2f",this->getBeats());
-        ImGui::SameLine();
+        ImGui::TextDisabled("Snap : "); ImGui::SameLine();
+        ImGui::Text("%s",Toolbox::toOrdinal(snap*4).c_str()); ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Beats :"); ImGui::SameLine();
+        ImGui::Text("%02.2f",this->getBeats()); ImGui::SameLine();
         if (music) {
-            ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Music File Offset :");
-            ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(music->getPlayingOffset()).c_str());
-            /*
-            sf::Time time = music->getPlayingOffset();
-            int minutes = static_cast<int>(std::abs(time.asSeconds()))/60;
-            int seconds = static_cast<int>(std::abs(time.asSeconds()))%60;
-            int miliseconds = static_cast<int>(std::abs(time.asMilliseconds()))%1000;
-            if (time.asSeconds() < 0) {
-                ImGui::Text("-%02d:%02d.%03d",minutes,seconds,miliseconds);
-            } else {
-                ImGui::Text("+%02d:%02d.%03d",minutes,seconds,miliseconds);
-            }
-             */
+            ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Music File Offset :"); ImGui::SameLine();
+            ImGui::TextUnformatted(Toolbox::to_string(music->getPlayingOffset()).c_str()); ImGui::SameLine();
         }
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Timeline Position :");
-        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.53,0.53,0.53,1),"Timeline Position :"); ImGui::SameLine();
         ImGui::TextUnformatted(Toolbox::to_string(playbackPosition).c_str());
-        /*
-        sf::Time time = playbackPosition;
-        int minutes = static_cast<int>(time.asSeconds())/60;
-        int seconds = static_cast<int>(time.asSeconds())%60;
-        int miliseconds = static_cast<int>(time.asMilliseconds())%1000;
-        ImGui::Text("%02d:%02d.%03d",minutes,seconds,miliseconds);
-         */
     }
     ImGui::End();
     ImGui::PopStyleVar();
@@ -258,10 +259,7 @@ void EditorState::displayTimeline() {
             float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0,0});
             if(ImGui::VSliderFloat("",ImGui::GetContentRegionMax(),&slider_pos,0.f,1.f,"")) {
-                playbackPosition = sf::seconds(scroll.backwards_transform(slider_pos));
-                if (playbackPosition.asSeconds() >= 0 and playbackPosition < music->getDuration()) {
-                    music->setPlayingOffset(playbackPosition);
-                }
+                setPlaybackAndMusicPosition(sf::seconds(scroll.backwards_transform(slider_pos)));
             }
         }
     }

@@ -18,32 +18,28 @@ public:
     Fumen fumen;
     std::optional<Chart> selectedChart; // Ok this was a pretty terrible design choice, be EXTRA careful about this still being in sync with what's actually in the std::map of fumen
     Widgets::Playfield playfield;
+    int snap = 1;
 
     std::optional<sf::Music> music;
-    float musicVolume = 100.f; // 0 -> 100
+    int musicVolume = 10; // 0 -> 10
+    void updateMusicVolume();
 
     std::optional<sf::Texture> jacket;
 
     sf::Time playbackPosition;
-    sf::Time chartRuntime; // Timing at which the playback stops
+    sf::Time chartRuntime; // sf::Time at which the chart preview stops, can be after the end of the audio
+
+    void setPlaybackAndMusicPosition(sf::Time newPosition);
+
     bool playing;
+
     float getBeats() {return getBeatsAt(playbackPosition.asSeconds());};
     float getBeatsAt(float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
     float getTicks() {return getTicksAt(playbackPosition.asSeconds());};
-    float getTicksAt(float seconds) {
-        if (selectedChart) {
-            return getBeatsAt(seconds)*selectedChart->getResolution();
-        } else {
-            return getBeatsAt(seconds)*240.f;
-        }
-    }
-    float getSecondsAt(int tick) {
-        if (selectedChart) {
-            return (60.f * tick)/(fumen.BPM * selectedChart->getResolution()) - fumen.offset;
-        } else {
-            return (60.f * tick)/(fumen.BPM * 240.f) - fumen.offset;
-        }
-    }
+    float getTicksAt(float seconds) {return getBeatsAt(seconds) * getResolution();}
+    float getSecondsAt(int tick) {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
+    int getResolution() {return selectedChart ? selectedChart->getResolution() : 240;};
+    int getSnapStep() {return getResolution() / snap;};
 
     void reloadFromFumen();
     void reloadMusic();
@@ -65,10 +61,6 @@ public:
     void displayPlaybackStatus();
     void displayTimeline();
     void displayChartList();
-    void displayChartProperties();
-
-    bool playBeatTick;
-    bool playNoteTick;
 
     std::vector<Note> getVisibleNotes();
 

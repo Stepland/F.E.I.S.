@@ -9,18 +9,15 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Volume de la musique
-    // TODO : Volume des claps
-    // TODO : Bruit des notes
-    // TODO : Volume des notes
-    // TODO : Contrôles aux fleches (←→ snap, ↑↓ position)
     // TODO : Affichage des notes
     // TODO : Edition des notes à la souris (mode suppression / mode ajout)
+    // TODO : Bruit des notes ticks
+    // TODO : Volume des notes ticks
     // TODO : Bruit différent si clap simple ou chord
     // TODO : Density graph sur la timeline
     // TODO : Système de notifs
     // TODO : Undo / Redo
-    // TODO : set pitch
+    // TODO : Pitch control (playback speed factor)
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
@@ -42,6 +39,8 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Unable to load sound " + noteTickPath);
     }
     sf::Sound noteTickSound(noteTick);
+    int noteTickVolume = 10;
+    bool playNoteTick = false;
 
     bool beatTicked = false;
     std::string beatTickPath = "assets/sounds/sound beat tick.wav";
@@ -51,6 +50,8 @@ int main(int argc, char** argv) {
         throw std::runtime_error("Unable to load sound " + beatTickPath);
     }
     sf::Sound beatTickSound(beatTick);
+    int beatTickVolume = 10;
+    bool playBeatTick = false;
 
 
     Widgets::Ecran_attente bg;
@@ -73,15 +74,62 @@ int main(int argc, char** argv) {
                     break;
                 case sf::Event::KeyPressed:
                     switch (event.key.code) {
-                        case sf::Keyboard::F3:
-                            if (editorState) {
-                                editorState->playBeatTick = not editorState->playBeatTick;
+                        case sf::Keyboard::Up:
+                            if (event.key.shift) {
+                                if (editorState) {
+                                    if (editorState->musicVolume < 10) {
+                                        editorState->musicVolume++;
+                                        editorState->updateMusicVolume();
+                                    }
+                                }
+                            } else {
+                                if (editorState and editorState->selectedChart) {
+                                    float floatTicks = editorState->getTicks();
+                                    int prevTick = static_cast<int>(floorf(floatTicks));
+                                    int step = editorState->getSnapStep();
+                                    int prevTickInSnap = prevTick;
+                                    if (prevTick%step == 0) {
+                                        prevTickInSnap -= step;
+                                    } else {
+                                        prevTickInSnap -= prevTick%step;
+                                    }
+                                    editorState->setPlaybackAndMusicPosition(sf::seconds(editorState->getSecondsAt(prevTickInSnap)));
+                                }
                             }
                             break;
-                        case sf::Keyboard::F4:
-                            if (editorState) {
-                                editorState->playNoteTick = not editorState->playNoteTick;
+                        case sf::Keyboard::Down:
+                            if (event.key.shift) {
+                                if (editorState) {
+                                    if (editorState->musicVolume > 0) {
+                                        editorState->musicVolume--;
+                                        editorState->updateMusicVolume();
+                                    }
+                                }
+                            } else {
+                                if (editorState and editorState->selectedChart) {
+                                    float floatTicks = editorState->getTicks();
+                                    int nextTick = static_cast<int>(ceilf(floatTicks));
+                                    int step = editorState->getSnapStep();
+                                    int nextTickInSnap = nextTick + (step - nextTick%step);
+                                    editorState->setPlaybackAndMusicPosition(sf::seconds(editorState->getSecondsAt(nextTickInSnap)));
+                                }
                             }
+                            break;
+                        case sf::Keyboard::Left:
+                            if (editorState and editorState->selectedChart) {
+                                editorState->snap = Toolbox::getPreviousDivisor(editorState->selectedChart->getResolution(),editorState->snap);
+                            }
+                            break;
+                        case sf::Keyboard::Right:
+                            if (editorState and editorState->selectedChart) {
+                                editorState->snap = Toolbox::getNextDivisor(editorState->selectedChart->getResolution(),editorState->snap);
+                            }
+                            break;
+                        case sf::Keyboard::F3:
+                            playBeatTick = not playBeatTick;
+                            break;
+                        case sf::Keyboard::F4:
+                            playNoteTick = not playNoteTick;
                             break;
                         case sf::Keyboard::Space:
                             if (not ImGui::GetIO().WantTextInput) {
@@ -136,7 +184,7 @@ int main(int argc, char** argv) {
                         break;
                 }
             }
-            if (editorState->playBeatTick) {
+            if (playBeatTick) {
                 if (fmodf(editorState->getBeats(),1.f) < 0.5) {
                     if (not beatTicked) {
                         beatTickSound.play();
@@ -171,6 +219,18 @@ int main(int argc, char** argv) {
             }
             if (editorState->showStatus) {
                 editorState->displayStatus();
+                ImGui::Begin("Status");
+                {
+                    ImGui::Checkbox("Beat Tick",&playBeatTick); ImGui::SameLine();
+                    if (ImGui::SliderInt("Beat Tick Volume",&beatTickVolume,0,10)) {
+                        Toolbox::updateVolume(beatTickSound,beatTickVolume);
+                    }
+                    ImGui::Checkbox("Note Tick",&playNoteTick); ImGui::SameLine();
+                    if (ImGui::SliderInt("Note Tick Volume",&noteTickVolume,0,10)) {
+                        Toolbox::updateVolume(noteTickSound,noteTickVolume);
+                    }
+                }
+                ImGui::End();
             }
             if (editorState->showPlaybackStatus) {
                 editorState->displayPlaybackStatus();
@@ -185,7 +245,9 @@ int main(int argc, char** argv) {
                 std::optional<Chart> c = newChartDialog.display(*editorState);
                 if (c) {
                     editorState->showNewChartDialog = false;
-                    editorState->fumen.Charts.try_emplace(c->dif_name,*c);
+                    if(editorState->fumen.Charts.try_emplace(c->dif_name,*c).second) {
+                        editorState->selectedChart = editorState->fumen.Charts[c->dif_name];
+                    }
                 }
             } else {
                 newChartDialog.resetValues();

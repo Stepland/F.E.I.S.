@@ -46,7 +46,9 @@ std::vector<std::string> Toolbox::getRecentFiles() {
     readFile.close();
     return recent;
 }
-
+/*
+ * return an sf::Time as ±MM:SS.mmm in a string
+ */
 std::string Toolbox::to_string(sf::Time time) {
     std::ostringstream stringStream;
     int minutes = static_cast<int>(std::abs(time.asSeconds()))/60;
@@ -64,7 +66,7 @@ std::string Toolbox::to_string(sf::Time time) {
 }
 
 /*
- * InputText that gets colored Red when isValid is false and hoverTextHelp gets displayed when hovering over invalid input
+ * Imgui::InputText that gets colored Red when isValid is false and hoverTextHelp gets displayed when hovering over invalid input
  * When input is valid InputText gets colored green
  * Displays InputText without any style change if the input is empty;
  */
@@ -93,4 +95,79 @@ bool Toolbox::InputTextColored(bool isValid, const std::string& hoverHelpText, c
         ImGui::PopStyleColor(3);
     }
     return return_value;
+}
+
+/*
+ * Quick formula to get an exponential function of the integer volume setting mapping 0 to 0.f and 10 to 100.f
+ */
+float Toolbox::convertToLogarithmicVolume(int x) {
+    if (x > 10) {
+        return 100.f;
+    } else if (x < 0) {
+        return 0.f;
+    }
+    return static_cast<float>(pow(2.f, static_cast<float>(x)*log(101.f)/(10*log(2.f))) - 1.f);
+}
+
+void Toolbox::updateVolume(sf::SoundSource &soundSource, int volume) {
+    soundSource.setVolume(Toolbox::convertToLogarithmicVolume(volume));
+}
+
+int Toolbox::getNextDivisor(int number, int starting_point) {
+
+    assert(number > 0);
+    assert(starting_point > 0 and starting_point <= number);
+
+    if (starting_point == number) {
+        return 1;
+    } else {
+        do {
+            starting_point++;
+        } while (number % starting_point != 0);
+    }
+
+    return starting_point;
+
+}
+
+int Toolbox::getPreviousDivisor(int number, int starting_point) {
+
+    assert(number > 0);
+    assert(starting_point > 0 and starting_point <= number);
+
+    if (starting_point == 1) {
+        return number;
+    } else {
+        do {
+            starting_point--;
+        } while (number % starting_point != 0);
+    }
+
+    return starting_point;
+
+}
+
+std::string Toolbox::toOrdinal(int number) {
+    std::ostringstream s;
+    s << number;
+    // Special case : is it a xx1x ?
+    if (number%100/10 == 1) {
+        s << "th";
+    } else {
+        switch (number%10) {
+            case 1:
+                s << "st";
+                break;
+            case 2:
+                s << "nd";
+                break;
+            case 3:
+                s << "rd";
+                break;
+            default:
+                s << "th";
+                break;
+        }
+    }
+    return s.str();
 }
