@@ -11,6 +11,8 @@
 #include "Toolbox.h"
 
 void Toolbox::pushNewRecentFile(std::filesystem::path path) {
+
+    std::filesystem::create_directory("settings");
     std::ifstream readFile(std::filesystem::path("settings/recent files.txt"));
     std::list<std::string> recent;
     std::set<std::string> recent_set;
