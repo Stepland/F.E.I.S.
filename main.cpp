@@ -9,14 +9,14 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Affichage des notes
     // TODO : Edition des notes à la souris (mode suppression / mode ajout)
+    // TODO : Marker selection
+    // TODO : Marker ending selection
     // TODO : Bruit des notes ticks
-    // TODO : Volume des notes ticks
     // TODO : Bruit différent si clap simple ou chord
+    // TODO : Undo / Redo
     // TODO : Density graph sur la timeline
     // TODO : Système de notifs
-    // TODO : Undo / Redo
     // TODO : Pitch control (playback speed factor)
 
     // Création de la fenêtre
@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
     sf::Sound noteTickSound(noteTick);
     int noteTickVolume = 10;
     bool playNoteTick = false;
+    bool noteTicked = false;
 
-    bool beatTicked = false;
     std::string beatTickPath = "assets/sounds/sound beat tick.wav";
     sf::SoundBuffer beatTick;
     if (!beatTick.loadFromFile(beatTickPath)) {
@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
     sf::Sound beatTickSound(beatTick);
     int beatTickVolume = 10;
     bool playBeatTick = false;
+    bool beatTicked = false;
 
 
     Widgets::Ecran_attente bg;
@@ -164,44 +165,63 @@ int main(int argc, char** argv) {
 
         sf::Time delta = deltaClock.restart();
         ImGui::SFML::Update(window, delta);
+        editorState->updateVisibleNotes();
 
         // Gestion du playback
-        if (editorState->playing) {
-            editorState->playbackPosition += delta;
-            if (editorState->music) {
-                switch(editorState->music->getStatus()) {
-                    case sf::Music::Stopped:
-                    case sf::Music::Paused:
-                        if (editorState->playbackPosition.asSeconds() >= 0 and editorState->playbackPosition < editorState->music->getDuration()) {
-                            editorState->music->setPlayingOffset(editorState->playbackPosition);
-                            editorState->music->play();
-                        }
-                        break;
-                    case sf::Music::Playing:
-                        editorState->playbackPosition = editorState->music->getPlayingOffset();
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (playBeatTick) {
-                if (fmodf(editorState->getBeats(),1.f) < 0.5) {
-                    if (not beatTicked) {
-                        beatTickSound.play();
-                        beatTicked = true;
+        if (editorState) {
+            if (editorState->playing) {
+                editorState->previousPos = editorState->playbackPosition;
+                editorState->playbackPosition += delta;
+                if (editorState->music) {
+                    switch(editorState->music->getStatus()) {
+                        case sf::Music::Stopped:
+                        case sf::Music::Paused:
+                            if (editorState->playbackPosition.asSeconds() >= 0 and editorState->playbackPosition < editorState->music->getDuration()) {
+                                editorState->music->setPlayingOffset(editorState->playbackPosition);
+                                editorState->music->play();
+                            }
+                            break;
+                        case sf::Music::Playing:
+                            editorState->playbackPosition = editorState->music->getPlayingOffset();
+                            break;
+                        default:
+                            break;
                     }
-                } else {
-                    beatTicked = false;
                 }
-            }
-            if (editorState->playbackPosition >= editorState->chartRuntime) {
-                editorState->playing = false;
-                editorState->playbackPosition = editorState->chartRuntime;
-            }
-        } else {
-            if (editorState->music) {
-                if (editorState->music->getStatus() == sf::Music::Playing) {
-                    editorState->music->pause();
+                if (playBeatTick) {
+                    if (fmodf(editorState->getBeats(),1.f) < 0.5) {
+                        if (not beatTicked) {
+                            beatTickSound.play();
+                            beatTicked = true;
+                        }
+                    } else {
+                        beatTicked = false;
+                    }
+                }
+                if (playNoteTick) {
+                    int currentTick = static_cast<int>(editorState->getTicks());
+                    for (auto note : editorState->visibleNotes) {
+                        float noteTiming = editorState->getSecondsAt(note.getTiming());
+                        if (noteTiming >= editorState->previousPos.asSeconds() and noteTiming <= editorState->playbackPosition.asSeconds()) {
+                            if (not noteTicked) {
+                                noteTickSound.play();
+                                noteTicked = true;
+                            }
+                        }
+                    }
+                    if (noteTicked) {
+                        noteTicked = false;
+                    }
+                }
+                if (editorState->playbackPosition >= editorState->chartRuntime) {
+                    editorState->playing = false;
+                    editorState->playbackPosition = editorState->chartRuntime;
+                }
+            } else {
+                if (editorState->music) {
+                    if (editorState->music->getStatus() == sf::Music::Playing) {
+                        editorState->music->pause();
+                    }
                 }
             }
         }

@@ -18,7 +18,7 @@ class Note {
 public:
 
 
-	Note(int timing,int pos,int length,int trail_pos);
+	Note(int pos, int timing, int length, int trail_pos);
 	static bool trail_pos_correct(int pos,int trail_pos);
 
 	bool operator==(const Note &rhs) const;

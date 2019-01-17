@@ -24,7 +24,7 @@ class Marker {
 public:
 
 	Marker(std::string folder = "mk0013");
-	std::optional<sf::Texture> getSprite(MarkerEndingState state, float seconds);
+	std::optional<std::reference_wrapper<sf::Texture>> getSprite(MarkerEndingState state, float seconds);
 
 private:
 

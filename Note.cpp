@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include "Note.h"
 
-Note::Note(int timing, int pos, int length, int trail_pos) {
+Note::Note(int pos, int timing, int length, int trail_pos) {
 	if (timing<0) {
 		throw std::runtime_error("Tried creating a note with negative timing : "+std::to_string(timing));
 	}

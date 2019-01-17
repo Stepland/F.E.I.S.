@@ -52,6 +52,7 @@ void EditorState::reloadMusic() {
  */
 void EditorState::reloadPlaybackPositionAndChartRuntime() {
     playbackPosition = sf::seconds(-(fumen.offset));
+    previousPos = playbackPosition;
     if (music) {
         if (selectedChart) {
             chartRuntime = sf::seconds(std::max(music->getDuration().asSeconds(),fumen.getChartRuntime(*selectedChart)-fumen.offset)+2.f);
@@ -113,9 +114,9 @@ void EditorState::displayPlayfield() {
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
         if (selectedChart) {
             int ImGuiIndex = 0;
-            for (auto note : getVisibleNotes()) {
-                std::optional<sf::Texture> t;
-                if ((t = playfield.marker.getSprite(playfield.markerEndingState,getSecondsAt(note.getTiming())))) {
+            for (auto note : visibleNotes) {
+                std::optional<std::reference_wrapper<sf::Texture>> t = playfield.marker.getSprite(playfield.markerEndingState,playbackPosition.asSeconds()-getSecondsAt(note.getTiming()));
+                if (t) {
                     int x = note.getPos()%4;
                     int y = note.getPos()/4;
                     ImGui::SetCursorPos({x*squareSize,TitlebarHeight + y*squareSize});
@@ -295,11 +296,10 @@ void EditorState::displayChartList() {
     }
     ImGui::End();
 }
+void EditorState::updateVisibleNotes() {
+    visibleNotes.clear();
 
-std::vector<Note> EditorState::getVisibleNotes() {
     if (selectedChart) {
-
-        std::vector<Note> visibleNotes;
 
         float minPos;
         if (this->playfield.markerEndingState == MISS) {
@@ -318,11 +318,6 @@ std::vector<Note> EditorState::getVisibleNotes() {
                 visibleNotes.push_back(note);
             }
         }
-
-        return visibleNotes;
-
-    } else {
-        return {};
     }
 }
 

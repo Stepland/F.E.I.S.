@@ -5,6 +5,7 @@
 #include <cmath>
 #include <sstream>
 #include <iomanip>
+#include <c++/8.2.1/functional>
 #include "Marker.h"
 
 Marker::Marker(std::string folder) {
@@ -19,6 +20,7 @@ Marker::Marker(std::string folder) {
 				std::cerr << "Unable to load marker " << folder;
 				throw std::runtime_error("Unable to load marker " + folder);
 			}
+			tex.setSmooth(true);
 			textures.insert({"h" + std::to_string(i+100*sup), tex});
 		}
 	}
@@ -40,15 +42,17 @@ Marker::Marker(std::string folder) {
 			std::cerr << "Unable to load marker " << folder;
 			throw std::runtime_error("Unable to load marker " + folder);
 		}
+		tex.setSmooth(true);
 		textures.insert({fichier, tex});
 	}
 }
 
-std::optional<sf::Texture> Marker::getSprite(MarkerEndingState state, float seconds) {
+std::optional<std::reference_wrapper<sf::Texture>> Marker::getSprite(MarkerEndingState state, float seconds) {
 	std::ostringstream frameName;
 	int frame = static_cast<int>((seconds*30.f+16.f));
 	if (frame >= 0 and frame <= 15) {
 		frameName << "ma" << std::setfill('0') << std::setw(2) << frame;
+		std::string frameStr = frameName.str();
 		return textures[frameName.str()];
 	} else {
 		if (state == MISS) {

@@ -26,6 +26,7 @@ public:
 
     std::optional<sf::Texture> jacket;
 
+    sf::Time previousPos;
     sf::Time playbackPosition;
     sf::Time chartRuntime; // sf::Time at which the chart preview stops, can be after the end of the audio
 
@@ -62,7 +63,8 @@ public:
     void displayTimeline();
     void displayChartList();
 
-    std::vector<Note> getVisibleNotes();
+    void updateVisibleNotes();
+    std::vector<Note> visibleNotes;
 
     explicit EditorState(Fumen& fumen);
 };
