@@ -9,9 +9,9 @@
 
 int main(int argc, char** argv) {
 
+    // TODO : Debug Log
     // TODO : Edition des notes à la souris (mode suppression / mode ajout)
-    // TODO : Marker selection
-    // TODO : Marker ending selection
+    // TODO : Highlight des notes qui s'entrechoquent
     // TODO : Bruit des notes ticks
     // TODO : Bruit différent si clap simple ou chord
     // TODO : Undo / Redo
@@ -54,6 +54,25 @@ int main(int argc, char** argv) {
     bool playBeatTick = false;
     bool beatTicked = false;
 
+
+    // Loading markers preview
+    std::map<std::string,sf::Texture> markerPreviews;
+    for (const auto& folder : std::filesystem::directory_iterator("assets/textures/markers")) {
+        if (folder.is_directory()) {
+            try {
+                sf::Texture markerPreview;
+                markerPreview.loadFromFile((folder/"ma15.png").string());
+                markerPreview.setSmooth(true);
+                markerPreviews.insert({folder.path().filename().string(),markerPreview});
+            } catch (const std::exception& e) {
+                // ajouter e au log
+            }
+        }
+    }
+
+    Marker defaultMarker;
+    Marker& marker = defaultMarker;
+    MarkerEndingState markerEndingState = MarkerEndingState_MISS;
 
     Widgets::Ecran_attente bg;
     std::optional<EditorState> editorState;
@@ -165,7 +184,7 @@ int main(int argc, char** argv) {
 
         sf::Time delta = deltaClock.restart();
         ImGui::SFML::Update(window, delta);
-        editorState->updateVisibleNotes();
+        editorState->updateVisibleNotes(markerEndingState);
 
         // Gestion du playback
         if (editorState) {
@@ -199,7 +218,6 @@ int main(int argc, char** argv) {
                     }
                 }
                 if (playNoteTick) {
-                    int currentTick = static_cast<int>(editorState->getTicks());
                     for (auto note : editorState->visibleNotes) {
                         float noteTiming = editorState->getSecondsAt(note.getTiming());
                         if (noteTiming >= editorState->previousPos.asSeconds() and noteTiming <= editorState->playbackPosition.asSeconds()) {
@@ -232,7 +250,7 @@ int main(int argc, char** argv) {
             window.clear(sf::Color(0, 0, 0));
 
             if (editorState->showPlayfield) {
-                editorState->displayPlayfield();
+                editorState->displayPlayfield(marker,markerEndingState);
             }
             if (editorState->showProperties) {
                 editorState->displayProperties();
@@ -373,6 +391,39 @@ int main(int argc, char** argv) {
                 }
                 if (ImGui::MenuItem("Editor Status",nullptr,editorState->showStatus)) {
                     editorState->showStatus = not editorState->showStatus;
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Settings",editorState.has_value())) {
+                if (ImGui::BeginMenu("Marker")) {
+                    int i = 0;
+                    for (auto& tuple : markerPreviews) {
+                        ImGui::PushID(tuple.first.c_str());
+                        if (ImGui::ImageButton(tuple.second,{100,100})) {
+                            try {
+                                marker = Marker(tuple.first);
+                            } catch (const std::exception& e) {
+                                tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                                marker = defaultMarker;
+                            }
+                        }
+                        ImGui::PopID();
+                        i++;
+                        if (i%4 != 0) {
+                            ImGui::SameLine();
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Marker Ending State")) {
+                    for (auto& m : Markers::markerStatePreviews) {
+                        if (ImGui::ImageButton(marker.getTextures().at(m.textureName),{100,100})) {
+                            markerEndingState = m.state;
+                        }
+                        ImGui::SameLine();
+                        ImGui::TextUnformatted(m.printName.c_str());
+                    }
+                    ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
             }

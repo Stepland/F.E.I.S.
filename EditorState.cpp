@@ -105,7 +105,7 @@ void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
     }
 }
 
-void EditorState::displayPlayfield() {
+void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndingState) {
 
     ImGui::SetNextWindowSize(ImVec2(400,400),ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(0,0),ImVec2(FLT_MAX,FLT_MAX),Toolbox::CustomConstraints::ContentSquare);
@@ -115,7 +115,7 @@ void EditorState::displayPlayfield() {
         if (selectedChart) {
             int ImGuiIndex = 0;
             for (auto note : visibleNotes) {
-                std::optional<std::reference_wrapper<sf::Texture>> t = playfield.marker.getSprite(playfield.markerEndingState,playbackPosition.asSeconds()-getSecondsAt(note.getTiming()));
+                std::optional<std::reference_wrapper<sf::Texture>> t = marker.getSprite(markerEndingState,playbackPosition.asSeconds()-getSecondsAt(note.getTiming()));
                 if (t) {
                     int x = note.getPos()%4;
                     int y = note.getPos()/4;
@@ -296,13 +296,13 @@ void EditorState::displayChartList() {
     }
     ImGui::End();
 }
-void EditorState::updateVisibleNotes() {
+void EditorState::updateVisibleNotes(MarkerEndingState markerEndingState) {
     visibleNotes.clear();
 
     if (selectedChart) {
 
         float minPos;
-        if (this->playfield.markerEndingState == MISS) {
+        if (markerEndingState == MarkerEndingState_MISS) {
             minPos = playbackPosition.asSeconds() - 8.f/30.f;
         } else {
             minPos = playbackPosition.asSeconds() - 16.f/30.f;

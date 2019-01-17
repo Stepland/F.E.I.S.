@@ -15,6 +15,9 @@
 class EditorState {
 
 public:
+
+    explicit EditorState(Fumen& fumen);
+
     Fumen fumen;
     std::optional<Chart> selectedChart; // Ok this was a pretty terrible design choice, be EXTRA careful about this still being in sync with what's actually in the std::map of fumen
     Widgets::Playfield playfield;
@@ -56,17 +59,15 @@ public:
     bool showNewChartDialog;
     bool showChartProperties;
 
-    void displayPlayfield();
+    void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();
     void displayTimeline();
     void displayChartList();
 
-    void updateVisibleNotes();
+    void updateVisibleNotes(MarkerEndingState markerEndingState);
     std::vector<Note> visibleNotes;
-
-    explicit EditorState(Fumen& fumen);
 };
 
 namespace ESHelper {

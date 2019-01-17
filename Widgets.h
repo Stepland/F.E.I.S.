@@ -30,9 +30,6 @@ namespace Widgets {
 	public:
 
 		Playfield();
-
-		Marker marker;
-		MarkerEndingState markerEndingState;
 		sf::Texture button;
 		sf::Texture button_pressed;
 

@@ -55,23 +55,23 @@ std::optional<std::reference_wrapper<sf::Texture>> Marker::getSprite(MarkerEndin
 		std::string frameStr = frameName.str();
 		return textures[frameName.str()];
 	} else {
-		if (state == MISS) {
+		if (state == MarkerEndingState_MISS) {
 			if (frame >= 16 and frame <= 23) {
 				frameName << "ma" << std::setfill('0') << std::setw(2) << frame;
 				return textures[frameName.str()];
 			}
-		} else if (frame >= 16 and frame <= 32) {
+		} else if (frame >= 16 and frame <= 31) {
 			switch (state) {
-				case EARLY:
+				case MarkerEndingState_EARLY:
 					frameName << "h1";
 					break;
-				case GOOD:
+				case MarkerEndingState_GOOD:
 					frameName << "h2";
 					break;
-				case GREAT:
+				case MarkerEndingState_GREAT:
 					frameName << "h3";
 					break;
-				case PERFECT:
+				case MarkerEndingState_PERFECT:
 					frameName << "h4";
 					break;
 				default:
@@ -84,13 +84,17 @@ std::optional<std::reference_wrapper<sf::Texture>> Marker::getSprite(MarkerEndin
 	return {};
 }
 
+const std::map<std::string, sf::Texture> &Marker::getTextures() const {
+	return textures;
+}
+
 /*
 sf::Texture Marker::getSprite(MarkerEndingState state, int frame) {
 
 	int lower;
 	int upper;
 	switch(state) {
-		case MISS:
+		case MarkerEndingState_MISS:
 			lower = 16;
 			upper = 32;
 			break;
@@ -106,19 +110,19 @@ sf::Texture Marker::getSprite(MarkerEndingState state, int frame) {
 
 	std::string tex_key;
 	switch (state) {
-		case MISS:
+		case MarkerEndingState_MISS:
 			tex_key += "ma";
 			break;
-		case EARLY:
+		case MarkerEndingState_EARLY:
 			tex_key += "h1";
 			break;
-		case GOOD:
+		case MarkerEndingState_GOOD:
 			tex_key += "h2";
 			break;
-		case GREAT:
+		case MarkerEndingState_GREAT:
 			tex_key += "h3";
 			break;
-		case PERFECT:
+		case MarkerEndingState_PERFECT:
 			tex_key += "h4";
 			break;
 	}
