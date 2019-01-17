@@ -9,12 +9,11 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Debug Log
-    // TODO : Edition des notes à la souris (mode suppression / mode ajout)
     // TODO : Highlight des notes qui s'entrechoquent
+    // TODO : Undo / Redo
+    // TODO : Debug Log
     // TODO : Bruit des notes ticks
     // TODO : Bruit différent si clap simple ou chord
-    // TODO : Undo / Redo
     // TODO : Density graph sur la timeline
     // TODO : Système de notifs
     // TODO : Pitch control (playback speed factor)
@@ -137,12 +136,12 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Keyboard::Left:
                             if (editorState and editorState->selectedChart) {
-                                editorState->snap = Toolbox::getPreviousDivisor(editorState->selectedChart->getResolution(),editorState->snap);
+                                editorState->snap = Toolbox::getPreviousDivisor(editorState->selectedChart->get().getResolution(),editorState->snap);
                             }
                             break;
                         case sf::Keyboard::Right:
                             if (editorState and editorState->selectedChart) {
-                                editorState->snap = Toolbox::getNextDivisor(editorState->selectedChart->getResolution(),editorState->snap);
+                                editorState->snap = Toolbox::getNextDivisor(editorState->selectedChart->get().getResolution(),editorState->snap);
                             }
                             break;
                         case sf::Keyboard::F3:
@@ -184,7 +183,7 @@ int main(int argc, char** argv) {
 
         sf::Time delta = deltaClock.restart();
         ImGui::SFML::Update(window, delta);
-        editorState->updateVisibleNotes(markerEndingState);
+        editorState->updateVisibleNotes();
 
         // Gestion du playback
         if (editorState) {
@@ -374,7 +373,7 @@ int main(int argc, char** argv) {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Delete Chart",nullptr,false,editorState->selectedChart.has_value())) {
-                    editorState->fumen.Charts.erase(editorState->selectedChart->dif_name);
+                    editorState->fumen.Charts.erase(editorState->selectedChart->get().dif_name);
                     editorState->selectedChart.reset();
                 }
                 ImGui::EndMenu();

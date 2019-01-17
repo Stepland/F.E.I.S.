@@ -134,7 +134,9 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                 ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0,0,0,0));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0,0,1.f,0.1f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0,0,1.f,0.5f));
-                ImGui::ImageButton(playfield.button,{squareSize,squareSize},0);
+                if (ImGui::ImageButton(playfield.button,{squareSize,squareSize},0)) {
+                    toggleNoteAtCurrentTime(x+4*y);
+                }
                 ImGui::PopStyleColor(3);
                 ImGui::PopID();
             }
@@ -219,7 +221,7 @@ void EditorState::displayPlaybackStatus() {
             );
     {
         if (selectedChart) {
-            ImGui::Text("%s %d",selectedChart->dif_name.c_str(),selectedChart->level); ImGui::SameLine();
+            ImGui::Text("%s %d",selectedChart->get().dif_name.c_str(),selectedChart->get().level); ImGui::SameLine();
         } else {
             ImGui::TextDisabled("No chart selected"); ImGui::SameLine();
         }
@@ -283,7 +285,7 @@ void EditorState::displayChartList() {
             ImGui::TextDisabled("Note Count"); ImGui::NextColumn();
             ImGui::Separator();
             for (auto tuple : fumen.Charts) {
-                if (ImGui::Selectable(tuple.first.c_str(), selectedChart ? *selectedChart==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
+                if (ImGui::Selectable(tuple.first.c_str(), selectedChart ? selectedChart->get()==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
                     selectedChart = tuple.second;
                 }
                 ImGui::NextColumn();
@@ -296,28 +298,38 @@ void EditorState::displayChartList() {
     }
     ImGui::End();
 }
-void EditorState::updateVisibleNotes(MarkerEndingState markerEndingState) {
+void EditorState::updateVisibleNotes() {
     visibleNotes.clear();
 
     if (selectedChart) {
 
-        float minPos;
-        if (markerEndingState == MarkerEndingState_MISS) {
-            minPos = playbackPosition.asSeconds() - 8.f/30.f;
-        } else {
-            minPos = playbackPosition.asSeconds() - 16.f/30.f;
-        }
-
+        float minPos = playbackPosition.asSeconds() - 16.f/30.f;
         float maxPos = playbackPosition.asSeconds() + 16.f/30.f;
 
         int min_exclusive = static_cast<int>(getTicksAt(minPos));
         int max_exclusive = static_cast<int>(getTicksAt(maxPos));
 
-        for (auto note : selectedChart->Notes) {
+        for (auto note : selectedChart->get().Notes) {
             if (note.getTiming() > min_exclusive and note.getTiming() < max_exclusive) {
-                visibleNotes.push_back(note);
+                visibleNotes.insert(note);
             }
         }
+    }
+}
+
+/*
+ * If a note is visible for the given pos, delete it
+ * Otherwise create note at nearest tick
+ */
+void EditorState::toggleNoteAtCurrentTime(int pos) {
+    if (selectedChart) {
+        for (auto note : visibleNotes) {
+            if (note.getPos() == pos) {
+                selectedChart->get().Notes.erase(note);
+                return;
+            }
+        }
+        selectedChart->get().Notes.emplace(pos,static_cast<int>(roundf(getTicks())));
     }
 }
 
@@ -445,8 +457,8 @@ void ESHelper::ChartPropertiesDialog::display(EditorState &editorState) {
         shouldRefreshValues = false;
 
         difNamesInUse.clear();
-        this->level = editorState.selectedChart->level;
-        this->difficulty = editorState.selectedChart->dif_name;
+        this->level = editorState.selectedChart->get().level;
+        this->difficulty = editorState.selectedChart->get().dif_name;
         std::set<std::string> difNames{"BSC","ADV","EXT"};
         showCustomDifName = (difNames.find(difficulty) == difNames.end());
 
@@ -509,9 +521,9 @@ void ESHelper::ChartPropertiesDialog::display(EditorState &editorState) {
         } else {
             if (ImGui::Button("Apply##New Chart")) {
                 try {
-                    editorState.fumen.Charts.erase(editorState.selectedChart->dif_name);
-                    editorState.selectedChart->dif_name = this->difficulty;
-                    editorState.selectedChart->level = this->level;
+                    editorState.fumen.Charts.erase(editorState.selectedChart->get().dif_name);
+                    editorState.selectedChart->get().dif_name = this->difficulty;
+                    editorState.selectedChart->get().level = this->level;
                     if (not (editorState.fumen.Charts.emplace(this->difficulty,editorState.selectedChart.value())).second) {
                         throw std::runtime_error("Could not insert modified chart in fumen");
                     } else {

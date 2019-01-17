@@ -19,7 +19,7 @@ public:
     explicit EditorState(Fumen& fumen);
 
     Fumen fumen;
-    std::optional<Chart> selectedChart; // Ok this was a pretty terrible design choice, be EXTRA careful about this still being in sync with what's actually in the std::map of fumen
+    std::optional<std::reference_wrapper<Chart>> selectedChart;
     Widgets::Playfield playfield;
     int snap = 1;
 
@@ -42,7 +42,7 @@ public:
     float getTicks() {return getTicksAt(playbackPosition.asSeconds());};
     float getTicksAt(float seconds) {return getBeatsAt(seconds) * getResolution();}
     float getSecondsAt(int tick) {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
-    int getResolution() {return selectedChart ? selectedChart->getResolution() : 240;};
+    int getResolution() {return selectedChart ? selectedChart->get().getResolution() : 240;};
     int getSnapStep() {return getResolution() / snap;};
 
     void reloadFromFumen();
@@ -66,8 +66,10 @@ public:
     void displayTimeline();
     void displayChartList();
 
-    void updateVisibleNotes(MarkerEndingState markerEndingState);
-    std::vector<Note> visibleNotes;
+    void updateVisibleNotes();
+    std::set<Note> visibleNotes;
+
+    void toggleNoteAtCurrentTime(int pos);
 };
 
 namespace ESHelper {
