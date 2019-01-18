@@ -9,6 +9,7 @@
 
 int main(int argc, char** argv) {
 
+    // TODO : BPM & offset settings dans le menu Porperties
     // TODO : Highlight des notes qui s'entrechoquent
     // TODO : Undo / Redo
     // TODO : Debug Log
@@ -55,14 +56,14 @@ int main(int argc, char** argv) {
 
 
     // Loading markers preview
-    std::map<std::string,sf::Texture> markerPreviews;
+    std::map<std::filesystem::path,sf::Texture> markerPreviews;
     for (const auto& folder : std::filesystem::directory_iterator("assets/textures/markers")) {
         if (folder.is_directory()) {
             try {
                 sf::Texture markerPreview;
                 markerPreview.loadFromFile((folder/"ma15.png").string());
                 markerPreview.setSmooth(true);
-                markerPreviews.insert({folder.path().filename().string(),markerPreview});
+                markerPreviews.insert({folder,markerPreview});
             } catch (const std::exception& e) {
                 // ajouter e au log
             }

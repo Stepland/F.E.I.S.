@@ -15,6 +15,13 @@ Marker::Marker() {
 }
 
 Marker::Marker(std::filesystem::path folder) {
+	if (validMarkerFolder(folder)) {
+		initFromFolder(folder);
+		return;
+	}
+	std::stringstream err;
+	err << "Invalid marker folder : " << folder.string();
+	throw std::runtime_error(err.str());
 }
 
 std::optional<std::reference_wrapper<sf::Texture>> Marker::getSprite(MarkerEndingState state, float seconds) {
