@@ -38,3 +38,5 @@ include_directories(${OPENGL_INCLUDE_DIR} imgui/)
 add_executable(FEIS ${SOURCE_FILES})
 
 target_link_libraries(FEIS stdc++fs ${OPENGL_LIBRARIES} sfml-system sfml-window sfml-graphics sfml-network sfml-audio WinMM)
+
+

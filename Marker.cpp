@@ -2,49 +2,19 @@
 // Created by Syméon on 17/08/2017.
 //
 
-#include <cmath>
-#include <sstream>
-#include <iomanip>
-#include <c++/8.2.1/functional>
 #include "Marker.h"
 
-Marker::Marker(std::string folder) {
+Marker::Marker() {
+    for (auto& folder : std::filesystem::directory_iterator("assets/textures/markers/")) {
+        if (validMarkerFolder(folder.path())) {
+        	initFromFolder(folder);
+        	return;
+        }
+    }
+    throw std::runtime_error("No valid marker found");
+}
 
-	path = "assets/textures/markers/" + folder;
-
-	// Chargement des h100~115 / h200~215 / h300~h315 / h400~415
-	for (int sup = 1; sup<=4; sup++) {
-		for (int i = 0; i <= 15; i++) {
-			sf::Texture tex;
-			if (!tex.loadFromFile(path + "/h" + std::to_string(i+100*sup) + ".png")) {
-				std::cerr << "Unable to load marker " << folder;
-				throw std::runtime_error("Unable to load marker " + folder);
-			}
-			tex.setSmooth(true);
-			textures.insert({"h" + std::to_string(i+100*sup), tex});
-		}
-	}
-
-	// Chargement de ma00~23
-	for (int i = 0; i <= 23; i++) {
-
-		sf::Texture tex;
-		std::string fichier;
-		if ( i < 10 ) {
-			fichier = "ma0"
-					+ std::to_string(i);
-		} else {
-			fichier = "ma"
-					+ std::to_string(i);
-		}
-
-		if (!tex.loadFromFile(path+"/"+fichier+".png")) {
-			std::cerr << "Unable to load marker " << folder;
-			throw std::runtime_error("Unable to load marker " + folder);
-		}
-		tex.setSmooth(true);
-		textures.insert({fichier, tex});
-	}
+Marker::Marker(std::filesystem::path folder) {
 }
 
 std::optional<std::reference_wrapper<sf::Texture>> Marker::getSprite(MarkerEndingState state, float seconds) {
@@ -86,6 +56,74 @@ std::optional<std::reference_wrapper<sf::Texture>> Marker::getSprite(MarkerEndin
 
 const std::map<std::string, sf::Texture> &Marker::getTextures() const {
 	return textures;
+}
+
+bool Marker::validMarkerFolder(std::filesystem::path folder) {
+
+    std::stringstream filename;
+    // ma00 ~ ma23
+    for (int i = 0; i < 24; ++i) {
+		filename.str("");
+        filename << "ma" << std::setw(2) << std::setfill('0') << i << ".png";
+        std::string s_filename = filename.str();
+        if (not std::filesystem::exists(folder/filename.str())) {
+        	return false;
+        }
+    }
+	// h100 ~ h115  +  h200 ~ h215  +   h300 ~ h315  +  h400 ~ h415
+	for (int j = 1; j <= 4; ++j) {
+		for (int i = 0; i < 16; ++i) {
+			filename.str("");
+			filename << "h" << 100*j + i << ".png";
+			std::string s_filename = filename.str();
+			if (not std::filesystem::exists(folder/filename.str())) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void Marker::initFromFolder(std::filesystem::path folder) {
+
+	textures.clear();
+	path = folder;
+
+	// Chargement des h100~115 / h200~215 / h300~h315 / h400~415
+	for (int sup = 1; sup<=4; sup++) {
+		for (int i = 0; i <= 15; i++) {
+			sf::Texture tex;
+			if (!tex.loadFromFile(path.string() + "/h" + std::to_string(i+100*sup) + ".png")) {
+				std::stringstream err;
+				err << "Unable to load marker " << folder << "\nfailed on image" << (path.string() + "/h" + std::to_string(i+100*sup) + ".png");
+				throw std::runtime_error(err.str());
+			}
+			tex.setSmooth(true);
+			textures.insert({"h" + std::to_string(i+100*sup), tex});
+		}
+	}
+
+	// Chargement de ma00~23
+	for (int i = 0; i <= 23; i++) {
+
+		sf::Texture tex;
+		std::string fichier;
+		if ( i < 10 ) {
+			fichier = "ma0"
+					  + std::to_string(i);
+		} else {
+			fichier = "ma"
+					  + std::to_string(i);
+		}
+
+		if (!tex.loadFromFile(path.string()+"/"+fichier+".png")) {
+			std::stringstream err;
+			err << "Unable to load marker " << folder << "\nfailed on image" << (path.string()+"/"+fichier+".png");
+			throw std::runtime_error(err.str());
+		}
+		tex.setSmooth(true);
+		textures.insert({fichier, tex});
+	}
 }
 
 /*

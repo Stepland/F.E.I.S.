@@ -10,6 +10,11 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <map>
+#include <cmath>
+#include <sstream>
+#include <iomanip>
+#include <filesystem>
+#include <functional>
 
 enum MarkerEndingState {
     MarkerEndingState_MISS,
@@ -39,15 +44,17 @@ class Marker {
 
 public:
 
-	Marker(std::string folder = "mk0013");
+	Marker();
+	Marker(std::filesystem::path folder);
 	std::optional<std::reference_wrapper<sf::Texture>> getSprite(MarkerEndingState state, float seconds);
-
     const std::map<std::string, sf::Texture> &getTextures() const;
 
 private:
 
 	std::map<std::string,sf::Texture> textures;
-	std::string path;
+	std::filesystem::path path;
+	bool validMarkerFolder(std::filesystem::path folder);
+	void initFromFolder(std::filesystem::path folder);
 
 };
 

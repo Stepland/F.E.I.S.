@@ -32,8 +32,10 @@ Widgets::Playfield::Playfield() {
 		std::cerr << "Unable to load texture " << button_path;
 		throw std::runtime_error("Unable to load texture " + button_path);
 	}
+	button.setSmooth(true);
 	if (!button_pressed.loadFromFile(button_path,{192,0,192,192})) {
 		std::cerr << "Unable to load texture " << button_path;
 		throw std::runtime_error("Unable to load texture " + button_path);
 	}
+	button_pressed.setSmooth(true);
 }

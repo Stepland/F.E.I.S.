@@ -183,10 +183,10 @@ int main(int argc, char** argv) {
 
         sf::Time delta = deltaClock.restart();
         ImGui::SFML::Update(window, delta);
-        editorState->updateVisibleNotes();
 
         // Gestion du playback
         if (editorState) {
+            editorState->updateVisibleNotes();
             if (editorState->playing) {
                 editorState->previousPos = editorState->playbackPosition;
                 editorState->playbackPosition += delta;
