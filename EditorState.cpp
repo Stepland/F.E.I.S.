@@ -284,9 +284,9 @@ void EditorState::displayChartList() {
             ImGui::TextDisabled("Level"); ImGui::NextColumn();
             ImGui::TextDisabled("Note Count"); ImGui::NextColumn();
             ImGui::Separator();
-            for (auto tuple : fumen.Charts) {
+            for (auto& tuple : fumen.Charts) {
                 if (ImGui::Selectable(tuple.first.c_str(), selectedChart ? selectedChart->get()==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
-                    selectedChart->get() = tuple.second;
+                    selectedChart = tuple.second;
                 }
                 ImGui::NextColumn();
                 ImGui::Text("%d",tuple.second.level); ImGui::NextColumn();
