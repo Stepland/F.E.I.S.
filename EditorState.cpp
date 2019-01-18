@@ -286,7 +286,7 @@ void EditorState::displayChartList() {
             ImGui::Separator();
             for (auto tuple : fumen.Charts) {
                 if (ImGui::Selectable(tuple.first.c_str(), selectedChart ? selectedChart->get()==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
-                    selectedChart = tuple.second;
+                    selectedChart->get() = tuple.second;
                 }
                 ImGui::NextColumn();
                 ImGui::Text("%d",tuple.second.level); ImGui::NextColumn();
@@ -323,13 +323,16 @@ void EditorState::updateVisibleNotes() {
  */
 void EditorState::toggleNoteAtCurrentTime(int pos) {
     if (selectedChart) {
+        bool deleted_something = false;
         for (auto note : visibleNotes) {
             if (note.getPos() == pos) {
                 selectedChart->get().Notes.erase(note);
-                return;
+                deleted_something = true;
             }
         }
-        selectedChart->get().Notes.emplace(pos,static_cast<int>(roundf(getTicks())));
+        if (not deleted_something) {
+            selectedChart->get().Notes.emplace(pos,static_cast<int>(roundf(getTicks())));
+        }
     }
 }
 
