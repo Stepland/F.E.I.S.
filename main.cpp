@@ -13,7 +13,6 @@ int main(int argc, char** argv) {
     // TODO : Highlight des notes qui s'entrechoquent
     // TODO : Undo / Redo
     // TODO : Debug Log
-    // TODO : Bruit des notes ticks
     // TODO : Bruit différent si clap simple ou chord
     // TODO : Density graph sur la timeline
     // TODO : Système de notifs
@@ -59,14 +58,10 @@ int main(int argc, char** argv) {
     std::map<std::filesystem::path,sf::Texture> markerPreviews;
     for (const auto& folder : std::filesystem::directory_iterator("assets/textures/markers")) {
         if (folder.is_directory()) {
-            try {
-                sf::Texture markerPreview;
-                markerPreview.loadFromFile((folder/"ma15.png").string());
-                markerPreview.setSmooth(true);
-                markerPreviews.insert({folder,markerPreview});
-            } catch (const std::exception& e) {
-                // ajouter e au log
-            }
+            sf::Texture markerPreview;
+            markerPreview.loadFromFile((folder/"ma15.png").string());
+            markerPreview.setSmooth(true);
+            markerPreviews.insert({folder,markerPreview});
         }
     }
 

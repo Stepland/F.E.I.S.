@@ -33,13 +33,9 @@ void EditorState::reloadFromFumen() {
  */
 void EditorState::reloadMusic() {
     music.emplace();
-    try {
-        if (!music->openFromFile(
-                (fumen.path.parent_path() / std::filesystem::path(fumen.musicPath)).string())
-                ) {
-            music.reset();
-        }
-    } catch (const std::exception& e) {
+    if (!music->openFromFile(
+            (fumen.path.parent_path() / std::filesystem::path(fumen.musicPath)).string())
+            ) {
         music.reset();
     }
     reloadPlaybackPositionAndChartRuntime();
@@ -74,14 +70,9 @@ void EditorState::reloadPlaybackPositionAndChartRuntime() {
  */
 void EditorState::reloadJacket() {
     jacket.emplace();
-    try {
-        if (!jacket->loadFromFile((fumen.path.parent_path() / std::filesystem::path(fumen.jacketPath)).string())) {
-            jacket.reset();
-        }
-    } catch (const std::exception& e) {
+    if (!jacket->loadFromFile((fumen.path.parent_path() / std::filesystem::path(fumen.jacketPath)).string())) {
         jacket.reset();
     }
-
 }
 
 void EditorState::updateMusicVolume() {

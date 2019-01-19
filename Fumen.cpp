@@ -68,7 +68,7 @@ void Fumen::saveAsMemon(std::filesystem::path path) {
 			note_json["n"] = note.getPos();
 			note_json["t"] = note.getTiming();
 			note_json["l"] = note.getLength();
-			note_json["p"] = note.getTrail_pos();
+			note_json["p"] = note.getTail_pos();
 			chart_json["notes"].push_back(note_json);
 		}
 		j["data"].push_back(chart_json);

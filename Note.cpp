@@ -3,9 +3,10 @@
 //
 
 #include <stdexcept>
+#include <assert.h>
 #include "Note.h"
 
-Note::Note(int pos, int timing, int length, int trail_pos) {
+Note::Note(int pos, int timing, int length, int tail_pos) {
 	if (timing<0) {
 		throw std::runtime_error("Tried creating a note with negative timing : "+std::to_string(timing));
 	}
@@ -16,51 +17,56 @@ Note::Note(int pos, int timing, int length, int trail_pos) {
 		throw std::runtime_error("Tried creating a note with invalid length : "+std::to_string(length));
 	}
 	if (length > 0) {
-		if (!(trail_pos >= 0 and trail_pos <= 11) or !trail_pos_correct(pos, trail_pos)) {
+		if (tail_pos < 0 or tail_pos > 11 or !tail_pos_correct(pos, tail_pos)) {
 			throw std::runtime_error(
-					"Tried creating a long note with invalid trail position : " + std::to_string(trail_pos));
+					"Tried creating a long note with invalid tail position : " + std::to_string(tail_pos));
 		}
 	}
 	this->timing = timing;
 	this->pos = pos;
 	this->length = length;
-	this->trail_pos = trail_pos;
+	this->tail_pos = tail_pos;
 
 }
 
-bool Note::trail_pos_correct(int note, int trail_pos) {
+bool Note::tail_pos_correct(int n, int p) {
 
-	int dist;
-	// où pointe la queue de la note longue ?
-	switch(trail_pos%4) {
+	assert(n >= 0 and n <= 15);
+	assert(p >= 0 and p <= 11);
 
-		//vers le haut ?
-		case 0:
-			dist = (note/4) - (trail_pos/4 + 1);
-			break;
+	int x = n%4;
+	int y = n/4;
 
-		//vers la droite ?
-		case 1:
-			dist = (note%4) + (trail_pos/4 + 1);
-			break;
+	int dx = 0;
+	int dy = 0;
 
-		//vers le bas ?
-		case 2:
-			dist = (note/4) + (trail_pos/4 + 1);
-			break;
+    // Vertical
+	if (p%2 == 0) {
 
-		//vers la gauche ?
-		case 3:
-			dist = (note%4) - (trail_pos/4 + 1);
-			break;
+        // Going up
+	    if ((p/2)%2 == 0) {
+	        dy = -(p/4 + 1);
 
-		//wtf ? comment veux-tu qu'un modulo 4 fasse autre chose ?
-		default:
-			throw std::runtime_error("Unexpected modulo result when checking note trail position");
+        // Going down
+	    } else {
+	        dy = p/4 +1;
+	    }
+
+    // Horizontal
+	} else {
+
+	    // Going right
+	    if ((p/2)%2 == 0) {
+	        dx = p/4 + 1;
+
+        // Going left
+	    } else {
+	        dx = -(p/4 + 1);
+	    }
+
 	}
 
-	//on reste bien dans l'écran si la position de la queue est entre 0 et 3 inclus
-	return (dist >= 0 and dist <= 3);
+	return ((0 <= x+dx) and (x+dx <= 4)) and ((0 <= y+dy) and (y+dy <= 4));
 
 }
 
@@ -72,16 +78,8 @@ int Note::getLength() const {
 	return length;
 }
 
-int Note::getTrail_pos() const {
-	return trail_pos;
-}
-
-void Note::setLength(int length) {
-	Note::length = length;
-}
-
-void Note::setTrail_pos(int trail_pos) {
-	Note::trail_pos = trail_pos;
+int Note::getTail_pos() const {
+	return tail_pos;
 }
 
 int Note::getTiming() const {
