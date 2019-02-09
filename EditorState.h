@@ -36,6 +36,7 @@ public:
     void setPlaybackAndMusicPosition(sf::Time newPosition);
 
     bool playing;
+    int lastTimingTicked = -1;
 
     float getBeats() {return getBeatsAt(playbackPosition.asSeconds());};
     float getBeatsAt(float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};

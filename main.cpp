@@ -9,7 +9,6 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : BPM & offset settings dans le menu Porperties
     // TODO : Highlight des notes qui s'entrechoquent
     // TODO : Undo / Redo
     // TODO : Debug Log
@@ -40,7 +39,7 @@ int main(int argc, char** argv) {
     sf::Sound noteTickSound(noteTick);
     int noteTickVolume = 10;
     bool playNoteTick = false;
-    bool noteTicked = false;
+    int lastTickTicked = -1;
 
     std::string beatTickPath = "assets/sounds/sound beat tick.wav";
     sf::SoundBuffer beatTick;
@@ -215,16 +214,15 @@ int main(int argc, char** argv) {
                 if (playNoteTick) {
                     for (auto note : editorState->visibleNotes) {
                         float noteTiming = editorState->getSecondsAt(note.getTiming());
-                        if (noteTiming >= editorState->previousPos.asSeconds() and noteTiming <= editorState->playbackPosition.asSeconds()) {
-                            if (not noteTicked) {
-                                noteTickSound.play();
-                                noteTicked = true;
-                            }
+                        if (noteTiming >= editorState->previousPos.asSeconds()
+                            and noteTiming <= editorState->playbackPosition.asSeconds()
+                            and note.getTiming() > editorState->lastTimingTicked) {
+                            noteTickSound.play();
+                            editorState->lastTimingTicked = note.getTiming();
                         }
                     }
-                    if (noteTicked) {
-                        noteTicked = false;
-                    }
+                } else {
+                    editorState->lastTimingTicked = -1;
                 }
                 if (editorState->playbackPosition >= editorState->chartRuntime) {
                     editorState->playing = false;

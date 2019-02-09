@@ -163,6 +163,12 @@ void EditorState::displayProperties() {
         if (Toolbox::InputTextColored(jacket.has_value(),"Invalid Jacket Path","Jacket",&(fumen.jacketPath))) {
             reloadJacket();
         }
+        if(ImGui::InputFloat("BPM",&fumen.BPM,1.0f,10.0f)) {
+            if (fumen.BPM <= 0.0f) {
+                fumen.BPM = 0.0f;
+            }
+        }
+        ImGui::InputFloat("offset",&fumen.offset);
     }
     ImGui::End();
 }
@@ -254,6 +260,7 @@ void EditorState::displayTimeline() {
             ImGui::SetCursorPos({0,0});
             if(ImGui::VSliderFloat("",ImGui::GetContentRegionMax(),&slider_pos,0.f,1.f,"")) {
                 setPlaybackAndMusicPosition(sf::seconds(scroll.backwards_transform(slider_pos)));
+                this->lastTimingTicked = -1;
             }
         }
     }
