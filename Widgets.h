@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include "Marker.h"
+#include "LNMarker.h"
 
 namespace Widgets {
 	class Ecran_attente {
@@ -32,6 +33,7 @@ namespace Widgets {
 		Playfield();
 		sf::Texture button;
 		sf::Texture button_pressed;
+		LNMarker longNoteMarker;
 
 	private:
 		std::string button_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";

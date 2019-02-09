@@ -32,6 +32,7 @@ public:
 	int getPos() const;
 	int getLength() const;
 	int getTail_pos() const;
+	int getTail_pos_as_note_pos() const;
 
 private:
 

@@ -10,6 +10,8 @@
 #include <SFML/Audio.hpp>
 #include <functional>
 #include <filesystem>
+#include <SFML/Graphics/Texture.hpp>
+#include <imgui-SFML.h>
 
 namespace Toolbox {
 
@@ -39,12 +41,19 @@ namespace Toolbox {
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);
     std::string toOrdinal(int number);
+
+    void displayIfHasValue(const std::optional<std::reference_wrapper<sf::Texture>>& tex, ImVec2 cursorPosition, ImVec2 texSize, int& index);
 }
 
 template<typename T>
 class AffineTransform {
 public:
-    AffineTransform(T low_input, T high_input, T low_output, T high_output)  {
+    AffineTransform(T low_input, T high_input, T low_output, T high_output):
+        low_input(low_input),
+        high_input(high_input),
+        low_output(low_output),
+        high_output(high_output)
+        {
         if (low_input == high_input) {
             throw std::invalid_argument("low and high input values for affine transform must be different !");
         }
@@ -52,6 +61,7 @@ public:
         b = (high_input*low_output - high_output*low_input)/(high_input-low_input);
     };
     T transform(T val) {return a*val + b;};
+    T clampedTransform(T val) { return transform(std::clamp(val,low_input,high_input));};
     T backwards_transform(T val) {
         // if we're too close to zero
         if (std::abs(a) < 10e-10) {
@@ -63,6 +73,11 @@ public:
 private:
     T a;
     T b;
+
+    T low_input;
+    T high_input;
+    T low_output;
+    T high_output;
 };
 
 #endif //FEIS_TOOLBOX_H

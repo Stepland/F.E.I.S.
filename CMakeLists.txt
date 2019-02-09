@@ -28,7 +28,7 @@ set(SOURCE_FILES
         Chart.cpp
         EditorState.cpp
         ${imgui}
-        tinyfiledialogs.c Toolbox.cpp Toolbox.h)
+        tinyfiledialogs.c Toolbox.cpp Toolbox.h LNMarker.cpp LNMarker.h)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})

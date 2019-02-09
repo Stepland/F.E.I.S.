@@ -38,13 +38,15 @@ public:
     bool playing;
     int lastTimingTicked = -1;
 
-    float getBeats() {return getBeatsAt(playbackPosition.asSeconds());};
-    float getBeatsAt(float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
-    float getTicks() {return getTicksAt(playbackPosition.asSeconds());};
-    float getTicksAt(float seconds) {return getBeatsAt(seconds) * getResolution();}
-    float getSecondsAt(int tick) {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
-    int getResolution() {return selectedChart ? selectedChart->get().getResolution() : 240;};
-    int getSnapStep() {return getResolution() / snap;};
+    float   getBeats        ()              {return getBeatsAt(playbackPosition.asSeconds());};
+    float   getBeatsAt      (float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
+    float   getTicks        ()              {return getTicksAt(playbackPosition.asSeconds());};
+    float   getTicksAt      (float seconds) {return getBeatsAt(seconds) * getResolution();}
+    float   getSecondsAt    (int tick)      {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
+    int     getResolution   ()              {return selectedChart ? selectedChart->get().getResolution() : 240;};
+    int     getSnapStep     ()              {return getResolution() / snap;};
+
+    float   ticksToSeconds  (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
 
     void reloadFromFumen();
     void reloadMusic();

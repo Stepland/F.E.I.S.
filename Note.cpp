@@ -114,3 +114,41 @@ bool Note::operator<=(const Note &rhs) const {
 bool Note::operator>=(const Note &rhs) const {
 	return !(*this < rhs);
 }
+
+int Note::getTail_pos_as_note_pos() const {
+
+
+	int x = pos%4;
+	int y = pos/4;
+
+	int dx = 0;
+	int dy = 0;
+
+	// Vertical
+	if (tail_pos%2 == 0) {
+
+		// Going up
+		if ((tail_pos/2)%2 == 0) {
+			dy = -(tail_pos/4 + 1);
+
+			// Going down
+		} else {
+			dy = tail_pos/4 +1;
+		}
+
+		// Horizontal
+	} else {
+
+		// Going right
+		if ((tail_pos/2)%2 == 0) {
+			dx = tail_pos/4 + 1;
+
+			// Going left
+		} else {
+			dx = -(tail_pos/4 + 1);
+		}
+
+	}
+
+	return x+dx + 4*(y+dy);
+}
