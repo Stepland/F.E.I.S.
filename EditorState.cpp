@@ -100,26 +100,35 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
     ImGui::SetNextWindowSize(ImVec2(400,400),ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(ImVec2(0,0),ImVec2(FLT_MAX,FLT_MAX),Toolbox::CustomConstraints::ContentSquare);
+
     if (ImGui::Begin("Playfield",&showPlayfield,ImGuiWindowFlags_NoScrollbar)) {
-        ImVec2 windowPos = ImGui::GetWindowPos();
+
         float squareSize = ImGui::GetWindowSize().x / 4.f;
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
+
         if (selectedChart) {
+
             int ImGuiIndex = 0;
+
             for (auto note : visibleNotes) {
+
                 float note_offset = (playbackPosition.asSeconds() - getSecondsAt(note.getTiming()));
                 auto frame = static_cast<long long int>(std::floor(note_offset * 30.f));
                 int x = note.getPos()%4;
                 int y = note.getPos()/4;
+
                 if (note.getLength() == 0) {
+
                     auto t = marker.getSprite(markerEndingState,note_offset);
+
                     if (t) {
                         ImGui::SetCursorPos({x*squareSize,TitlebarHeight + y*squareSize});
                         ImGui::PushID(ImGuiIndex);
                         ImGui::Image(*t,{squareSize,squareSize});
                         ImGui::PopID();
+                        ++ImGuiIndex;
                     }
-                    ++ImGuiIndex;
+
                 } else {
 
                     float tail_end_in_seconds = getSecondsAt(note.getTiming()+note.getLength());
@@ -145,7 +154,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
                             if (frame < 8) {
 
-                                // Before note : from triangle end to note edge
+                                // Before the note : tail goes from triangle tip to note edge
 
                                 switch (note.getTail_pos()%4) {
 
@@ -187,7 +196,8 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
                             } else {
 
-                                // During the note : from triangle start to edge
+                                // During the note : tail goes from triangle base to note edge
+
                                 switch (note.getTail_pos()%4) {
 
                                     // going down
@@ -264,7 +274,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                                     ImGuiIndex
                             );
 
-                            // Affichage de la note de début
+                            // Display the beginning marker
                             auto t = marker.getSprite(markerEndingState,note_offset);
                             if (t) {
                                 ImGui::SetCursorPos({x*squareSize,TitlebarHeight + y*squareSize});
@@ -277,7 +287,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
                     } else {
 
-                        // Affichage de la note de fin
+                        // Display the ending marker
                         if (tail_end_offset > 0.0f) {
                             auto t = marker.getSprite(markerEndingState,tail_end_offset);
                             if (t) {
@@ -344,7 +354,7 @@ void EditorState::displayProperties() {
                 fumen.BPM = 0.0f;
             }
         }
-        ImGui::InputFloat("offset",&fumen.offset);
+        ImGui::InputFloat("offset",&fumen.offset,0.01f,1.f);
     }
     ImGui::End();
 }
