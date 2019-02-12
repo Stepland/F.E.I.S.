@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     // TODO : Density graph sur la timeline
     // TODO : Système de notifs
     // TODO : Pitch control (playback speed factor)
+    // TODO : A small preference save system (marker , ...)
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
@@ -179,7 +180,7 @@ int main(int argc, char** argv) {
         sf::Time delta = deltaClock.restart();
         ImGui::SFML::Update(window, delta);
 
-        // Gestion du playback
+        // Audio playback management
         if (editorState) {
             editorState->updateVisibleNotes();
             if (editorState->playing) {

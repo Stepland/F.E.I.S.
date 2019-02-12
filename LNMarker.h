@@ -12,6 +12,10 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
+/*
+ * This approach at displaying rotated textures is absolutely terrible, I should just dig a little bit into the internals
+ * of Dear ImGui and pass in custom vertices and UVs when I want to rotate a texture but I don't feel confident enough rn
+ */
 class LNMarker {
 
 public:
