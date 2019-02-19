@@ -3,21 +3,27 @@ project(FEIS)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
+
+set(OpenGL_GL_PREFERENCE GLVND)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3")
 
-SET(GCC_COVERAGE_COMPILE_FLAGS "-mwindows")
-SET(GCC_COVERAGE_LINK_FLAGS    "-mwindows")
+if (WIN32)
+    message("Compiling for windows !")
+    SET(GCC_COVERAGE_COMPILE_FLAGS "${GCC_COVERAGE_COMPILE_FLAGS} -mwindows")
+    SET(GCC_COVERAGE_LINK_FLAGS    "${GCC_COVERAGE_LINK_FLAGS} -mwindows")
+endif(WIN32)
+
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -static-libgcc -static-libstdc++")
 
-set(imgui imgui/imgui.cpp
-        imgui/imgui_draw.cpp
-        imgui/imgui_widgets.cpp
-        imgui/imgui-SFML.cpp
-        imgui/imgui_stdlib.cpp
-        imgui/imgui_demo.cpp)
+set(imgui include/imgui/imgui.cpp
+          include/imgui/imgui_draw.cpp
+          include/imgui/imgui_widgets.cpp
+          include/imgui/imgui-SFML.cpp
+          include/imgui/imgui_stdlib.cpp
+          include/imgui/imgui_demo.cpp)
 
 set(SOURCE_FILES
         main.cpp
@@ -37,12 +43,16 @@ find_library (WinMM libwinmm.a)
 find_package (SFML 2.5.1 COMPONENTS system window graphics network audio REQUIRED)
 find_package (OpenGL REQUIRED)
 
-include_directories(${OPENGL_INCLUDE_DIR} imgui/)
+include_directories(${OPENGL_INCLUDE_DIR} include/imgui/)
 
 add_executable(FEIS ${SOURCE_FILES})
-target_link_libraries(FEIS stdc++fs ${OPENGL_LIBRARIES} sfml-system sfml-window sfml-graphics sfml-network sfml-audio WinMM)
 
-add_executable(ImGuiDemo ImGuiDemoMain.cpp ${imgui})
+set(TARGET_LINK_LIBS ${OPENGL_LIBRARIES} "stdc++" "stdc++fs" sfml-system sfml-window sfml-graphics sfml-network sfml-audio)
 
-target_link_libraries(ImGuiDemo ${OPENGL_LIBRARIES} sfml-system sfml-window sfml-graphics sfml-network sfml-audio WinMM)
+if(WIN32)
+    set(TARGET_LINK_LIBS ${TARGET_LINK_LIBS} WinMM)
+endif(WIN32)
+
+message("Taret link libs : ${TARGET_LINK_LIBS}")
+target_link_libraries(FEIS ${TARGET_LINK_LIBS})
 

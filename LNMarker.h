@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <list>
 #include <map>
+#include <iomanip>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
