@@ -20,7 +20,7 @@
 class LNMarker {
 
 public:
-    LNMarker(std::filesystem::path folder="assets/textures/long");
+    explicit LNMarker(std::filesystem::path folder="assets/textures/long");
 
     std::optional<std::reference_wrapper<sf::Texture>> getTriangleTexture(float seconds, int tail_pos);
 

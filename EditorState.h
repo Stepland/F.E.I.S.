@@ -11,15 +11,21 @@
 #include "Fumen.h"
 #include "Marker.h"
 #include "Widgets.h"
+#include "History.h"
 
 class EditorState {
-
 public:
+
+    struct Chart_with_History {
+        explicit Chart_with_History(Chart& c) : ref(c) {};
+        Chart& ref;
+        History<Chart> history;
+    };
 
     explicit EditorState(Fumen& fumen);
 
     Fumen fumen;
-    std::optional<std::reference_wrapper<Chart>> selectedChart;
+    std::optional<Chart_with_History> chart;
     Widgets::Playfield playfield;
     int snap = 1;
 
@@ -43,7 +49,7 @@ public:
     float   getTicks        ()              {return getTicksAt(playbackPosition.asSeconds());};
     float   getTicksAt      (float seconds) {return getBeatsAt(seconds) * getResolution();}
     float   getSecondsAt    (int tick)      {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
-    int     getResolution   ()              {return selectedChart ? selectedChart->get().getResolution() : 240;};
+    int     getResolution   ()              {return chart ? chart->ref.getResolution() : 240;};
     int     getSnapStep     ()              {return getResolution() / snap;};
 
     float   ticksToSeconds  (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
