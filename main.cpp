@@ -6,13 +6,13 @@
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
+#include "NotificationsQueue.h"
 
 int main(int argc, char** argv) {
 
     // TODO : Highlight crossing notes
     // TODO : Different noise for chords
     // TODO : Density graph on the timeline
-    // TODO : Notification System
     // TODO : Pitch control (playback speed factor)
     // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Debug Log
@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
 
     Widgets::Ecran_attente bg;
     std::optional<EditorState> editorState;
+    NotificationsQueue notificationsQueue;
     ESHelper::NewChartDialog newChartDialog;
     ESHelper::ChartPropertiesDialog chartPropertiesDialog;
 
@@ -141,9 +142,19 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Keyboard::F3:
                             playBeatTick = not playBeatTick;
+                            if (playBeatTick) {
+                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick: on"));
+                            } else {
+                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick: off"));
+                            }
                             break;
                         case sf::Keyboard::F4:
                             playNoteTick = not playNoteTick;
+                            if (playNoteTick) {
+                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick: on"));
+                            } else {
+                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick: off"));
+                            }
                             break;
                         case sf::Keyboard::Space:
                             if (not ImGui::GetIO().WantTextInput) {
@@ -315,7 +326,9 @@ int main(int argc, char** argv) {
             bg.render(window);
         }
 
-        // Dessin de l'interface
+        notificationsQueue.display();
+
+        // Main Menu bar drawing
         ImGui::BeginMainMenuBar();
         {
             if (ImGui::BeginMenu("File")) {
