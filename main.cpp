@@ -10,7 +10,7 @@
 int main(int argc, char** argv) {
 
     // TODO : Highlight des notes qui s'entrechoquent
-    // TODO : Undo / Redo
+    // TODO : scroll to modifed note when undoing/redoing
     // TODO : Debug Log
     // TODO : Bruit différent si clap simple ou chord
     // TODO : Density graph sur la timeline
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
                                     }
                                 }
                             } else {
-                                if (editorState and editorState->selectedChart) {
+                                if (editorState and editorState->chart) {
                                     float floatTicks = editorState->getTicks();
                                     int prevTick = static_cast<int>(floorf(floatTicks));
                                     int step = editorState->getSnapStep();
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
                                     }
                                 }
                             } else {
-                                if (editorState and editorState->selectedChart) {
+                                if (editorState and editorState->chart) {
                                     float floatTicks = editorState->getTicks();
                                     int nextTick = static_cast<int>(ceilf(floatTicks));
                                     int step = editorState->getSnapStep();
@@ -131,13 +131,13 @@ int main(int argc, char** argv) {
                             }
                             break;
                         case sf::Keyboard::Left:
-                            if (editorState and editorState->selectedChart) {
-                                editorState->snap = Toolbox::getPreviousDivisor(editorState->selectedChart->get().getResolution(),editorState->snap);
+                            if (editorState and editorState->chart) {
+                                editorState->snap = Toolbox::getPreviousDivisor(editorState->chart->ref.getResolution(),editorState->snap);
                             }
                             break;
                         case sf::Keyboard::Right:
-                            if (editorState and editorState->selectedChart) {
-                                editorState->snap = Toolbox::getNextDivisor(editorState->selectedChart->get().getResolution(),editorState->snap);
+                            if (editorState and editorState->chart) {
+                                editorState->snap = Toolbox::getNextDivisor(editorState->chart->ref.getResolution(),editorState->snap);
                             }
                             break;
                         case sf::Keyboard::F3:
@@ -166,6 +166,26 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::S:
                             if (event.key.control) {
                                 ESHelper::save(*editorState);
+                            }
+                            break;
+                        case sf::Keyboard::Y:
+                            if (event.key.control) {
+                                if (editorState and editorState->chart) {
+                                    auto next = editorState->chart->history.get_next();
+                                    if (next) {
+                                        (*next)->doAction(*editorState);
+                                    }
+                                }
+                            }
+                            break;
+                        case sf::Keyboard::Z:
+                            if (event.key.control) {
+                                if (editorState and editorState->chart) {
+                                    auto previous = editorState->chart->history.get_previous();
+                                    if (previous) {
+                                        (*previous)->undoAction(*editorState);
+                                    }
+                                }
                             }
                             break;
                         default:
@@ -238,11 +258,14 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Dessin du fond
+        // Drawing
         if (editorState) {
 
             window.clear(sf::Color(0, 0, 0));
 
+            if (editorState->showHistory) {
+                editorState->chart->history.display(print_history_message);
+            }
             if (editorState->showPlayfield) {
                 editorState->displayPlayfield(marker,markerEndingState);
             }
@@ -278,7 +301,7 @@ int main(int argc, char** argv) {
                 if (c) {
                     editorState->showNewChartDialog = false;
                     if(editorState->fumen.Charts.try_emplace(c->dif_name,*c).second) {
-                        editorState->selectedChart = editorState->fumen.Charts[c->dif_name];
+                        editorState->chart->ref = editorState->fumen.Charts[c->dif_name];
                     }
                 }
             } else {
@@ -359,7 +382,7 @@ int main(int argc, char** argv) {
                 if (ImGui::MenuItem("Chart List")) {
                     editorState->showChartList = true;
                 }
-                if (ImGui::MenuItem("Properties##Chart",nullptr,false,editorState->selectedChart.has_value())) {
+                if (ImGui::MenuItem("Properties##Chart",nullptr,false,editorState->chart.has_value())) {
                     editorState->showChartProperties = true;
                 }
                 ImGui::Separator();
@@ -367,9 +390,9 @@ int main(int argc, char** argv) {
                     editorState->showNewChartDialog = true;
                 }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Delete Chart",nullptr,false,editorState->selectedChart.has_value())) {
-                    editorState->fumen.Charts.erase(editorState->selectedChart->get().dif_name);
-                    editorState->selectedChart.reset();
+                if (ImGui::MenuItem("Delete Chart",nullptr,false,editorState->chart.has_value())) {
+                    editorState->fumen.Charts.erase(editorState->chart->ref.dif_name);
+                    editorState->chart.reset();
                 }
                 ImGui::EndMenu();
             }
@@ -385,6 +408,9 @@ int main(int argc, char** argv) {
                 }
                 if (ImGui::MenuItem("Editor Status",nullptr,editorState->showStatus)) {
                     editorState->showStatus = not editorState->showStatus;
+                }
+                if (ImGui::MenuItem("History",nullptr,editorState->showHistory)) {
+                    editorState->showHistory = not editorState->showHistory;
                 }
                 ImGui::EndMenu();
             }

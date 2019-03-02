@@ -11,15 +11,25 @@
 #include "Fumen.h"
 #include "Marker.h"
 #include "Widgets.h"
+#include "History.h"
+#include "HistoryActions.h"
+
+class ActionWithMessage;
+class OpenChart;
 
 class EditorState {
-
 public:
+
+    struct Chart_with_History {
+        explicit Chart_with_History(Chart& c);
+        Chart& ref;
+        History<std::shared_ptr<ActionWithMessage>> history;
+    };
 
     explicit EditorState(Fumen& fumen);
 
     Fumen fumen;
-    std::optional<std::reference_wrapper<Chart>> selectedChart;
+    std::optional<Chart_with_History> chart;
     Widgets::Playfield playfield;
     int snap = 1;
 
@@ -43,7 +53,7 @@ public:
     float   getTicks        ()              {return getTicksAt(playbackPosition.asSeconds());};
     float   getTicksAt      (float seconds) {return getBeatsAt(seconds) * getResolution();}
     float   getSecondsAt    (int tick)      {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
-    int     getResolution   ()              {return selectedChart ? selectedChart->get().getResolution() : 240;};
+    int     getResolution   ()              {return chart ? chart->ref.getResolution() : 240;};
     int     getSnapStep     ()              {return getResolution() / snap;};
 
     float   ticksToSeconds  (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
@@ -61,6 +71,7 @@ public:
     bool showChartList;
     bool showNewChartDialog;
     bool showChartProperties;
+    bool showHistory;
 
     void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
     void displayProperties();
@@ -107,7 +118,7 @@ namespace ESHelper {
     private:
 
         int level;
-        std::string difficulty;
+        std::string difficulty_name;
         std::string comboPreview;
         std::set<std::string> difNamesInUse;
         bool showCustomDifName = false;
