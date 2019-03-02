@@ -183,6 +183,7 @@ int main(int argc, char** argv) {
                                 if (editorState and editorState->chart) {
                                     auto next = editorState->chart->history.get_next();
                                     if (next) {
+                                        notificationsQueue.push(std::make_shared<RedoNotification>(**next));
                                         (*next)->doAction(*editorState);
                                     }
                                 }
@@ -193,6 +194,7 @@ int main(int argc, char** argv) {
                                 if (editorState and editorState->chart) {
                                     auto previous = editorState->chart->history.get_previous();
                                     if (previous) {
+                                        notificationsQueue.push(std::make_shared<UndoNotification>(**previous));
                                         (*previous)->undoAction(*editorState);
                                     }
                                 }
