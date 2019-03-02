@@ -16,16 +16,20 @@ OpenChart::OpenChart(Chart c) : notes(c.Notes) {
     message = ss.str();
 }
 
-void OpenChart::doAction(EditorState &ed) {
+void OpenChart::doAction(EditorState &ed) const {
     ed.chart->ref.Notes = notes;
 }
 
 ToggledNotes::ToggledNotes(std::set<Note> n, bool have_been_added) : notes(n), have_been_added(have_been_added) {
+    if (n.empty()) {
+        throw std::invalid_argument("Can't construct a ToogledNotes History Action with an empty note set");
+    }
+
     std::stringstream ss;
     if (have_been_added) {
-        ss << "Added Note";
+        ss << "Added " << n.size() << " Note";
     } else {
-        ss << "Removed Note";
+        ss << "Removed " << n.size() << " Note";
     }
     if (n.size() > 1) {
         ss << "s";
@@ -33,7 +37,8 @@ ToggledNotes::ToggledNotes(std::set<Note> n, bool have_been_added) : notes(n), h
     message = ss.str();
 }
 
-void ToggledNotes::doAction(EditorState &ed) {
+void ToggledNotes::doAction(EditorState &ed) const {
+    ed.setPlaybackAndMusicPosition(sf::seconds(ed.getSecondsAt(notes.begin()->getTiming())));
     if (have_been_added) {
         for (auto note : notes) {
             if (ed.chart->ref.Notes.find(note) == ed.chart->ref.Notes.end()) {
@@ -49,7 +54,8 @@ void ToggledNotes::doAction(EditorState &ed) {
     }
 }
 
-void ToggledNotes::undoAction(EditorState &ed) {
+void ToggledNotes::undoAction(EditorState &ed) const {
+    ed.setPlaybackAndMusicPosition(sf::seconds(ed.getSecondsAt(notes.begin()->getTiming())));
     if (not have_been_added) {
         for (auto note : notes) {
             if (ed.chart->ref.Notes.find(note) == ed.chart->ref.Notes.end()) {

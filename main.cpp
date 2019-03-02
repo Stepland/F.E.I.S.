@@ -9,14 +9,13 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Highlight des notes qui s'entrechoquent
-    // TODO : scroll to modifed note when undoing/redoing
-    // TODO : Debug Log
-    // TODO : Bruit différent si clap simple ou chord
-    // TODO : Density graph sur la timeline
-    // TODO : Système de notifs
+    // TODO : Highlight crossing notes
+    // TODO : Different noise for chords
+    // TODO : Density graph on the timeline
+    // TODO : Notification System
     // TODO : Pitch control (playback speed factor)
-    // TODO : A small preference save system (marker , ...)
+    // TODO : A small preference persistency system (marker , etc ...)
+    // TODO : Debug Log
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");

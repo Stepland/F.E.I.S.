@@ -20,8 +20,8 @@ public:
     explicit ActionWithMessage(std::string message = "") : message(std::move(message)) {};
 
     const std::string &getMessage() const;
-    virtual void doAction(EditorState &ed) {};
-    virtual void undoAction(EditorState &ed) {};
+    virtual void doAction(EditorState &ed) const {};
+    virtual void undoAction(EditorState &ed) const {};
 
     virtual ~ActionWithMessage() = default;
 
@@ -36,10 +36,10 @@ class OpenChart : public ActionWithMessage {
 public:
     explicit OpenChart(Chart c);
 
-    void doAction(EditorState &ed) override;
+    void doAction(EditorState &ed) const override;
 
 protected:
-    std::set<Note> notes;
+    const std::set<Note> notes;
 };
 
 /*
@@ -49,15 +49,15 @@ class ToggledNotes : public ActionWithMessage {
 public:
     ToggledNotes(std::set<Note> notes, bool have_been_added);
 
-    void doAction(EditorState &ed) override;
-    void undoAction(EditorState &ed) override;
+    void doAction(EditorState &ed) const override;
+    void undoAction(EditorState &ed) const override;
 
 protected:
-    bool have_been_added;
-    std::set<Note> notes;
+    const bool have_been_added;
+    const std::set<Note> notes;
 };
 
-auto print_history_message = [](std::shared_ptr<ActionWithMessage> hs) -> std::string {
+auto print_history_message = [](const std::shared_ptr<ActionWithMessage> &hs) -> std::string {
     return (*hs).getMessage();
 };
 
