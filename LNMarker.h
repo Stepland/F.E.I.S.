@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <list>
 #include <map>
+#include <iomanip>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
@@ -19,7 +20,7 @@
 class LNMarker {
 
 public:
-    LNMarker(std::filesystem::path folder="assets/textures/long");
+    explicit LNMarker(std::filesystem::path folder="assets/textures/long");
 
     std::optional<std::reference_wrapper<sf::Texture>> getTriangleTexture(float seconds, int tail_pos);
 
