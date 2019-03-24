@@ -12,7 +12,6 @@
 int main(int argc, char** argv) {
 
     // TODO : Density graph on the timeline
-    // TODO : Pitch control (playback speed factor)
     // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Linear view
     // TODO : Long notes editing
@@ -74,13 +73,10 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::Up:
                             if (event.key.shift) {
                                 if (editorState) {
-                                    if (editorState->musicVolume < 10) {
-                                        editorState->musicVolume++;
-                                        editorState->updateMusicVolume();
-                                        std::stringstream ss;
-                                        ss << "Music Volume : " << editorState->musicVolume*10 << "%";
-                                        notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
-                                    }
+                                    editorState->musicVolumeUp();
+                                    std::stringstream ss;
+                                    ss << "Music Volume : " << editorState->musicVolume*10 << "%";
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
                                 // TODO : there is something weird with the way I'm doing this, going back with the key often makes it go back twice
@@ -101,13 +97,10 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::Down:
                             if (event.key.shift) {
                                 if (editorState) {
-                                    if (editorState->musicVolume > 0) {
-                                        editorState->musicVolume--;
-                                        editorState->updateMusicVolume();
-                                        std::stringstream ss;
-                                        ss << "Music Volume : " << editorState->musicVolume*10 << "%";
-                                        notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
-                                    }
+                                    editorState->musicVolumeDown();
+                                    std::stringstream ss;
+                                    ss << "Music Volume : " << editorState->musicVolume*10 << "%";
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
                                 if (editorState and editorState->chart) {
@@ -120,19 +113,36 @@ int main(int argc, char** argv) {
                             }
                             break;
                         case sf::Keyboard::Left:
-                            if (editorState and editorState->chart) {
-                                editorState->snap = Toolbox::getPreviousDivisor(editorState->chart->ref.getResolution(),editorState->snap);
-                                std::stringstream ss;
-                                ss << "Snap : " << Toolbox::toOrdinal(4*editorState->snap);
-                                notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+                            if (event.key.shift) {
+                                if (editorState) {
+                                    editorState->musicSpeedDown();
+                                    std::stringstream ss;
+                                    ss << "Speed : " << editorState->musicSpeed*10 << "%";
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+                                }
+                            } else {
+                                if (editorState and editorState->chart) {
+                                    editorState->snap = Toolbox::getPreviousDivisor(
+                                            editorState->chart->ref.getResolution(), editorState->snap);
+                                    std::stringstream ss;
+                                    ss << "Snap : " << Toolbox::toOrdinal(4 * editorState->snap);
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+                                }
                             }
                             break;
                         case sf::Keyboard::Right:
-                            if (editorState and editorState->chart) {
-                                editorState->snap = Toolbox::getNextDivisor(editorState->chart->ref.getResolution(),editorState->snap);
+                            if (event.key.shift) {
+                                editorState->musicSpeedUp();
                                 std::stringstream ss;
-                                ss << "Snap : " << Toolbox::toOrdinal(4*editorState->snap);
+                                ss << "Speed : " << editorState->musicSpeed*10 << "%";
                                 notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+                            } else {
+                                if (editorState and editorState->chart) {
+                                    editorState->snap = Toolbox::getNextDivisor(editorState->chart->ref.getResolution(),editorState->snap);
+                                    std::stringstream ss;
+                                    ss << "Snap : " << Toolbox::toOrdinal(4*editorState->snap);
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+                                }
                             }
                             break;
                         case sf::Keyboard::F3:
@@ -211,7 +221,7 @@ int main(int argc, char** argv) {
             editorState->updateVisibleNotes();
             if (editorState->playing) {
                 editorState->previousPos = editorState->playbackPosition;
-                editorState->playbackPosition += delta;
+                editorState->playbackPosition += delta*(editorState->musicSpeed/10.f);
                 if (editorState->music) {
                     switch(editorState->music->getStatus()) {
                         case sf::Music::Stopped:

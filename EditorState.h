@@ -35,7 +35,14 @@ public:
 
     std::optional<sf::Music> music;
     int musicVolume = 10; // 0 -> 10
-    void updateMusicVolume();
+    void setMusicVolume(int newMusicVolume);
+    void musicVolumeUp() {setMusicVolume(musicVolume+1);};
+    void musicVolumeDown() {setMusicVolume(musicVolume-1);};
+
+    int musicSpeed = 10; // 1 -> 20
+    void setMusicSpeed(int newMusicSpeed);
+    void musicSpeedUp() {setMusicSpeed(musicSpeed+1);};
+    void musicSpeedDown() {setMusicSpeed(musicSpeed-1);};
 
     std::optional<sf::Texture> albumCover;
 

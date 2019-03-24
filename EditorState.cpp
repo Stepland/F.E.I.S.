@@ -75,12 +75,6 @@ void EditorState::reloadAlbumCover() {
     }
 }
 
-void EditorState::updateMusicVolume() {
-    if (music) {
-        Toolbox::updateVolume(*music,musicVolume);
-    }
-}
-
 void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
 
     if (newPosition.asSeconds() < -fumen.offset) {
@@ -471,7 +465,7 @@ void EditorState::displayStatus() {
             }
         }
         if (ImGui::SliderInt("Music Volume",&musicVolume,0,10)) {
-            updateMusicVolume();
+            setMusicVolume(musicVolume);
         }
     }
     ImGui::End();
@@ -629,6 +623,20 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
         chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
     }
 
+}
+
+void EditorState::setMusicSpeed(int newMusicSpeed) {
+    musicSpeed = std::clamp(newMusicSpeed,1,20);
+    if (music) {
+        music->setPitch(musicSpeed/10.f);
+    }
+}
+
+void EditorState::setMusicVolume(int newMusicVolume) {
+    musicVolume = std::clamp(newMusicVolume,0,10);
+    if (music) {
+        Toolbox::updateVolume(*music,musicVolume);
+    }
 }
 
 void ESHelper::save(EditorState& ed) {
