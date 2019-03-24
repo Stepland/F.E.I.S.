@@ -7,14 +7,15 @@
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
 #include "NotificationsQueue.h"
+#include "SoundEffect.h"
 
 int main(int argc, char** argv) {
 
-    // TODO : Different noise for chords
     // TODO : Density graph on the timeline
     // TODO : Pitch control (playback speed factor)
     // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Linear view
+    // TODO : Long notes editing
     // TODO : Debug Log
 
     // Création de la fenêtre
@@ -30,28 +31,9 @@ int main(int argc, char** argv) {
     IO.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-Medium.ttf", 16.f);
     ImGui::SFML::UpdateFontTexture();
 
-    std::string noteTickPath = "assets/sounds/sound note tick.wav";
-    sf::SoundBuffer noteTick;
-    if (!noteTick.loadFromFile(noteTickPath)) {
-        std::cerr << "Unable to load sound " << noteTickPath;
-        throw std::runtime_error("Unable to load sound " + noteTickPath);
-    }
-    sf::Sound noteTickSound(noteTick);
-    int noteTickVolume = 10;
-    bool playNoteTick = false;
-    int lastTickTicked = -1;
-
-    std::string beatTickPath = "assets/sounds/sound beat tick.wav";
-    sf::SoundBuffer beatTick;
-    if (!beatTick.loadFromFile(beatTickPath)) {
-        std::cerr << "Unable to load sound " << beatTickPath;
-        throw std::runtime_error("Unable to load sound " + beatTickPath);
-    }
-    sf::Sound beatTickSound(beatTick);
-    int beatTickVolume = 10;
-    bool playBeatTick = false;
-    bool beatTicked = false;
-
+    SoundEffect beatTick("sound beat tick.wav");
+    SoundEffect noteTick("sound note tick.wav");
+    SoundEffect chordTick("sound chord tick.wav");
 
     // Loading markers preview
     std::map<std::filesystem::path,sf::Texture> markerPreviews;
@@ -154,16 +136,14 @@ int main(int argc, char** argv) {
                             }
                             break;
                         case sf::Keyboard::F3:
-                            playBeatTick = not playBeatTick;
-                            if (playBeatTick) {
+                            if (beatTick.toggle()) {
                                 notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : on"));
                             } else {
                                 notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : off"));
                             }
                             break;
                         case sf::Keyboard::F4:
-                            playNoteTick = not playNoteTick;
-                            if (playNoteTick) {
+                            if (noteTick.toggle()) {
                                 notificationsQueue.push(std::make_shared<TextNotification>("Note tick : on"));
                             } else {
                                 notificationsQueue.push(std::make_shared<TextNotification>("Note tick : off"));
@@ -248,26 +228,33 @@ int main(int argc, char** argv) {
                             break;
                     }
                 }
-                if (playBeatTick) {
-                    if (fmodf(editorState->getBeats(),1.f) < 0.5) {
-                        if (not beatTicked) {
-                            beatTickSound.play();
-                            beatTicked = true;
-                        }
-                    } else {
-                        beatTicked = false;
+                if (beatTick.shouldPlay) {
+                    int previous_tick = static_cast<int>(editorState->getTicksAt(editorState->previousPos.asSeconds()));
+                    int current_tick = static_cast<int>(editorState->getTicksAt(editorState->playbackPosition.asSeconds()));
+                    if (previous_tick/editorState->getResolution() != current_tick/editorState->getResolution()) {
+                        beatTick.play();
                     }
                 }
-                if (playNoteTick) {
+                if (noteTick.shouldPlay) {
+                    int note_count = 0;
                     for (auto note : editorState->visibleNotes) {
                         float noteTiming = editorState->getSecondsAt(note.getTiming());
                         if (noteTiming >= editorState->previousPos.asSeconds()
                             and noteTiming <= editorState->playbackPosition.asSeconds()) {
-                            noteTickSound.play();
-                            break;
+                            note_count++;
                         }
                     }
+                    if (chordTick.shouldPlay) {
+                        if (note_count > 1) {
+                            chordTick.play();
+                        } else if (note_count == 1) {
+                            noteTick.play();
+                        }
+                    } else if (note_count >= 1) {
+                        noteTick.play();
+                    }
                 }
+
                 if (editorState->playbackPosition >= editorState->chartRuntime) {
                     editorState->playing = false;
                     editorState->playbackPosition = editorState->chartRuntime;
@@ -299,14 +286,11 @@ int main(int argc, char** argv) {
                 editorState->displayStatus();
                 ImGui::Begin("Status");
                 {
-                    ImGui::Checkbox("Beat Tick",&playBeatTick); ImGui::SameLine();
-                    if (ImGui::SliderInt("Beat Tick Volume",&beatTickVolume,0,10)) {
-                        Toolbox::updateVolume(beatTickSound,beatTickVolume);
-                    }
-                    ImGui::Checkbox("Note Tick",&playNoteTick); ImGui::SameLine();
-                    if (ImGui::SliderInt("Note Tick Volume",&noteTickVolume,0,10)) {
-                        Toolbox::updateVolume(noteTickSound,noteTickVolume);
-                    }
+                    ImGui::Text("Beat Tick"); ImGui::SameLine();
+                    beatTick.displayControls();
+                    ImGui::Text("Note Tick"); ImGui::SameLine();
+                    noteTick.displayControls();
+                    ImGui::Checkbox("Chord sound",&chordTick.shouldPlay);
                 }
                 ImGui::End();
             }

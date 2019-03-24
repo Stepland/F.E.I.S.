@@ -34,7 +34,7 @@ set(SOURCE_FILES
         Chart.cpp
         EditorState.cpp
         ${imgui}
-        tinyfiledialogs.c Toolbox.cpp Toolbox.h LNMarker.cpp LNMarker.h History.h HistoryActions.cpp HistoryActions.h NotificationsQueue.cpp NotificationsQueue.h Notification.cpp Notification.h)
+        tinyfiledialogs.c Toolbox.cpp Toolbox.h LNMarker.cpp LNMarker.h History.h HistoryActions.cpp HistoryActions.h NotificationsQueue.cpp NotificationsQueue.h Notification.cpp Notification.h SoundEffect.cpp SoundEffect.h)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
