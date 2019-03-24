@@ -10,7 +10,6 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Highlight crossing notes
     // TODO : Different noise for chords
     // TODO : Density graph on the timeline
     // TODO : Pitch control (playback speed factor)
@@ -96,9 +95,13 @@ int main(int argc, char** argv) {
                                     if (editorState->musicVolume < 10) {
                                         editorState->musicVolume++;
                                         editorState->updateMusicVolume();
+                                        std::stringstream ss;
+                                        ss << "Music Volume : " << editorState->musicVolume*10 << "%";
+                                        notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                     }
                                 }
                             } else {
+                                // TODO : there is something weird with the way I'm doing this, going back with the key often makes it go back twice
                                 if (editorState and editorState->chart) {
                                     float floatTicks = editorState->getTicks();
                                     int prevTick = static_cast<int>(floorf(floatTicks));
@@ -119,6 +122,9 @@ int main(int argc, char** argv) {
                                     if (editorState->musicVolume > 0) {
                                         editorState->musicVolume--;
                                         editorState->updateMusicVolume();
+                                        std::stringstream ss;
+                                        ss << "Music Volume : " << editorState->musicVolume*10 << "%";
+                                        notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                     }
                                 }
                             } else {
@@ -134,27 +140,33 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::Left:
                             if (editorState and editorState->chart) {
                                 editorState->snap = Toolbox::getPreviousDivisor(editorState->chart->ref.getResolution(),editorState->snap);
+                                std::stringstream ss;
+                                ss << "Snap : " << Toolbox::toOrdinal(4*editorState->snap);
+                                notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                             }
                             break;
                         case sf::Keyboard::Right:
                             if (editorState and editorState->chart) {
                                 editorState->snap = Toolbox::getNextDivisor(editorState->chart->ref.getResolution(),editorState->snap);
+                                std::stringstream ss;
+                                ss << "Snap : " << Toolbox::toOrdinal(4*editorState->snap);
+                                notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                             }
                             break;
                         case sf::Keyboard::F3:
                             playBeatTick = not playBeatTick;
                             if (playBeatTick) {
-                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick: on"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : on"));
                             } else {
-                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick: off"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : off"));
                             }
                             break;
                         case sf::Keyboard::F4:
                             playNoteTick = not playNoteTick;
                             if (playNoteTick) {
-                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick: on"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick : on"));
                             } else {
-                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick: off"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick : off"));
                             }
                             break;
                         case sf::Keyboard::Space:
@@ -177,6 +189,7 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::S:
                             if (event.key.control) {
                                 ESHelper::save(*editorState);
+                                notificationsQueue.push(std::make_shared<TextNotification>("Saved file"));
                             }
                             break;
                         case sf::Keyboard::Y:
@@ -249,14 +262,11 @@ int main(int argc, char** argv) {
                     for (auto note : editorState->visibleNotes) {
                         float noteTiming = editorState->getSecondsAt(note.getTiming());
                         if (noteTiming >= editorState->previousPos.asSeconds()
-                            and noteTiming <= editorState->playbackPosition.asSeconds()
-                            and note.getTiming() > editorState->lastTimingTicked) {
+                            and noteTiming <= editorState->playbackPosition.asSeconds()) {
                             noteTickSound.play();
-                            editorState->lastTimingTicked = note.getTiming();
+                            break;
                         }
                     }
-                } else {
-                    editorState->lastTimingTicked = -1;
                 }
                 if (editorState->playbackPosition >= editorState->chartRuntime) {
                     editorState->playing = false;
@@ -314,7 +324,7 @@ int main(int argc, char** argv) {
                 if (c) {
                     editorState->showNewChartDialog = false;
                     if(editorState->fumen.Charts.try_emplace(c->dif_name,*c).second) {
-                        editorState->chart->ref = editorState->fumen.Charts[c->dif_name];
+                        editorState->chart.emplace(editorState->fumen.Charts.at(c->dif_name));
                     }
                 }
             } else {

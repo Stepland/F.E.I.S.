@@ -33,6 +33,7 @@ namespace Widgets {
 		Playfield();
 		sf::Texture button;
 		sf::Texture button_pressed;
+		sf::Texture note_collision;
 		LNMarker longNoteMarker;
 
 	private:
