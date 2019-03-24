@@ -10,8 +10,8 @@
 #include <set>
 #include <fstream>
 #include <filesystem>
+#include <json.hpp>
 
-#include "json.hpp"
 #include "Note.h"
 #include "Chart.h"
 
@@ -33,12 +33,14 @@ public:
           	const std::string &songTitle = "",
           	const std::string &artist = "",
 	      	const std::string &musicPath = "",
-	      	const std::string &jacketPath = "",
+	      	const std::string &albumCoverPath = "",
 	      	float BPM = 120,
 	      	float offset = 0
 	      			);
 
 	void loadFromMemon(std::filesystem::path path);
+	void loadFromMemon_v0_1_0(nlohmann::json j);
+	void loadFromMemon_fallback(nlohmann::json j);
 	// TODO : implementer ça
 	//void loadFromMemo(std::string path);
 	//void loadFromEve(std::string path);
@@ -56,7 +58,7 @@ public:
 	std::string songTitle;
 	std::string artist;
 	std::string musicPath;
-	std::string jacketPath;
+	std::string albumCoverPath;
 	float BPM;
 	float offset;
 

@@ -11,7 +11,7 @@
 
 class NotificationsQueue {
 public:
-    NotificationsQueue(int max_size = 10): max_size(max_size) {};
+    explicit NotificationsQueue(int max_size = 10): max_size(max_size) {};
 
     void push(const std::shared_ptr<Notification> &notification);
 

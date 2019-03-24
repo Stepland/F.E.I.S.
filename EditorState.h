@@ -37,7 +37,7 @@ public:
     int musicVolume = 10; // 0 -> 10
     void updateMusicVolume();
 
-    std::optional<sf::Texture> jacket;
+    std::optional<sf::Texture> albumCover;
 
     sf::Time previousPos;
     sf::Time playbackPosition;
@@ -61,7 +61,7 @@ public:
     void reloadFromFumen();
     void reloadMusic();
     void reloadPlaybackPositionAndChartRuntime();
-    void reloadJacket();
+    void reloadAlbumCover();
 
     bool showPlayfield = true;
     bool showProperties;

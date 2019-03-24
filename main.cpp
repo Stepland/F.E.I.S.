@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
     // TODO : Density graph on the timeline
     // TODO : Pitch control (playback speed factor)
     // TODO : A small preference persistency system (marker , etc ...)
+    // TODO : Linear view
     // TODO : Debug Log
 
     // Création de la fenêtre

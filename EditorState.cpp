@@ -23,7 +23,7 @@ void EditorState::reloadFromFumen() {
         this->chart.reset();
     }
     reloadMusic();
-    reloadJacket();
+    reloadAlbumCover();
 }
 
 /*
@@ -65,13 +65,13 @@ void EditorState::reloadPlaybackPositionAndChartRuntime() {
 }
 
 /*
- * Reloads the jacket from what's indicated in the "jacket path" field of the fumen
- * Resets the jacket state if anything fails
+ * Reloads the album cover from what's indicated in the "album cover path" field of the fumen
+ * Resets the album cover state if anything fails
  */
-void EditorState::reloadJacket() {
-    jacket.emplace();
-    if (!jacket->loadFromFile((fumen.path.parent_path() / std::filesystem::path(fumen.jacketPath)).string())) {
-        jacket.reset();
+void EditorState::reloadAlbumCover() {
+    albumCover.emplace();
+    if (!albumCover->loadFromFile((fumen.path.parent_path() / std::filesystem::path(fumen.albumCoverPath)).string())) {
+        albumCover.reset();
     }
 }
 
@@ -332,10 +332,10 @@ void EditorState::displayProperties() {
     {
         ImGui::Columns(2, nullptr, false);
 
-        if (jacket) {
-            ImGui::Image(*jacket,sf::Vector2f(200,200));
+        if (albumCover) {
+            ImGui::Image(*albumCover,sf::Vector2f(200,200));
         } else {
-            ImGui::BeginChild("Jacket",ImVec2(200,200),true);
+            ImGui::BeginChild("Album Cover",ImVec2(200,200),true);
             ImGui::EndChild();
         }
 
@@ -346,8 +346,8 @@ void EditorState::displayProperties() {
         if (Toolbox::InputTextColored(music.has_value(),"Invalid Music Path","Music",&fumen.musicPath)) {
             reloadMusic();
         }
-        if (Toolbox::InputTextColored(jacket.has_value(),"Invalid Jacket Path","Jacket",&(fumen.jacketPath))) {
-            reloadJacket();
+        if (Toolbox::InputTextColored(albumCover.has_value(),"Invalid Album Cover Path","Album Cover",&fumen.albumCoverPath)) {
+            reloadAlbumCover();
         }
         if(ImGui::InputFloat("BPM",&fumen.BPM,1.0f,10.0f)) {
             if (fumen.BPM <= 0.0f) {
@@ -374,11 +374,11 @@ void EditorState::displayStatus() {
             }
         }
 
-        if (not jacket) {
-            if (not fumen.jacketPath.empty()) {
-                ImGui::TextColored(ImVec4(1,0.42,0.41,1),"Invalid jacket path : %s",fumen.jacketPath.c_str());
+        if (not albumCover) {
+            if (not fumen.albumCoverPath.empty()) {
+                ImGui::TextColored(ImVec4(1,0.42,0.41,1),"Invalid albumCover path : %s",fumen.albumCoverPath.c_str());
             } else {
-                ImGui::TextColored(ImVec4(1,0.42,0.41,1),"No jacket loaded");
+                ImGui::TextColored(ImVec4(1,0.42,0.41,1),"No albumCover loaded");
             }
         }
         if (ImGui::SliderInt("Music Volume",&musicVolume,0,10)) {
