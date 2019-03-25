@@ -13,6 +13,7 @@
 #include "Widgets.h"
 #include "History.h"
 #include "HistoryActions.h"
+#include "Widgets.h"
 
 class ActionWithMessage;
 class OpenChart;
@@ -31,6 +32,8 @@ public:
     Fumen fumen;
     std::optional<Chart_with_History> chart;
     Widgets::Playfield playfield;
+    Widgets::DensityGraph densityGraph;
+    uint8_t density_graph_alpha = 255;
     int snap = 1;
 
     std::optional<sf::Music> music;
@@ -48,12 +51,11 @@ public:
 
     sf::Time previousPos;
     sf::Time playbackPosition;
-    sf::Time chartRuntime; // sf::Time at which the chart preview stops, can be after the end of the audio
+    sf::Time previewEnd; // sf::Time at which the chart preview stops, can be after the end of the audio
 
     void setPlaybackAndMusicPosition(sf::Time newPosition);
 
     bool playing;
-    int lastTimingTicked = -1;
 
     float   getBeats        ()              {return getBeatsAt(playbackPosition.asSeconds());};
     float   getBeatsAt      (float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
@@ -65,9 +67,11 @@ public:
 
     float   ticksToSeconds  (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
 
+    float   getChartRuntime ()              {return previewEnd.asSeconds() + fumen.offset;};
+
     void reloadFromFumen();
     void reloadMusic();
-    void reloadPlaybackPositionAndChartRuntime();
+    void reloadPlaybackPositionAndPreviewEnd();
     void reloadAlbumCover();
 
     bool showPlayfield = true;
@@ -79,6 +83,7 @@ public:
     bool showNewChartDialog;
     bool showChartProperties;
     bool showHistory;
+    bool showSoundSettings;
 
     void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
     void displayProperties();

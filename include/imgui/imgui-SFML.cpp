@@ -489,6 +489,13 @@ void Image(const sf::Texture& texture, const sf::Vector2f& size,
     ImGui::Image((void*)texture.getNativeHandle(), size, ImVec2(0, 0), ImVec2(1, 1), tintColor, borderColor);
 }
 
+void Image(const sf::Texture& texture, const ImVec2& uv0, const ImVec2& uv1,
+           const sf::Color& tintColor, const sf::Color& borderColor)
+{
+    ImGui::Image((void*)texture.getNativeHandle(), static_cast<sf::Vector2f>(texture.getSize()), uv0, uv1, tintColor, borderColor);
+}
+
+
 void Image(const sf::Texture& texture, const sf::FloatRect& textureRect,
     const sf::Color& tintColor, const sf::Color& borderColor)
 {

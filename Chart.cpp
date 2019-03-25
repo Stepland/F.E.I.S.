@@ -35,3 +35,22 @@ bool Chart::operator==(const Chart &rhs) const {
 bool Chart::operator!=(const Chart &rhs) const {
     return !(rhs == *this);
 }
+
+bool Chart::is_colliding(const Note &note, int ticks_threshold) {
+
+	int lower_bound = note.getTiming()-ticks_threshold;
+	int upper_bound = note.getTiming()+ticks_threshold;
+
+	auto lower_note = Notes.lower_bound(Note(0,lower_bound));
+	auto upper_note = Notes.upper_bound(Note(15,upper_bound));
+
+	if (lower_note != Notes.end()) {
+		for (auto other_note = lower_note; other_note != Notes.end() and other_note != upper_note; ++other_note) {
+			if (other_note->getPos() == note.getPos() and other_note->getTiming() != note.getTiming()) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}

@@ -29,7 +29,7 @@ void EditorState::reloadFromFumen() {
 /*
  * Reloads music from what's indicated in the "music path" field of the fumen
  * Resets the music state in case anything fails
- * Updates playbackPosition and the chartRuntime
+ * Updates playbackPosition and previewEnd
  */
 void EditorState::reloadMusic() {
     music.emplace();
@@ -38,7 +38,7 @@ void EditorState::reloadMusic() {
             ) {
         music.reset();
     }
-    reloadPlaybackPositionAndChartRuntime();
+    reloadPlaybackPositionAndPreviewEnd();
 }
 
 /*
@@ -46,20 +46,20 @@ void EditorState::reloadMusic() {
  * Let reloadMusic do it,
  * you can end up with some strange stuff if you call it before reloadMusic
  */
-void EditorState::reloadPlaybackPositionAndChartRuntime() {
+void EditorState::reloadPlaybackPositionAndPreviewEnd() {
     playbackPosition = sf::seconds(-(fumen.offset));
     previousPos = playbackPosition;
     if (music) {
         if (chart) {
-            chartRuntime = sf::seconds(std::max(music->getDuration().asSeconds(),fumen.getChartRuntime(chart->ref)-fumen.offset)+2.f);
+            previewEnd = sf::seconds(std::max(music->getDuration().asSeconds(),fumen.getChartRuntime(chart->ref)-fumen.offset)+2.f);
         } else {
-            chartRuntime = sf::seconds(std::max(-fumen.offset,music->getDuration().asSeconds()));
+            previewEnd = sf::seconds(std::max(-fumen.offset,music->getDuration().asSeconds()));
         }
     } else {
         if (chart) {
-            chartRuntime = sf::seconds(std::max(fumen.getChartRuntime(chart->ref)-fumen.offset,2.f));
+            previewEnd = sf::seconds(std::max(fumen.getChartRuntime(chart->ref)-fumen.offset,2.f));
         } else {
-            chartRuntime = sf::seconds(std::max(-fumen.offset,2.f));
+            previewEnd = sf::seconds(std::max(-fumen.offset,2.f));
         }
     }
 }
@@ -79,8 +79,8 @@ void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
 
     if (newPosition.asSeconds() < -fumen.offset) {
         newPosition = sf::seconds(-fumen.offset);
-    } else if (newPosition > chartRuntime) {
-        newPosition = chartRuntime;
+    } else if (newPosition > previewEnd) {
+        newPosition = previewEnd;
     }
     previousPos = sf::seconds(newPosition.asSeconds() - 1.f/60.f);
     playbackPosition = newPosition;
@@ -328,65 +328,13 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         // Check for collisions then display them
         if (chart) {
 
-            std::array<std::vector<Note>, 16> notes_per_position = {};
+            int ticks_threshold = static_cast<int>((1.f/60.f)*fumen.BPM*getResolution());
+
             std::array<bool, 16> collisions = {};
 
             for (auto const& note : visibleNotes) {
-                notes_per_position[note.getPos()].push_back(note);
-            }
-
-            for (int i = 0; i < 16; ++i) {
-
-                int size = notes_per_position.at(i).size();
-
-                if (size > 1) {
-
-                    collisions.at(i) = true;
-
-                } else if (size == 1) {
-
-                    auto note = notes_per_position.at(i).at(0);
-
-                    int lower_bound = static_cast<int>(getTicksAt(getSecondsAt(note.getTiming())-1.f));
-                    int upper_bound = static_cast<int>(getTicksAt(getSecondsAt(note.getTiming())+1.f));
-
-                    auto current_note_it = chart->ref.Notes.find(note);
-                    if (current_note_it != chart->ref.Notes.end()) {
-                        // backwards
-                        if (current_note_it != chart->ref.Notes.begin()) {
-                            auto other_note_it = current_note_it;
-                            --other_note_it;
-                            while (other_note_it != chart->ref.Notes.begin()) {
-                                if (other_note_it->getPos() == note.getPos()) {
-                                    if (other_note_it->getTiming() > lower_bound) {
-                                        collisions.at(i) = true;
-                                        break;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                --other_note_it;
-                            }
-                        }
-
-                        // forwards
-                        auto other_note_it = current_note_it;
-                        ++other_note_it;
-                        while (other_note_it != chart->ref.Notes.end()) {
-                            if (other_note_it->getPos() == note.getPos()) {
-                                if (other_note_it->getTiming() < upper_bound) {
-                                    collisions.at(i) = true;
-                                    break;
-                                } else {
-                                    break;
-                                }
-                            }
-                            ++other_note_it;
-                        }
-                    }
-
-                } else {
-                    collisions.at(i) = false;
+                if (chart->ref.is_colliding(note,ticks_threshold)) {
+                    collisions[note.getPos()] = true;
                 }
             }
             for (int i = 0; i < 16; ++i) {
@@ -509,11 +457,38 @@ void EditorState::displayPlaybackStatus() {
 void EditorState::displayTimeline() {
 
     ImGuiIO& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 25, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
-    ImGui::SetNextWindowSize({20,io.DisplaySize.y * 0.9f},ImGuiCond_Always);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
+
+    float height = io.DisplaySize.y * 0.9f;
+
+    if (chart) {
+        if (densityGraph.should_recompute) {
+            densityGraph.should_recompute = false;
+            densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
+                                          getResolution());
+        } else {
+            if (densityGraph.last_height) {
+                if (static_cast<int>(height) != *(densityGraph.last_height)) {
+                    densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
+                                                  getResolution());
+                }
+            } else {
+                densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
+                                              getResolution());
+            }
+        }
+    }
+
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 35, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+    ImGui::SetNextWindowSize({45,height},ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(1, 1));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,1);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,ImVec4(0,0,0,0));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,ImVec4(0,0,0,0));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,ImVec4(0,0,0,0));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0,1.0,1.1,1.0));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.240f, 0.520f, 0.880f, 0.500f));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.240f, 0.520f, 0.880f, 0.700f));
     ImGui::Begin(
             "Timeline",
             &showTimeline,
@@ -524,7 +499,9 @@ void EditorState::displayTimeline() {
             );
     {
         if (music) {
-            AffineTransform<float> scroll(-fumen.offset,chartRuntime.asSeconds(),1.f,0.f);
+            ImGui::SetCursorPos({0,0});
+            ImGui::Image(densityGraph.graph.getTexture(),ImVec2(0,1),ImVec2(1,0));
+            AffineTransform<float> scroll(-fumen.offset,previewEnd.asSeconds(),1.f,0.f);
             float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0,0});
             if(ImGui::VSliderFloat("",ImGui::GetContentRegionMax(),&slider_pos,0.f,1.f,"")) {
@@ -533,6 +510,7 @@ void EditorState::displayTimeline() {
         }
     }
     ImGui::End();
+    ImGui::PopStyleColor(6);
     ImGui::PopStyleVar(3);
 }
 
@@ -613,6 +591,7 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
                 toggledNotes.insert(note);
                 chart->ref.Notes.erase(note);
                 deleted_something = true;
+                break;
             }
         }
         if (not deleted_something) {
@@ -621,6 +600,7 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
         }
 
         chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
+        densityGraph.should_recompute = true;
     }
 
 }

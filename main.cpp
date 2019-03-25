@@ -11,7 +11,6 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Density graph on the timeline
     // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Linear view
     // TODO : Long notes editing
@@ -153,10 +152,20 @@ int main(int argc, char** argv) {
                             }
                             break;
                         case sf::Keyboard::F4:
-                            if (noteTick.toggle()) {
-                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick : on"));
+                            if (event.key.shift) {
+                                if (chordTick.toggle()) {
+                                    noteTick.shouldPlay = true;
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note+Chord tick : on"));
+                                } else {
+                                    noteTick.shouldPlay = false;
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note+Chord tick : off"));
+                                }
                             } else {
-                                notificationsQueue.push(std::make_shared<TextNotification>("Note tick : off"));
+                                if (noteTick.toggle()) {
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note tick : on"));
+                                } else {
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note tick : off"));
+                                }
                             }
                             break;
                         case sf::Keyboard::Space:
@@ -189,6 +198,7 @@ int main(int argc, char** argv) {
                                     if (next) {
                                         notificationsQueue.push(std::make_shared<RedoNotification>(**next));
                                         (*next)->doAction(*editorState);
+                                        editorState->densityGraph.should_recompute = true;
                                     }
                                 }
                             }
@@ -200,6 +210,7 @@ int main(int argc, char** argv) {
                                     if (previous) {
                                         notificationsQueue.push(std::make_shared<UndoNotification>(**previous));
                                         (*previous)->undoAction(*editorState);
+                                        editorState->densityGraph.should_recompute = true;
                                     }
                                 }
                             }
@@ -265,9 +276,9 @@ int main(int argc, char** argv) {
                     }
                 }
 
-                if (editorState->playbackPosition >= editorState->chartRuntime) {
+                if (editorState->playbackPosition >= editorState->previewEnd) {
                     editorState->playing = false;
-                    editorState->playbackPosition = editorState->chartRuntime;
+                    editorState->playbackPosition = editorState->previewEnd;
                 }
             } else {
                 if (editorState->music) {
@@ -294,15 +305,6 @@ int main(int argc, char** argv) {
             }
             if (editorState->showStatus) {
                 editorState->displayStatus();
-                ImGui::Begin("Status");
-                {
-                    ImGui::Text("Beat Tick"); ImGui::SameLine();
-                    beatTick.displayControls();
-                    ImGui::Text("Note Tick"); ImGui::SameLine();
-                    noteTick.displayControls();
-                    ImGui::Checkbox("Chord sound",&chordTick.shouldPlay);
-                }
-                ImGui::End();
             }
             if (editorState->showPlaybackStatus) {
                 editorState->displayPlaybackStatus();
@@ -329,6 +331,24 @@ int main(int argc, char** argv) {
             } else {
                 chartPropertiesDialog.shouldRefreshValues = true;
             }
+
+            if (editorState->showSoundSettings) {
+                ImGui::Begin("Sound Settings",&editorState->showSoundSettings,ImGuiWindowFlags_AlwaysAutoResize);
+                {
+                    if (ImGui::TreeNode("Beat Tick")) {
+                        beatTick.displayControls();
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::TreeNode("Note Tick")) {
+                        noteTick.displayControls();
+                        ImGui::Checkbox("Chord sound",&chordTick.shouldPlay);
+                        ImGui::TreePop();
+                    }
+                }
+                ImGui::End();
+            }
+
         } else {
             bg.render(window);
         }
@@ -434,6 +454,9 @@ int main(int argc, char** argv) {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Settings",editorState.has_value())) {
+                if (ImGui::MenuItem("Sound")) {
+                    editorState->showSoundSettings = true;
+                }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;
                     for (auto& tuple : markerPreviews) {

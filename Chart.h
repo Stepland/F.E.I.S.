@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <set>
+#include <vector>
 #include "Note.h"
 
 class Chart {
@@ -23,6 +24,8 @@ public:
 	std::string dif_name;
 	int level;
 	std::set<Note> Notes;
+
+	bool is_colliding(const Note &note, int ticks_threshold);
 
 	bool operator==(const Chart &rhs) const;
 

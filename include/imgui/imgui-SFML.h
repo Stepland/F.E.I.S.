@@ -2,10 +2,10 @@
 #define IMGUI_SFML_H
 
 #include <SFML/System/Vector2.hpp>
-#include <SFML/Graphics/Rect.hpp>
-#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics.hpp>
 #include <SFML/System/Time.hpp>
 #include <SFML/Window/Joystick.hpp>
+#include "imgui.h"
 
 namespace sf
 {
@@ -56,6 +56,9 @@ namespace SFML
         const sf::Color& tintColor = sf::Color::White,
         const sf::Color& borderColor = sf::Color::Transparent);
     void Image(const sf::Texture& texture, const sf::Vector2f& size,
+        const sf::Color& tintColor = sf::Color::White,
+        const sf::Color& borderColor = sf::Color::Transparent);
+    void Image(const sf::Texture& texture, const ImVec2& uv0, const ImVec2& uv1,
         const sf::Color& tintColor = sf::Color::White,
         const sf::Color& borderColor = sf::Color::Transparent);
     void Image(const sf::Texture& texture, const sf::FloatRect& textureRect,
