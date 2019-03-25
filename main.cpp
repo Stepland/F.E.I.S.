@@ -11,9 +11,8 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : A small preference persistency system (marker , etc ...)
-    // TODO : Linear view
     // TODO : Long notes editing
+    // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Debug Log
 
     // Création de la fenêtre
@@ -175,6 +174,18 @@ int main(int argc, char** argv) {
                                 }
                             }
                             break;
+                        case sf::Keyboard::Add:
+                            if (editorState) {
+                                editorState->linearView.zoom_in();
+                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom in"));
+                            }
+                            break;
+                        case sf::Keyboard::Subtract:
+                            if (editorState) {
+                                editorState->linearView.zoom_out();
+                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
+                            }
+                            break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
                                 ESHelper::open(editorState);
@@ -299,6 +310,9 @@ int main(int argc, char** argv) {
             }
             if (editorState->showPlayfield) {
                 editorState->displayPlayfield(marker,markerEndingState);
+            }
+            if (editorState->showLinearView) {
+                editorState->displayLinearView();
             }
             if (editorState->showProperties) {
                 editorState->displayProperties();
@@ -438,6 +452,9 @@ int main(int argc, char** argv) {
             if (ImGui::BeginMenu("View",editorState.has_value())) {
                 if (ImGui::MenuItem("Playfield", nullptr,editorState->showPlayfield)) {
                     editorState->showPlayfield = not editorState->showPlayfield;
+                }
+                if (ImGui::MenuItem("Linear View", nullptr, editorState->showLinearView)) {
+                    editorState->showLinearView = not editorState->showLinearView;
                 }
                 if (ImGui::MenuItem("Playback Status",nullptr,editorState->showPlaybackStatus)) {
                     editorState->showPlaybackStatus = not editorState->showPlaybackStatus;

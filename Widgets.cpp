@@ -109,8 +109,9 @@ void Widgets::DensityGraph::updateGraphTexture() {
 		throw std::runtime_error("Unable to create DensityGraph's RenderTexture");
 	}
 	graph_rect = {0.0, 0.0, 45.0, static_cast<float>(*last_height)};
-
 	graph.clear(sf::Color::Transparent);
+	graph.setSmooth(true);
+
 	unsigned int x = 2;
 	unsigned int y = 4;
 
@@ -131,4 +132,121 @@ void Widgets::DensityGraph::updateGraphTexture() {
 		++line;
 	}
 
+}
+
+void Widgets::LinearView::setZoom(int newZoom) {
+	zoom = std::clamp(newZoom,-5,5);
+}
+
+void Widgets::LinearView::update(std::optional<Chart> chart, sf::Time playbackPosition, float ticksAtPlaybackPosition, float BPM, int resolution, ImVec2 size) {
+
+	int x = std::max(140, static_cast<int>(size.x));
+	int y = std::max(140, static_cast<int>(size.y));
+
+	if (!view.create(static_cast<unsigned int>(x), static_cast<unsigned int>(y))) {
+		std::cerr << "Unable to create LinearView's RenderTexture";
+		throw std::runtime_error("Unable to create LinearView's RenderTexture");
+	}
+	view.setSmooth(true);
+	view.clear(sf::Color::Transparent);
+
+	if (chart) {
+
+		AffineTransform<float> SecondsToTicks(playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
+		AffineTransform<float> PixelsToSeconds(-25.f, 75.f, playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds());
+		AffineTransform<float> PixelsToTicks(-25.f, 75.f, ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
+
+
+		// Draw the beat lines and numbers
+		int next_beat_tick =  ((1 + (static_cast<int>(PixelsToTicks.transform(0.f))+resolution)/resolution) * resolution) - resolution;
+		int next_beat = std::max(0,next_beat_tick/resolution);
+		next_beat_tick = next_beat*resolution;
+		float next_beat_line_y = PixelsToTicks.backwards_transform(static_cast<float>(next_beat_tick));
+
+		sf::RectangleShape beat_line(sf::Vector2f(static_cast<float>(x)-80.f,1.f));
+
+		sf::Text beat_number;
+		beat_number.setFont(beat_number_font);
+		beat_number.setCharacterSize(15);
+		beat_number.setFillColor(sf::Color::White);
+		std::stringstream ss;
+
+		while (next_beat_line_y < static_cast<float>(y)) {
+
+			if (next_beat%4 == 0) {
+
+				beat_line.setFillColor(sf::Color::White);
+				beat_line.setPosition({50.f,next_beat_line_y});
+				view.draw(beat_line);
+
+
+				ss.str(std::string());
+				ss << next_beat/4;
+				beat_number.setString(ss.str());
+				sf::FloatRect textRect = beat_number.getLocalBounds();
+				beat_number.setOrigin(textRect.left + textRect.width, textRect.top  + textRect.height/2.f);
+				beat_number.setPosition({40.f, next_beat_line_y});
+				view.draw(beat_number);
+
+			} else {
+
+				beat_line.setFillColor(sf::Color(255,255,255,127));
+				beat_line.setPosition({50.f,next_beat_line_y});
+				view.draw(beat_line);
+
+			}
+
+			next_beat_tick += resolution;
+			next_beat += 1;
+			next_beat_line_y = PixelsToTicks.backwards_transform(static_cast<float>(next_beat_tick));
+		}
+
+		// Draw the notes;
+		float note_width = (static_cast<float>(x)-80.f)/16.f;
+		note_rect.setSize({note_width,6.f});
+		sf::FloatRect note_bounds = note_rect.getLocalBounds();
+		note_rect.setOrigin(note_bounds.left + note_bounds.width/2.f, note_bounds.top  + note_bounds.height/2.f);
+
+		float collision_zone_size = 10.f*(60.f/BPM)*100.f*timeFactor();
+		note_collision_zone.setSize({(static_cast<float>(x)-80.f)/16.f-2.f,collision_zone_size});
+		sf::FloatRect collision_zone_bounds = note_collision_zone.getLocalBounds();
+		note_collision_zone.setOrigin(collision_zone_bounds.left + collision_zone_bounds.width/2.f, collision_zone_bounds.top  + collision_zone_bounds.height/2.f);
+
+		int lower_bound_ticks = std::max(0,static_cast<int>(SecondsToTicks.transform(PixelsToSeconds.transform(0.f)-0.5f)));
+		int upper_bound_ticks = std::max(0,static_cast<int>(SecondsToTicks.transform(PixelsToSeconds.transform(static_cast<float>(y))+0.5f)));
+
+		auto lower_note = chart->Notes.lower_bound(Note(0,lower_bound_ticks));
+		auto upper_note = chart->Notes.upper_bound(Note(15,upper_bound_ticks));
+
+		if (lower_note != chart->Notes.end()) {
+			for (auto note = lower_note; note != chart->Notes.end() and note != upper_note; ++note) {
+				float note_x = 50.f+note_width*note->getPos();
+				float note_y = PixelsToTicks.backwards_transform(static_cast<float>(note->getTiming()));
+				note_rect.setPosition(note_x,note_y);
+				note_collision_zone.setPosition(note_x,note_y);
+				view.draw(note_rect);
+				view.draw(note_collision_zone);
+			}
+		}
+
+		// Draw the cursor
+		cursor.setSize(sf::Vector2f(static_cast<float>(x)-76.f,4.f));
+		view.draw(cursor);
+
+	}
+
+}
+
+Widgets::LinearView::LinearView() {
+
+	if (!beat_number_font.loadFromFile(font_path)) {
+		std::cerr << "Unable to load " << font_path;
+		throw std::runtime_error("Unable to load" + font_path);
+	}
+	cursor.setFillColor(sf::Color(66,150,250,200));
+	cursor.setOrigin(0.f,2.f);
+	cursor.setPosition({48.f,75.f});
+
+	note_rect.setFillColor(sf::Color(230,179,0,255));
+	note_collision_zone.setFillColor(sf::Color(230,179,0,127));
 }

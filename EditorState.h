@@ -32,8 +32,11 @@ public:
     Fumen fumen;
     std::optional<Chart_with_History> chart;
     Widgets::Playfield playfield;
+
     Widgets::DensityGraph densityGraph;
-    uint8_t density_graph_alpha = 255;
+
+    Widgets::LinearView linearView;
+
     int snap = 1;
 
     std::optional<sf::Music> music;
@@ -84,6 +87,7 @@ public:
     bool showChartProperties;
     bool showHistory;
     bool showSoundSettings;
+    bool showLinearView;
 
     void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
     void displayProperties();
@@ -91,6 +95,7 @@ public:
     void displayPlaybackStatus();
     void displayTimeline();
     void displayChartList();
+    void displayLinearView();
 
     void updateVisibleNotes();
     std::set<Note> visibleNotes;

@@ -543,6 +543,21 @@ void EditorState::displayChartList() {
     ImGui::End();
 }
 
+void EditorState::displayLinearView() {
+
+    ImGui::SetNextWindowSize(ImVec2(204,400),ImGuiCond_Once);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(204,204),ImVec2(FLT_MAX,FLT_MAX));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,ImVec2(2,2));
+    if (ImGui::Begin("Linear View", &showLinearView,ImGuiWindowFlags_NoScrollbar)) {
+        linearView.update(chart->ref, playbackPosition, getTicks(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
+        ImGui::SetCursorPos({0,ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f});
+        ImGui::Image(linearView.view.getTexture(),ImVec2(0,1),ImVec2(1,0));
+    }
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}
+
 /*
  * This SCREAAAAMS for optimisation, but in the meantime it works !
  */
