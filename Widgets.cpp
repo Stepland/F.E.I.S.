@@ -220,7 +220,7 @@ void Widgets::LinearView::update(std::optional<Chart> chart, sf::Time playbackPo
 
 		if (lower_note != chart->Notes.end()) {
 			for (auto note = lower_note; note != chart->Notes.end() and note != upper_note; ++note) {
-				float note_x = 50.f+note_width*note->getPos();
+				float note_x = 50.f+note_width*(note->getPos()+0.5f);
 				float note_y = PixelsToTicks.backwards_transform(static_cast<float>(note->getTiming()));
 				note_rect.setPosition(note_x,note_y);
 				note_collision_zone.setPosition(note_x,note_y);

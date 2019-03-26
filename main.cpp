@@ -11,6 +11,7 @@
 
 int main(int argc, char** argv) {
 
+    // TODO : Selection system
     // TODO : Long notes editing
     // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Debug Log
