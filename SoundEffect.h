@@ -9,6 +9,9 @@
 #include <iostream>
 #include <SFML/Audio.hpp>
 
+/*
+ * Holds an sf::Sound and can display some controls associated with it (volume and on/off toggle)
+ */
 class SoundEffect {
 public:
     explicit SoundEffect(std::string filename);

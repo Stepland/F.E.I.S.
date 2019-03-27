@@ -89,6 +89,10 @@ namespace SFML
                      const sf::Color& bgColor = sf::Color::Transparent,
                      const sf::Color& tintColor = sf::Color::White);
 
+// Custom custom stuff for F.E.I.S
+
+    bool ColorEdit4(const char* label, sf::Color& col, ImGuiColorEditFlags flags = 0);
+
 // Draw_list overloads. All positions are in relative coordinates (relative to top-left of the current window)
     void DrawLine(const sf::Vector2f& a, const sf::Vector2f& b, const sf::Color& col, float thickness = 1.0f);
     void DrawRect(const sf::FloatRect& rect, const sf::Color& color, float rounding = 0.0f, int rounding_corners = 0x0F, float thickness = 1.0f);

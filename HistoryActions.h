@@ -15,6 +15,9 @@
 
 class EditorState;
 
+/*
+ * Base class for history actions (stuff that is stored inside of History objects)
+ */
 class ActionWithMessage {
 public:
     explicit ActionWithMessage(std::string message = "") : message(std::move(message)) {};

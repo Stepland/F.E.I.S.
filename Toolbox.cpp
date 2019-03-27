@@ -185,3 +185,18 @@ Toolbox::displayIfHasValue(const std::optional<std::reference_wrapper<sf::Textur
         ++index;
     }
 }
+
+void Toolbox::center(sf::Shape &s) {
+    sf::FloatRect bounds = s.getLocalBounds();
+    s.setOrigin(bounds.left + bounds.width/2.f, bounds.top  + bounds.height/2.f);
+}
+
+bool Toolbox::editFillColor(const char* label, sf::Shape& s) {
+
+    sf::Color col = s.getFillColor();
+    if (ImGui::ColorEdit4(label, col)) {
+        s.setFillColor(col);
+        return true;
+    }
+    return false;
+}

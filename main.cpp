@@ -2,19 +2,21 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 #include <imgui_stdlib.h>
+#include <variant>
 #include "Widgets.h"
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
 #include "Toolbox.h"
 #include "NotificationsQueue.h"
 #include "SoundEffect.h"
+#include "TimeSelection.h"
 
 int main(int argc, char** argv) {
 
-    // TODO : Selection system
     // TODO : Long notes editing
     // TODO : A small preference persistency system (marker , etc ...)
     // TODO : Debug Log
+    // TODO : Rewrite the terrible LNMarker stuff
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
@@ -48,7 +50,7 @@ int main(int argc, char** argv) {
     Marker& marker = defaultMarker;
     MarkerEndingState markerEndingState = MarkerEndingState_MISS;
 
-    Widgets::Ecran_attente bg;
+    Widgets::BlankScreen bg;
     std::optional<EditorState> editorState;
     NotificationsQueue notificationsQueue;
     ESHelper::NewChartDialog newChartDialog;
@@ -69,6 +71,75 @@ int main(int argc, char** argv) {
                     break;
                 case sf::Event::KeyPressed:
                     switch (event.key.code) {
+
+                        /*
+                         * Selection related stuff
+                         */
+
+                        // Discard, in that order : timeSelection, selected_notes
+                        case sf::Keyboard::Escape:
+                            if (editorState and editorState->chart) {
+                                if (not std::holds_alternative<std::monostate>(editorState->chart->timeSelection)) {
+                                    editorState->chart->timeSelection.emplace<std::monostate>();
+                                } else if (not editorState->chart->selectedNotes.empty()) {
+                                    editorState->chart->selectedNotes.clear();
+                                }
+                            }
+                            break;
+
+                        // Modify timeSelection
+                        case sf::Keyboard::Tab:
+                            if (editorState and editorState->chart) {
+
+                                // if no timeSelection was previously made
+                                if (std::holds_alternative<std::monostate>(editorState->chart->timeSelection)) {
+
+                                    // set the start of the timeSelection to the current time
+                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getTicks());
+
+                                // if the start of the timeSelection is already set
+                                } else if (std::holds_alternative<unsigned int>(editorState->chart->timeSelection)) {
+
+                                    auto current_tick = static_cast<int>(editorState->getTicks());
+                                    auto selection_start = static_cast<int>(std::get<unsigned int>(editorState->chart->timeSelection));
+
+                                    // if we are on the same tick as the timeSelection start we discard the timeSelection
+                                    if (current_tick == selection_start) {
+                                        editorState->chart->timeSelection.emplace<std::monostate>();
+
+                                    // else we create a full timeSelection while paying attention to the order
+                                    } else {
+                                        auto new_selection_start = static_cast<unsigned int>(std::min(current_tick, selection_start));
+                                        auto duration = static_cast<unsigned int>(std::abs(current_tick - selection_start));
+                                        editorState->chart->timeSelection.emplace<TimeSelection>(new_selection_start,duration);
+                                        editorState->chart->selectedNotes = editorState->chart->ref.getNotesBetween(new_selection_start, new_selection_start+duration);
+                                    }
+
+                                // if a full timeSelection already exists
+                                } else if (std::holds_alternative<TimeSelection>(editorState->chart->timeSelection)) {
+                                    // discard the current timeSelection and set the start of the timeSelection to the current time
+                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getTicks());
+                                }
+                            }
+                            break;
+
+                        // Delete selected notes from the chart and discard timeSelection
+                        case sf::Keyboard::Delete:
+                            if (editorState and editorState->chart) {
+                                if (not editorState->chart->selectedNotes.empty()) {
+                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(editorState->chart->selectedNotes,false));
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Deleted selected notes"));
+                                    for (auto note : editorState->chart->selectedNotes) {
+                                        editorState->chart->ref.Notes.erase(note);
+                                    }
+                                    editorState->chart->selectedNotes.clear();
+                                }
+                            }
+                            break;
+
+                        /*
+                         * Arrow keys
+                         */
                         case sf::Keyboard::Up:
                             if (event.key.shift) {
                                 if (editorState) {
@@ -144,6 +215,10 @@ int main(int argc, char** argv) {
                                 }
                             }
                             break;
+
+                        /*
+                         * F keys
+                         */
                         case sf::Keyboard::F3:
                             if (beatTick.toggle()) {
                                 notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : on"));
@@ -187,6 +262,24 @@ int main(int argc, char** argv) {
                                 notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
                             }
                             break;
+                        /*
+                         * Letter keys, in alphabetical order
+                         */
+                        case sf::Keyboard::C:
+                            if (event.key.control) {
+                                if (editorState and editorState->chart and (not editorState->chart->selectedNotes.empty())) {
+
+                                    std::stringstream ss;
+                                    ss << "Copied " << editorState->chart->selectedNotes.size() << " note";
+                                    if (editorState->chart->selectedNotes.size() > 1) {
+                                        ss << "s";
+                                    }
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+
+                                    editorState->chart->notesClipboard.copy(editorState->chart->selectedNotes);
+                                }
+                            }
+                            break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
                                 ESHelper::open(editorState);
@@ -201,6 +294,48 @@ int main(int argc, char** argv) {
                             if (event.key.control) {
                                 ESHelper::save(*editorState);
                                 notificationsQueue.push(std::make_shared<TextNotification>("Saved file"));
+                            }
+                            break;
+                        case sf::Keyboard::V:
+                            if (event.key.control) {
+                                if (editorState and editorState->chart and (not editorState->chart->notesClipboard.empty())) {
+
+                                    int tick_offset = static_cast<int>(editorState->getTicks());
+                                    std::set<Note> pasted_notes = editorState->chart->notesClipboard.paste(tick_offset);
+
+                                    std::stringstream ss;
+                                    ss << "Pasted " << pasted_notes.size() << " note";
+                                    if (pasted_notes.size() > 1) {
+                                        ss << "s";
+                                    }
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+
+                                    for (auto note : pasted_notes) {
+                                        editorState->chart->ref.Notes.insert(note);
+                                    }
+                                    editorState->chart->selectedNotes = pasted_notes;
+                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(editorState->chart->selectedNotes,true));
+                                }
+                            }
+                            break;
+                        case sf::Keyboard::X:
+                            if (event.key.control) {
+                                if (editorState and editorState->chart and (not editorState->chart->selectedNotes.empty())) {
+
+                                    std::stringstream ss;
+                                    ss << "Cut " << editorState->chart->selectedNotes.size() << " note";
+                                    if (editorState->chart->selectedNotes.size() > 1) {
+                                        ss << "s";
+                                    }
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
+
+                                    editorState->chart->notesClipboard.copy(editorState->chart->selectedNotes);
+                                    for (auto note : editorState->chart->selectedNotes) {
+                                        editorState->chart->ref.Notes.erase(note);
+                                    }
+                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(editorState->chart->selectedNotes,false));
+                                    editorState->chart->selectedNotes.clear();
+                                }
                             }
                             break;
                         case sf::Keyboard::Y:
@@ -314,6 +449,9 @@ int main(int argc, char** argv) {
             }
             if (editorState->showLinearView) {
                 editorState->displayLinearView();
+            }
+            if (editorState->linearView.shouldDisplaySettings) {
+                editorState->linearView.displaySettings();
             }
             if (editorState->showProperties) {
                 editorState->displayProperties();
@@ -474,6 +612,9 @@ int main(int argc, char** argv) {
             if (ImGui::BeginMenu("Settings",editorState.has_value())) {
                 if (ImGui::MenuItem("Sound")) {
                     editorState->showSoundSettings = true;
+                }
+                if (ImGui::MenuItem("Linear View")) {
+                    editorState->linearView.shouldDisplaySettings = true;
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;

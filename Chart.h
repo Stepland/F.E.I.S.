@@ -10,6 +10,9 @@
 #include <vector>
 #include "Note.h"
 
+/*
+ * Holds the notes, the difficulty name and the level
+ */
 class Chart {
 
 public:
@@ -24,6 +27,9 @@ public:
 	std::string dif_name;
 	int level;
 	std::set<Note> Notes;
+
+	std::set<Note> getNotesBetween(int start_timing, int end_timing) const;
+	std::set<Note> getVisibleNotesBetween(int start_timing, int end_timing) const;
 
 	bool is_colliding(const Note &note, int ticks_threshold);
 

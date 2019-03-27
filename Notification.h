@@ -9,6 +9,9 @@
 #include <string>
 #include "HistoryActions.h"
 
+/*
+ * The display function should call ImGui primitives to display arbitrary stuff in the notifications queue
+ */
 class Notification {
 public:
     virtual void display() const = 0;
@@ -16,7 +19,9 @@ public:
     virtual ~Notification() = default;
 };
 
-
+/*
+ * Displays the string given to the constructor
+ */
 class TextNotification : public Notification {
 public:
     explicit TextNotification(const std::string &message);
@@ -26,6 +31,9 @@ public:
     const std::string message;
 };
 
+/*
+ * Displays "Undo" in orange followed by the message associated with the action passed to the constructor
+ */
 class UndoNotification : public Notification {
 public:
     explicit UndoNotification(const ActionWithMessage& awm) : message(awm.getMessage()) {};
@@ -35,6 +43,9 @@ public:
     const std::string message;
 };
 
+/*
+ * Displays "Redo" in blue followed by the message associated with the action passed to the constructor
+ */
 class RedoNotification : public  Notification {
 public:
     explicit RedoNotification(const ActionWithMessage& awm) : message(awm.getMessage()) {};

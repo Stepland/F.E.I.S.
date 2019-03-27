@@ -15,6 +15,9 @@
 #include "Note.h"
 #include "Chart.h"
 
+/*
+ * Difficulty name ordering : BSC > ADV > EXT > anything else in lexicographical order
+ */
 struct cmpDifName {
 	std::map<std::string,int> dif_names;
 
@@ -24,6 +27,9 @@ struct cmpDifName {
 	bool operator()(const std::string& a, const std::string& b) const;
 };
 
+/*
+ * Represents a .memon file : several charts and some metadata
+ */
 class Fumen {
 
 public:
@@ -41,14 +47,8 @@ public:
 	void loadFromMemon(std::filesystem::path path);
 	void loadFromMemon_v0_1_0(nlohmann::json j);
 	void loadFromMemon_fallback(nlohmann::json j);
-	// TODO : implementer ça
-	//void loadFromMemo(std::string path);
-	//void loadFromEve(std::string path);
 
 	void saveAsMemon(std::filesystem::path path);
-	// TODO : implementer ça
-	//void saveAsMemo(std::string path);
-	//void saveAsEve(std::string path);
 
 	void autoLoadFromMemon() {loadFromMemon(path);};
 	void autoSaveAsMemon() {saveAsMemon(path);};

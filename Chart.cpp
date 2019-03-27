@@ -54,3 +54,44 @@ bool Chart::is_colliding(const Note &note, int ticks_threshold) {
 
 	return false;
 }
+
+/*
+ * This function does not take long notes into account and just gives back
+ * anything with a timing value between the two arguments, inclusive
+ */
+std::set<Note> Chart::getNotesBetween(int start_timing, int end_timing) const {
+
+	std::set<Note> res = {};
+
+	auto lower_bound = Notes.lower_bound(Note(0,start_timing));
+	auto upper_bound = Notes.upper_bound(Note(15,end_timing));
+
+	for (auto& note_it = lower_bound; note_it != upper_bound; ++note_it) {
+		res.insert(*note_it);
+	}
+
+	return res;
+}
+
+/*
+ * Takes long notes into account, gives back any note that would be visible between
+ * the two arguments, LN tails included
+ */
+std::set<Note> Chart::getVisibleNotesBetween(int start_timing, int end_timing) const {
+
+    auto res = getNotesBetween(start_timing, end_timing);
+
+	auto note_it = Notes.upper_bound(Note(0,start_timing));
+    std::set<Note>::reverse_iterator rev_note_it(note_it);
+
+    for (; rev_note_it != Notes.rend(); ++rev_note_it) {
+    	if (rev_note_it->getLength() != 0) {
+    		int end_tick = rev_note_it->getTiming() + rev_note_it->getLength();
+    		if (end_tick >= start_timing and end_tick <= end_timing) {
+    			res.insert(*rev_note_it);
+    		}
+    	}
+    }
+
+    return res;
+}

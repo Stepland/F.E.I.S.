@@ -325,9 +325,10 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             }
         }
 
-        // Check for collisions then display them
+
         if (chart) {
 
+            // Check for collisions then display them
             int ticks_threshold = static_cast<int>((1.f/60.f)*fumen.BPM*getResolution());
 
             std::array<bool, 16> collisions = {};
@@ -344,6 +345,19 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                     ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
                     ImGui::PushID(ImGuiIndex);
                     ImGui::Image(playfield.note_collision, {squareSize, squareSize});
+                    ImGui::PopID();
+                    ++ImGuiIndex;
+                }
+            }
+
+            // Display selected notes
+            for (auto const& note : visibleNotes) {
+                if (chart->selectedNotes.find(note) != chart->selectedNotes.end()) {
+                    int x = note.getPos()%4;
+                    int y = note.getPos()/4;
+                    ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
+                    ImGui::PushID(ImGuiIndex);
+                    ImGui::Image(playfield.note_selected, {squareSize, squareSize});
                     ImGui::PopID();
                     ++ImGuiIndex;
                 }
@@ -550,7 +564,7 @@ void EditorState::displayLinearView() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,ImVec2(2,2));
     if (ImGui::Begin("Linear View", &showLinearView,ImGuiWindowFlags_NoScrollbar)) {
-        linearView.update(chart->ref, playbackPosition, getTicks(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
+        linearView.update(chart->ref, chart->selectedNotes, chart->timeSelection, playbackPosition, getTicks(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
         ImGui::SetCursorPos({0,ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f});
         ImGui::Image(linearView.view.getTexture(),ImVec2(0,1),ImVec2(1,0));
     }

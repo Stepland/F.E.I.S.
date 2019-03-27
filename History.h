@@ -30,7 +30,7 @@ class History {
 public:
 
     /*
-     * we cannot undo the very first action, which in my case corresponds to opening a chart
+     * we cannot undo the very first action, which in F.E.I.S corresponds to opening a chart
      */
     std::optional<T> get_previous() {
         if (previous_actions.size() == 1) {

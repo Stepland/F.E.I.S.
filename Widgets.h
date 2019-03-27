@@ -10,13 +10,23 @@
 #include "Marker.h"
 #include "LNMarker.h"
 #include "Chart.h"
+#include "TimeSelection.h"
 
+/*
+ * I create a widget whenever I want some graphical thing to hold some data and not just reload it on every frame
+ * for instance :
+ *     - BlankScreen holds the texture for the FEIS logo
+ *     - Playfield holds the textures for the buttons
+ *     - LinearView holds its font and textures
+ *     - DensityGraph holds all the density info and some textures
+ */
 namespace Widgets {
-	class Ecran_attente {
+
+	class BlankScreen {
 
 	public:
 
-		Ecran_attente();
+		BlankScreen();
 		void render(sf::RenderWindow &window);
 
 	private:
@@ -35,6 +45,7 @@ namespace Widgets {
 		sf::Texture base_texture;
 		sf::Sprite button;
 		sf::Sprite button_pressed;
+		sf::Sprite note_selected;
 		sf::Sprite note_collision;
 		LNMarker longNoteMarker;
 
@@ -51,15 +62,32 @@ namespace Widgets {
 		sf::RenderTexture view;
 		sf::Font beat_number_font;
 		sf::RectangleShape cursor;
+		sf::RectangleShape selection;
 		sf::RectangleShape note_rect;
+		sf::RectangleShape long_note_rect;
+		sf::RectangleShape long_note_collision_zone;
+		sf::RectangleShape note_selected;
 		sf::RectangleShape note_collision_zone;
 
-	    void update(std::optional<Chart> chart, sf::Time playbackPosition, float ticksAtPlaybackPosition, float BPM, int resolution, ImVec2 size);
+	    void update(
+			const std::optional<Chart>& chart,
+			const std::set<Note>& selectedNotes,
+			const SelectionState& selectionState,
+			const sf::Time& playbackPosition,
+			const float& ticksAtPlaybackPosition,
+			const float& BPM,
+			const int& resolution,
+			const ImVec2& size
+		);
 
         void setZoom(int zoom);
         void zoom_in() {setZoom(zoom+1);};
         void zoom_out() {setZoom(zoom-1);};
         float timeFactor() {return std::pow(1.25f,static_cast<float>(zoom));};
+
+        bool shouldDisplaySettings;
+
+        void displaySettings();
 
     private:
 

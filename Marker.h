@@ -40,12 +40,15 @@ namespace Markers {
     };
 }
 
+/*
+ * Holds the textures associated with a given marker folder from the assets folder
+ */
 class Marker {
 
 public:
 
 	Marker();
-	Marker(std::filesystem::path folder);
+	explicit Marker(std::filesystem::path folder);
 	std::optional<std::reference_wrapper<sf::Texture>> getSprite(MarkerEndingState state, float seconds);
     const std::map<std::string, sf::Texture> &getTextures() const;
 

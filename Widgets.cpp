@@ -5,7 +5,7 @@
 #include "Widgets.h"
 #include "Toolbox.h"
 
-Widgets::Ecran_attente::Ecran_attente() : gris_de_fond(sf::Color(38,38,38)) {
+Widgets::BlankScreen::BlankScreen() : gris_de_fond(sf::Color(38,38,38)) {
 
 	if(!tex_FEIS_logo.loadFromFile("assets/textures/FEIS_logo.png"))
 	{
@@ -17,7 +17,7 @@ Widgets::Ecran_attente::Ecran_attente() : gris_de_fond(sf::Color(38,38,38)) {
 
 }
 
-void Widgets::Ecran_attente::render(sf::RenderWindow& window) {
+void Widgets::BlankScreen::render(sf::RenderWindow& window) {
     // effacement de la fenêtre en noir
     window.clear(gris_de_fond);
 
@@ -39,6 +39,9 @@ Widgets::Playfield::Playfield() {
 
 	button_pressed.setTexture(base_texture);
 	button_pressed.setTextureRect({192,0,192,192});
+
+	note_selected.setTexture(base_texture);
+	note_selected.setTextureRect({384,0,192,192});
 
 	note_collision.setTexture(base_texture);
 	note_collision.setTextureRect({576,0,192,192});
@@ -138,7 +141,10 @@ void Widgets::LinearView::setZoom(int newZoom) {
 	zoom = std::clamp(newZoom,-5,5);
 }
 
-void Widgets::LinearView::update(std::optional<Chart> chart, sf::Time playbackPosition, float ticksAtPlaybackPosition, float BPM, int resolution, ImVec2 size) {
+void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::set<Note> &selectedNotes,
+								 const SelectionState &selectionState, const sf::Time &playbackPosition,
+								 const float &ticksAtPlaybackPosition, const float &BPM, const int &resolution,
+								 const ImVec2 &size) {
 
 	int x = std::max(140, static_cast<int>(size.x));
 	int y = std::max(140, static_cast<int>(size.y));
@@ -154,10 +160,14 @@ void Widgets::LinearView::update(std::optional<Chart> chart, sf::Time playbackPo
 
 		AffineTransform<float> SecondsToTicks(playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
 		AffineTransform<float> PixelsToSeconds(-25.f, 75.f, playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds());
+		AffineTransform<float> PixelsToSecondsProprotional(0.f, 100.f, 0.f, (60.f/BPM)/timeFactor());
 		AffineTransform<float> PixelsToTicks(-25.f, 75.f, ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
 
 
-		// Draw the beat lines and numbers
+		/*
+		 * Draw the beat lines and numbers
+		 */
+
 		int next_beat_tick =  ((1 + (static_cast<int>(PixelsToTicks.transform(0.f))+resolution)/resolution) * resolution) - resolution;
 		int next_beat = std::max(0,next_beat_tick/resolution);
 		next_beat_tick = next_beat*resolution;
@@ -201,37 +211,100 @@ void Widgets::LinearView::update(std::optional<Chart> chart, sf::Time playbackPo
 			next_beat_line_y = PixelsToTicks.backwards_transform(static_cast<float>(next_beat_tick));
 		}
 
-		// Draw the notes;
+		/*
+		 * Draw the notes
+		 */
+
+		// Size & center the shapes
 		float note_width = (static_cast<float>(x)-80.f)/16.f;
 		note_rect.setSize({note_width,6.f});
-		sf::FloatRect note_bounds = note_rect.getLocalBounds();
-		note_rect.setOrigin(note_bounds.left + note_bounds.width/2.f, note_bounds.top  + note_bounds.height/2.f);
+		Toolbox::center(note_rect);
 
-		float collision_zone_size = 10.f*(60.f/BPM)*100.f*timeFactor();
+		note_selected.setSize({note_width+2.f,8.f});
+		Toolbox::center(note_selected);
+
+		float collision_zone_size = PixelsToSecondsProprotional.backwards_transform(1.f);
 		note_collision_zone.setSize({(static_cast<float>(x)-80.f)/16.f-2.f,collision_zone_size});
-		sf::FloatRect collision_zone_bounds = note_collision_zone.getLocalBounds();
-		note_collision_zone.setOrigin(collision_zone_bounds.left + collision_zone_bounds.width/2.f, collision_zone_bounds.top  + collision_zone_bounds.height/2.f);
+		Toolbox::center(note_collision_zone);
 
+		long_note_collision_zone.setSize({(static_cast<float>(x)-80.f)/16.f-2.f,collision_zone_size});
+		Toolbox::center(long_note_collision_zone);
+
+		// Find the notes that need to be displayed
 		int lower_bound_ticks = std::max(0,static_cast<int>(SecondsToTicks.transform(PixelsToSeconds.transform(0.f)-0.5f)));
 		int upper_bound_ticks = std::max(0,static_cast<int>(SecondsToTicks.transform(PixelsToSeconds.transform(static_cast<float>(y))+0.5f)));
 
-		auto lower_note = chart->Notes.lower_bound(Note(0,lower_bound_ticks));
-		auto upper_note = chart->Notes.upper_bound(Note(15,upper_bound_ticks));
+		for (auto& note : chart->getVisibleNotesBetween(lower_bound_ticks,upper_bound_ticks)) {
 
-		if (lower_note != chart->Notes.end()) {
-			for (auto note = lower_note; note != chart->Notes.end() and note != upper_note; ++note) {
-				float note_x = 50.f+note_width*(note->getPos()+0.5f);
-				float note_y = PixelsToTicks.backwards_transform(static_cast<float>(note->getTiming()));
-				note_rect.setPosition(note_x,note_y);
-				note_collision_zone.setPosition(note_x,note_y);
-				view.draw(note_rect);
+			float note_x = 50.f+note_width*(note.getPos()+0.5f);
+			float note_y = PixelsToTicks.backwards_transform(static_cast<float>(note.getTiming()));
+			note_rect.setPosition(note_x,note_y);
+			note_selected.setPosition(note_x,note_y);
+			note_collision_zone.setPosition(note_x,note_y);
+
+			if (note.getLength() != 0) {
+
+				float tail_size = PixelsToSecondsProprotional.backwards_transform(SecondsToTicks.backwards_transform(note.getLength()));
+				float long_note_collision_size = collision_zone_size + tail_size;
+				long_note_collision_zone.setSize({(static_cast<float>(x)-80.f)/16.f-2.f,collision_zone_size});
+				Toolbox::center(long_note_collision_zone);
+				long_note_collision_zone.setSize({(static_cast<float>(x)-80.f)/16.f-2.f,long_note_collision_size});
+				long_note_collision_zone.setPosition(note_x,note_y);
+
+				view.draw(long_note_collision_zone);
+
+
+				float tail_width = .75f*(static_cast<float>(x)-80.f)/16.f;
+				long_note_rect.setSize({tail_width,tail_size});
+				sf::FloatRect long_note_bounds = long_note_rect.getLocalBounds();
+				long_note_rect.setOrigin(long_note_bounds.left + long_note_bounds.width/2.f, long_note_bounds.top);
+				long_note_rect.setPosition(note_x,note_y);
+
+				view.draw(long_note_rect);
+
+			} else {
 				view.draw(note_collision_zone);
+			}
+
+			view.draw(note_rect);
+
+
+			if (selectedNotes.find(note) != selectedNotes.end()) {
+				view.draw(note_selected);
 			}
 		}
 
-		// Draw the cursor
-		cursor.setSize(sf::Vector2f(static_cast<float>(x)-76.f,4.f));
+		/*
+		 * Draw the cursor
+		 */
+		cursor.setSize({static_cast<float>(x)-76.f,4.f});
 		view.draw(cursor);
+
+		/*
+		 * Draw the timeSelection
+		 */
+
+		selection.setSize({static_cast<float>(x)-80.f,0.f});
+		if (std::holds_alternative<unsigned int>(selectionState)) {
+			unsigned int ticks = std::get<unsigned int>(selectionState);
+			float selection_y = PixelsToTicks.backwards_transform(static_cast<float>(ticks));
+			if (selection_y > 0.f and selection_y < static_cast<float>(y)) {
+				selection.setPosition(50.f,selection_y);
+				view.draw(selection);
+			}
+		} else if (std::holds_alternative<TimeSelection>(selectionState)) {
+			const auto& ts = std::get<TimeSelection>(selectionState);
+			float selection_start_y = PixelsToTicks.backwards_transform(static_cast<float>(ts.start));
+			float selection_end_y = PixelsToTicks.backwards_transform(static_cast<float>(ts.start+ts.duration));
+			if (
+				(selection_start_y > 0.f and selection_start_y < static_cast<float>(y)) or
+				(selection_end_y > 0.f and selection_end_y < static_cast<float>(y))
+			) {
+				selection.setSize({static_cast<float>(x)-80.f,selection_end_y-selection_start_y});
+				selection.setPosition(50.f,selection_start_y);
+				view.draw(selection);
+			}
+		}
 
 	}
 
@@ -243,10 +316,34 @@ Widgets::LinearView::LinearView() {
 		std::cerr << "Unable to load " << font_path;
 		throw std::runtime_error("Unable to load" + font_path);
 	}
+
 	cursor.setFillColor(sf::Color(66,150,250,200));
 	cursor.setOrigin(0.f,2.f);
 	cursor.setPosition({48.f,75.f});
 
-	note_rect.setFillColor(sf::Color(230,179,0,255));
+	selection.setFillColor(sf::Color(153,255,153,92));
+	selection.setOutlineColor(sf::Color(153,255,153,189));
+	selection.setOutlineThickness(1.f);
+
+	note_rect.setFillColor(sf::Color(255,213,0,255));
+
+	note_selected.setFillColor(sf::Color(255,255,255,200));
+	note_selected.setOutlineThickness(1.f);
+
 	note_collision_zone.setFillColor(sf::Color(230,179,0,127));
+
+	long_note_rect.setFillColor(sf::Color(255,90,0,223));
+	long_note_collision_zone.setFillColor(sf::Color(230,179,0,127));
+}
+
+void Widgets::LinearView::displaySettings() {
+	if (ImGui::Begin("Linear View Settings",&shouldDisplaySettings)) {
+		Toolbox::editFillColor("Cursor", cursor);
+		Toolbox::editFillColor("Note", note_rect);
+		if(Toolbox::editFillColor("Note Collision Zone", note_collision_zone)) {
+			long_note_collision_zone.setFillColor(note_collision_zone.getFillColor());
+		}
+		Toolbox::editFillColor("Long Note Tail", long_note_rect);
+	}
+	ImGui::End();
 }

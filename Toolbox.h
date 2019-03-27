@@ -13,6 +13,9 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <imgui-SFML.h>
 
+/*
+ * I just dump things here where I'm unsure whether they deserve a special file for them or not
+ */
 namespace Toolbox {
 
     struct CustomColors {
@@ -42,8 +45,9 @@ namespace Toolbox {
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);
     std::string toOrdinal(int number);
-
     void displayIfHasValue(const std::optional<std::reference_wrapper<sf::Texture>>& tex, ImVec2 cursorPosition, ImVec2 texSize, int& index);
+    void center(sf::Shape& s);
+    bool editFillColor(const char* label, sf::Shape& s);
 }
 
 template<typename T>

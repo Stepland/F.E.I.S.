@@ -14,29 +14,40 @@
 #include "History.h"
 #include "HistoryActions.h"
 #include "Widgets.h"
+#include "TimeSelection.h"
+#include "NotesClipboard.h"
 
 class ActionWithMessage;
 class OpenChart;
 
+/*
+ * The god class, holds everything there is to know about the currently open .memon file
+ */
 class EditorState {
 public:
+
+
 
     struct Chart_with_History {
         explicit Chart_with_History(Chart& c);
         Chart& ref;
+        std::set<Note> selectedNotes;
+        NotesClipboard notesClipboard;
+        SelectionState timeSelection;
         History<std::shared_ptr<ActionWithMessage>> history;
     };
 
     explicit EditorState(Fumen& fumen);
 
-    Fumen fumen;
     std::optional<Chart_with_History> chart;
+
+    Fumen fumen;
+
     Widgets::Playfield playfield;
-
     Widgets::DensityGraph densityGraph;
-
     Widgets::LinearView linearView;
 
+    // the snap but divided by 4 because you can't set a snap to anything lower than 4ths
     int snap = 1;
 
     std::optional<sf::Music> music;

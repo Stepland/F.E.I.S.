@@ -9,6 +9,9 @@
 #include <SFML/System.hpp>
 #include "Notification.h"
 
+/*
+ * Responsible for displaying the notifications with a fadeout effect
+ */
 class NotificationsQueue {
 public:
     explicit NotificationsQueue(int max_size = 10): max_size(max_size) {};
