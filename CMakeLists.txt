@@ -59,7 +59,7 @@ find_library (WinMM libwinmm.a)
 find_package (SFML 2.5.1 COMPONENTS system window graphics network audio REQUIRED)
 find_package (OpenGL REQUIRED)
 
-include_directories(${OPENGL_INCLUDE_DIR} include/ include/imgui/)
+include_directories(${OPENGL_INCLUDE_DIR} ${SFML_INCLUDE_DIR} include/ include/imgui/)
 
 add_executable(FEIS ${SOURCE_FILES})
 

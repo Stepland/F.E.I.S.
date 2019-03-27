@@ -29,24 +29,22 @@ void EditorState::reloadFromFumen() {
 /*
  * Reloads music from what's indicated in the "music path" field of the fumen
  * Resets the music state in case anything fails
- * Updates playbackPosition and previewEnd
+ * Updates playbackPosition and previewEnd as well
  */
 void EditorState::reloadMusic() {
+
     music.emplace();
-    if (!music->openFromFile(
-            (fumen.path.parent_path() / std::filesystem::path(fumen.musicPath)).string())
-            ) {
+
+    std::filesystem::path music_path = std::filesystem::path(fumen.path).parent_path() / fumen.musicPath;
+
+    if (
+        fumen.musicPath.empty() or
+        not std::filesystem::exists(music_path) or
+        not music->openFromFile(music_path.string())
+    ) {
         music.reset();
     }
-    reloadPlaybackPositionAndPreviewEnd();
-}
 
-/*
- * NEVER CALL THAT YOURSELF,
- * Let reloadMusic do it,
- * you can end up with some strange stuff if you call it before reloadMusic
- */
-void EditorState::reloadPlaybackPositionAndPreviewEnd() {
     playbackPosition = sf::seconds(-(fumen.offset));
     previousPos = playbackPosition;
     if (music) {
@@ -69,10 +67,19 @@ void EditorState::reloadPlaybackPositionAndPreviewEnd() {
  * Resets the album cover state if anything fails
  */
 void EditorState::reloadAlbumCover() {
+
     albumCover.emplace();
-    if (!albumCover->loadFromFile((fumen.path.parent_path() / std::filesystem::path(fumen.albumCoverPath)).string())) {
+
+    std::filesystem::path album_cover_path = std::filesystem::path(fumen.path).parent_path() / fumen.albumCoverPath;
+
+    if (
+        fumen.albumCoverPath.empty() or
+        not std::filesystem::exists(album_cover_path) or
+        not albumCover->loadFromFile(album_cover_path.string())
+    ) {
         albumCover.reset();
     }
+
 }
 
 void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
@@ -325,7 +332,6 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             }
         }
 
-
         if (chart) {
 
             // Check for collisions then display them
@@ -564,9 +570,13 @@ void EditorState::displayLinearView() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,ImVec2(2,2));
     if (ImGui::Begin("Linear View", &showLinearView,ImGuiWindowFlags_NoScrollbar)) {
-        linearView.update(chart->ref, chart->selectedNotes, chart->timeSelection, playbackPosition, getTicks(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
-        ImGui::SetCursorPos({0,ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f});
-        ImGui::Image(linearView.view.getTexture(),ImVec2(0,1),ImVec2(1,0));
+        if (chart) {
+            linearView.update(chart->ref, chart->selectedNotes, chart->timeSelection, playbackPosition, getTicks(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
+            ImGui::SetCursorPos({0,ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f});
+            ImGui::Image(linearView.view.getTexture(),ImVec2(0,1),ImVec2(1,0));
+        } else {
+            ImGui::TextDisabled("- no chart selected -");
+        }
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
