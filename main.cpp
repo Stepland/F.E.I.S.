@@ -66,7 +66,15 @@ int main(int argc, char** argv) {
                 case sf::Event::Closed:
                     preferences.save();
                     if (editorState) {
-                        editorState->alertSaveChanges(window);
+                        switch (editorState->alertSaveChanges()) {
+                            case saveChangesYes:
+                                ESHelper::save(*editorState);
+                            case saveChangesNo:
+                            case saveChangesDidNotDisplayDialog:
+                                window.close();
+                            case saveChangesCancel:
+                                break;
+                        }
                     } else {
                         window.close();
                     }
@@ -571,9 +579,18 @@ int main(int argc, char** argv) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
                             if (editorState) {
-                                editorState->alertSaveChanges(window);
+                                switch(editorState->alertSaveChanges()) {
+                                    case saveChangesYes:
+                                        ESHelper::save(*editorState);
+                                    case saveChangesNo:
+                                    case saveChangesDidNotDisplayDialog:
+                                        ESHelper::openFromFile(editorState,file);
+                                    case saveChangesCancel:
+                                        break;
+                                }
+                            } else {
+                                ESHelper::openFromFile(editorState,file);
                             }
-                            ESHelper::openFromFile(editorState,file);
                         }
                         ImGui::PopID();
                         ++i;

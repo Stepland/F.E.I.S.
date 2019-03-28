@@ -21,6 +21,13 @@
 class ActionWithMessage;
 class OpenChart;
 
+enum saveChangesResponses {
+    saveChangesYes,
+    saveChangesNo,
+    saveChangesCancel,
+    saveChangesDidNotDisplayDialog
+};
+
 /*
  * The god class, holds everything there is to know about the currently open .memon file
  */
@@ -99,7 +106,7 @@ public:
     void displayChartList();
     void displayLinearView();
 
-    void alertSaveChanges(sf::Window& window);
+    saveChangesResponses alertSaveChanges();
 
     void updateVisibleNotes();
     std::set<Note> visibleNotes;

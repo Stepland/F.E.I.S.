@@ -611,29 +611,26 @@ void EditorState::displayLinearView() {
     ImGui::PopStyleVar(2);
 }
 
-void EditorState::alertSaveChanges(sf::Window& window) {
+saveChangesResponses EditorState::alertSaveChanges() {
     if (chart and (not chart->history.empty())) {
         int response = tinyfd_messageBox("Warning","Do you want to save changes ?","yesnocancel","warning",1);
         switch (response) {
             // cancel
             case 0:
-                break;
+                return saveChangesCancel;
             // yes
             case 1:
-                ESHelper::save(*this);
-                window.close();
-                break;
+                return saveChangesYes;
             // no
             case 2:
-                window.close();
-                break;
+                return saveChangesNo;
             default:
                 std::stringstream ss;
                 ss << "Got unexcpected result from tinyfd_messageBox : " << response;
                 throw std::runtime_error(ss.str());
         }
     } else {
-        window.close();
+        return saveChangesDidNotDisplayDialog;
     }
 }
 
