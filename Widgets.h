@@ -11,6 +11,8 @@
 #include "LNMarker.h"
 #include "Chart.h"
 #include "TimeSelection.h"
+#include "Toolbox.h"
+#include "ChartWithHistory.h"
 
 /*
  * I create a widget whenever I want some graphical thing to hold some data and not just reload it on every frame
@@ -70,9 +72,7 @@ namespace Widgets {
 		sf::RectangleShape note_collision_zone;
 
 	    void update(
-			const std::optional<Chart>& chart,
-			const std::set<Note>& selectedNotes,
-			const SelectionState& selectionState,
+			const std::optional<Chart_with_History> chart,
 			const sf::Time& playbackPosition,
 			const float& ticksAtPlaybackPosition,
 			const float& BPM,

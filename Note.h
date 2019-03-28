@@ -51,7 +51,10 @@ public:
 
 
 	Note(int pos, int timing, int length = 0, int tail_pos = 0);
+	Note(const Note& note_a, const Note& note_b);
 	static bool tail_pos_correct(int pos, int tail_pos);
+	static int tail_pos_to_note_pos(int pos, int tail_pos);
+	static int distance(int pos_a, int pos_b);
 
 	bool operator==(const Note &rhs) const;
 	bool operator!=(const Note &rhs) const;
@@ -64,7 +67,7 @@ public:
 	int getPos() const;
 	int getLength() const;
 	int getTail_pos() const;
-	int getTail_pos_as_note_pos() const;
+	int getTail_pos_as_note_pos() const {return Note::tail_pos_to_note_pos(pos,tail_pos);};
 
 private:
 
@@ -73,7 +76,7 @@ private:
 	int length;
 	int tail_pos;
 
+	void initAsClosestLongNote(const Note& start, int end_timing, int wanted_tail_pos);
 };
-
 
 #endif //FEIS_NOTE_H

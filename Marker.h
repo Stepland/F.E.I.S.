@@ -51,12 +51,12 @@ public:
 	explicit Marker(std::filesystem::path folder);
 	std::optional<std::reference_wrapper<sf::Texture>> getSprite(MarkerEndingState state, float seconds);
     const std::map<std::string, sf::Texture> &getTextures() const;
+    static bool validMarkerFolder(std::filesystem::path folder);
 
 private:
 
 	std::map<std::string,sf::Texture> textures;
 	std::filesystem::path path;
-	bool validMarkerFolder(std::filesystem::path folder);
 	void initFromFolder(std::filesystem::path folder);
 
 };

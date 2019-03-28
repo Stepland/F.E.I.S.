@@ -16,6 +16,7 @@
 #include "Widgets.h"
 #include "TimeSelection.h"
 #include "NotesClipboard.h"
+#include "ChartWithHistory.h"
 
 class ActionWithMessage;
 class OpenChart;
@@ -25,17 +26,6 @@ class OpenChart;
  */
 class EditorState {
 public:
-
-
-
-    struct Chart_with_History {
-        explicit Chart_with_History(Chart& c);
-        Chart& ref;
-        std::set<Note> selectedNotes;
-        NotesClipboard notesClipboard;
-        SelectionState timeSelection;
-        History<std::shared_ptr<ActionWithMessage>> history;
-    };
 
     explicit EditorState(Fumen& fumen);
 
@@ -63,25 +53,25 @@ public:
 
     std::optional<sf::Texture> albumCover;
 
+    bool playing;
+
     sf::Time previousPos;
     sf::Time playbackPosition;
     sf::Time previewEnd; // sf::Time at which the chart preview stops, can be after the end of the audio
 
     void setPlaybackAndMusicPosition(sf::Time newPosition);
 
-    bool playing;
+    float   getBeats                ()              {return getBeatsAt(playbackPosition.asSeconds());};
+    float   getBeatsAt              (float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
+    float   getCurrentTick          ()              {return getTicksAt(playbackPosition.asSeconds());};
+    float   getTicksAt              (float seconds) {return getBeatsAt(seconds) * getResolution();}
+    float   getSecondsAt            (int tick)      {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
+    int     getResolution           ()              {return chart ? chart->ref.getResolution() : 240;};
+    int     getSnapStep             ()              {return getResolution() / snap;};
 
-    float   getBeats        ()              {return getBeatsAt(playbackPosition.asSeconds());};
-    float   getBeatsAt      (float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
-    float   getTicks        ()              {return getTicksAt(playbackPosition.asSeconds());};
-    float   getTicksAt      (float seconds) {return getBeatsAt(seconds) * getResolution();}
-    float   getSecondsAt    (int tick)      {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
-    int     getResolution   ()              {return chart ? chart->ref.getResolution() : 240;};
-    int     getSnapStep     ()              {return getResolution() / snap;};
+    float   ticksToSeconds          (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
 
-    float   ticksToSeconds  (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
-
-    float   getChartRuntime ()              {return previewEnd.asSeconds() + fumen.offset;};
+    float   getChartRuntime         ()              {return previewEnd.asSeconds() + fumen.offset;};
 
     void reloadFromFumen();
     void reloadMusic();
@@ -101,12 +91,15 @@ public:
     bool showLinearView;
 
     void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
+    void displayLongNote(const Note& note, int& ImGuiIndex, Marker& marker, MarkerEndingState& markerEndingState);
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();
     void displayTimeline();
     void displayChartList();
     void displayLinearView();
+
+    void alertSaveChanges(sf::Window& window);
 
     void updateVisibleNotes();
     std::set<Note> visibleNotes;

@@ -113,6 +113,11 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
         if (chart) {
 
+            auto longNoteDummy = chart->makeLongNoteDummy(static_cast<int>(roundf(getCurrentTick())));
+            if (longNoteDummy) {
+                displayLongNote(*longNoteDummy, ImGuiIndex, marker, markerEndingState);
+            }
+
             for (auto const& note : visibleNotes) {
 
                 float note_offset = (playbackPosition.asSeconds() - getSecondsAt(note.getTiming()));
@@ -123,7 +128,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
                 if (note.getLength() == 0) {
 
-                    // Display normal notes
+                    // Display normal note
 
                     auto t = marker.getSprite(markerEndingState, note_offset);
 
@@ -137,181 +142,8 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
                 } else {
 
-                    // Display long notes
+                    displayLongNote(note, ImGuiIndex, marker, markerEndingState);
 
-                    float tail_end_in_seconds = getSecondsAt(note.getTiming() + note.getLength());
-                    float tail_end_offset = playbackPosition.asSeconds() - tail_end_in_seconds;
-
-                    if (playbackPosition.asSeconds() < tail_end_in_seconds) {
-
-                        // Before or During the long note
-
-                        int triangle = note.getTail_pos_as_note_pos();
-
-                        auto triangle_x = static_cast<float>(triangle % 4);
-                        auto triangle_y = static_cast<float>(triangle / 4);
-
-                        AffineTransform<float> x_trans(0.0f, ticksToSeconds(note.getLength()), triangle_x,
-                                                       static_cast<float>(x));
-                        AffineTransform<float> y_trans(0.0f, ticksToSeconds(note.getLength()), triangle_y,
-                                                       static_cast<float>(y));
-                        triangle_x = x_trans.clampedTransform(note_offset);
-                        triangle_y = y_trans.clampedTransform(note_offset);
-
-                        auto tail_tex = playfield.longNoteMarker.getTailTexture(note_offset, note.getTail_pos());
-                        if (tail_tex) {
-
-                            ImVec2 cursorPos;
-                            sf::Vector2f texSize;
-
-                            if (frame < 8) {
-
-                                // Before the note : tail goes from triangle tip to note edge
-
-                                switch (note.getTail_pos() % 4) {
-
-                                    // going down
-                                    case 0:
-                                        cursorPos.x = x * squareSize;
-                                        cursorPos.y = (triangle_y + 1) * squareSize;
-                                        texSize.x = squareSize;
-                                        texSize.y = (y - triangle_y - 1) * squareSize;
-                                        break;
-
-                                        // going left (to the left, to the left ...)
-                                    case 1:
-                                        cursorPos.x = (x + 1) * squareSize;
-                                        cursorPos.y = y * squareSize;
-                                        texSize.x = (triangle_x - x - 1) * squareSize;
-                                        texSize.y = squareSize;
-                                        break;
-
-                                        // going up
-                                    case 2:
-                                        cursorPos.x = x * squareSize;
-                                        cursorPos.y = (y + 1) * squareSize;
-                                        texSize.x = squareSize;
-                                        texSize.y = (triangle_y - y - 1) * squareSize;
-                                        break;
-
-                                        // going right
-                                    case 3:
-                                        cursorPos.x = (triangle_x + 1) * squareSize;
-                                        cursorPos.y = y * squareSize;
-                                        texSize.x = (x - triangle_x - 1) * squareSize;
-                                        texSize.y = squareSize;
-                                        break;
-
-                                    default:
-                                        throw std::runtime_error("wtf ?");
-                                }
-
-                            } else {
-
-                                // During the note : tail goes from triangle base to note edge
-
-                                switch (note.getTail_pos() % 4) {
-
-                                    // going down
-                                    case 0:
-                                        cursorPos.x = x * squareSize;
-                                        cursorPos.y = (triangle_y + 0.9f) * squareSize;
-                                        texSize.x = squareSize;
-                                        texSize.y = (y - triangle_y - 0.9f) * squareSize;
-                                        break;
-
-                                        // going left (to the left, to the left ...)
-                                    case 1:
-                                        cursorPos.x = (x + 1) * squareSize;
-                                        cursorPos.y = y * squareSize;
-                                        texSize.x = (triangle_x - x - 0.9f) * squareSize;
-                                        texSize.y = squareSize;
-                                        break;
-
-                                        // going up
-                                    case 2:
-                                        cursorPos.x = x * squareSize;
-                                        cursorPos.y = (y + 1) * squareSize;
-                                        texSize.x = squareSize;
-                                        texSize.y = (triangle_y - y - 0.9f) * squareSize;
-                                        break;
-
-                                        // going right
-                                    case 3:
-                                        cursorPos.x = (triangle_x + 0.9f) * squareSize;
-                                        cursorPos.y = y * squareSize;
-                                        texSize.x = (x - triangle_x - 0.9f) * squareSize;
-                                        texSize.y = squareSize;
-                                        break;
-
-                                    default:
-                                        throw std::runtime_error("wtf ?");
-                                }
-
-                            }
-
-                            cursorPos.y += TitlebarHeight;
-
-                            ImGui::SetCursorPos(cursorPos);
-                            ImGui::PushID(ImGuiIndex);
-                            ImGui::Image(*tail_tex, texSize);
-                            ImGui::PopID();
-                            ++ImGuiIndex;
-
-                            Toolbox::displayIfHasValue(
-                                    playfield.longNoteMarker.getSquareBackgroundTexture(note_offset,
-                                                                                        note.getTail_pos()),
-                                    {x * squareSize, TitlebarHeight + y * squareSize},
-                                    {squareSize, squareSize},
-                                    ImGuiIndex
-                            );
-
-                            Toolbox::displayIfHasValue(
-                                    playfield.longNoteMarker.getSquareOutlineTexture(note_offset, note.getTail_pos()),
-                                    {x * squareSize, TitlebarHeight + y * squareSize},
-                                    {squareSize, squareSize},
-                                    ImGuiIndex
-                            );
-
-                            Toolbox::displayIfHasValue(
-                                    playfield.longNoteMarker.getTriangleTexture(note_offset, note.getTail_pos()),
-                                    {triangle_x * squareSize, TitlebarHeight + triangle_y * squareSize},
-                                    {squareSize, squareSize},
-                                    ImGuiIndex
-                            );
-
-                            Toolbox::displayIfHasValue(
-                                    playfield.longNoteMarker.getSquareHighlightTexture(note_offset, note.getTail_pos()),
-                                    {x * squareSize, TitlebarHeight + y * squareSize},
-                                    {squareSize, squareSize},
-                                    ImGuiIndex
-                            );
-
-                            // Display the beginning marker
-                            auto t = marker.getSprite(markerEndingState, note_offset);
-                            if (t) {
-                                ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
-                                ImGui::PushID(ImGuiIndex);
-                                ImGui::Image(*t, {squareSize, squareSize});
-                                ImGui::PopID();
-                                ++ImGuiIndex;
-                            }
-                        }
-
-                    } else {
-
-                        // After long note end : Display the ending marker
-                        if (tail_end_offset > 0.0f) {
-                            auto t = marker.getSprite(markerEndingState, tail_end_offset);
-                            if (t) {
-                                ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
-                                ImGui::PushID(ImGuiIndex);
-                                ImGui::Image(*t, {squareSize, squareSize});
-                                ImGui::PopID();
-                                ++ImGuiIndex;
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -326,6 +158,17 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0,0,1.f,0.5f));
                 if (ImGui::ImageButton(playfield.button,{squareSize,squareSize},0)) {
                     toggleNoteAtCurrentTime(x+4*y);
+                }
+                if (ImGui::IsItemHovered()) {
+                    // Deal with long note creation stuff
+                    if (chart and chart->creatingLongNote) {
+                        if (not chart->longNoteBeingCreated) {
+                            Note current_note = Note(x+4*y,static_cast<int>(roundf(getCurrentTick())));
+                            chart->longNoteBeingCreated = std::make_pair(current_note,current_note);
+                        } else {
+                            chart->longNoteBeingCreated->second = Note(x+4*y,static_cast<int>(roundf(getCurrentTick())));
+                        }
+                    }
                 }
                 ImGui::PopStyleColor(3);
                 ImGui::PopID();
@@ -372,6 +215,191 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
     }
     ImGui::End();
 
+}
+
+void EditorState::displayLongNote(const Note& note, int& ImGuiIndex, Marker& marker, MarkerEndingState& markerEndingState) {
+
+    float squareSize = ImGui::GetWindowSize().x / 4.f;
+    float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
+
+    float note_offset = (playbackPosition.asSeconds() - getSecondsAt(note.getTiming()));
+    auto frame = static_cast<long long int>(std::floor(note_offset * 30.f));
+    int x = note.getPos() % 4;
+    int y = note.getPos() / 4;
+
+    float tail_end_in_seconds = getSecondsAt(note.getTiming() + note.getLength());
+    float tail_end_offset = playbackPosition.asSeconds() - tail_end_in_seconds;
+
+    if (playbackPosition.asSeconds() < tail_end_in_seconds) {
+
+        // Before or During the long note
+
+        int triangle = note.getTail_pos_as_note_pos();
+
+        auto triangle_x = static_cast<float>(triangle % 4);
+        auto triangle_y = static_cast<float>(triangle / 4);
+
+        AffineTransform<float> x_trans(0.0f, ticksToSeconds(note.getLength()), triangle_x,
+                                       static_cast<float>(x));
+        AffineTransform<float> y_trans(0.0f, ticksToSeconds(note.getLength()), triangle_y,
+                                       static_cast<float>(y));
+        triangle_x = x_trans.clampedTransform(note_offset);
+        triangle_y = y_trans.clampedTransform(note_offset);
+
+        auto tail_tex = playfield.longNoteMarker.getTailTexture(note_offset, note.getTail_pos());
+        if (tail_tex) {
+
+            ImVec2 cursorPos;
+            sf::Vector2f texSize;
+
+            if (frame < 8) {
+
+                // Before the note : tail goes from triangle tip to note edge
+
+                switch (note.getTail_pos() % 4) {
+
+                    // going down
+                    case 0:
+                        cursorPos.x = x * squareSize;
+                        cursorPos.y = (triangle_y + 1) * squareSize;
+                        texSize.x = squareSize;
+                        texSize.y = (y - triangle_y - 1) * squareSize;
+                        break;
+
+                        // going left (to the left, to the left ...)
+                    case 1:
+                        cursorPos.x = (x + 1) * squareSize;
+                        cursorPos.y = y * squareSize;
+                        texSize.x = (triangle_x - x - 1) * squareSize;
+                        texSize.y = squareSize;
+                        break;
+
+                        // going up
+                    case 2:
+                        cursorPos.x = x * squareSize;
+                        cursorPos.y = (y + 1) * squareSize;
+                        texSize.x = squareSize;
+                        texSize.y = (triangle_y - y - 1) * squareSize;
+                        break;
+
+                        // going right
+                    case 3:
+                        cursorPos.x = (triangle_x + 1) * squareSize;
+                        cursorPos.y = y * squareSize;
+                        texSize.x = (x - triangle_x - 1) * squareSize;
+                        texSize.y = squareSize;
+                        break;
+
+                    default:
+                        throw std::runtime_error("wtf ?");
+                }
+
+            } else {
+
+                // During the note : tail goes from triangle base to note edge
+
+                switch (note.getTail_pos() % 4) {
+
+                    // going down
+                    case 0:
+                        cursorPos.x = x * squareSize;
+                        cursorPos.y = (triangle_y + 0.9f) * squareSize;
+                        texSize.x = squareSize;
+                        texSize.y = (y - triangle_y - 0.9f) * squareSize;
+                        break;
+
+                        // going left (to the left, to the left ...)
+                    case 1:
+                        cursorPos.x = (x + 1) * squareSize;
+                        cursorPos.y = y * squareSize;
+                        texSize.x = (triangle_x - x - 0.9f) * squareSize;
+                        texSize.y = squareSize;
+                        break;
+
+                        // going up
+                    case 2:
+                        cursorPos.x = x * squareSize;
+                        cursorPos.y = (y + 1) * squareSize;
+                        texSize.x = squareSize;
+                        texSize.y = (triangle_y - y - 0.9f) * squareSize;
+                        break;
+
+                        // going right
+                    case 3:
+                        cursorPos.x = (triangle_x + 0.9f) * squareSize;
+                        cursorPos.y = y * squareSize;
+                        texSize.x = (x - triangle_x - 0.9f) * squareSize;
+                        texSize.y = squareSize;
+                        break;
+
+                    default:
+                        throw std::runtime_error("wtf ?");
+                }
+
+            }
+
+            cursorPos.y += TitlebarHeight;
+
+            ImGui::SetCursorPos(cursorPos);
+            ImGui::PushID(ImGuiIndex);
+            ImGui::Image(*tail_tex, texSize);
+            ImGui::PopID();
+            ++ImGuiIndex;
+
+            Toolbox::displayIfHasValue(
+                    playfield.longNoteMarker.getSquareBackgroundTexture(note_offset,
+                                                                        note.getTail_pos()),
+                    {x * squareSize, TitlebarHeight + y * squareSize},
+                    {squareSize, squareSize},
+                    ImGuiIndex
+            );
+
+            Toolbox::displayIfHasValue(
+                    playfield.longNoteMarker.getSquareOutlineTexture(note_offset, note.getTail_pos()),
+                    {x * squareSize, TitlebarHeight + y * squareSize},
+                    {squareSize, squareSize},
+                    ImGuiIndex
+            );
+
+            Toolbox::displayIfHasValue(
+                    playfield.longNoteMarker.getTriangleTexture(note_offset, note.getTail_pos()),
+                    {triangle_x * squareSize, TitlebarHeight + triangle_y * squareSize},
+                    {squareSize, squareSize},
+                    ImGuiIndex
+            );
+
+            Toolbox::displayIfHasValue(
+                    playfield.longNoteMarker.getSquareHighlightTexture(note_offset, note.getTail_pos()),
+                    {x * squareSize, TitlebarHeight + y * squareSize},
+                    {squareSize, squareSize},
+                    ImGuiIndex
+            );
+
+            // Display the beginning marker
+            auto t = marker.getSprite(markerEndingState, note_offset);
+            if (t) {
+                ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
+                ImGui::PushID(ImGuiIndex);
+                ImGui::Image(*t, {squareSize, squareSize});
+                ImGui::PopID();
+                ++ImGuiIndex;
+            }
+        }
+
+    } else {
+
+        // After long note end : Display the ending marker
+        if (tail_end_offset > 0.0f) {
+            auto t = marker.getSprite(markerEndingState, tail_end_offset);
+            if (t) {
+                ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
+                ImGui::PushID(ImGuiIndex);
+                ImGui::Image(*t, {squareSize, squareSize});
+                ImGui::PopID();
+                ++ImGuiIndex;
+            }
+        }
+    }
 }
 
 /*
@@ -550,6 +578,7 @@ void EditorState::displayChartList() {
             ImGui::Separator();
             for (auto& tuple : fumen.Charts) {
                 if (ImGui::Selectable(tuple.first.c_str(), chart ? chart->ref==tuple.second : false , ImGuiSelectableFlags_SpanAllColumns)) {
+                    ESHelper::save(*this);
                     chart.emplace(tuple.second);
                 }
                 ImGui::NextColumn();
@@ -571,7 +600,7 @@ void EditorState::displayLinearView() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,ImVec2(2,2));
     if (ImGui::Begin("Linear View", &showLinearView,ImGuiWindowFlags_NoScrollbar)) {
         if (chart) {
-            linearView.update(chart->ref, chart->selectedNotes, chart->timeSelection, playbackPosition, getTicks(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
+            linearView.update(chart, playbackPosition, getCurrentTick(), fumen.BPM, getResolution(), ImGui::GetContentRegionMax());
             ImGui::SetCursorPos({0,ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f});
             ImGui::Image(linearView.view.getTexture(),ImVec2(0,1),ImVec2(1,0));
         } else {
@@ -580,6 +609,32 @@ void EditorState::displayLinearView() {
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
+}
+
+void EditorState::alertSaveChanges(sf::Window& window) {
+    if (chart and (not chart->history.empty())) {
+        int response = tinyfd_messageBox("Warning","Do you want to save changes ?","yesnocancel","warning",1);
+        switch (response) {
+            // cancel
+            case 0:
+                break;
+            // yes
+            case 1:
+                ESHelper::save(*this);
+                window.close();
+                break;
+            // no
+            case 2:
+                window.close();
+                break;
+            default:
+                std::stringstream ss;
+                ss << "Got unexcpected result from tinyfd_messageBox : " << response;
+                throw std::runtime_error(ss.str());
+        }
+    } else {
+        window.close();
+    }
 }
 
 /*
@@ -634,8 +689,8 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
             }
         }
         if (not deleted_something) {
-            toggledNotes.emplace(pos,static_cast<int>(roundf(getTicks())));
-            chart->ref.Notes.emplace(pos,static_cast<int>(roundf(getTicks())));
+            toggledNotes.emplace(pos,static_cast<int>(roundf(getCurrentTick())));
+            chart->ref.Notes.emplace(pos,static_cast<int>(roundf(getCurrentTick())));
         }
 
         chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
@@ -864,8 +919,4 @@ void ESHelper::ChartPropertiesDialog::display(EditorState &editorState) {
     }
     ImGui::End();
 
-}
-
-EditorState::Chart_with_History::Chart_with_History(Chart &c) : ref(c) {
-    history.push(std::make_shared<OpenChart>(c));
 }

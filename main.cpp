@@ -10,12 +10,10 @@
 #include "NotificationsQueue.h"
 #include "SoundEffect.h"
 #include "TimeSelection.h"
+#include "Preferences.h"
 
 int main(int argc, char** argv) {
 
-    // TODO : Long notes editing
-    // TODO : A small preference persistency system (marker , etc ...)
-    // TODO : Debug Log
     // TODO : Rewrite the terrible LNMarker stuff
 
     // Création de la fenêtre
@@ -46,9 +44,11 @@ int main(int argc, char** argv) {
         }
     }
 
-    Marker defaultMarker;
+    Preferences preferences;
+
+    Marker defaultMarker = Marker(preferences.marker);
     Marker& marker = defaultMarker;
-    MarkerEndingState markerEndingState = MarkerEndingState_MISS;
+    MarkerEndingState markerEndingState = preferences.markerEndingState;
 
     Widgets::BlankScreen bg;
     std::optional<EditorState> editorState;
@@ -64,10 +64,45 @@ int main(int argc, char** argv) {
 
             switch (event.type) {
                 case sf::Event::Closed:
-                    window.close();
+                    preferences.save();
+                    if (editorState) {
+                        editorState->alertSaveChanges(window);
+                    } else {
+                        window.close();
+                    }
                     break;
                 case sf::Event::Resized:
                     window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
+                    break;
+                case sf::Event::MouseButtonPressed:
+                    switch (event.mouseButton.button) {
+                        case sf::Mouse::Button::Right:
+                            if (editorState and editorState->chart) {
+                                editorState->chart->creatingLongNote = true;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case sf::Event::MouseButtonReleased:
+                    switch (event.mouseButton.button) {
+                        case sf::Mouse::Button::Right:
+                            if (editorState and editorState->chart) {
+                                if (editorState->chart->longNoteBeingCreated) {
+                                    auto pair = *editorState->chart->longNoteBeingCreated;
+                                    Note new_note = Note(pair.first,pair.second);
+                                    std::set<Note> new_note_set = {new_note};
+                                    editorState->chart->ref.Notes.insert(new_note);
+                                    editorState->chart->longNoteBeingCreated.reset();
+                                    editorState->chart->creatingLongNote = false;
+                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(new_note_set, true));
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     break;
                 case sf::Event::KeyPressed:
                     switch (event.key.code) {
@@ -95,12 +130,12 @@ int main(int argc, char** argv) {
                                 if (std::holds_alternative<std::monostate>(editorState->chart->timeSelection)) {
 
                                     // set the start of the timeSelection to the current time
-                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getTicks());
+                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getCurrentTick());
 
                                 // if the start of the timeSelection is already set
                                 } else if (std::holds_alternative<unsigned int>(editorState->chart->timeSelection)) {
 
-                                    auto current_tick = static_cast<int>(editorState->getTicks());
+                                    auto current_tick = static_cast<int>(editorState->getCurrentTick());
                                     auto selection_start = static_cast<int>(std::get<unsigned int>(editorState->chart->timeSelection));
 
                                     // if we are on the same tick as the timeSelection start we discard the timeSelection
@@ -118,7 +153,7 @@ int main(int argc, char** argv) {
                                 // if a full timeSelection already exists
                                 } else if (std::holds_alternative<TimeSelection>(editorState->chart->timeSelection)) {
                                     // discard the current timeSelection and set the start of the timeSelection to the current time
-                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getTicks());
+                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getCurrentTick());
                                 }
                             }
                             break;
@@ -151,7 +186,7 @@ int main(int argc, char** argv) {
                             } else {
                                 // TODO : there is something weird with the way I'm doing this, going back with the key often makes it go back twice
                                 if (editorState and editorState->chart) {
-                                    float floatTicks = editorState->getTicks();
+                                    float floatTicks = editorState->getCurrentTick();
                                     int prevTick = static_cast<int>(floorf(floatTicks));
                                     int step = editorState->getSnapStep();
                                     int prevTickInSnap = prevTick;
@@ -174,7 +209,7 @@ int main(int argc, char** argv) {
                                 }
                             } else {
                                 if (editorState and editorState->chart) {
-                                    float floatTicks = editorState->getTicks();
+                                    float floatTicks = editorState->getCurrentTick();
                                     int nextTick = static_cast<int>(ceilf(floatTicks));
                                     int step = editorState->getSnapStep();
                                     int nextTickInSnap = nextTick + (step - nextTick%step);
@@ -300,7 +335,7 @@ int main(int argc, char** argv) {
                             if (event.key.control) {
                                 if (editorState and editorState->chart and (not editorState->chart->notesClipboard.empty())) {
 
-                                    int tick_offset = static_cast<int>(editorState->getTicks());
+                                    int tick_offset = static_cast<int>(editorState->getCurrentTick());
                                     std::set<Note> pasted_notes = editorState->chart->notesClipboard.paste(tick_offset);
 
                                     std::stringstream ss;
@@ -535,6 +570,9 @@ int main(int argc, char** argv) {
                     for (const auto& file : Toolbox::getRecentFiles()) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
+                            if (editorState) {
+                                editorState->alertSaveChanges(window);
+                            }
                             ESHelper::openFromFile(editorState,file);
                         }
                         ImGui::PopID();
@@ -623,6 +661,7 @@ int main(int argc, char** argv) {
                         if (ImGui::ImageButton(tuple.second,{100,100})) {
                             try {
                                 marker = Marker(tuple.first);
+                                preferences.marker = tuple.first.string();
                             } catch (const std::exception& e) {
                                 tinyfd_messageBox("Error",e.what(),"ok","error",1);
                                 marker = defaultMarker;
@@ -640,6 +679,7 @@ int main(int argc, char** argv) {
                     for (auto& m : Markers::markerStatePreviews) {
                         if (ImGui::ImageButton(marker.getTextures().at(m.textureName),{100,100})) {
                             markerEndingState = m.state;
+                            preferences.markerEndingState = m.state;
                         }
                         ImGui::SameLine();
                         ImGui::TextUnformatted(m.printName.c_str());

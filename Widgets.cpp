@@ -3,7 +3,7 @@
 //
 
 #include "Widgets.h"
-#include "Toolbox.h"
+
 
 Widgets::BlankScreen::BlankScreen() : gris_de_fond(sf::Color(38,38,38)) {
 
@@ -141,8 +141,7 @@ void Widgets::LinearView::setZoom(int newZoom) {
 	zoom = std::clamp(newZoom,-5,5);
 }
 
-void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::set<Note> &selectedNotes,
-								 const SelectionState &selectionState, const sf::Time &playbackPosition,
+void Widgets::LinearView::update(const std::optional<Chart_with_History> chart, const sf::Time &playbackPosition,
 								 const float &ticksAtPlaybackPosition, const float &BPM, const int &resolution,
 								 const ImVec2 &size) {
 
@@ -159,6 +158,7 @@ void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::s
 	if (chart) {
 
 		AffineTransform<float> SecondsToTicks(playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
+		AffineTransform<float> SecondsToTicksProportional(0.f,(60.f/BPM),0.f,resolution);
 		AffineTransform<float> PixelsToSeconds(-25.f, 75.f, playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds());
 		AffineTransform<float> PixelsToSecondsProprotional(0.f, 100.f, 0.f, (60.f/BPM)/timeFactor());
 		AffineTransform<float> PixelsToTicks(-25.f, 75.f, ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
@@ -234,7 +234,13 @@ void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::s
 		int lower_bound_ticks = std::max(0,static_cast<int>(SecondsToTicks.transform(PixelsToSeconds.transform(0.f)-0.5f)));
 		int upper_bound_ticks = std::max(0,static_cast<int>(SecondsToTicks.transform(PixelsToSeconds.transform(static_cast<float>(y))+0.5f)));
 
-		for (auto& note : chart->getVisibleNotesBetween(lower_bound_ticks,upper_bound_ticks)) {
+		auto notes = chart->ref.getVisibleNotesBetween(lower_bound_ticks,upper_bound_ticks);
+		auto currentLongNote = chart->makeCurrentLongNote();
+		if (currentLongNote) {
+			notes.insert(*currentLongNote);
+		}
+
+		for (auto& note : notes) {
 
 			float note_x = 50.f+note_width*(note.getPos()+0.5f);
 			float note_y = PixelsToTicks.backwards_transform(static_cast<float>(note.getTiming()));
@@ -244,7 +250,7 @@ void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::s
 
 			if (note.getLength() != 0) {
 
-				float tail_size = PixelsToSecondsProprotional.backwards_transform(SecondsToTicks.backwards_transform(note.getLength()));
+				float tail_size = PixelsToSecondsProprotional.backwards_transform(SecondsToTicksProportional.backwards_transform(note.getLength()));
 				float long_note_collision_size = collision_zone_size + tail_size;
 				long_note_collision_zone.setSize({(static_cast<float>(x)-80.f)/16.f-2.f,collision_zone_size});
 				Toolbox::center(long_note_collision_zone);
@@ -269,7 +275,7 @@ void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::s
 			view.draw(note_rect);
 
 
-			if (selectedNotes.find(note) != selectedNotes.end()) {
+			if (chart->selectedNotes.find(note) != chart->selectedNotes.end()) {
 				view.draw(note_selected);
 			}
 		}
@@ -285,15 +291,15 @@ void Widgets::LinearView::update(const std::optional<Chart> &chart, const std::s
 		 */
 
 		selection.setSize({static_cast<float>(x)-80.f,0.f});
-		if (std::holds_alternative<unsigned int>(selectionState)) {
-			unsigned int ticks = std::get<unsigned int>(selectionState);
+		if (std::holds_alternative<unsigned int>(chart->timeSelection)) {
+			unsigned int ticks = std::get<unsigned int>(chart->timeSelection);
 			float selection_y = PixelsToTicks.backwards_transform(static_cast<float>(ticks));
 			if (selection_y > 0.f and selection_y < static_cast<float>(y)) {
 				selection.setPosition(50.f,selection_y);
 				view.draw(selection);
 			}
-		} else if (std::holds_alternative<TimeSelection>(selectionState)) {
-			const auto& ts = std::get<TimeSelection>(selectionState);
+		} else if (std::holds_alternative<TimeSelection>(chart->timeSelection)) {
+			const auto& ts = std::get<TimeSelection>(chart->timeSelection);
 			float selection_start_y = PixelsToTicks.backwards_transform(static_cast<float>(ts.start));
 			float selection_end_y = PixelsToTicks.backwards_transform(static_cast<float>(ts.start+ts.duration));
 			if (

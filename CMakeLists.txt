@@ -50,7 +50,7 @@ set(SOURCE_FILES
         SoundEffect.h
         TimeSelection.h
         NotesClipboard.cpp
-        NotesClipboard.h)
+        NotesClipboard.h ChartWithHistory.cpp ChartWithHistory.h Preferences.cpp Preferences.h)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})

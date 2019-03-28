@@ -7,6 +7,8 @@
 
 #include <stack>
 #include <optional>
+#include <functional>
+#include <imgui/imgui.h>
 
 /*
  *  History implemented this way :
@@ -83,6 +85,10 @@ public:
             }
         }
         ImGui::End();
+    }
+
+    bool empty() {
+        return previous_actions.size() <= 1;
     }
 
 

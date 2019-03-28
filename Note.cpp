@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <assert.h>
+#include <optional>
 #include "Note.h"
 
 Note::Note(int pos, int timing, int length, int tail_pos) {
@@ -27,6 +28,37 @@ Note::Note(int pos, int timing, int length, int tail_pos) {
 	this->length = length;
 	this->tail_pos = tail_pos;
 
+}
+
+/*
+ * Constructor to create a long note out of a pair
+ */
+Note::Note(const Note& note_a, const Note& note_b) {
+	this->initAsClosestLongNote(note_a, note_b.timing, note_b.pos);
+}
+
+void Note::initAsClosestLongNote(const Note &start, int end_timing, int wanted_tail_pos) {
+	pos = start.getPos();
+	timing = std::min(start.getTiming(), end_timing);
+	length = std::abs(start.getTiming() - end_timing);
+
+	std::optional<int> best_tail_pos = {};
+	for (int i = 0; i < 12; ++i) {
+		if (Note::tail_pos_correct(pos,i)) {
+			if (not best_tail_pos) {
+				best_tail_pos = i;
+			} else {
+				int potential_tail = Note::tail_pos_to_note_pos(pos,i);
+				int best_tail = Note::tail_pos_to_note_pos(pos, *best_tail_pos);
+				if (distance(potential_tail, wanted_tail_pos) < distance(best_tail, wanted_tail_pos)) {
+					best_tail_pos = i;
+				}
+			}
+		}
+	}
+
+	assert(best_tail_pos.has_value());
+	tail_pos = *best_tail_pos;
 }
 
 bool Note::tail_pos_correct(int n, int p) {
@@ -68,6 +100,49 @@ bool Note::tail_pos_correct(int n, int p) {
 
 	return ((0 <= x+dx) and (x+dx <= 4)) and ((0 <= y+dy) and (y+dy <= 4));
 
+}
+
+int Note::tail_pos_to_note_pos(int pos, int tail_pos) {
+
+	int x = pos%4;
+	int y = pos/4;
+
+	int dx = 0;
+	int dy = 0;
+
+	// Vertical
+	if (tail_pos%2 == 0) {
+
+		// Going up
+		if ((tail_pos/2)%2 == 0) {
+			dy = -(tail_pos/4 + 1);
+
+			// Going down
+		} else {
+			dy = tail_pos/4 +1;
+		}
+
+		// Horizontal
+	} else {
+
+		// Going right
+		if ((tail_pos/2)%2 == 0) {
+			dx = tail_pos/4 + 1;
+
+			// Going left
+		} else {
+			dx = -(tail_pos/4 + 1);
+		}
+
+	}
+
+	return x+dx + 4*(y+dy);
+}
+
+int Note::distance(int pos_a, int pos_b) {
+	int x = (pos_a%4) - (pos_b%4);
+	int y = (pos_a/4) - (pos_b/4);
+	return x*x + y*y;
 }
 
 int Note::getPos() const {
@@ -113,42 +188,4 @@ bool Note::operator<=(const Note &rhs) const {
 
 bool Note::operator>=(const Note &rhs) const {
 	return !(*this < rhs);
-}
-
-int Note::getTail_pos_as_note_pos() const {
-
-
-	int x = pos%4;
-	int y = pos/4;
-
-	int dx = 0;
-	int dy = 0;
-
-	// Vertical
-	if (tail_pos%2 == 0) {
-
-		// Going up
-		if ((tail_pos/2)%2 == 0) {
-			dy = -(tail_pos/4 + 1);
-
-			// Going down
-		} else {
-			dy = tail_pos/4 +1;
-		}
-
-		// Horizontal
-	} else {
-
-		// Going right
-		if ((tail_pos/2)%2 == 0) {
-			dx = tail_pos/4 + 1;
-
-			// Going left
-		} else {
-			dx = -(tail_pos/4 + 1);
-		}
-
-	}
-
-	return x+dx + 4*(y+dy);
 }
