@@ -635,6 +635,21 @@ saveChangesResponses EditorState::alertSaveChanges() {
 }
 
 /*
+ * Saves if asked and returns false if user canceled
+ */
+bool EditorState::saveChangesOrCancel() {
+    switch(alertSaveChanges()) {
+        case saveChangesYes:
+            ESHelper::save(*this);
+        case saveChangesNo:
+        case saveChangesDidNotDisplayDialog:
+            return true;
+        case saveChangesCancel:
+            return false;
+    }
+}
+
+/*
  * This SCREAAAAMS for optimisation, but in the meantime it works !
  */
 void EditorState::updateVisibleNotes() {
@@ -737,7 +752,19 @@ void ESHelper::openFromFile(std::optional<EditorState> &ed, std::filesystem::pat
 }
 
 /*
- * Returns the newly created chart if there is
+ * returns true if user saved or if saving wasn't necessary
+ * returns false if user canceled
+ */
+bool ESHelper::saveOrCancel(std::optional<EditorState>& ed) {
+    if (ed) {
+        return ed->saveChangesOrCancel();
+    } else {
+        return true;
+    }
+}
+
+/*
+ * Returns the newly created chart if there is one
  */
 std::optional<Chart> ESHelper::NewChartDialog::display(EditorState &editorState) {
 

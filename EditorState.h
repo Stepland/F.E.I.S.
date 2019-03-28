@@ -107,6 +107,7 @@ public:
     void displayLinearView();
 
     saveChangesResponses alertSaveChanges();
+    bool saveChangesOrCancel();
 
     void updateVisibleNotes();
     std::set<Note> visibleNotes;
@@ -118,6 +119,8 @@ namespace ESHelper {
     void save(EditorState& ed);
     void open(std::optional<EditorState>& ed);
     void openFromFile(std::optional<EditorState>& ed, std::filesystem::path path);
+
+    bool saveOrCancel(std::optional<EditorState>& ed);
 
     class NewChartDialog {
 

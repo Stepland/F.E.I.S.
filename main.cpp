@@ -11,6 +11,7 @@
 #include "SoundEffect.h"
 #include "TimeSelection.h"
 #include "Preferences.h"
+#include "EditActions.h"
 
 int main(int argc, char** argv) {
 
@@ -65,17 +66,7 @@ int main(int argc, char** argv) {
             switch (event.type) {
                 case sf::Event::Closed:
                     preferences.save();
-                    if (editorState) {
-                        switch (editorState->alertSaveChanges()) {
-                            case saveChangesYes:
-                                ESHelper::save(*editorState);
-                            case saveChangesNo:
-                            case saveChangesDidNotDisplayDialog:
-                                window.close();
-                            case saveChangesCancel:
-                                break;
-                        }
-                    } else {
+                    if (ESHelper::saveOrCancel(editorState)) {
                         window.close();
                     }
                     break;
@@ -168,16 +159,7 @@ int main(int argc, char** argv) {
 
                         // Delete selected notes from the chart and discard timeSelection
                         case sf::Keyboard::Delete:
-                            if (editorState and editorState->chart) {
-                                if (not editorState->chart->selectedNotes.empty()) {
-                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(editorState->chart->selectedNotes,false));
-                                    notificationsQueue.push(std::make_shared<TextNotification>("Deleted selected notes"));
-                                    for (auto note : editorState->chart->selectedNotes) {
-                                        editorState->chart->ref.Notes.erase(note);
-                                    }
-                                    editorState->chart->selectedNotes.clear();
-                                }
-                            }
+                            EditActions::delete_(editorState, notificationsQueue);
                             break;
 
                         /*
@@ -310,22 +292,14 @@ int main(int argc, char** argv) {
                          */
                         case sf::Keyboard::C:
                             if (event.key.control) {
-                                if (editorState and editorState->chart and (not editorState->chart->selectedNotes.empty())) {
-
-                                    std::stringstream ss;
-                                    ss << "Copied " << editorState->chart->selectedNotes.size() << " note";
-                                    if (editorState->chart->selectedNotes.size() > 1) {
-                                        ss << "s";
-                                    }
-                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
-
-                                    editorState->chart->notesClipboard.copy(editorState->chart->selectedNotes);
-                                }
+                                EditActions::copy(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
-                                ESHelper::open(editorState);
+                                if (ESHelper::saveOrCancel(editorState)) {
+                                    ESHelper::open(editorState);
+                                }
                             }
                             break;
                         case sf::Keyboard::P:
@@ -341,68 +315,22 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Keyboard::V:
                             if (event.key.control) {
-                                if (editorState and editorState->chart and (not editorState->chart->notesClipboard.empty())) {
-
-                                    int tick_offset = static_cast<int>(editorState->getCurrentTick());
-                                    std::set<Note> pasted_notes = editorState->chart->notesClipboard.paste(tick_offset);
-
-                                    std::stringstream ss;
-                                    ss << "Pasted " << pasted_notes.size() << " note";
-                                    if (pasted_notes.size() > 1) {
-                                        ss << "s";
-                                    }
-                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
-
-                                    for (auto note : pasted_notes) {
-                                        editorState->chart->ref.Notes.insert(note);
-                                    }
-                                    editorState->chart->selectedNotes = pasted_notes;
-                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(editorState->chart->selectedNotes,true));
-                                }
+                                EditActions::paste(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::X:
                             if (event.key.control) {
-                                if (editorState and editorState->chart and (not editorState->chart->selectedNotes.empty())) {
-
-                                    std::stringstream ss;
-                                    ss << "Cut " << editorState->chart->selectedNotes.size() << " note";
-                                    if (editorState->chart->selectedNotes.size() > 1) {
-                                        ss << "s";
-                                    }
-                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
-
-                                    editorState->chart->notesClipboard.copy(editorState->chart->selectedNotes);
-                                    for (auto note : editorState->chart->selectedNotes) {
-                                        editorState->chart->ref.Notes.erase(note);
-                                    }
-                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(editorState->chart->selectedNotes,false));
-                                    editorState->chart->selectedNotes.clear();
-                                }
+                                EditActions::cut(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::Y:
                             if (event.key.control) {
-                                if (editorState and editorState->chart) {
-                                    auto next = editorState->chart->history.get_next();
-                                    if (next) {
-                                        notificationsQueue.push(std::make_shared<RedoNotification>(**next));
-                                        (*next)->doAction(*editorState);
-                                        editorState->densityGraph.should_recompute = true;
-                                    }
-                                }
+                                EditActions::redo(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::Z:
                             if (event.key.control) {
-                                if (editorState and editorState->chart) {
-                                    auto previous = editorState->chart->history.get_previous();
-                                    if (previous) {
-                                        notificationsQueue.push(std::make_shared<UndoNotification>(**previous));
-                                        (*previous)->undoAction(*editorState);
-                                        editorState->densityGraph.should_recompute = true;
-                                    }
-                                }
+                                EditActions::undo(editorState, notificationsQueue);
                             }
                             break;
                         default:
@@ -556,39 +484,33 @@ int main(int argc, char** argv) {
         {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
-                    const char* _filepath = tinyfd_saveFileDialog("New File",nullptr,0,nullptr,nullptr);
-                    if (_filepath != nullptr) {
-                        std::filesystem::path filepath(_filepath);
-                        try {
-                            Fumen f(filepath);
-                            f.autoSaveAsMemon();
-                            editorState.emplace(f);
-                            Toolbox::pushNewRecentFile(std::filesystem::canonical(editorState->fumen.path));
-                        } catch (const std::exception& e) {
-                            tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                    if (ESHelper::saveOrCancel(editorState)) {
+                        const char* _filepath = tinyfd_saveFileDialog("New File",nullptr,0,nullptr,nullptr);
+                        if (_filepath != nullptr) {
+                            std::filesystem::path filepath(_filepath);
+                            try {
+                                Fumen f(filepath);
+                                f.autoSaveAsMemon();
+                                editorState.emplace(f);
+                                Toolbox::pushNewRecentFile(std::filesystem::canonical(editorState->fumen.path));
+                            } catch (const std::exception& e) {
+                                tinyfd_messageBox("Error",e.what(),"ok","error",1);
+                            }
                         }
                     }
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Open","Ctrl+O")) {
-                    ESHelper::open(editorState);
+                    if (ESHelper::saveOrCancel(editorState)) {
+                        ESHelper::open(editorState);
+                    }
                 }
                 if (ImGui::BeginMenu("Recent Files")) {
                     int i = 0;
                     for (const auto& file : Toolbox::getRecentFiles()) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
-                            if (editorState) {
-                                switch(editorState->alertSaveChanges()) {
-                                    case saveChangesYes:
-                                        ESHelper::save(*editorState);
-                                    case saveChangesNo:
-                                    case saveChangesDidNotDisplayDialog:
-                                        ESHelper::openFromFile(editorState,file);
-                                    case saveChangesCancel:
-                                        break;
-                                }
-                            } else {
+                            if (ESHelper::saveOrCancel(editorState)) {
                                 ESHelper::openFromFile(editorState,file);
                             }
                         }
@@ -598,7 +520,9 @@ int main(int argc, char** argv) {
                     ImGui::EndMenu();
                 }
                 if (ImGui::MenuItem("Close","",false,editorState.has_value())) {
-                    editorState.reset();
+                    if (ESHelper::saveOrCancel(editorState)) {
+                        editorState.reset();
+                    }
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save","Ctrl+S",false,editorState.has_value())) {
@@ -623,6 +547,25 @@ int main(int argc, char** argv) {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
+                    EditActions::undo(editorState, notificationsQueue);
+                }
+                if (ImGui::MenuItem("Redo", "Ctrl+Y")) {
+                    EditActions::redo(editorState, notificationsQueue);
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Cut", "Ctrl+X")) {
+                    EditActions::cut(editorState, notificationsQueue);
+                }
+                if (ImGui::MenuItem("Copy", "Ctrl+C")) {
+                    EditActions::copy(editorState, notificationsQueue);
+                }
+                if (ImGui::MenuItem("Paste", "Ctrl+V")) {
+                    EditActions::paste(editorState, notificationsQueue);
+                }
+                if (ImGui::MenuItem("Delete", "Delete")) {
+                    EditActions::delete_(editorState, notificationsQueue);
+                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Chart",editorState.has_value())) {
