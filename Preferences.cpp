@@ -35,7 +35,7 @@ void Preferences::loadDefaults() {
     for (auto& folder : std::filesystem::directory_iterator("assets/textures/markers/")) {
         if (Marker::validMarkerFolder(folder.path())) {
             assert(folder.is_directory());
-            marker = folder.path().filename().string();
+            marker = folder.path().string();
             found_a_marker = true;
             break;
         }

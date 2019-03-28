@@ -645,6 +645,7 @@ bool EditorState::saveChangesOrCancel() {
         case saveChangesDidNotDisplayDialog:
             return true;
         case saveChangesCancel:
+        default:
             return false;
     }
 }

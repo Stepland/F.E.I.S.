@@ -38,7 +38,7 @@ bool Chart::operator!=(const Chart &rhs) const {
 
 bool Chart::is_colliding(const Note &note, int ticks_threshold) {
 
-	int lower_bound = note.getTiming()-ticks_threshold;
+	int lower_bound = std::max(0,note.getTiming()-ticks_threshold);
 	int upper_bound = note.getTiming()+ticks_threshold;
 
 	auto lower_note = Notes.lower_bound(Note(0,lower_bound));
