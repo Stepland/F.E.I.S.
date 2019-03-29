@@ -11,7 +11,7 @@ Chart_with_History::Chart_with_History(Chart &c) : ref(c) {
 std::optional<Note> Chart_with_History::makeLongNoteDummy(int current_tick) const {
     if (creatingLongNote and longNoteBeingCreated) {
         Note long_note = Note(longNoteBeingCreated->first, longNoteBeingCreated->second);
-        Note dummy_long_note = Note(long_note.getPos(), current_tick-1, ref.getResolution(), long_note.getTail_pos());
+        Note dummy_long_note = Note(long_note.getPos(), current_tick, ref.getResolution(), long_note.getTail_pos());
         return dummy_long_note;
     } else {
         return {};
