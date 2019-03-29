@@ -5,4 +5,4 @@ a.k.a.  <i>Fumen Edit Integration System</i>
 
 Jubeat chart editor written in C++ using SFML & Dear ImGui
 
-Development status entirely depends on my motivation
+Check [the wiki](https://github.com/Stepland/F.E.I.S./wiki) for instructions
