@@ -4,7 +4,7 @@
 
 #include "Preferences.h"
 
-Preferences::Preferences() {
+Preferences::Preferences() : markerEndingState(MarkerEndingState_PERFECT) {
 
     loadDefaults();
 
@@ -49,10 +49,9 @@ void Preferences::loadDefaults() {
 
 void Preferences::load_v0_1_0(nlohmann::json j) {
 
-    auto new_marker_folder = j.at("marker").at("folder").get<std::string>();
-    auto marker_path = new_marker_folder;
-    if (Marker::validMarkerFolder(marker_path)) {
-        marker = new_marker_folder;
+    auto new_marker_path = j.at("marker").at("folder").get<std::string>();
+    if (Marker::validMarkerFolder(new_marker_path)) {
+        marker = new_marker_path;
     }
 
     auto new_markerEndingState = j.at("marker").at("ending state").get<std::string>();

@@ -8,7 +8,14 @@
 #include "NotificationsQueue.h"
 #include "EditorState.h"
 
-namespace EditActions {
+namespace Move {
+
+    void backwardsInTime(std::optional<EditorState>& ed);
+    void forwardsInTime(std::optional<EditorState>& ed);
+
+}
+
+namespace Edit {
 
     void undo(std::optional<EditorState>& ed, NotificationsQueue& nq);
     void redo(std::optional<EditorState>& ed, NotificationsQueue& nq);

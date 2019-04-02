@@ -2,9 +2,34 @@
 // Created by Syméon on 28/03/2019.
 //
 
-#include "EditActions.h"
+#include "EditorStateActions.h"
 
-void EditActions::undo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
+void Move::backwardsInTime(std::optional<EditorState> &ed) {
+    if (ed and ed->chart) {
+        float floatTicks = ed->getCurrentTick();
+        auto prevTick = static_cast<int>(floorf(floatTicks));
+        int step = ed->getSnapStep();
+        int prevTickInSnap = prevTick;
+        if (prevTick%step == 0) {
+            prevTickInSnap -= step;
+        } else {
+            prevTickInSnap -= prevTick%step;
+        }
+        ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(prevTickInSnap)));
+    }
+}
+
+void Move::forwardsInTime(std::optional<EditorState> &ed) {
+    if (ed and ed->chart) {
+        float floatTicks = ed->getCurrentTick();
+        auto nextTick = static_cast<int>(ceilf(floatTicks));
+        int step = ed->getSnapStep();
+        int nextTickInSnap = nextTick + (step - nextTick%step);
+        ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(nextTickInSnap)));
+    }
+}
+
+void Edit::undo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart) {
         auto previous = ed->chart->history.get_previous();
         if (previous) {
@@ -15,7 +40,7 @@ void EditActions::undo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     }
 }
 
-void EditActions::redo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
+void Edit::redo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart) {
         auto next = ed->chart->history.get_next();
         if (next) {
@@ -27,7 +52,7 @@ void EditActions::redo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
 }
 
 
-void EditActions::cut(std::optional<EditorState>& ed, NotificationsQueue& nq) {
+void Edit::cut(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->selectedNotes.empty())) {
 
         std::stringstream ss;
@@ -46,7 +71,7 @@ void EditActions::cut(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     }
 }
 
-void EditActions::copy(std::optional<EditorState>& ed, NotificationsQueue& nq) {
+void Edit::copy(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->selectedNotes.empty())) {
 
         std::stringstream ss;
@@ -60,10 +85,10 @@ void EditActions::copy(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     }
 }
 
-void EditActions::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) {
+void Edit::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->notesClipboard.empty())) {
 
-        int tick_offset = static_cast<int>(ed->getCurrentTick());
+        auto tick_offset = static_cast<int>(ed->getCurrentTick());
         std::set<Note> pasted_notes = ed->chart->notesClipboard.paste(tick_offset);
 
         std::stringstream ss;
@@ -82,7 +107,7 @@ void EditActions::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) 
 
 }
 
-void EditActions::delete_(std::optional<EditorState>& ed, NotificationsQueue& nq) {
+void Edit::delete_(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart) {
         if (not ed->chart->selectedNotes.empty()) {
             ed->chart->history.push(std::make_shared<ToggledNotes>(ed->chart->selectedNotes,false));

@@ -11,11 +11,12 @@
 #include "SoundEffect.h"
 #include "TimeSelection.h"
 #include "Preferences.h"
-#include "EditActions.h"
+#include "EditorStateActions.h"
 
 int main(int argc, char** argv) {
 
     // TODO : Rewrite the terrible LNMarker stuff
+    // TODO : make the playfield not appear when there's no chart selected
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
@@ -103,6 +104,26 @@ int main(int argc, char** argv) {
                             break;
                     }
                     break;
+                case sf::Event::MouseWheelScrolled:
+                    switch (event.mouseWheelScroll.wheel) {
+                        case sf::Mouse::Wheel::VerticalWheel:
+                            {
+                                auto delta = static_cast<int>(std::floor(event.mouseWheelScroll.delta));
+                                if (delta >= 0) {
+                                    for (int i = 0; i < delta; ++i) {
+                                        Move::backwardsInTime(editorState);
+                                    }
+                                } else {
+                                    for (int i = 0; i < -delta; ++i) {
+                                        Move::forwardsInTime(editorState);
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 case sf::Event::KeyPressed:
                     switch (event.key.code) {
 
@@ -159,7 +180,7 @@ int main(int argc, char** argv) {
 
                         // Delete selected notes from the chart and discard timeSelection
                         case sf::Keyboard::Delete:
-                            EditActions::delete_(editorState, notificationsQueue);
+                            Edit::delete_(editorState, notificationsQueue);
                             break;
 
                         /*
@@ -174,19 +195,7 @@ int main(int argc, char** argv) {
                                     notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
-                                // TODO : there is something weird with the way I'm doing this, going back with the key often makes it go back twice
-                                if (editorState and editorState->chart) {
-                                    float floatTicks = editorState->getCurrentTick();
-                                    int prevTick = static_cast<int>(floorf(floatTicks));
-                                    int step = editorState->getSnapStep();
-                                    int prevTickInSnap = prevTick;
-                                    if (prevTick%step == 0) {
-                                        prevTickInSnap -= step;
-                                    } else {
-                                        prevTickInSnap -= prevTick%step;
-                                    }
-                                    editorState->setPlaybackAndMusicPosition(sf::seconds(editorState->getSecondsAt(prevTickInSnap)));
-                                }
+                                Move::backwardsInTime(editorState);
                             }
                             break;
                         case sf::Keyboard::Down:
@@ -198,13 +207,7 @@ int main(int argc, char** argv) {
                                     notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
-                                if (editorState and editorState->chart) {
-                                    float floatTicks = editorState->getCurrentTick();
-                                    int nextTick = static_cast<int>(ceilf(floatTicks));
-                                    int step = editorState->getSnapStep();
-                                    int nextTickInSnap = nextTick + (step - nextTick%step);
-                                    editorState->setPlaybackAndMusicPosition(sf::seconds(editorState->getSecondsAt(nextTickInSnap)));
-                                }
+                                Move::forwardsInTime(editorState);
                             }
                             break;
                         case sf::Keyboard::Left:
@@ -292,7 +295,7 @@ int main(int argc, char** argv) {
                          */
                         case sf::Keyboard::C:
                             if (event.key.control) {
-                                EditActions::copy(editorState, notificationsQueue);
+                                Edit::copy(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::O:
@@ -315,22 +318,22 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Keyboard::V:
                             if (event.key.control) {
-                                EditActions::paste(editorState, notificationsQueue);
+                                Edit::paste(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::X:
                             if (event.key.control) {
-                                EditActions::cut(editorState, notificationsQueue);
+                                Edit::cut(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::Y:
                             if (event.key.control) {
-                                EditActions::redo(editorState, notificationsQueue);
+                                Edit::redo(editorState, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::Z:
                             if (event.key.control) {
-                                EditActions::undo(editorState, notificationsQueue);
+                                Edit::undo(editorState, notificationsQueue);
                             }
                             break;
                         default:
@@ -368,8 +371,8 @@ int main(int argc, char** argv) {
                     }
                 }
                 if (beatTick.shouldPlay) {
-                    int previous_tick = static_cast<int>(editorState->getTicksAt(editorState->previousPos.asSeconds()));
-                    int current_tick = static_cast<int>(editorState->getTicksAt(editorState->playbackPosition.asSeconds()));
+                    auto previous_tick = static_cast<int>(editorState->getTicksAt(editorState->previousPos.asSeconds()));
+                    auto current_tick = static_cast<int>(editorState->getTicksAt(editorState->playbackPosition.asSeconds()));
                     if (previous_tick/editorState->getResolution() != current_tick/editorState->getResolution()) {
                         beatTick.play();
                     }
@@ -548,23 +551,23 @@ int main(int argc, char** argv) {
             }
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
-                    EditActions::undo(editorState, notificationsQueue);
+                    Edit::undo(editorState, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Redo", "Ctrl+Y")) {
-                    EditActions::redo(editorState, notificationsQueue);
+                    Edit::redo(editorState, notificationsQueue);
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Cut", "Ctrl+X")) {
-                    EditActions::cut(editorState, notificationsQueue);
+                    Edit::cut(editorState, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Copy", "Ctrl+C")) {
-                    EditActions::copy(editorState, notificationsQueue);
+                    Edit::copy(editorState, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Paste", "Ctrl+V")) {
-                    EditActions::paste(editorState, notificationsQueue);
+                    Edit::paste(editorState, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Delete", "Delete")) {
-                    EditActions::delete_(editorState, notificationsQueue);
+                    Edit::delete_(editorState, notificationsQueue);
                 }
                 ImGui::EndMenu();
             }

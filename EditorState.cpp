@@ -105,7 +105,14 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
     ImGui::SetNextWindowSize(ImVec2(400,400),ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(ImVec2(0,0),ImVec2(FLT_MAX,FLT_MAX),Toolbox::CustomConstraints::ContentSquare);
 
-    if (ImGui::Begin("Playfield",&showPlayfield,ImGuiWindowFlags_NoScrollbar)) {
+    if (
+        ImGui::Begin(
+            "Playfield",
+            &showPlayfield,
+            ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoScrollWithMouse
+        )
+    ) {
 
         float squareSize = ImGui::GetWindowSize().x / 4.f;
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
@@ -178,7 +185,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         if (chart) {
 
             // Check for collisions then display them
-            int ticks_threshold = static_cast<int>((1.f/60.f)*fumen.BPM*getResolution());
+            auto ticks_threshold = static_cast<int>((1.f/60.f)*fumen.BPM*getResolution());
 
             std::array<bool, 16> collisions = {};
 
