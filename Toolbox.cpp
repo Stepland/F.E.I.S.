@@ -175,17 +175,6 @@ std::string Toolbox::toOrdinal(int number) {
     return s.str();
 }
 
-void
-Toolbox::displayIfHasValue(const std::optional<std::reference_wrapper<sf::Texture>> &tex, ImVec2 cursorPosition, ImVec2 texSize, int &index) {
-    if (tex) {
-        ImGui::SetCursorPos(cursorPosition);
-        ImGui::PushID(index);
-        ImGui::Image(*tex,texSize);
-        ImGui::PopID();
-        ++index;
-    }
-}
-
 void Toolbox::center(sf::Shape &s) {
     sf::FloatRect bounds = s.getLocalBounds();
     s.setOrigin(bounds.left + bounds.width/2.f, bounds.top  + bounds.height/2.f);

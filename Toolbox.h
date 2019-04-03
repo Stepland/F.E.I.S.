@@ -45,7 +45,6 @@ namespace Toolbox {
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);
     std::string toOrdinal(int number);
-    void displayIfHasValue(const std::optional<std::reference_wrapper<sf::Texture>>& tex, ImVec2 cursorPosition, ImVec2 texSize, int& index);
     void center(sf::Shape& s);
     bool editFillColor(const char* label, sf::Shape& s);
 }

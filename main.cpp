@@ -15,8 +15,7 @@
 
 int main(int argc, char** argv) {
 
-    // TODO : Rewrite the terrible LNMarker stuff
-    // TODO : make the playfield not appear when there's no chart selected
+    // TODO : Make the playfield not appear when there's no chart selected
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");

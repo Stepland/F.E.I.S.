@@ -98,7 +98,7 @@ public:
     bool showLinearView;
 
     void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
-    void displayLongNote(const Note& note, int& ImGuiIndex, Marker& marker, MarkerEndingState& markerEndingState);
+
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();
