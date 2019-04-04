@@ -102,6 +102,8 @@ namespace Widgets {
 		sf::RectangleShape note_selected;
 		sf::RectangleShape note_collision_zone;
 
+		void resize(unsigned int width, unsigned int height);
+
 	    void update(
 			const std::optional<Chart_with_History> chart,
 			const sf::Time& playbackPosition,

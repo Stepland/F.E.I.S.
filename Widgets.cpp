@@ -96,13 +96,14 @@ void Widgets::Playfield::drawLongNote(const Note &note, const sf::Time &playback
 	float squareSize = static_cast<float>(longNoteLayer.getSize().x) / 4;
 
 	AffineTransform<float> SecondsToTicksProportional(0.f, (60.f / BPM), 0.f, resolution);
+    AffineTransform<float> SecondsToTicks(playbackPosition.asSeconds()-(60.f/BPM), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution, ticksAtPlaybackPosition);
 
 	float note_offset = SecondsToTicksProportional.backwards_transform(ticksAtPlaybackPosition - note.getTiming());
 	auto frame = static_cast<long long int>(std::floor(note_offset * 30.f));
 	int x = note.getPos() % 4;
 	int y = note.getPos() / 4;
 
-	float tail_end_in_seconds = SecondsToTicksProportional.backwards_transform(note.getTiming() + note.getLength());
+	float tail_end_in_seconds = SecondsToTicks.backwards_transform(note.getTiming() + note.getLength());
 	float tail_end_offset = playbackPosition.asSeconds() - tail_end_in_seconds;
 
 	if (playbackPosition.asSeconds() < tail_end_in_seconds) {
@@ -210,12 +211,13 @@ void Widgets::Playfield::drawLongNote(
 	float squareSize = static_cast<float>(longNoteLayer.getSize().x) / 4;
 
 	AffineTransform<float> SecondsToTicksProportional(0.f, (60.f / BPM), 0.f, resolution);
+    AffineTransform<float> SecondsToTicks(playbackPosition.asSeconds()-(60.f/BPM), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution, ticksAtPlaybackPosition);
 
 	float note_offset = SecondsToTicksProportional.backwards_transform(ticksAtPlaybackPosition - note.getTiming());
 	int x = note.getPos() % 4;
 	int y = note.getPos() / 4;
 
-	float tail_end_in_seconds = SecondsToTicksProportional.backwards_transform(note.getTiming() + note.getLength());
+	float tail_end_in_seconds = SecondsToTicks.backwards_transform(note.getTiming() + note.getLength());
 	float tail_end_offset = playbackPosition.asSeconds() - tail_end_in_seconds;
 
 	if (playbackPosition.asSeconds() < tail_end_in_seconds) {
@@ -274,6 +276,20 @@ Widgets::LinearView::LinearView() {
 
 }
 
+void Widgets::LinearView::resize(unsigned int width, unsigned int height) {
+
+    if (view.getSize() != sf::Vector2u(width,height)) {
+        if (!view.create(width, height)) {
+            std::cerr << "Unable to resize Playfield's longNoteLayer";
+            throw std::runtime_error("Unable to resize Playfield's longNoteLayer");
+        }
+        view.setSmooth(true);
+    }
+
+    view.clear(sf::Color::Transparent);
+
+}
+
 void Widgets::LinearView::update(const std::optional<Chart_with_History> chart, const sf::Time &playbackPosition,
 								 const float &ticksAtPlaybackPosition, const float &BPM, const int &resolution,
 								 const ImVec2 &size) {
@@ -281,12 +297,7 @@ void Widgets::LinearView::update(const std::optional<Chart_with_History> chart, 
 	int x = std::max(140, static_cast<int>(size.x));
 	int y = std::max(140, static_cast<int>(size.y));
 
-	if (!view.create(static_cast<unsigned int>(x), static_cast<unsigned int>(y))) {
-		std::cerr << "Unable to create LinearView's RenderTexture";
-		throw std::runtime_error("Unable to create LinearView's RenderTexture");
-	}
-	view.setSmooth(true);
-	view.clear(sf::Color::Transparent);
+    resize(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
 
 	if (chart) {
 
