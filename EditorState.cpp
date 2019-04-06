@@ -358,7 +358,7 @@ void EditorState::displayTimeline() {
 
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 35, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
     ImGui::SetNextWindowSize({45,height},ImGuiCond_Always);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(1, 1));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,1);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);
     ImGui::PushStyleColor(ImGuiCol_FrameBg,ImVec4(0,0,0,0));
