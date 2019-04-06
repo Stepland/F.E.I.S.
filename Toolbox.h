@@ -77,6 +77,12 @@ public:
 private:
     T a;
     T b;
+public:
+    void setB(T b) {
+        AffineTransform::b = b;
+    }
+
+private:
 
     T low_input;
     T high_input;

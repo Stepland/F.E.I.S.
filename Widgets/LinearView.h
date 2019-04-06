@@ -20,16 +20,6 @@ public:
     LinearView();
 
     sf::RenderTexture view;
-    sf::Font beat_number_font;
-    sf::RectangleShape cursor;
-    sf::RectangleShape selection;
-    sf::RectangleShape note_rect;
-    sf::RectangleShape long_note_rect;
-    sf::RectangleShape long_note_collision_zone;
-    sf::RectangleShape note_selected;
-    sf::RectangleShape note_collision_zone;
-
-    void resize(unsigned int width, unsigned int height);
 
     void update(
         const std::optional<Chart_with_History>& chart,
@@ -40,20 +30,42 @@ public:
         const ImVec2& size
     );
 
-void setZoom(int zoom);
-void zoom_in() {setZoom(zoom+1);};
-void zoom_out() {setZoom(zoom-1);};
-float timeFactor() {return std::pow(1.25f, static_cast<float>(zoom));};
+    void setZoom(int zoom);
+    void zoom_in() {setZoom(zoom+1);};
+    void zoom_out() {setZoom(zoom-1);};
+    float timeFactor() {return std::pow(1.25f, static_cast<float>(zoom));};
 
-bool shouldDisplaySettings;
+    bool shouldDisplaySettings;
 
-void displaySettings();
+    void displaySettings();
 
 private:
 
-int zoom = 0;
-    std::__cxx11::string font_path = "assets/fonts/NotoSans-Medium.ttf";
+    sf::Font beat_number_font;
+    sf::RectangleShape cursor;
+    sf::RectangleShape selection;
+    sf::RectangleShape note_rect;
+    sf::RectangleShape long_note_rect;
+    sf::RectangleShape long_note_collision_zone;
+    sf::RectangleShape note_selected;
+    sf::RectangleShape note_collision_zone;
 
+    float last_BPM = 120.0f;
+    int last_resolution = 240;
+    bool shouldReloadTransforms;
+
+    AffineTransform<float> SecondsToTicks;
+    AffineTransform<float> SecondsToTicksProportional;
+    AffineTransform<float> PixelsToSeconds;
+    AffineTransform<float> PixelsToSecondsProprotional;
+    AffineTransform<float> PixelsToTicks;
+
+    void resize(unsigned int width, unsigned int height);
+
+    void reloadTransforms(const sf::Time &playbackPosition, const float &ticksAtPlaybackPosition, const float &BPM, const int &resolution);
+
+    int zoom = 0;
+    const std::string font_path = "assets/fonts/NotoSans-Medium.ttf";
 };
 
 #endif //FEIS_LINEARVIEW_H

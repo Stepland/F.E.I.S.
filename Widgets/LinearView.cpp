@@ -6,7 +6,13 @@
 #include <variant>
 #include "LinearView.h"
 
-LinearView::LinearView() {
+LinearView::LinearView() :
+	SecondsToTicks(-(60.f/last_BPM)/timeFactor(), 0.f, -last_resolution/timeFactor(), 0),
+	SecondsToTicksProportional(0.f,(60.f/last_BPM),0.f,last_resolution),
+	PixelsToSeconds(-25.f, 75.f, -(60.f/last_BPM)/timeFactor(), 0.f),
+	PixelsToSecondsProprotional(0.f, 100.f, 0.f, (60.f/last_BPM)/timeFactor()),
+	PixelsToTicks(-25.f, 75.f, -last_resolution/timeFactor(), 0)
+{
 
 	if (!beat_number_font.loadFromFile(font_path)) {
 		std::cerr << "Unable to load " << font_path;
@@ -55,20 +61,13 @@ void LinearView::update(const std::optional<Chart_with_History>& chart, const sf
 	int y = std::max(140, static_cast<int>(size.y));
 
     resize(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+    reloadTransforms(playbackPosition, ticksAtPlaybackPosition, BPM, resolution);
 
 	if (chart) {
-
-		AffineTransform<float> SecondsToTicks(playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
-		AffineTransform<float> SecondsToTicksProportional(0.f,(60.f/BPM),0.f,resolution);
-		AffineTransform<float> PixelsToSeconds(-25.f, 75.f, playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds());
-		AffineTransform<float> PixelsToSecondsProprotional(0.f, 100.f, 0.f, (60.f/BPM)/timeFactor());
-		AffineTransform<float> PixelsToTicks(-25.f, 75.f, ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
-
 
 		/*
 		 * Draw the beat lines and numbers
 		 */
-
 		int next_beat_tick =  ((1 + (static_cast<int>(PixelsToTicks.transform(0.f))+resolution)/resolution) * resolution) - resolution;
 		int next_beat = std::max(0, next_beat_tick / resolution);
 		next_beat_tick = next_beat*resolution;
@@ -219,6 +218,7 @@ void LinearView::update(const std::optional<Chart_with_History>& chart, const sf
 
 void LinearView::setZoom(int newZoom) {
 	zoom = std::clamp(newZoom, -5, 5);
+	shouldReloadTransforms = true;
 }
 
 void LinearView::displaySettings() {
@@ -231,4 +231,18 @@ void LinearView::displaySettings() {
 		Toolbox::editFillColor("Long Note Tail", long_note_rect);
 	}
 	ImGui::End();
+}
+
+void LinearView::reloadTransforms(const sf::Time &playbackPosition, const float &ticksAtPlaybackPosition, const float &BPM, const int &resolution) {
+	if (shouldReloadTransforms or last_BPM != BPM or last_resolution != resolution) {
+		SecondsToTicksProportional = AffineTransform<float>(0.f,(60.f/BPM),0.f,resolution);
+		PixelsToSecondsProprotional = AffineTransform<float>(0.f, 100.f, 0.f, (60.f/BPM)/timeFactor());
+        SecondsToTicks = AffineTransform<float>(playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds(), ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
+        PixelsToSeconds = AffineTransform<float>(-25.f, 75.f, playbackPosition.asSeconds()-(60.f/BPM)/timeFactor(), playbackPosition.asSeconds());
+        PixelsToTicks = AffineTransform<float>(-25.f, 75.f, ticksAtPlaybackPosition-resolution/timeFactor(), ticksAtPlaybackPosition);
+	} else {
+        PixelsToSeconds.setB(playbackPosition.asSeconds()-0.75f*(60.f/BPM)/timeFactor());
+	    PixelsToTicks.setB(ticksAtPlaybackPosition-0.75f*resolution/timeFactor());
+	}
+
 }
