@@ -1,0 +1,63 @@
+//
+// Created by symeon on 06/04/19.
+//
+
+#ifndef FEIS_PLAYFIELD_H
+#define FEIS_PLAYFIELD_H
+
+
+#include <SFML/Graphics.hpp>
+#include <imgui-SFML.h>
+#include "../LNMarker.h"
+#include "../Note.h"
+#include "../Marker.h"
+
+
+class Playfield {
+
+public:
+
+    Playfield();
+    sf::Texture base_texture;
+    sf::Sprite button;
+    sf::Sprite button_pressed;
+    sf::Sprite note_selected;
+    sf::Sprite note_collision;
+
+    sf::RenderTexture markerLayer;
+    sf::Sprite markerSprite;
+
+    LNMarker longNoteMarker;
+    sf::RenderTexture longNoteLayer;
+    sf::Sprite LNSquareBackgroud;
+    sf::Sprite LNSquareOutline;
+    sf::Sprite LNSquareHighlight;
+    sf::Sprite LNTail;
+    sf::Sprite LNTriangle;
+
+
+    void resize(unsigned int width);
+
+    void drawLongNote(
+        const Note& note,
+        const sf::Time& playbackPosition,
+        const float& ticksAtPlaybackPosition,
+        const float& BPM,
+        const int& resolution
+    );
+
+    void drawLongNote(
+        const Note& note,
+        const sf::Time& playbackPosition,
+        const float& ticksAtPlaybackPosition,
+        const float& BPM,
+        const int& resolution,
+        Marker& marker,
+        MarkerEndingState& markerEndingState
+    );
+
+private:
+    std::__cxx11::string texture_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
+};
+
+#endif //FEIS_PLAYFIELD_H

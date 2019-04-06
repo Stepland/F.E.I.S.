@@ -3,15 +3,13 @@
 #include <imgui-SFML.h>
 #include <imgui_stdlib.h>
 #include <variant>
-#include "Widgets.h"
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
-#include "Toolbox.h"
 #include "NotificationsQueue.h"
 #include "SoundEffect.h"
-#include "TimeSelection.h"
 #include "Preferences.h"
 #include "EditorStateActions.h"
+#include "Widgets/BlankScreen.h"
 
 int main(int argc, char** argv) {
 
@@ -51,7 +49,7 @@ int main(int argc, char** argv) {
     Marker& marker = defaultMarker;
     MarkerEndingState markerEndingState = preferences.markerEndingState;
 
-    Widgets::BlankScreen bg;
+    BlankScreen bg;
     std::optional<EditorState> editorState;
     NotificationsQueue notificationsQueue;
     ESHelper::NewChartDialog newChartDialog;

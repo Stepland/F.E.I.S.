@@ -10,6 +10,8 @@
 #include "TimeSelection.h"
 #include "HistoryActions.h"
 #include "History.h"
+#include "Widgets/DensityGraph.h"
+
 
 struct Chart_with_History {
     explicit Chart_with_History(Chart &c);
@@ -20,6 +22,7 @@ struct Chart_with_History {
     std::optional<std::pair<Note,Note>> longNoteBeingCreated;
     bool creatingLongNote;
     History<std::shared_ptr<ActionWithMessage>> history;
+    DensityGraph densityGraph;
 
     std::optional<Note> makeLongNoteDummy(int current_tick) const;
     std::optional<Note> makeCurrentLongNote() const;

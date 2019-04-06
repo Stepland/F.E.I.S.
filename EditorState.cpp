@@ -10,7 +10,6 @@
 #include <imgui_internal.h>
 #include "EditorState.h"
 #include "tinyfiledialogs.h"
-#include "Toolbox.h"
 
 EditorState::EditorState(Fumen &fumen) : fumen(fumen) {
     reloadFromFumen();
@@ -338,19 +337,20 @@ void EditorState::displayTimeline() {
 
     float height = io.DisplaySize.y * 0.9f;
 
+    // checking if we need to recompute the densities
     if (chart) {
-        if (densityGraph.should_recompute) {
-            densityGraph.should_recompute = false;
-            densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
+        if (chart->densityGraph.should_recompute) {
+            chart->densityGraph.should_recompute = false;
+            chart->densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
                                           getResolution());
         } else {
-            if (densityGraph.last_height) {
-                if (static_cast<int>(height) != *(densityGraph.last_height)) {
-                    densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
+            if (chart->densityGraph.last_height) {
+                if (static_cast<int>(height) != *(chart->densityGraph.last_height)) {
+                    chart->densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
                                                   getResolution());
                 }
             } else {
-                densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
+                chart->densityGraph.computeDensities(static_cast<int>(height), getChartRuntime(), chart->ref, fumen.BPM,
                                               getResolution());
             }
         }
@@ -376,9 +376,9 @@ void EditorState::displayTimeline() {
             |ImGuiWindowFlags_NoMove
             );
     {
-        if (music) {
+        if (music and chart) {
             ImGui::SetCursorPos({0,0});
-            ImGui::Image(densityGraph.graph.getTexture(),ImVec2(0,1),ImVec2(1,0));
+            ImGui::Image(chart->densityGraph.graph.getTexture(),ImVec2(0,1),ImVec2(1,0));
             AffineTransform<float> scroll(-fumen.offset,previewEnd.asSeconds(),1.f,0.f);
             float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0,0});
@@ -537,7 +537,7 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
         }
 
         chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
-        densityGraph.should_recompute = true;
+        chart->densityGraph.should_recompute = true;
     }
 
 }

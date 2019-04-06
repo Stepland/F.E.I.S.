@@ -35,7 +35,7 @@ void Edit::undo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
         if (previous) {
             nq.push(std::make_shared<UndoNotification>(**previous));
             (*previous)->undoAction(*ed);
-            ed->densityGraph.should_recompute = true;
+            ed->chart->densityGraph.should_recompute = true;
         }
     }
 }
@@ -46,7 +46,7 @@ void Edit::redo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
         if (next) {
             nq.push(std::make_shared<RedoNotification>(**next));
             (*next)->doAction(*ed);
-            ed->densityGraph.should_recompute = true;
+            ed->chart->densityGraph.should_recompute = true;
         }
     }
 }

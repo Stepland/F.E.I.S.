@@ -10,13 +10,13 @@
 #include <SFML/Graphics.hpp>
 #include "Fumen.h"
 #include "Marker.h"
-#include "Widgets.h"
 #include "History.h"
 #include "HistoryActions.h"
-#include "Widgets.h"
 #include "TimeSelection.h"
 #include "NotesClipboard.h"
 #include "ChartWithHistory.h"
+#include "Widgets/LinearView.h"
+#include "Widgets/Playfield.h"
 
 class ActionWithMessage;
 class OpenChart;
@@ -40,9 +40,8 @@ public:
 
     Fumen fumen;
 
-    Widgets::Playfield playfield;
-    Widgets::DensityGraph densityGraph;
-    Widgets::LinearView linearView;
+    Playfield playfield;
+    LinearView linearView;
 
     // the snap but divided by 4 because you can't set a snap to anything lower than 4ths
     int snap = 1;
@@ -98,7 +97,6 @@ public:
     bool showLinearView;
 
     void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
-
     void displayProperties();
     void displayStatus();
     void displayPlaybackStatus();

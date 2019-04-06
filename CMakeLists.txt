@@ -27,7 +27,6 @@ set(imgui include/imgui/imgui.cpp
 
 set(SOURCE_FILES
         main.cpp
-        Widgets.cpp
         Marker.cpp
         Fumen.cpp
         Note.cpp
@@ -50,7 +49,15 @@ set(SOURCE_FILES
         SoundEffect.h
         TimeSelection.h
         NotesClipboard.cpp
-        NotesClipboard.h ChartWithHistory.cpp ChartWithHistory.h Preferences.cpp Preferences.h EditorStateActions.cpp EditorStateActions.h)
+        NotesClipboard.h
+        ChartWithHistory.cpp
+        ChartWithHistory.h
+        Preferences.cpp
+        Preferences.h
+        EditorStateActions.cpp
+        EditorStateActions.h
+        Widgets/DensityGraph.cpp
+        Widgets/DensityGraph.h Widgets/LinearView.cpp Widgets/LinearView.h Widgets/Playfield.cpp Widgets/Playfield.h Widgets/BlankScreen.cpp Widgets/BlankScreen.h)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
