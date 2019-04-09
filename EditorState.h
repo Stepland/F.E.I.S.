@@ -63,7 +63,14 @@ public:
 
     sf::Time previousPos;
     sf::Time playbackPosition;
+
+private:
     sf::Time previewEnd; // sf::Time at which the chart preview stops, can be after the end of the audio
+
+public:
+    const sf::Time &getPreviewEnd();
+
+public:
 
     void setPlaybackAndMusicPosition(sf::Time newPosition);
 
@@ -77,12 +84,12 @@ public:
 
     float   ticksToSeconds          (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
 
-    float   getChartRuntime         ()              {return previewEnd.asSeconds() + fumen.offset;};
+    float   getChartRuntime         ()              {return getPreviewEnd().asSeconds() + fumen.offset;};
 
     void reloadFromFumen();
     void reloadMusic();
-    void reloadPlaybackPositionAndPreviewEnd();
     void reloadAlbumCover();
+    void reloadPreviewEnd();
 
     bool showPlayfield = true;
     bool showProperties;

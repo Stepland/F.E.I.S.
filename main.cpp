@@ -14,6 +14,8 @@
 int main(int argc, char** argv) {
 
     // TODO : Make the playfield not appear when there's no chart selected
+    // TODO : Make the linear preview display the end of the chart
+    // TODO : Make the linear preview timebar height movable
 
     // Création de la fenêtre
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
@@ -394,9 +396,9 @@ int main(int argc, char** argv) {
                     }
                 }
 
-                if (editorState->playbackPosition >= editorState->previewEnd) {
+                if (editorState->playbackPosition > editorState->getPreviewEnd()) {
                     editorState->playing = false;
-                    editorState->playbackPosition = editorState->previewEnd;
+                    editorState->playbackPosition = editorState->getPreviewEnd();
                 }
             } else {
                 if (editorState->music) {

@@ -46,17 +46,22 @@ void EditorState::reloadMusic() {
 
     playbackPosition = sf::seconds(-(fumen.offset));
     previousPos = playbackPosition;
+    reloadPreviewEnd();
+}
+
+void EditorState::reloadPreviewEnd() {
     if (music) {
         if (chart) {
-            previewEnd = sf::seconds(std::max(music->getDuration().asSeconds(),fumen.getChartRuntime(chart->ref)-fumen.offset)+2.f);
+            previewEnd = sf::seconds(
+                    std::max(music->getDuration().asSeconds(), fumen.getChartRuntime(chart->ref) - fumen.offset) + 2.f);
         } else {
-            previewEnd = sf::seconds(std::max(-fumen.offset,music->getDuration().asSeconds()));
+            previewEnd = sf::seconds(std::max(-fumen.offset, music->getDuration().asSeconds()));
         }
     } else {
         if (chart) {
-            previewEnd = sf::seconds(std::max(fumen.getChartRuntime(chart->ref)-fumen.offset,2.f));
+            previewEnd = sf::seconds(std::max(fumen.getChartRuntime(chart->ref) - fumen.offset, 2.f));
         } else {
-            previewEnd = sf::seconds(std::max(-fumen.offset,2.f));
+            previewEnd = sf::seconds(std::max(-fumen.offset, 2.f));
         }
     }
 }
@@ -82,6 +87,8 @@ void EditorState::reloadAlbumCover() {
 }
 
 void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
+
+    reloadPreviewEnd();
 
     if (newPosition.asSeconds() < -fumen.offset) {
         newPosition = sf::seconds(-fumen.offset);
@@ -337,7 +344,6 @@ void EditorState::displayTimeline() {
 
     float height = io.DisplaySize.y * 0.9f;
 
-    // checking if we need to recompute the densities
     if (chart) {
         if (chart->densityGraph.should_recompute) {
             chart->densityGraph.should_recompute = false;
@@ -554,6 +560,11 @@ void EditorState::setMusicVolume(int newMusicVolume) {
     if (music) {
         Toolbox::updateVolume(*music,musicVolume);
     }
+}
+
+const sf::Time &EditorState::getPreviewEnd() {
+    reloadPreviewEnd();
+    return previewEnd;
 }
 
 void ESHelper::save(EditorState& ed) {

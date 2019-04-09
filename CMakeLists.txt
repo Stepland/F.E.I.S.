@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-project(FEIS)
+project(FEIS VERSION 1.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,7 +15,7 @@ if (WIN32)
     SET(GCC_COVERAGE_LINK_FLAGS    "${GCC_COVERAGE_LINK_FLAGS} -mwindows")
 endif(WIN32)
 
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 
 set(imgui include/imgui/imgui.cpp
@@ -26,13 +26,13 @@ set(imgui include/imgui/imgui.cpp
           include/imgui/imgui_demo.cpp)
 
 set(SOURCE_FILES
+        ${imgui}
         main.cpp
         Marker.cpp
         Fumen.cpp
         Note.cpp
         Chart.cpp
         EditorState.cpp
-        ${imgui}
         include/tinyfiledialogs.c
         Toolbox.cpp
         Toolbox.h
@@ -57,7 +57,13 @@ set(SOURCE_FILES
         EditorStateActions.cpp
         EditorStateActions.h
         Widgets/DensityGraph.cpp
-        Widgets/DensityGraph.h Widgets/LinearView.cpp Widgets/LinearView.h Widgets/Playfield.cpp Widgets/Playfield.h Widgets/BlankScreen.cpp Widgets/BlankScreen.h)
+        Widgets/DensityGraph.h
+        Widgets/LinearView.cpp
+        Widgets/LinearView.h
+        Widgets/Playfield.cpp
+        Widgets/Playfield.h
+        Widgets/BlankScreen.cpp
+        Widgets/BlankScreen.h)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${FEIS_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
