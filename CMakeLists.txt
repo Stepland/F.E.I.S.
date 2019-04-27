@@ -27,7 +27,7 @@ set(imgui include/imgui/imgui.cpp
 
 set(SOURCE_FILES
         ${imgui}
-        main.cpp
+        Main.cpp
         Marker.cpp
         Fumen.cpp
         Note.cpp
