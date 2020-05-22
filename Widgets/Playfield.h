@@ -12,6 +12,8 @@
 #include "../Note.h"
 #include "../Marker.h"
 
+#include <string>
+
 
 class Playfield {
 
@@ -57,7 +59,7 @@ public:
     );
 
 private:
-    std::__cxx11::string texture_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
+    const std::string texture_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
 };
 
 #endif //FEIS_PLAYFIELD_H

@@ -70,3 +70,7 @@ void ToggledNotes::undoAction(EditorState &ed) const {
         }
     }
 }
+
+std::string get_message(const std::shared_ptr<ActionWithMessage>& awm) {
+    return awm->getMessage();
+}

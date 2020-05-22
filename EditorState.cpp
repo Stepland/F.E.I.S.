@@ -635,7 +635,7 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState &editorState)
                         difficulty = dif_name;
                     }
                 } else {
-                    ImGui::TextDisabled(dif_name);
+                    ImGui::TextDisabled("%s", dif_name);
                 }
             }
             ImGui::Separator();
@@ -739,7 +739,7 @@ void ESHelper::ChartPropertiesDialog::display(EditorState &editorState) {
                         difficulty_name = dif_name;
                     }
                 } else {
-                    ImGui::TextDisabled(dif_name);
+                    ImGui::TextDisabled("%s", dif_name);
                 }
             }
             ImGui::Separator();

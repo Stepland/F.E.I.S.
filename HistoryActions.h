@@ -22,7 +22,7 @@ class ActionWithMessage {
 public:
     explicit ActionWithMessage(std::string message = "") : message(std::move(message)) {};
 
-    const std::string &getMessage() const;
+    const std::string& getMessage() const;
     virtual void doAction(EditorState &ed) const {};
     virtual void undoAction(EditorState &ed) const {};
 
@@ -60,9 +60,7 @@ protected:
     const std::set<Note> notes;
 };
 
-auto print_history_message = [](const std::shared_ptr<ActionWithMessage> &hs) -> std::string {
-    return (*hs).getMessage();
-};
+std::string get_message(const std::shared_ptr<ActionWithMessage>& awm);
 
 
 #endif //FEIS_HISTORYSTATE_H
