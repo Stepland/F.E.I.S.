@@ -10,4 +10,4 @@
 
 Jubeat chart editor.
 
-Check [the wiki](https://github.com/Stepland/F.E.I.S./wiki) for instructions
+Check [the wiki](https://gitlab.com/Buggyroom/F.E.I.S./-/wikis/home) for instructions
