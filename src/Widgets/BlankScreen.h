@@ -1,14 +1,9 @@
-//
-// Created by symeon on 06/04/19.
-//
-
 #ifndef FEIS_BLANKSCREEN_H
 #define FEIS_BLANKSCREEN_H
 
 #include <SFML/Graphics.hpp>
 
 class BlankScreen {
-
 public:
 
     BlankScreen();
