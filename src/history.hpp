@@ -1,10 +1,10 @@
 #ifndef FEIS_HISTORY_H
 #define FEIS_HISTORY_H
 
-#include <stack>
-#include <optional>
 #include <functional>
 #include <imgui/imgui.h>
+#include <optional>
+#include <stack>
 
 /*
  *  History implemented this way :
@@ -26,9 +26,9 @@
 template<typename T>
 class History {
 public:
-
     /*
-     * we cannot undo the very first action, which in F.E.I.S corresponds to opening a chart
+     * we cannot undo the very first action, which in F.E.I.S corresponds to
+     * opening a chart
      */
     std::optional<T> get_previous() {
         if (previous_actions.size() == 1) {
@@ -67,10 +67,12 @@ public:
             }
             ImGui::Unindent();
             if (previous_actions.empty()) {
-                ImGui::Bullet(); ImGui::TextDisabled("(empty)");
+                ImGui::Bullet();
+                ImGui::TextDisabled("(empty)");
             } else {
                 auto it = previous_actions.cbegin();
-                ImGui::Bullet(); ImGui::TextUnformatted(printer(*it).c_str());
+                ImGui::Bullet();
+                ImGui::TextUnformatted(printer(*it).c_str());
                 ImGui::Indent();
                 ++it;
                 while (it != previous_actions.cend()) {
@@ -83,15 +85,11 @@ public:
         ImGui::End();
     }
 
-    bool empty() {
-        return previous_actions.size() <= 1;
-    }
-
+    bool empty() { return previous_actions.size() <= 1; }
 
 private:
     std::deque<T> previous_actions;
     std::deque<T> next_actions;
 };
 
-
-#endif //FEIS_HISTORY_H
+#endif  // FEIS_HISTORY_H

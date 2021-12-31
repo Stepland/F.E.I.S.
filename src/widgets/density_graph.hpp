@@ -1,18 +1,14 @@
 #ifndef FEIS_DENSITYGRAPH_H
 #define FEIS_DENSITYGRAPH_H
 
-
 #include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>
-#include "../chart.hpp"
-
 #include <string>
 
+#include "../chart.hpp"
 
 class DensityGraph {
-
 public:
-
     struct density_entry {
         int density;
         bool has_collisions;
@@ -36,8 +32,8 @@ public:
     void updateGraphTexture();
 
 private:
-    std::string texture_path = "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
-
+    std::string texture_path =
+        "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
 };
 
-#endif //FEIS_DENSITYGRAPH_H
+#endif  // FEIS_DENSITYGRAPH_H

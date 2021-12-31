@@ -1,9 +1,13 @@
-#include <imgui/imgui.h>
 #include "sound_effect.hpp"
+
+#include <imgui/imgui.h>
+
 #include "toolbox.hpp"
 
-SoundEffect::SoundEffect(std::string filename): buffer(), volume(10), shouldPlay(false) {
-
+SoundEffect::SoundEffect(std::string filename) :
+    buffer(),
+    volume(10),
+    shouldPlay(false) {
     auto soundPath = std::filesystem::path("assets/sounds") / filename;
 
     if (!buffer.loadFromFile(soundPath.string())) {
@@ -19,8 +23,8 @@ void SoundEffect::play() {
 }
 
 void SoundEffect::setVolume(int newVolume) {
-    volume = std::clamp(newVolume,0,10);
-    Toolbox::updateVolume(sound,volume);
+    volume = std::clamp(newVolume, 0, 10);
+    Toolbox::updateVolume(sound, volume);
 }
 
 int SoundEffect::getVolume() const {
@@ -29,11 +33,12 @@ int SoundEffect::getVolume() const {
 
 void SoundEffect::displayControls() {
     ImGui::PushID(&shouldPlay);
-    ImGui::Checkbox("Toggle",&shouldPlay); ImGui::SameLine();
+    ImGui::Checkbox("Toggle", &shouldPlay);
+    ImGui::SameLine();
     ImGui::PopID();
 
     ImGui::PushID(&volume);
-    if (ImGui::SliderInt("Volume",&volume,0,10)) {
+    if (ImGui::SliderInt("Volume", &volume, 0, 10)) {
         setVolume(volume);
     }
     ImGui::PopID();

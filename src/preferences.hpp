@@ -1,14 +1,14 @@
 #ifndef FEIS_PREFERENCES_H
 #define FEIS_PREFERENCES_H
 
-#include <string>
 #include <fstream>
 #include <json.hpp>
+#include <string>
+
 #include "marker.hpp"
 
 class Preferences {
 public:
-
     Preferences();
 
     void load(nlohmann::json j);
@@ -22,8 +22,6 @@ public:
 
 private:
     const std::string file_path = "settings/preferences.json";
-
 };
 
-
-#endif //FEIS_PREFERENCES_H
+#endif  // FEIS_PREFERENCES_H

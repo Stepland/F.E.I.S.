@@ -1,12 +1,13 @@
 #ifndef FEIS_NOTIFICATION_H
 #define FEIS_NOTIFICATION_H
 
-
 #include <string>
+
 #include "history_actions.hpp"
 
 /*
- * The display function should call ImGui primitives to display arbitrary stuff in the notifications queue
+ * The display function should call ImGui primitives to display arbitrary stuff
+ * in the notifications queue
  */
 class Notification {
 public:
@@ -20,7 +21,7 @@ public:
  */
 class TextNotification : public Notification {
 public:
-    explicit TextNotification(const std::string &message);
+    explicit TextNotification(const std::string& message);
 
     void display() const override;
 
@@ -28,11 +29,13 @@ public:
 };
 
 /*
- * Displays "Undo" in orange followed by the message associated with the action passed to the constructor
+ * Displays "Undo" in orange followed by the message associated with the action
+ * passed to the constructor
  */
 class UndoNotification : public Notification {
 public:
-    explicit UndoNotification(const ActionWithMessage& awm) : message(awm.getMessage()) {};
+    explicit UndoNotification(const ActionWithMessage& awm) :
+        message(awm.getMessage()) {};
 
     void display() const override;
 
@@ -40,15 +43,17 @@ public:
 };
 
 /*
- * Displays "Redo" in blue followed by the message associated with the action passed to the constructor
+ * Displays "Redo" in blue followed by the message associated with the action
+ * passed to the constructor
  */
-class RedoNotification : public  Notification {
+class RedoNotification : public Notification {
 public:
-    explicit RedoNotification(const ActionWithMessage& awm) : message(awm.getMessage()) {};
+    explicit RedoNotification(const ActionWithMessage& awm) :
+        message(awm.getMessage()) {};
 
     void display() const override;
 
     const std::string message;
 };
 
-#endif //FEIS_NOTIFICATION_H
+#endif  // FEIS_NOTIFICATION_H

@@ -1,7 +1,8 @@
-#include <imgui.h>
 #include "notifications_queue.hpp"
 
-void NotificationsQueue::push(const std::shared_ptr<Notification> &notification) {
+#include <imgui.h>
+
+void NotificationsQueue::push(const std::shared_ptr<Notification>& notification) {
     while (queue.size() >= max_size) {
         queue.pop_back();
     }
@@ -12,29 +13,24 @@ void NotificationsQueue::push(const std::shared_ptr<Notification> &notification)
 void NotificationsQueue::display() {
     update();
     if (not queue.empty()) {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);
-        ImGui::SetNextWindowPos(ImVec2(5,20), ImGuiCond_Always);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        ImGui::SetNextWindowPos(ImVec2(5, 20), ImGuiCond_Always);
         ImGui::Begin(
-                "Notifications",
-                nullptr,
-                ImGuiWindowFlags_NoNav
-                |ImGuiWindowFlags_NoDecoration
-                |ImGuiWindowFlags_NoInputs
-                |ImGuiWindowFlags_NoMove
-                |ImGuiWindowFlags_NoBackground
-                |ImGuiWindowFlags_AlwaysAutoResize
-                |ImGuiWindowFlags_NoFocusOnAppearing
-        );
+            "Notifications",
+            nullptr,
+            ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs
+                | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize
+                | ImGuiWindowFlags_NoFocusOnAppearing);
         {
             float alpha = 1.0f;
             if (queue.size() == 1) {
-                alpha = time_to_alpha(last_push.getElapsedTime().asSeconds()/4.0f);
+                alpha = time_to_alpha(last_push.getElapsedTime().asSeconds() / 4.0f);
             } else {
                 alpha = time_to_alpha(last_push.getElapsedTime().asSeconds());
             }
             for (int i = queue.size() - 1; i >= 0; --i) {
-                if (i == queue.size()-1) {
-                    ImGui::PushStyleVar(ImGuiStyleVar_Alpha,alpha);
+                if (i == queue.size() - 1) {
+                    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
                     queue[i]->display();
                     ImGui::PopStyleVar();
                 } else {

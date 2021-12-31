@@ -1,66 +1,60 @@
 #ifndef FEIS_FUMEN_H
 #define FEIS_FUMEN_H
 
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <json.hpp>
 #include <map>
 #include <set>
-#include <fstream>
-#include <filesystem>
-#include <json.hpp>
 
-#include "note.hpp"
 #include "chart.hpp"
+#include "note.hpp"
 
 /*
- * Difficulty name ordering : BSC > ADV > EXT > anything else in lexicographical order
+ * Difficulty name ordering : BSC > ADV > EXT > anything else in lexicographical
+ * order
  */
 struct cmpDifName {
-	std::map<std::string,int> dif_names;
+    std::map<std::string, int> dif_names;
 
-	cmpDifName() {
-		dif_names = {{"BSC",1},{"ADV",2},{"EXT",3}};
-	}
-	bool operator()(const std::string& a, const std::string& b) const;
+    cmpDifName() { dif_names = {{"BSC", 1}, {"ADV", 2}, {"EXT", 3}}; }
+    bool operator()(const std::string& a, const std::string& b) const;
 };
 
 /*
  * Represents a .memon file : several charts and some metadata
  */
 class Fumen {
-
 public:
+    explicit Fumen(
+        const std::filesystem::path& path,
+        const std::string& songTitle = "",
+        const std::string& artist = "",
+        const std::string& musicPath = "",
+        const std::string& albumCoverPath = "",
+        float BPM = 120,
+        float offset = 0);
 
-	explicit Fumen(
-			const std::filesystem::path &path,
-          	const std::string &songTitle = "",
-          	const std::string &artist = "",
-	      	const std::string &musicPath = "",
-	      	const std::string &albumCoverPath = "",
-	      	float BPM = 120,
-	      	float offset = 0
-	      			);
+    void loadFromMemon(std::filesystem::path path);
+    void loadFromMemon_v0_1_0(nlohmann::json j);
+    void loadFromMemon_fallback(nlohmann::json j);
 
-	void loadFromMemon(std::filesystem::path path);
-	void loadFromMemon_v0_1_0(nlohmann::json j);
-	void loadFromMemon_fallback(nlohmann::json j);
+    void saveAsMemon(std::filesystem::path path);
 
-	void saveAsMemon(std::filesystem::path path);
+    void autoLoadFromMemon() { loadFromMemon(path); };
+    void autoSaveAsMemon() { saveAsMemon(path); };
 
-	void autoLoadFromMemon() {loadFromMemon(path);};
-	void autoSaveAsMemon() {saveAsMemon(path);};
+    std::map<std::string, Chart, cmpDifName> Charts;
+    std::filesystem::path path;
+    std::string songTitle;
+    std::string artist;
+    std::string musicPath;
+    std::string albumCoverPath;
+    float BPM;
+    float offset;
 
-	std::map<std::string,Chart,cmpDifName> Charts;
-	std::filesystem::path path;
-	std::string songTitle;
-	std::string artist;
-	std::string musicPath;
-	std::string albumCoverPath;
-	float BPM;
-	float offset;
-
-	float getChartRuntime(Chart c);
-
+    float getChartRuntime(Chart c);
 };
 
-
-#endif //FEIS_FUMEN_H
+#endif  // FEIS_FUMEN_H

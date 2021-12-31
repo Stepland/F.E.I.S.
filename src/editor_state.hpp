@@ -1,16 +1,17 @@
 #ifndef FEIS_EDITORSTATE_H
 #define FEIS_EDITORSTATE_H
 
-#include <optional>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <optional>
+
+#include "chart_with_history.hpp"
 #include "fumen.hpp"
-#include "marker.hpp"
 #include "history.hpp"
 #include "history_actions.hpp"
-#include "time_selection.hpp"
+#include "marker.hpp"
 #include "notes_clipboard.hpp"
-#include "chart_with_history.hpp"
+#include "time_selection.hpp"
 #include "widgets/linear_view.hpp"
 #include "widgets/playfield.hpp"
 
@@ -25,11 +26,11 @@ enum saveChangesResponses {
 };
 
 /*
- * The god class, holds everything there is to know about the currently open .memon file
+ * The god class, holds everything there is to know about the currently open
+ * .memon file
  */
 class EditorState {
 public:
-
     explicit EditorState(Fumen& fumen);
 
     std::optional<Chart_with_History> chart;
@@ -39,19 +40,20 @@ public:
     Playfield playfield;
     LinearView linearView;
 
-    // the snap but divided by 4 because you can't set a snap to anything lower than 4ths
+    // the snap but divided by 4 because you can't set a snap to anything lower
+    // than 4ths
     int snap = 1;
 
     std::optional<sf::Music> music;
-    int musicVolume = 10; // 0 -> 10
+    int musicVolume = 10;  // 0 -> 10
     void setMusicVolume(int newMusicVolume);
-    void musicVolumeUp() {setMusicVolume(musicVolume+1);};
-    void musicVolumeDown() {setMusicVolume(musicVolume-1);};
+    void musicVolumeUp() { setMusicVolume(musicVolume + 1); };
+    void musicVolumeDown() { setMusicVolume(musicVolume - 1); };
 
-    int musicSpeed = 10; // 1 -> 20
+    int musicSpeed = 10;  // 1 -> 20
     void setMusicSpeed(int newMusicSpeed);
-    void musicSpeedUp() {setMusicSpeed(musicSpeed+1);};
-    void musicSpeedDown() {setMusicSpeed(musicSpeed-1);};
+    void musicSpeedUp() { setMusicSpeed(musicSpeed + 1); };
+    void musicSpeedDown() { setMusicSpeed(musicSpeed - 1); };
 
     std::optional<sf::Texture> albumCover;
 
@@ -61,26 +63,36 @@ public:
     sf::Time playbackPosition;
 
 private:
-    sf::Time previewEnd; // sf::Time at which the chart preview stops, can be after the end of the audio
+    sf::Time previewEnd;  // sf::Time at which the chart preview stops, can be
+                          // after the end of the audio
 
 public:
-    const sf::Time &getPreviewEnd();
+    const sf::Time& getPreviewEnd();
 
 public:
-
     void setPlaybackAndMusicPosition(sf::Time newPosition);
 
-    float   getBeats                ()              {return getBeatsAt(playbackPosition.asSeconds());};
-    float   getBeatsAt              (float seconds) {return ((seconds+fumen.offset)/60.f)* fumen.BPM;};
-    float   getCurrentTick          ()              {return getTicksAt(playbackPosition.asSeconds());};
-    float   getTicksAt              (float seconds) {return getBeatsAt(seconds) * getResolution();}
-    float   getSecondsAt            (int tick)      {return (60.f * tick)/(fumen.BPM * getResolution()) - fumen.offset;};
-    int     getResolution           ()              {return chart ? chart->ref.getResolution() : 240;};
-    int     getSnapStep             ()              {return getResolution() / snap;};
+    float getBeats() { return getBeatsAt(playbackPosition.asSeconds()); };
+    float getBeatsAt(float seconds) {
+        return ((seconds + fumen.offset) / 60.f) * fumen.BPM;
+    };
+    float getCurrentTick() { return getTicksAt(playbackPosition.asSeconds()); };
+    float getTicksAt(float seconds) {
+        return getBeatsAt(seconds) * getResolution();
+    }
+    float getSecondsAt(int tick) {
+        return (60.f * tick) / (fumen.BPM * getResolution()) - fumen.offset;
+    };
+    int getResolution() { return chart ? chart->ref.getResolution() : 240; };
+    int getSnapStep() { return getResolution() / snap; };
 
-    float   ticksToSeconds          (int ticks)     {return (60.f * ticks)/(fumen.BPM * getResolution());};
+    float ticksToSeconds(int ticks) {
+        return (60.f * ticks) / (fumen.BPM * getResolution());
+    };
 
-    float   getChartRuntime         ()              {return getPreviewEnd().asSeconds() + fumen.offset;};
+    float getChartRuntime() {
+        return getPreviewEnd().asSeconds() + fumen.offset;
+    };
 
     void reloadFromFumen();
     void reloadMusic();
@@ -124,39 +136,36 @@ namespace ESHelper {
     bool saveOrCancel(std::optional<EditorState>& ed);
 
     class NewChartDialog {
-
     public:
-
         std::optional<Chart> display(EditorState& editorState);
-        void resetValues() {level = 1; resolution = 240; difficulty = ""; comboPreview = ""; showCustomDifName = false;};
+        void resetValues() {
+            level = 1;
+            resolution = 240;
+            difficulty = "";
+            comboPreview = "";
+            showCustomDifName = false;
+        };
 
     private:
-
         int level = 1;
         int resolution = 240;
         std::string difficulty;
         std::string comboPreview;
         bool showCustomDifName = false;
-
     };
 
     class ChartPropertiesDialog {
-
     public:
-
         void display(EditorState& editorState);
         bool shouldRefreshValues = true;
 
     private:
-
         int level;
         std::string difficulty_name;
         std::string comboPreview;
         std::set<std::string> difNamesInUse;
         bool showCustomDifName = false;
-
     };
 }
 
-
-#endif //FEIS_EDITORSTATE_H
+#endif  // FEIS_EDITORSTATE_H

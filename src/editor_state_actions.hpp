@@ -1,8 +1,8 @@
 #ifndef FEIS_EDITACTIONS_H
 #define FEIS_EDITACTIONS_H
 
-#include "notifications_queue.hpp"
 #include "editor_state.hpp"
+#include "notifications_queue.hpp"
 
 namespace Move {
 
@@ -23,5 +23,4 @@ namespace Edit {
 
 };
 
-
-#endif //FEIS_EDITACTIONS_H
+#endif  // FEIS_EDITACTIONS_H

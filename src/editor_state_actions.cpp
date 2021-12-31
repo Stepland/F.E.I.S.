@@ -1,26 +1,26 @@
 #include "editor_state_actions.hpp"
 
-void Move::backwardsInTime(std::optional<EditorState> &ed) {
+void Move::backwardsInTime(std::optional<EditorState>& ed) {
     if (ed and ed->chart) {
         float floatTicks = ed->getCurrentTick();
         auto prevTick = static_cast<int>(floorf(floatTicks));
         int step = ed->getSnapStep();
         int prevTickInSnap = prevTick;
-        if (prevTick%step == 0) {
+        if (prevTick % step == 0) {
             prevTickInSnap -= step;
         } else {
-            prevTickInSnap -= prevTick%step;
+            prevTickInSnap -= prevTick % step;
         }
         ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(prevTickInSnap)));
     }
 }
 
-void Move::forwardsInTime(std::optional<EditorState> &ed) {
+void Move::forwardsInTime(std::optional<EditorState>& ed) {
     if (ed and ed->chart) {
         float floatTicks = ed->getCurrentTick();
         auto nextTick = static_cast<int>(ceilf(floatTicks));
         int step = ed->getSnapStep();
-        int nextTickInSnap = nextTick + (step - nextTick%step);
+        int nextTickInSnap = nextTick + (step - nextTick % step);
         ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(nextTickInSnap)));
     }
 }
@@ -47,10 +47,8 @@ void Edit::redo(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     }
 }
 
-
 void Edit::cut(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->selectedNotes.empty())) {
-
         std::stringstream ss;
         ss << "Cut " << ed->chart->selectedNotes.size() << " note";
         if (ed->chart->selectedNotes.size() > 1) {
@@ -62,14 +60,14 @@ void Edit::cut(std::optional<EditorState>& ed, NotificationsQueue& nq) {
         for (auto note : ed->chart->selectedNotes) {
             ed->chart->ref.Notes.erase(note);
         }
-        ed->chart->history.push(std::make_shared<ToggledNotes>(ed->chart->selectedNotes,false));
+        ed->chart->history.push(
+            std::make_shared<ToggledNotes>(ed->chart->selectedNotes, false));
         ed->chart->selectedNotes.clear();
     }
 }
 
 void Edit::copy(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->selectedNotes.empty())) {
-
         std::stringstream ss;
         ss << "Copied " << ed->chart->selectedNotes.size() << " note";
         if (ed->chart->selectedNotes.size() > 1) {
@@ -83,7 +81,6 @@ void Edit::copy(std::optional<EditorState>& ed, NotificationsQueue& nq) {
 
 void Edit::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->notesClipboard.empty())) {
-
         auto tick_offset = static_cast<int>(ed->getCurrentTick());
         std::set<Note> pasted_notes = ed->chart->notesClipboard.paste(tick_offset);
 
@@ -98,16 +95,17 @@ void Edit::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) {
             ed->chart->ref.Notes.insert(note);
         }
         ed->chart->selectedNotes = pasted_notes;
-        ed->chart->history.push(std::make_shared<ToggledNotes>(ed->chart->selectedNotes,true));
+        ed->chart->history.push(std::make_shared<ToggledNotes>(ed->chart->selectedNotes, true));
     }
-
 }
 
 void Edit::delete_(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart) {
         if (not ed->chart->selectedNotes.empty()) {
-            ed->chart->history.push(std::make_shared<ToggledNotes>(ed->chart->selectedNotes,false));
-            nq.push(std::make_shared<TextNotification>("Deleted selected notes"));
+            ed->chart->history.push(
+                std::make_shared<ToggledNotes>(ed->chart->selectedNotes, false));
+            nq.push(
+                std::make_shared<TextNotification>("Deleted selected notes"));
             for (auto note : ed->chart->selectedNotes) {
                 ed->chart->ref.Notes.erase(note);
             }

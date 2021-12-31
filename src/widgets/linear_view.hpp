@@ -1,18 +1,15 @@
 #ifndef FEIS_LINEARVIEW_H
 #define FEIS_LINEARVIEW_H
 
-
 #include <SFML/Graphics.hpp>
 #include <cmath>
+
+#include "../chart_with_history.hpp"
 #include "../time_selection.hpp"
 #include "../toolbox.hpp"
-#include "../chart_with_history.hpp"
-
 
 class LinearView {
-
 public:
-
     LinearView();
 
     sf::RenderTexture view;
@@ -23,20 +20,18 @@ public:
         const float& ticksAtPlaybackPosition,
         const float& BPM,
         const int& resolution,
-        const ImVec2& size
-    );
+        const ImVec2& size);
 
     void setZoom(int zoom);
-    void zoom_in() {setZoom(zoom+1);};
-    void zoom_out() {setZoom(zoom-1);};
-    float timeFactor() {return std::pow(1.25f, static_cast<float>(zoom));};
+    void zoom_in() { setZoom(zoom + 1); };
+    void zoom_out() { setZoom(zoom - 1); };
+    float timeFactor() { return std::pow(1.25f, static_cast<float>(zoom)); };
 
     bool shouldDisplaySettings;
 
     void displaySettings();
 
 private:
-
     sf::Font beat_number_font;
     sf::RectangleShape cursor;
     sf::RectangleShape selection;
@@ -58,10 +53,14 @@ private:
 
     void resize(unsigned int width, unsigned int height);
 
-    void reloadTransforms(const sf::Time &playbackPosition, const float &ticksAtPlaybackPosition, const float &BPM, const int &resolution);
+    void reloadTransforms(
+        const sf::Time& playbackPosition,
+        const float& ticksAtPlaybackPosition,
+        const float& BPM,
+        const int& resolution);
 
     int zoom = 0;
     const std::string font_path = "assets/fonts/NotoSans-Medium.ttf";
 };
 
-#endif //FEIS_LINEARVIEW_H
+#endif  // FEIS_LINEARVIEW_H

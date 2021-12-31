@@ -1,19 +1,19 @@
-#include <imgui.h>
-#include <imgui_stdlib.h>
-#include <list>
-#include <set>
-#include <cmath>
-#include <fstream>
-#include <iomanip>
 #include "toolbox.hpp"
 
-void Toolbox::pushNewRecentFile(std::filesystem::path path) {
+#include <cmath>
+#include <fstream>
+#include <imgui.h>
+#include <imgui_stdlib.h>
+#include <iomanip>
+#include <list>
+#include <set>
 
+void Toolbox::pushNewRecentFile(std::filesystem::path path) {
     std::filesystem::create_directory("settings");
     std::ifstream readFile(std::filesystem::path("settings/recent files.txt"));
     std::list<std::string> recent;
     std::set<std::string> recent_set;
-    for(std::string line; getline( readFile, line );) {
+    for (std::string line; getline(readFile, line);) {
         if (recent_set.find(line) == recent_set.end()) {
             recent.push_back(line);
             recent_set.insert(line);
@@ -39,7 +39,7 @@ void Toolbox::pushNewRecentFile(std::filesystem::path path) {
 std::vector<std::string> Toolbox::getRecentFiles() {
     std::ifstream readFile(std::filesystem::path("settings/recent files.txt"));
     std::vector<std::string> recent;
-    for(std::string line; getline( readFile, line ); ){
+    for (std::string line; getline(readFile, line);) {
         recent.push_back(line);
     }
     readFile.close();
@@ -50,42 +50,58 @@ std::vector<std::string> Toolbox::getRecentFiles() {
  */
 std::string Toolbox::to_string(sf::Time time) {
     std::ostringstream stringStream;
-    int minutes = static_cast<int>(std::abs(time.asSeconds()))/60;
-    int seconds = static_cast<int>(std::abs(time.asSeconds()))%60;
-    int miliseconds = static_cast<int>(std::abs(time.asMilliseconds()))%1000;
+    int minutes = static_cast<int>(std::abs(time.asSeconds())) / 60;
+    int seconds = static_cast<int>(std::abs(time.asSeconds())) % 60;
+    int miliseconds = static_cast<int>(std::abs(time.asMilliseconds())) % 1000;
     if (time.asSeconds() < 0) {
         stringStream << "-";
     } else {
         stringStream << "+";
     }
     stringStream.fill('0');
-    stringStream << std::setw(2) << minutes << ":" << std::setw(2) << seconds << "." << std::setw(3) << miliseconds;
+    stringStream << std::setw(2) << minutes << ":" << std::setw(2) << seconds
+                 << "." << std::setw(3) << miliseconds;
     //("-%02d:%02d.%03d",minutes,seconds,miliseconds);
     return stringStream.str();
 }
 
 /*
- * Imgui::InputText that gets colored Red when isValid is false and hoverTextHelp gets displayed when hovering over invalid input
- * When input is valid InputText gets colored green
- * Displays InputText without any style change if the input is empty;
+ * Imgui::InputText that gets colored Red when isValid is false and
+ * hoverTextHelp gets displayed when hovering over invalid input When input is
+ * valid InputText gets colored green Displays InputText without any style
+ * change if the input is empty;
  */
-bool Toolbox::InputTextColored(bool isValid, const std::string& hoverHelpText, const char *label, std::string *str, ImGuiInputTextFlags flags,
-                               ImGuiInputTextCallback callback, void *user_data) {
+bool Toolbox::InputTextColored(
+    bool isValid,
+    const std::string& hoverHelpText,
+    const char* label,
+    std::string* str,
+    ImGuiInputTextFlags flags,
+    ImGuiInputTextCallback callback,
+    void* user_data) {
     bool return_value;
     if (str->empty()) {
-        return_value = ImGui::InputText(label,str,flags,callback,user_data);
+        return_value = ImGui::InputText(label, str, flags, callback, user_data);
     } else {
         Toolbox::CustomColors colors;
         if (not isValid) {
             ImGui::PushStyleColor(ImGuiCol_FrameBg, colors.FrameBg_Red.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors.FrameBgHovered_Red.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors.FrameBgActive_Red.Value);
+            ImGui::PushStyleColor(
+                ImGuiCol_FrameBgHovered,
+                colors.FrameBgHovered_Red.Value);
+            ImGui::PushStyleColor(
+                ImGuiCol_FrameBgActive,
+                colors.FrameBgActive_Red.Value);
         } else {
             ImGui::PushStyleColor(ImGuiCol_FrameBg, colors.FrameBg_Green.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors.FrameBgHovered_Green.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors.FrameBgActive_Green.Value);
+            ImGui::PushStyleColor(
+                ImGuiCol_FrameBgHovered,
+                colors.FrameBgHovered_Green.Value);
+            ImGui::PushStyleColor(
+                ImGuiCol_FrameBgActive,
+                colors.FrameBgActive_Green.Value);
         }
-        return_value = ImGui::InputText(label,str,flags,callback,user_data);
+        return_value = ImGui::InputText(label, str, flags, callback, user_data);
         if (ImGui::IsItemHovered() and (not isValid)) {
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(hoverHelpText.c_str());
@@ -97,7 +113,8 @@ bool Toolbox::InputTextColored(bool isValid, const std::string& hoverHelpText, c
 }
 
 /*
- * Quick formula to get an exponential function of the integer volume setting mapping 0 to 0.f and 10 to 100.f
+ * Quick formula to get an exponential function of the integer volume setting
+ * mapping 0 to 0.f and 10 to 100.f
  */
 float Toolbox::convertToLogarithmicVolume(int x) {
     if (x > 10) {
@@ -105,15 +122,15 @@ float Toolbox::convertToLogarithmicVolume(int x) {
     } else if (x < 0) {
         return 0.f;
     }
-    return static_cast<float>(pow(2.f, static_cast<float>(x)*log(101.f)/(10*log(2.f))) - 1.f);
+    return static_cast<float>(
+        pow(2.f, static_cast<float>(x) * log(101.f) / (10 * log(2.f))) - 1.f);
 }
 
-void Toolbox::updateVolume(sf::SoundSource &soundSource, int volume) {
+void Toolbox::updateVolume(sf::SoundSource& soundSource, int volume) {
     soundSource.setVolume(Toolbox::convertToLogarithmicVolume(volume));
 }
 
 int Toolbox::getNextDivisor(int number, int starting_point) {
-
     assert(number > 0);
     assert(starting_point > 0 and starting_point <= number);
 
@@ -126,11 +143,9 @@ int Toolbox::getNextDivisor(int number, int starting_point) {
     }
 
     return starting_point;
-
 }
 
 int Toolbox::getPreviousDivisor(int number, int starting_point) {
-
     assert(number > 0);
     assert(starting_point > 0 and starting_point <= number);
 
@@ -143,17 +158,16 @@ int Toolbox::getPreviousDivisor(int number, int starting_point) {
     }
 
     return starting_point;
-
 }
 
 std::string Toolbox::toOrdinal(int number) {
     std::ostringstream s;
     s << number;
     // Special case : is it a xx1x ?
-    if (number%100/10 == 1) {
+    if (number % 100 / 10 == 1) {
         s << "th";
     } else {
-        switch (number%10) {
+        switch (number % 10) {
             case 1:
                 s << "st";
                 break;
@@ -171,13 +185,12 @@ std::string Toolbox::toOrdinal(int number) {
     return s.str();
 }
 
-void Toolbox::center(sf::Shape &s) {
+void Toolbox::center(sf::Shape& s) {
     sf::FloatRect bounds = s.getLocalBounds();
-    s.setOrigin(bounds.left + bounds.width/2.f, bounds.top  + bounds.height/2.f);
+    s.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
 }
 
 bool Toolbox::editFillColor(const char* label, sf::Shape& s) {
-
     sf::Color col = s.getFillColor();
     if (ImGui::ColorEdit4(label, col)) {
         s.setFillColor(col);
