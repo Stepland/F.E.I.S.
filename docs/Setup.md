@@ -17,6 +17,12 @@ get a more up-to-date version than what your distro packages might have
 $ pip install meson
 ```
 
+Unfortunately this also means meson will not come with ninja so we need to install it ourselves :
+
+```console
+$ sudo apt install ninja-build
+```
+
 Install SFML
 
 ```console
