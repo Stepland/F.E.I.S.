@@ -1,9 +1,11 @@
 #include <SFML/Graphics.hpp>
+#include <filesystem>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <tinyfiledialogs.h>
 #include <variant>
+#include <whereami++.hpp>
 
 #include "editor_state.hpp"
 #include "editor_state_actions.hpp"
@@ -17,9 +19,10 @@ int main(int argc, char** argv) {
     // TODO : Make the linear preview display the end of the chart
     // TODO : Make the linear preview timebar height movable
 
-    // Création de la fenêtre
+    auto assets_folder = std::filesystem::path {whereami::executable_dir()} / "assets";
+
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
-    sf::RenderWindow& ref_window = window;
+    // sf::RenderWindow& ref_window = window;
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(60);
 
@@ -27,17 +30,16 @@ int main(int argc, char** argv) {
 
     ImGuiIO& IO = ImGui::GetIO();
     IO.Fonts->Clear();
-    IO.Fonts->AddFontFromFileTTF("assets/fonts/NotoSans-Medium.ttf", 16.f);
+    IO.Fonts->AddFontFromFileTTF((assets_folder / "fonts" / "NotoSans-Medium.ttf").c_str(), 16.f);
     ImGui::SFML::UpdateFontTexture();
 
-    SoundEffect beatTick {"sound beat tick.wav"};
-    SoundEffect noteTick {"sound note tick.wav"};
-    SoundEffect chordTick {"sound chord tick.wav"};
+    SoundEffect beatTick {assets_folder / "sounds" / "beat.wav"};
+    SoundEffect noteTick {assets_folder / "sounds" / "note.wav"};
+    SoundEffect chordTick {assets_folder / "sounds" / "chord.wav"};
 
     // Loading markers preview
     std::map<std::filesystem::path, sf::Texture> markerPreviews;
-    for (const auto& folder :
-         std::filesystem::directory_iterator("assets/textures/markers")) {
+    for (const auto& folder : std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         if (folder.is_directory()) {
             sf::Texture markerPreview;
             markerPreview.loadFromFile((folder.path() / "ma15.png").string());
@@ -72,8 +74,7 @@ int main(int argc, char** argv) {
                     }
                     break;
                 case sf::Event::Resized:
-                    window.setView(sf::View(
-                        sf::FloatRect(0, 0, event.size.width, event.size.height)));
+                    window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
                     break;
                 case sf::Event::MouseButtonPressed:
                     switch (event.mouseButton.button) {
@@ -97,8 +98,7 @@ int main(int argc, char** argv) {
                                     editorState->chart->ref.Notes.insert(new_note);
                                     editorState->chart->longNoteBeingCreated.reset();
                                     editorState->chart->creatingLongNote = false;
-                                    editorState->chart->history.push(
-                                        std::make_shared<ToggledNotes>(new_note_set, true));
+                                    editorState->chart->history.push(std::make_shared<ToggledNotes>(new_note_set, true));
                                 }
                             }
                             break;
@@ -109,8 +109,7 @@ int main(int argc, char** argv) {
                 case sf::Event::MouseWheelScrolled:
                     switch (event.mouseWheelScroll.wheel) {
                         case sf::Mouse::Wheel::VerticalWheel: {
-                            auto delta = static_cast<int>(
-                                std::floor(event.mouseWheelScroll.delta));
+                            auto delta = static_cast<int>(std::floor(event.mouseWheelScroll.delta));
                             if (delta >= 0) {
                                 for (int i = 0; i < delta; ++i) {
                                     Move::backwardsInTime(editorState);
@@ -135,8 +134,7 @@ int main(int argc, char** argv) {
                         // selected_notes
                         case sf::Keyboard::Escape:
                             if (editorState and editorState->chart) {
-                                if (not std::holds_alternative<std::monostate>(
-                                        editorState->chart->timeSelection)) {
+                                if (not std::holds_alternative<std::monostate>(editorState->chart->timeSelection)) {
                                     editorState->chart->timeSelection.emplace<std::monostate>();
                                 } else if (not editorState->chart->selectedNotes.empty()) {
                                     editorState->chart->selectedNotes.clear();
@@ -148,23 +146,17 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::Tab:
                             if (editorState and editorState->chart) {
                                 // if no timeSelection was previously made
-                                if (std::holds_alternative<std::monostate>(
-                                        editorState->chart->timeSelection)) {
+                                if (std::holds_alternative<std::monostate>(editorState->chart->timeSelection)) {
                                     // set the start of the timeSelection to the
                                     // current time
-                                    editorState->chart->timeSelection =
-                                        static_cast<unsigned int>(
-                                            editorState->getCurrentTick());
+                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getCurrentTick());
 
                                     // if the start of the timeSelection is
                                     // already set
-                                } else if (std::holds_alternative<unsigned int>(
-                                               editorState->chart->timeSelection)) {
-                                    auto current_tick =
-                                        static_cast<int>(editorState->getCurrentTick());
+                                } else if (std::holds_alternative<unsigned int>(editorState->chart->timeSelection)) {
+                                    auto current_tick = static_cast<int>(editorState->getCurrentTick());
                                     auto selection_start =
-                                        static_cast<int>(std::get<unsigned int>(
-                                            editorState->chart->timeSelection));
+                                        static_cast<int>(std::get<unsigned int>(editorState->chart->timeSelection));
 
                                     // if we are on the same tick as the
                                     // timeSelection start we discard the
@@ -175,28 +167,20 @@ int main(int argc, char** argv) {
                                         // else we create a full timeSelection
                                         // while paying attention to the order
                                     } else {
-                                        auto new_selection_start = static_cast<unsigned int>(
-                                            std::min(current_tick, selection_start));
-                                        auto duration = static_cast<unsigned int>(
-                                            std::abs(current_tick - selection_start));
-                                        editorState->chart->timeSelection.emplace<TimeSelection>(
-                                            new_selection_start,
-                                            duration);
+                                        auto new_selection_start =
+                                            static_cast<unsigned int>(std::min(current_tick, selection_start));
+                                        auto duration = static_cast<unsigned int>(std::abs(current_tick - selection_start));
+                                        editorState->chart->timeSelection.emplace<TimeSelection>(new_selection_start, duration);
                                         editorState->chart->selectedNotes =
-                                            editorState->chart->ref.getNotesBetween(
-                                                new_selection_start,
-                                                new_selection_start + duration);
+                                            editorState->chart->ref.getNotesBetween(new_selection_start, new_selection_start + duration);
                                     }
 
                                     // if a full timeSelection already exists
-                                } else if (std::holds_alternative<TimeSelection>(
-                                               editorState->chart->timeSelection)) {
+                                } else if (std::holds_alternative<TimeSelection>(editorState->chart->timeSelection)) {
                                     // discard the current timeSelection and set
                                     // the start of the timeSelection to the
                                     // current time
-                                    editorState->chart->timeSelection =
-                                        static_cast<unsigned int>(
-                                            editorState->getCurrentTick());
+                                    editorState->chart->timeSelection = static_cast<unsigned int>(editorState->getCurrentTick());
                                 }
                             }
                             break;
@@ -215,10 +199,8 @@ int main(int argc, char** argv) {
                                 if (editorState) {
                                     editorState->musicVolumeUp();
                                     std::stringstream ss;
-                                    ss << "Music Volume : "
-                                       << editorState->musicVolume * 10 << "%";
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                    ss << "Music Volume : " << editorState->musicVolume * 10 << "%";
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
                                 Move::backwardsInTime(editorState);
@@ -229,10 +211,8 @@ int main(int argc, char** argv) {
                                 if (editorState) {
                                     editorState->musicVolumeDown();
                                     std::stringstream ss;
-                                    ss << "Music Volume : "
-                                       << editorState->musicVolume * 10 << "%";
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                    ss << "Music Volume : " << editorState->musicVolume * 10 << "%";
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
                                 Move::forwardsInTime(editorState);
@@ -244,19 +224,15 @@ int main(int argc, char** argv) {
                                     editorState->musicSpeedDown();
                                     std::stringstream ss;
                                     ss << "Speed : " << editorState->musicSpeed * 10 << "%";
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
                                 if (editorState and editorState->chart) {
-                                    editorState->snap = Toolbox::getPreviousDivisor(
-                                        editorState->chart->ref.getResolution(),
-                                        editorState->snap);
+                                    editorState->snap =
+                                        Toolbox::getPreviousDivisor(editorState->chart->ref.getResolution(), editorState->snap);
                                     std::stringstream ss;
-                                    ss << "Snap : "
-                                       << Toolbox::toOrdinal(4 * editorState->snap);
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                    ss << "Snap : " << Toolbox::toOrdinal(4 * editorState->snap);
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             }
                             break;
@@ -265,18 +241,14 @@ int main(int argc, char** argv) {
                                 editorState->musicSpeedUp();
                                 std::stringstream ss;
                                 ss << "Speed : " << editorState->musicSpeed * 10 << "%";
-                                notificationsQueue.push(
-                                    std::make_shared<TextNotification>(ss.str()));
+                                notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                             } else {
                                 if (editorState and editorState->chart) {
-                                    editorState->snap = Toolbox::getNextDivisor(
-                                        editorState->chart->ref.getResolution(),
-                                        editorState->snap);
+                                    editorState->snap =
+                                        Toolbox::getNextDivisor(editorState->chart->ref.getResolution(), editorState->snap);
                                     std::stringstream ss;
-                                    ss << "Snap : "
-                                       << Toolbox::toOrdinal(4 * editorState->snap);
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                    ss << "Snap : " << Toolbox::toOrdinal(4 * editorState->snap);
+                                    notificationsQueue.push(std::make_shared<TextNotification>(ss.str()));
                                 }
                             }
                             break;
@@ -286,31 +258,26 @@ int main(int argc, char** argv) {
                          */
                         case sf::Keyboard::F3:
                             if (beatTick.toggle()) {
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Beat tick : on"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : on"));
                             } else {
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Beat tick : off"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Beat tick : off"));
                             }
                             break;
                         case sf::Keyboard::F4:
                             if (event.key.shift) {
                                 if (chordTick.toggle()) {
                                     noteTick.shouldPlay = true;
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note+Chord tick : on"));
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note+Chord tick : on"));
                                 } else {
                                     noteTick.shouldPlay = false;
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note+Chord tick : off"));
+                                    notificationsQueue.push(
+                                        std::make_shared<TextNotification>("Note+Chord tick : off"));
                                 }
                             } else {
                                 if (noteTick.toggle()) {
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note tick : on"));
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note tick : on"));
                                 } else {
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note tick : off"));
+                                    notificationsQueue.push(std::make_shared<TextNotification>("Note tick : off"));
                                 }
                             }
                             break;
@@ -324,15 +291,13 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::Add:
                             if (editorState) {
                                 editorState->linearView.zoom_in();
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Zoom in"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom in"));
                             }
                             break;
                         case sf::Keyboard::Subtract:
                             if (editorState) {
                                 editorState->linearView.zoom_out();
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Zoom out"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
                             }
                             break;
                         /*
@@ -346,7 +311,7 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::O:
                             if (event.key.control) {
                                 if (ESHelper::saveOrCancel(editorState)) {
-                                    ESHelper::open(editorState);
+                                    ESHelper::open(editorState, assets_folder);
                                 }
                             }
                             break;
@@ -358,8 +323,7 @@ int main(int argc, char** argv) {
                         case sf::Keyboard::S:
                             if (event.key.control) {
                                 ESHelper::save(*editorState);
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Saved file"));
+                                notificationsQueue.push(std::make_shared<TextNotification>("Saved file"));
                             }
                             break;
                         case sf::Keyboard::V:
@@ -405,27 +369,22 @@ int main(int argc, char** argv) {
                         case sf::Music::Stopped:
                         case sf::Music::Paused:
                             if (editorState->playbackPosition.asSeconds() >= 0
-                                and editorState->playbackPosition
-                                    < editorState->music->getDuration()) {
+                                and editorState->playbackPosition < editorState->music->getDuration()) {
                                 editorState->music->setPlayingOffset(editorState->playbackPosition);
                                 editorState->music->play();
                             }
                             break;
                         case sf::Music::Playing:
-                            editorState->playbackPosition =
-                                editorState->music->getPlayingOffset();
+                            editorState->playbackPosition = editorState->music->getPlayingOffset();
                             break;
                         default:
                             break;
                     }
                 }
                 if (beatTick.shouldPlay) {
-                    auto previous_tick = static_cast<int>(editorState->getTicksAt(
-                        editorState->previousPos.asSeconds()));
-                    auto current_tick = static_cast<int>(editorState->getTicksAt(
-                        editorState->playbackPosition.asSeconds()));
-                    if (previous_tick / editorState->getResolution()
-                        != current_tick / editorState->getResolution()) {
+                    auto previous_tick = static_cast<int>(editorState->getTicksAt(editorState->previousPos.asSeconds()));
+                    auto current_tick = static_cast<int>(editorState->getTicksAt(editorState->playbackPosition.asSeconds()));
+                    if (previous_tick / editorState->getResolution() != current_tick / editorState->getResolution()) {
                         beatTick.play();
                     }
                 }
@@ -539,23 +498,16 @@ int main(int argc, char** argv) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
                     if (ESHelper::saveOrCancel(editorState)) {
-                        const char* _filepath =
-                            tinyfd_saveFileDialog("New File", nullptr, 0, nullptr, nullptr);
+                        const char* _filepath = tinyfd_saveFileDialog("New File", nullptr, 0, nullptr, nullptr);
                         if (_filepath != nullptr) {
                             std::filesystem::path filepath(_filepath);
                             try {
                                 Fumen f(filepath);
                                 f.autoSaveAsMemon();
-                                editorState.emplace(f);
-                                Toolbox::pushNewRecentFile(std::filesystem::canonical(
-                                    editorState->fumen.path));
+                                editorState.emplace(f, assets_folder);
+                                Toolbox::pushNewRecentFile(std::filesystem::canonical(editorState->fumen.path));
                             } catch (const std::exception& e) {
-                                tinyfd_messageBox(
-                                    "Error",
-                                    e.what(),
-                                    "ok",
-                                    "error",
-                                    1);
+                                tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
                             }
                         }
                     }
@@ -563,7 +515,7 @@ int main(int argc, char** argv) {
                 ImGui::Separator();
                 if (ImGui::MenuItem("Open", "Ctrl+O")) {
                     if (ESHelper::saveOrCancel(editorState)) {
-                        ESHelper::open(editorState);
+                        ESHelper::open(editorState, assets_folder);
                     }
                 }
                 if (ImGui::BeginMenu("Recent Files")) {
@@ -572,7 +524,7 @@ int main(int argc, char** argv) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
                             if (ESHelper::saveOrCancel(editorState)) {
-                                ESHelper::openFromFile(editorState, file);
+                                ESHelper::openFromFile(editorState, file, assets_folder);
                             }
                         }
                         ImGui::PopID();
@@ -591,8 +543,7 @@ int main(int argc, char** argv) {
                 }
                 if (ImGui::MenuItem("Save As", "", false, editorState.has_value())) {
                     char const* options[1] = {"*.memon"};
-                    const char* _filepath(
-                        tinyfd_saveFileDialog("Save File", nullptr, 1, options, nullptr));
+                    const char* _filepath(tinyfd_saveFileDialog("Save File", nullptr, 1, options, nullptr));
                     if (_filepath != nullptr) {
                         std::filesystem::path filepath(_filepath);
                         try {
@@ -634,11 +585,7 @@ int main(int argc, char** argv) {
                 if (ImGui::MenuItem("Chart List")) {
                     editorState->showChartList = true;
                 }
-                if (ImGui::MenuItem(
-                        "Properties##Chart",
-                        nullptr,
-                        false,
-                        editorState->chart.has_value())) {
+                if (ImGui::MenuItem("Properties##Chart", nullptr, false, editorState->chart.has_value())) {
                     editorState->showChartProperties = true;
                 }
                 ImGui::Separator();
@@ -646,11 +593,7 @@ int main(int argc, char** argv) {
                     editorState->showNewChartDialog = true;
                 }
                 ImGui::Separator();
-                if (ImGui::MenuItem(
-                        "Delete Chart",
-                        nullptr,
-                        false,
-                        editorState->chart.has_value())) {
+                if (ImGui::MenuItem("Delete Chart", nullptr, false, editorState->chart.has_value())) {
                     editorState->fumen.Charts.erase(editorState->chart->ref.dif_name);
                     editorState->chart.reset();
                 }
@@ -693,12 +636,7 @@ int main(int argc, char** argv) {
                                 marker = Marker(tuple.first);
                                 preferences.marker = tuple.first.string();
                             } catch (const std::exception& e) {
-                                tinyfd_messageBox(
-                                    "Error",
-                                    e.what(),
-                                    "ok",
-                                    "error",
-                                    1);
+                                tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
                                 marker = defaultMarker;
                             }
                         }
