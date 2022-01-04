@@ -29,11 +29,13 @@ public:
     std::optional<int> last_height;
     std::optional<float> last_section_length;
 
-    void computeDensities(int height, float chartRuntime, Chart& chart, float BPM, int resolution);
-    void updateGraphTexture();
+    void update(int height, float chartRuntime, Chart& chart, float BPM, int resolution);
 
 private:
     const std::filesystem::path texture_path;
+
+    void computeDensities(int height, float chartRuntime, Chart& chart, float BPM, int resolution);
+    void updateGraphTexture();
 };
 
 #endif  // FEIS_DENSITYGRAPH_H

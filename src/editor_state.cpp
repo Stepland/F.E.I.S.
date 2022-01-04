@@ -378,7 +378,7 @@ void EditorState::displayTimeline() {
     if (chart) {
         if (chart->densityGraph.should_recompute) {
             chart->densityGraph.should_recompute = false;
-            chart->densityGraph.computeDensities(
+            chart->densityGraph.update(
                 static_cast<int>(height),
                 getChartRuntime(),
                 chart->ref,
@@ -387,7 +387,7 @@ void EditorState::displayTimeline() {
         } else {
             if (chart->densityGraph.last_height) {
                 if (static_cast<int>(height) != *(chart->densityGraph.last_height)) {
-                    chart->densityGraph.computeDensities(
+                    chart->densityGraph.update(
                         static_cast<int>(height),
                         getChartRuntime(),
                         chart->ref,
@@ -395,7 +395,7 @@ void EditorState::displayTimeline() {
                         getResolution());
                 }
             } else {
-                chart->densityGraph.computeDensities(
+                chart->densityGraph.update(
                     static_cast<int>(height),
                     getChartRuntime(),
                     chart->ref,

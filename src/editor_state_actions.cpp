@@ -96,6 +96,7 @@ void Edit::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) {
         }
         ed->chart->selectedNotes = pasted_notes;
         ed->chart->history.push(std::make_shared<ToggledNotes>(ed->chart->selectedNotes, true));
+        ed->chart->densityGraph.should_recompute = true;
     }
 }
 

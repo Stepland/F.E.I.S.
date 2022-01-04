@@ -18,6 +18,11 @@ DensityGraph::DensityGraph(std::filesystem::path assets) :
     collision_square.setTextureRect({496, 270, 6, 6});
 }
 
+void DensityGraph::update(int height, float chartRuntime, Chart& chart, float BPM, int resolution) {
+    this->computeDensities(height, chartRuntime, chart, BPM, resolution);
+    this->updateGraphTexture();
+}
+
 void DensityGraph::computeDensities(int height, float chartRuntime, Chart& chart, float BPM, int resolution) {
     auto ticksToSeconds = [BPM, resolution](int ticks) -> float {
         return (60.f * ticks) / (BPM * resolution);
@@ -47,8 +52,6 @@ void DensityGraph::computeDensities(int height, float chartRuntime, Chart& chart
             }
         }
     }
-
-    updateGraphTexture();
 }
 
 void DensityGraph::updateGraphTexture() {
