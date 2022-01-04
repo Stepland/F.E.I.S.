@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>
 #include <string>
+#include <filesystem>
 
 #include "../chart.hpp"
 
@@ -14,7 +15,7 @@ public:
         bool has_collisions;
     };
 
-    DensityGraph();
+    DensityGraph(std::filesystem::path assets);
     sf::Texture base_texture;
     sf::Sprite normal_square;
     sf::Sprite collision_square;
@@ -32,8 +33,7 @@ public:
     void updateGraphTexture();
 
 private:
-    std::string texture_path =
-        "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
+    const std::filesystem::path texture_path;
 };
 
 #endif  // FEIS_DENSITYGRAPH_H

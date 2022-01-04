@@ -11,7 +11,7 @@
  */
 class SoundEffect {
 public:
-    explicit SoundEffect(std::string filename);
+    explicit SoundEffect(std::filesystem::path path);
     void play();
 
     int getVolume() const;

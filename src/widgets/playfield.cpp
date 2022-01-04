@@ -2,10 +2,15 @@
 
 #include "../toolbox.hpp"
 
-Playfield::Playfield() {
+const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
+
+Playfield::Playfield(std::filesystem::path assets_folder) :
+    longNoteMarker(assets_folder / "textures" / "long"),
+    texture_path(assets_folder / texture_file)
+{
     if (!base_texture.loadFromFile(texture_path)) {
         std::cerr << "Unable to load texture " << texture_path;
-        throw std::runtime_error("Unable to load texture " + texture_path);
+        throw std::runtime_error("Unable to load texture " + texture_path.string());
     }
     base_texture.setSmooth(true);
 
@@ -87,7 +92,8 @@ void Playfield::drawLongNote(
 
     float tail_end_in_seconds =
         SecondsToTicks.backwards_transform(note.getTiming() + note.getLength());
-    float tail_end_offset = playbackPosition.asSeconds() - tail_end_in_seconds;
+    // float tail_end_offset = playbackPosition.asSeconds() -
+    // tail_end_in_seconds;
 
     if (playbackPosition.asSeconds() < tail_end_in_seconds) {
         // Before or During the long note

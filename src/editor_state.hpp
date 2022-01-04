@@ -31,7 +31,7 @@ enum saveChangesResponses {
  */
 class EditorState {
 public:
-    explicit EditorState(Fumen& fumen);
+    EditorState(Fumen& fumen, std::filesystem::path assets);
 
     std::optional<Chart_with_History> chart;
 
@@ -94,7 +94,7 @@ public:
         return getPreviewEnd().asSeconds() + fumen.offset;
     };
 
-    void reloadFromFumen();
+    void reloadFromFumen(std::filesystem::path assets);
     void reloadMusic();
     void reloadAlbumCover();
     void reloadPreviewEnd();
@@ -116,7 +116,7 @@ public:
     void displayStatus();
     void displayPlaybackStatus();
     void displayTimeline();
-    void displayChartList();
+    void displayChartList(std::filesystem::path assets);
     void displayLinearView();
 
     saveChangesResponses alertSaveChanges();
@@ -130,8 +130,13 @@ public:
 
 namespace ESHelper {
     void save(EditorState& ed);
-    void open(std::optional<EditorState>& ed);
-    void openFromFile(std::optional<EditorState>& ed, std::filesystem::path path);
+    void open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings);
+    void openFromFile(
+        std::optional<EditorState>& ed,
+        std::filesystem::path file,
+        std::filesystem::path assets,
+        std::filesystem::path settings
+    );
 
     bool saveOrCancel(std::optional<EditorState>& ed);
 
@@ -156,7 +161,7 @@ namespace ESHelper {
 
     class ChartPropertiesDialog {
     public:
-        void display(EditorState& editorState);
+        void display(EditorState& editorState, std::filesystem::path assets);
         bool shouldRefreshValues = true;
 
     private:

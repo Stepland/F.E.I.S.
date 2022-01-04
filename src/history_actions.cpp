@@ -19,8 +19,8 @@ void OpenChart::doAction(EditorState& ed) const {
 }
 
 ToggledNotes::ToggledNotes(std::set<Note> n, bool have_been_added) :
-    notes(n),
-    have_been_added(have_been_added) {
+    have_been_added(have_been_added),
+    notes(n) {
     if (n.empty()) {
         throw std::invalid_argument(
             "Can't construct a ToogledNotes History Action with an empty note "

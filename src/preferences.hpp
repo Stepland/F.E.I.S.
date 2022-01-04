@@ -1,6 +1,7 @@
 #ifndef FEIS_PREFERENCES_H
 #define FEIS_PREFERENCES_H
 
+#include <filesystem>
 #include <fstream>
 #include <json.hpp>
 #include <string>
@@ -9,19 +10,16 @@
 
 class Preferences {
 public:
-    Preferences();
+    Preferences(std::filesystem::path assets, std::filesystem::path settings);
 
     void load(nlohmann::json j);
     void load_v0_1_0(nlohmann::json j);
-    void loadDefaults();
 
     void save();
 
     std::string marker;
     MarkerEndingState markerEndingState;
-
-private:
-    const std::string file_path = "settings/preferences.json";
+    const std::filesystem::path file_path;
 };
 
 #endif  // FEIS_PREFERENCES_H

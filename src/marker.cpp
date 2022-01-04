@@ -1,24 +1,23 @@
 #include "marker.hpp"
 
-Marker::Marker() {
-    for (auto& folder :
-         std::filesystem::directory_iterator("assets/textures/markers/")) {
-        if (validMarkerFolder(folder.path())) {
-            initFromFolder(folder);
-            return;
-        }
+Marker first_available_marker_from_folder(std::filesystem::path assets_folder) {
+    for (auto& folder : std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
+        try {
+            return Marker{folder};
+        } catch (const std::runtime_error&) {}
     }
     throw std::runtime_error("No valid marker found");
 }
 
 Marker::Marker(std::filesystem::path folder) {
-    if (validMarkerFolder(folder)) {
-        initFromFolder(folder);
-        return;
+    if (not validMarkerFolder(folder)) {
+        std::stringstream err;
+        err << "Invalid marker folder : " << folder.string();
+        throw std::runtime_error(err.str());
     }
-    std::stringstream err;
-    err << "Invalid marker folder : " << folder.string();
-    throw std::runtime_error(err.str());
+
+    initFromFolder(folder);
+    return;
 }
 
 std::optional<std::reference_wrapper<sf::Texture>>

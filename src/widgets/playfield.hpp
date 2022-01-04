@@ -11,7 +11,7 @@
 
 class Playfield {
 public:
-    Playfield();
+    Playfield(std::filesystem::path assets_folder);
     sf::Texture base_texture;
     sf::Sprite button;
     sf::Sprite button_pressed;
@@ -48,8 +48,7 @@ public:
         MarkerEndingState& markerEndingState);
 
 private:
-    const std::string texture_path =
-        "assets/textures/edit_textures/game_front_edit_tex_1.tex.png";
+    const std::filesystem::path texture_path;
 };
 
 #endif  // FEIS_PLAYFIELD_H

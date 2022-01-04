@@ -4,15 +4,12 @@
 
 #include "toolbox.hpp"
 
-SoundEffect::SoundEffect(std::string filename) :
+SoundEffect::SoundEffect(std::filesystem::path path) :
+    shouldPlay(false),
     buffer(),
-    volume(10),
-    shouldPlay(false) {
-    auto soundPath = std::filesystem::path("assets/sounds") / filename;
-
-    if (!buffer.loadFromFile(soundPath.string())) {
-        std::cerr << "Unable to load sound : " << filename;
-        throw std::runtime_error("Unable to load sound : " + filename);
+    volume(10) {
+    if (!buffer.loadFromFile(path.string())) {
+        throw std::runtime_error("Unable to load sound : " + path.string());
     }
 
     sound = sf::Sound(buffer);

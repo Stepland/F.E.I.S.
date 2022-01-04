@@ -8,8 +8,10 @@
 #include "time_selection.hpp"
 #include "widgets/density_graph.hpp"
 
+#include <filesystem>
+
 struct Chart_with_History {
-    explicit Chart_with_History(Chart& c);
+    explicit Chart_with_History(Chart& c, std::filesystem::path assets);
     Chart& ref;
     std::set<Note> selectedNotes;
     NotesClipboard notesClipboard;

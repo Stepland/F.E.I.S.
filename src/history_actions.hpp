@@ -1,13 +1,14 @@
-#include <utility>
+
 
 #ifndef FEIS_HISTORYSTATE_H
-    #define FEIS_HISTORYSTATE_H
+#define FEIS_HISTORYSTATE_H
 
-    #include <memory>
-    #include <string>
-    #include <variant>
+#include <memory>
+#include <string>
+#include <utility>
+#include <variant>
 
-    #include "chart.hpp"
+#include "chart.hpp"
 
 class EditorState;
 

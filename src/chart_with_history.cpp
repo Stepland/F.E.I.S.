@@ -1,6 +1,9 @@
 #include "chart_with_history.hpp"
 
-Chart_with_History::Chart_with_History(Chart& c) : ref(c) {
+Chart_with_History::Chart_with_History(Chart& c, std::filesystem::path assets) :
+    ref(c),
+    densityGraph(assets)
+{
     history.push(std::make_shared<OpenChart>(c));
 }
 

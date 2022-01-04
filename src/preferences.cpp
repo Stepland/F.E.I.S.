@@ -1,13 +1,28 @@
 #include "preferences.hpp"
 
-Preferences::Preferences() : markerEndingState(MarkerEndingState_PERFECT) {
-    loadDefaults();
+const std::string preference_file = "preferences.json";
 
-    std::filesystem::path preferences_path(file_path);
+Preferences::Preferences(std::filesystem::path assets, std::filesystem::path settings) :
+    markerEndingState(MarkerEndingState_PERFECT),
+    file_path(settings / preference_file)
+{
+    bool found_a_marker = false;
+    for (auto& folder :
+         std::filesystem::directory_iterator(assets / "textures" / "markers")) {
+        if (Marker::validMarkerFolder(folder.path())) {
+            assert(folder.is_directory());
+            marker = folder.path().string();
+            found_a_marker = true;
+            break;
+        }
+    }
+    if (not found_a_marker) {
+        throw std::runtime_error("No valid marker found");
+    }
 
-    if (std::filesystem::exists(preferences_path)) {
+    if (std::filesystem::exists(file_path)) {
         nlohmann::json j;
-        std::ifstream preferences_file(preferences_path);
+        std::ifstream preferences_file(file_path);
         preferences_file >> j;
         load(j);
     }
@@ -20,24 +35,6 @@ void Preferences::load(nlohmann::json j) {
             load_v0_1_0(j);
         }
     }
-}
-
-void Preferences::loadDefaults() {
-    bool found_a_marker;
-    for (auto& folder :
-         std::filesystem::directory_iterator("assets/textures/markers/")) {
-        if (Marker::validMarkerFolder(folder.path())) {
-            assert(folder.is_directory());
-            marker = folder.path().string();
-            found_a_marker = true;
-            break;
-        }
-    }
-    if (not found_a_marker) {
-        throw std::runtime_error("No valid marker found");
-    }
-
-    markerEndingState = MarkerEndingState_PERFECT;
 }
 
 void Preferences::load_v0_1_0(nlohmann::json j) {

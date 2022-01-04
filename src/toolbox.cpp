@@ -8,9 +8,12 @@
 #include <list>
 #include <set>
 
-void Toolbox::pushNewRecentFile(std::filesystem::path path) {
-    std::filesystem::create_directory("settings");
-    std::ifstream readFile(std::filesystem::path("settings/recent files.txt"));
+const std::string recent_files_file = "recent files.txt";
+
+void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::path settings) {
+    std::filesystem::create_directory(settings);
+    auto recent_files_path = settings / recent_files_file;
+    std::ifstream readFile(recent_files_path);
     std::list<std::string> recent;
     std::set<std::string> recent_set;
     for (std::string line; getline(readFile, line);) {
@@ -21,23 +24,26 @@ void Toolbox::pushNewRecentFile(std::filesystem::path path) {
     }
     readFile.close();
 
-    recent.remove(std::filesystem::canonical(path).string());
+    recent.remove(std::filesystem::canonical(file).string());
 
     while (recent.size() >= 10) {
         recent.pop_back();
     }
 
-    recent.push_front(std::filesystem::canonical(path).string());
+    recent.push_front(std::filesystem::canonical(file).string());
 
-    std::ofstream writeFile("settings/recent files.txt", std::ofstream::out | std::ofstream::trunc);
+    std::ofstream writeFile(
+        recent_files_path,
+        std::ofstream::out | std::ofstream::trunc
+    );
     for (const auto& line : recent) {
         writeFile << line << std::endl;
     }
     writeFile.close();
 }
 
-std::vector<std::string> Toolbox::getRecentFiles() {
-    std::ifstream readFile(std::filesystem::path("settings/recent files.txt"));
+std::vector<std::string> Toolbox::getRecentFiles(std::filesystem::path settings) {
+    std::ifstream readFile{settings / recent_files_file};
     std::vector<std::string> recent;
     for (std::string line; getline(readFile, line);) {
         recent.push_back(line);

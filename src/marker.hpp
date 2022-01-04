@@ -38,7 +38,6 @@ namespace Markers {
  */
 class Marker {
 public:
-    Marker();
     explicit Marker(std::filesystem::path folder);
     std::optional<std::reference_wrapper<sf::Texture>>
     getSprite(MarkerEndingState state, float seconds);
@@ -50,5 +49,7 @@ private:
     std::filesystem::path path;
     void initFromFolder(std::filesystem::path folder);
 };
+
+Marker first_available_marker_from_folder(std::filesystem::path assets_folder);
 
 #endif  // FEIS_MARKER_H

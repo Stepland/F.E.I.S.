@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <filesystem>
 
 #include "../chart_with_history.hpp"
 #include "../time_selection.hpp"
@@ -10,7 +11,7 @@
 
 class LinearView {
 public:
-    LinearView();
+    LinearView(std::filesystem::path assets);
 
     sf::RenderTexture view;
 
@@ -60,7 +61,7 @@ private:
         const int& resolution);
 
     int zoom = 0;
-    const std::string font_path = "assets/fonts/NotoSans-Medium.ttf";
+    const std::filesystem::path font_path;
 };
 
 #endif  // FEIS_LINEARVIEW_H

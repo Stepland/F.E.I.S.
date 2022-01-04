@@ -3,15 +3,19 @@
 #include <iostream>
 #include <variant>
 
-LinearView::LinearView() :
+const std::string font_file = "fonts/NotoSans-Medium.ttf";
+
+LinearView::LinearView(std::filesystem::path assets) :
     SecondsToTicks(-(60.f / last_BPM) / timeFactor(), 0.f, -last_resolution / timeFactor(), 0),
     SecondsToTicksProportional(0.f, (60.f / last_BPM), 0.f, last_resolution),
     PixelsToSeconds(-25.f, 75.f, -(60.f / last_BPM) / timeFactor(), 0.f),
     PixelsToSecondsProprotional(0.f, 100.f, 0.f, (60.f / last_BPM) / timeFactor()),
-    PixelsToTicks(-25.f, 75.f, -last_resolution / timeFactor(), 0) {
+    PixelsToTicks(-25.f, 75.f, -last_resolution / timeFactor(), 0),
+    font_path(assets / font_file)
+{
     if (!beat_number_font.loadFromFile(font_path)) {
         std::cerr << "Unable to load " << font_path;
-        throw std::runtime_error("Unable to load" + font_path);
+        throw std::runtime_error("Unable to load " + font_path.string());
     }
 
     cursor.setFillColor(sf::Color(66, 150, 250, 200));

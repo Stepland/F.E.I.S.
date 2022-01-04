@@ -23,8 +23,8 @@ namespace Toolbox {
         ImColor FrameBgHovered_Red = {0.980f, 0.261f, 0.261f, 0.400f};
         ImColor FrameBgActive_Red = {0.980f, 0.261f, 0.261f, 0.671f};
     };
-    void pushNewRecentFile(std::filesystem::path path);
-    std::vector<std::string> getRecentFiles();
+    void pushNewRecentFile(std::filesystem::path file, std::filesystem::path settings);
+    std::vector<std::string> getRecentFiles(std::filesystem::path settings);
 
     struct CustomConstraints {
         static void ContentSquare(ImGuiSizeCallbackData* data) {

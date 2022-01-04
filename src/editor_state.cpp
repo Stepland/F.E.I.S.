@@ -8,13 +8,17 @@
 #include <imgui_stdlib.h>
 #include <tinyfiledialogs.h>
 
-EditorState::EditorState(Fumen& fumen) : fumen(fumen) {
-    reloadFromFumen();
+EditorState::EditorState(Fumen& fumen, std::filesystem::path assets) :
+    fumen(fumen),
+    playfield(assets),
+    linearView(assets)
+{
+    reloadFromFumen(assets);
 }
 
-void EditorState::reloadFromFumen() {
+void EditorState::reloadFromFumen(std::filesystem::path assets) {
     if (not this->fumen.Charts.empty()) {
-        this->chart.emplace(this->fumen.Charts.begin()->second);
+        this->chart.emplace(this->fumen.Charts.begin()->second, assets);
     } else {
         this->chart.reset();
     }
@@ -129,7 +133,8 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             for (auto const& note : visibleNotes) {
                 float note_offset =
                     (playbackPosition.asSeconds() - getSecondsAt(note.getTiming()));
-                auto frame = static_cast<long long int>(std::floor(note_offset * 30.f));
+                // auto frame = static_cast<long long
+                // int>(std::floor(note_offset * 30.f));
                 int x = note.getPos() % 4;
                 int y = note.getPos() / 4;
 
@@ -443,7 +448,7 @@ void EditorState::displayTimeline() {
     ImGui::PopStyleVar(3);
 }
 
-void EditorState::displayChartList() {
+void EditorState::displayChartList(std::filesystem::path assets) {
     if (ImGui::Begin("Chart List", &showChartList, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (this->fumen.Charts.empty()) {
             ImGui::Dummy({100, 0});
@@ -467,7 +472,7 @@ void EditorState::displayChartList() {
                         chart ? chart->ref == tuple.second : false,
                         ImGuiSelectableFlags_SpanAllColumns)) {
                     ESHelper::save(*this);
-                    chart.emplace(tuple.second);
+                    chart.emplace(tuple.second, assets);
                 }
                 ImGui::NextColumn();
                 ImGui::Text("%d", tuple.second.level);
@@ -636,20 +641,26 @@ void ESHelper::save(EditorState& ed) {
     }
 }
 
-void ESHelper::open(std::optional<EditorState>& ed) {
+void ESHelper::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
     const char* _filepath =
         tinyfd_openFileDialog("Open File", nullptr, 0, nullptr, nullptr, false);
     if (_filepath != nullptr) {
-        ESHelper::openFromFile(ed, _filepath);
+        auto filepath = std::filesystem::path{_filepath};
+        ESHelper::openFromFile(ed, filepath, assets, settings);
     }
 }
 
-void ESHelper::openFromFile(std::optional<EditorState>& ed, std::filesystem::path path) {
+void ESHelper::openFromFile(
+    std::optional<EditorState>& ed,
+    std::filesystem::path file,
+    std::filesystem::path assets,
+    std::filesystem::path settings
+) {
     try {
-        Fumen f(path);
+        Fumen f(file);
         f.autoLoadFromMemon();
-        ed.emplace(f);
-        Toolbox::pushNewRecentFile(std::filesystem::canonical(ed->fumen.path));
+        ed.emplace(f, assets);
+        Toolbox::pushNewRecentFile(std::filesystem::canonical(ed->fumen.path), settings);
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
@@ -756,7 +767,7 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState& editorState)
     return newChart;
 }
 
-void ESHelper::ChartPropertiesDialog::display(EditorState& editorState) {
+void ESHelper::ChartPropertiesDialog::display(EditorState& editorState, std::filesystem::path assets) {
     assert(editorState.chart.has_value());
 
     if (this->shouldRefreshValues) {
@@ -835,7 +846,9 @@ void ESHelper::ChartPropertiesDialog::display(EditorState& editorState) {
                             "Could not insert modified chart in fumen");
                     } else {
                         editorState.chart.emplace(
-                            editorState.fumen.Charts.at(modified_chart.dif_name));
+                            editorState.fumen.Charts.at(modified_chart.dif_name),
+                            assets
+                        );
                         shouldRefreshValues = true;
                     }
                 } catch (const std::exception& e) {

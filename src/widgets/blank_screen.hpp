@@ -3,9 +3,11 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <filesystem>
+
 class BlankScreen {
 public:
-    BlankScreen();
+    BlankScreen(std::filesystem::path assets);
     void render(sf::RenderWindow& window);
 
 private:

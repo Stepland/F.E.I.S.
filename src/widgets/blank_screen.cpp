@@ -2,8 +2,8 @@
 
 #include <string>
 
-BlankScreen::BlankScreen() : gris_de_fond(sf::Color(38, 38, 38)) {
-    if (!tex_FEIS_logo.loadFromFile("assets/textures/FEIS_logo.png")) {
+BlankScreen::BlankScreen(std::filesystem::path assets) : gris_de_fond(sf::Color(38, 38, 38)) {
+    if (!tex_FEIS_logo.loadFromFile(assets / "textures" / "FEIS_logo.png")) {
         throw std::string("Unable to load assets/textures/FEIS_logo.png");
     }
     tex_FEIS_logo.setSmooth(true);
