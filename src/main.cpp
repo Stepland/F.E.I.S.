@@ -30,6 +30,17 @@ int main(int argc, char** argv) {
 
     ImGui::SFML::Init(window, false);
 
+    auto font_path = assets_folder / "fonts" / "NotoSans-Medium.ttf";
+    if (not std::filesystem::exists(font_path)) {
+        tinyfd_messageBox(
+            "Error",
+            ("Could not open "+font_path.string()).c_str(),
+            "ok",
+            "error",
+            1
+        );
+        return -1;
+    }
     ImGuiIO& IO = ImGui::GetIO();
     IO.Fonts->Clear();
     IO.Fonts->AddFontFromFileTTF(
