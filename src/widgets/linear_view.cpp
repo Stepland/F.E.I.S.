@@ -56,7 +56,8 @@ void LinearView::update(
     const float& ticksAtPlaybackPosition,
     const float& BPM,
     const int& resolution,
-    const ImVec2& size) {
+    const ImVec2& size
+) {
     int x = std::max(140, static_cast<int>(size.x));
     int y = std::max(140, static_cast<int>(size.y));
 
@@ -198,7 +199,6 @@ void LinearView::update(
         /*
          * Draw the timeSelection
          */
-
         selection.setSize({static_cast<float>(x) - 80.f, 0.f});
         if (std::holds_alternative<unsigned int>(chart->timeSelection)) {
             unsigned int ticks = std::get<unsigned int>(chart->timeSelection);
@@ -245,8 +245,12 @@ void LinearView::reloadTransforms(
     const sf::Time& playbackPosition,
     const float& ticksAtPlaybackPosition,
     const float& BPM,
-    const int& resolution) {
+    const int& resolution
+) {
     if (shouldReloadTransforms or last_BPM != BPM or last_resolution != resolution) {
+        shouldReloadTransforms = false;
+        last_BPM = BPM;
+        last_resolution = resolution;
         SecondsToTicksProportional =
             AffineTransform<float>(0.f, (60.f / BPM), 0.f, resolution);
         PixelsToSecondsProprotional =
