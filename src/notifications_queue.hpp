@@ -11,7 +11,7 @@
  */
 class NotificationsQueue {
 public:
-    explicit NotificationsQueue(int max_size = 10) : max_size(max_size) {};
+    explicit NotificationsQueue(unsigned int max_size = 10) : max_size(max_size) {};
 
     void push(const std::shared_ptr<Notification>& notification);
 
@@ -23,7 +23,7 @@ private:
         return std::max(0.0f, 2.0f * (0.5f - seconds));
     }
     sf::Clock last_push;
-    const int max_size;
+    const unsigned int max_size;
     std::deque<std::shared_ptr<Notification>> queue;
 };
 

@@ -28,13 +28,17 @@ void NotificationsQueue::display() {
             } else {
                 alpha = time_to_alpha(last_push.getElapsedTime().asSeconds());
             }
-            for (int i = queue.size() - 1; i >= 0; --i) {
-                if (i == queue.size() - 1) {
+            for (
+                auto notif = queue.rbegin();
+                notif != queue.rend();
+                ++notif
+            ) {
+                if (notif == queue.crbegin()) {
                     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
-                    queue[i]->display();
+                    (*notif)->display();
                     ImGui::PopStyleVar();
                 } else {
-                    queue[i]->display();
+                    (*notif)->display();
                 }
             }
         }
