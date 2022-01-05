@@ -142,8 +142,9 @@ void Fumen::saveAsMemon(std::filesystem::path path) {
 float Fumen::getChartRuntime(Chart c) {
     if (!c.Notes.empty()) {
         Note last_note = *c.Notes.rbegin();
-        return ((static_cast<float>(last_note.getTiming()) / c.getResolution()) / this->BPM)
-            * 60.f;
+        auto beats = static_cast<float>(last_note.getTiming()) / c.getResolution();
+        auto minutes = beats / this->BPM;
+        return minutes * 60.f;
     } else {
         return 0;
     }

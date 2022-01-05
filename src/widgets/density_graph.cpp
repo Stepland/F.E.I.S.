@@ -1,5 +1,7 @@
 #include "density_graph.hpp"
 
+#include <algorithm>
+
 const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
 
 DensityGraph::DensityGraph(std::filesystem::path assets) :
@@ -43,8 +45,11 @@ void DensityGraph::computeDensities(int height, float chartRuntime, Chart& chart
         last_section_length = section_length;
 
         for (auto const& note : chart.Notes) {
-            auto section =
-                static_cast<unsigned long>(ticksToSeconds(note.getTiming()) / section_length);
+            auto note_time = note.getTiming();
+            auto note_seconds = ticksToSeconds(note_time);
+            auto float_section = note_seconds / section_length;
+            auto int_section = static_cast<int>(float_section);
+            auto section = std::clamp(int_section, 0, sections - 1);
             densities.at(section).density += 1;
             if (not densities.at(section).has_collisions) {
                 densities.at(section).has_collisions =

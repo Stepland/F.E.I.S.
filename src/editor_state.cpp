@@ -37,8 +37,11 @@ void EditorState::reloadMusic() {
     std::filesystem::path music_path =
         std::filesystem::path(fumen.path).parent_path() / fumen.musicPath;
 
-    if (fumen.musicPath.empty() or not std::filesystem::exists(music_path)
-        or not music->openFromFile(music_path.string())) {
+    if (
+        fumen.musicPath.empty()
+        or not std::filesystem::exists(music_path)
+        or not music->openFromFile(music_path.string())
+    ) {
         music.reset();
     }
 
@@ -48,25 +51,26 @@ void EditorState::reloadMusic() {
 }
 
 void EditorState::reloadPreviewEnd() {
+    float music_duration = 0;
     if (music) {
-        if (chart) {
-            previewEnd = sf::seconds(
-                std::max(
-                    music->getDuration().asSeconds(),
-                    fumen.getChartRuntime(chart->ref) - fumen.offset)
-                + 2.f);
-        } else {
-            previewEnd =
-                sf::seconds(std::max(-fumen.offset, music->getDuration().asSeconds()));
-        }
-    } else {
-        if (chart) {
-            previewEnd = sf::seconds(
-                std::max(fumen.getChartRuntime(chart->ref) - fumen.offset, 2.f));
-        } else {
-            previewEnd = sf::seconds(std::max(-fumen.offset, 2.f));
-        }
+        music_duration = music->getDuration().asSeconds();
     }
+
+    float chart_runtime = 0;
+    if (chart) {
+        chart_runtime = fumen.getChartRuntime(chart->ref);
+    }
+
+    // Chart end in seconds using the music file "coordinate system"
+    // (beat 0 is at -offset seconds)
+    float chart_end = std::max(chart_runtime - fumen.offset, 0.f);
+    float preview_end_seconds = std::max(music_duration, chart_end) ;
+    
+    // Add some extra time at the end to allow for more notes to be placed
+    // after the end of the chart
+    // TODO: is this really the way to do it ?
+    preview_end_seconds += 2.f;
+    previewEnd = sf::seconds(preview_end_seconds);
 }
 
 /*
@@ -425,21 +429,14 @@ void EditorState::displayTimeline() {
         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration
             | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
     {
-        if (music and chart) {
+        if (chart) {
             ImGui::SetCursorPos({0, 0});
             ImGui::Image(chart->densityGraph.graph.getTexture(), ImVec2(0, 1), ImVec2(1, 0));
             AffineTransform<float> scroll(-fumen.offset, previewEnd.asSeconds(), 1.f, 0.f);
             float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0, 0});
-            if (ImGui::VSliderFloat(
-                    "",
-                    ImGui::GetContentRegionMax(),
-                    &slider_pos,
-                    0.f,
-                    1.f,
-                    "")) {
-                setPlaybackAndMusicPosition(
-                    sf::seconds(scroll.backwards_transform(slider_pos)));
+            if (ImGui::VSliderFloat("TimelineSlider", ImGui::GetContentRegionMax(), &slider_pos, 0.f, 1.f, "")) {
+                setPlaybackAndMusicPosition(sf::seconds(scroll.backwards_transform(slider_pos)));
             }
         }
     }

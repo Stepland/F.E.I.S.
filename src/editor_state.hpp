@@ -63,8 +63,8 @@ public:
     sf::Time playbackPosition;
 
 private:
-    sf::Time previewEnd;  // sf::Time at which the chart preview stops, can be
-                          // after the end of the audio
+    sf::Time previewEnd;  // sf::Time (in the audio file "coordinates") at which the chart preview stops, can be
+                          // after the end of the actual audio file
 
 public:
     const sf::Time& getPreviewEnd();
