@@ -15,8 +15,9 @@ void Chart::setResolution(int resolution) {
 Chart::Chart(const std::string& dif, int level, int resolution) :
     dif_name(dif),
     level(level),
-    resolution(resolution),
-    Notes() {
+    Notes(),
+    resolution(resolution)
+{
     if (resolution <= 0) {
         throw std::invalid_argument("Can't set a resolution of " + std::to_string(resolution));
     }
