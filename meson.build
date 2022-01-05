@@ -8,7 +8,12 @@ project(
 
 sources = []
 
-subdir('include')  # Defines `inc` and adds stuff in `sources`
+# I chose to put the .cpp files of the libs I vendor directly in include/
+# I store the files in a (lib name -> files) dict so that tests can
+# select which libs they want to compile with
+include_sources = {}
+
+subdir('include')  # Defines `inc` and adds stuff in `include_sources`
 subdir('src')  # Adds stuff in `sources`
 
 deps = [
@@ -18,6 +23,12 @@ deps = [
     dependency('sfml-audio', version : '>=2.5.1'),
     dependency('gl'),
 ]
+
+subdir('tests')
+
+foreach lib, lib_sources : include_sources
+    sources += lib_sources
+endforeach
 
 executable(
     'FEIS',

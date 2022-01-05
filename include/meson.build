@@ -1,9 +1,6 @@
 inc = include_directories('.', 'imgui')
 
-sources += files(
-    'tinyfiledialogs.cpp',
-    'whereami.cpp',
-    'whereami++.cpp',
-)
+include_sources += {'tinyfiledialogs': files('tinyfiledialogs.cpp')}
+include_sources += {'whereami': files('whereami.cpp', 'whereami++.cpp')}
 
 subdir('imgui')

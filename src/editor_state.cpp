@@ -168,9 +168,9 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             }
 
             ImGui::SetCursorPos({0, TitlebarHeight});
-            ImGui::Image(playfield.longNoteLayer.getTexture(), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image(playfield.longNoteLayer);
             ImGui::SetCursorPos({0, TitlebarHeight});
-            ImGui::Image(playfield.markerLayer.getTexture(), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image(playfield.markerLayer);
         }
 
         // Display button grid
@@ -431,7 +431,7 @@ void EditorState::displayTimeline() {
     {
         if (chart) {
             ImGui::SetCursorPos({0, 0});
-            ImGui::Image(chart->densityGraph.graph.getTexture(), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image(chart->densityGraph.graph);
             AffineTransform<float> scroll(-fumen.offset, previewEnd.asSeconds(), 1.f, 0.f);
             float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0, 0});
@@ -498,9 +498,9 @@ void EditorState::displayLinearView() {
                 fumen.BPM,
                 getResolution(),
                 ImGui::GetContentRegionMax());
-            ImGui::SetCursorPos(
-                {0, ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f});
-            ImGui::Image(linearView.view.getTexture(), ImVec2(0, 1), ImVec2(1, 0));
+            auto cursor_y = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            ImGui::SetCursorPos({0, cursor_y});
+            ImGui::Image(linearView.view);
         } else {
             ImGui::TextDisabled("- no chart selected -");
         }

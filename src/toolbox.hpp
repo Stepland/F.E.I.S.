@@ -5,9 +5,10 @@
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/Shape.hpp>
 #include <filesystem>
 #include <functional>
-#include <imgui-SFML.h>
+#include <imgui.h>
 
 /*
  * I just dump things here where I'm unsure whether they deserve a special file

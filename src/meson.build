@@ -17,4 +17,5 @@ sources += files(
     'toolbox.cpp',
 )
 
+subdir('imgui')
 subdir('widgets')
