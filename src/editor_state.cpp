@@ -489,7 +489,7 @@ void EditorState::displayLinearView() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(204, 204), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
-    if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar)) {
+    if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (chart) {
             linearView.update(
                 chart,

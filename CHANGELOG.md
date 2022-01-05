@@ -1,7 +1,9 @@
 # v1.2.0
 ## 🗿 Bugfixes 🗿
-- Update density graph when pasting
-- Fix display of density graph for charts without music
+- When scrolling down, the Linear View would scroll in a jerky way (it would move up for one frame then down), not anymore !
+- Density Graph
+    - it would not update when copy/pasting notes, not anymore !
+    - it would not show for charts without music, not anymore !
 
 ## 🍒 Small improvements 🍒
 - Frendlier error message when the UI font is not found in the assets folder
