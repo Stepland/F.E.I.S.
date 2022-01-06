@@ -32,6 +32,9 @@ int main(int argc, char** argv) {
 
     ImGui::SFML::Init(window, false);
 
+    auto& style = ImGui::GetStyle();
+    style.WindowRounding = 5.f;
+
     auto font_path = assets_folder / "fonts" / "NotoSans-Medium.ttf";
     if (not std::filesystem::exists(font_path)) {
         tinyfd_messageBox(
