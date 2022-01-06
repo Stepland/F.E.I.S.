@@ -53,6 +53,7 @@ void EditorState::reloadMusic() {
 }
 
 void EditorState::reloadPreviewEnd() {
+    auto old_previewEnd = previewEnd;
     float music_duration = 0;
     if (music) {
         music_duration = music->getDuration().asSeconds();
@@ -73,6 +74,9 @@ void EditorState::reloadPreviewEnd() {
     // TODO: is this really the way to do it ?
     preview_end_seconds += 2.f;
     previewEnd = sf::seconds(preview_end_seconds);
+    if (old_previewEnd != previewEnd and chart) {
+        chart->densityGraph.should_recompute = true;
+    }
 }
 
 /*
