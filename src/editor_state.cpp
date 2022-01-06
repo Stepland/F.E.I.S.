@@ -1,5 +1,6 @@
 #include "editor_state.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <imgui-SFML.h>
@@ -44,10 +45,11 @@ void EditorState::reloadMusic() {
     ) {
         music.reset();
     }
-
-    playbackPosition = sf::seconds(-(fumen.offset));
-    previousPos = playbackPosition;
     reloadPreviewEnd();
+
+    auto seconds_position = std::clamp(playbackPosition.asSeconds(), -(fumen.offset), previewEnd.asSeconds());
+    playbackPosition = sf::seconds(seconds_position);
+    previousPos = playbackPosition;
 }
 
 void EditorState::reloadPreviewEnd() {
@@ -92,11 +94,13 @@ void EditorState::reloadAlbumCover() {
 void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
     reloadPreviewEnd();
 
-    if (newPosition.asSeconds() < -fumen.offset) {
-        newPosition = sf::seconds(-fumen.offset);
-    } else if (newPosition > previewEnd) {
-        newPosition = previewEnd;
-    }
+    newPosition = sf::seconds(
+        std::clamp(
+            newPosition.asSeconds(),
+            -fumen.offset,
+            previewEnd.asSeconds()
+        )
+    );
     previousPos = sf::seconds(newPosition.asSeconds() - 1.f / 60.f);
     playbackPosition = newPosition;
     if (music) {

@@ -7,6 +7,7 @@
 
 ## 🍒 Small improvements 🍒
 - Frendlier error message when the UI font is not found in the assets folder
+- Playback position is kept instead of being reset to zero when you change charts or reload the audio file
 
 ## 🚧 Small Changes 🚧
 - Force using the asset folder next to the executable
