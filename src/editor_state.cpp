@@ -124,6 +124,11 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         Toolbox::CustomConstraints::ContentSquare);
 
     if (ImGui::Begin("Playfield", &showPlayfield, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+        if (not ImGui::IsWindowHovered() and chart and chart->creatingLongNote) {
+            // cancel long note creation if the mouse is or goes out of the playfield
+            chart->longNoteBeingCreated.reset();
+            chart->creatingLongNote = false;
+        }
         float squareSize = ImGui::GetWindowSize().x / 4.f;
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
         int ImGuiIndex = 0;
@@ -196,18 +201,16 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                 if (ImGui::ImageButton(playfield.button, {squareSize, squareSize}, 0)) {
                     toggleNoteAtCurrentTime(x + 4 * y);
                 }
-                if (ImGui::IsItemHovered()) {
+                if (ImGui::IsItemHovered() and chart and chart->creatingLongNote) {
                     // Deal with long note creation stuff
-                    if (chart and chart->creatingLongNote) {
-                        if (not chart->longNoteBeingCreated) {
-                            Note current_note =
-                                Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
-                            chart->longNoteBeingCreated =
-                                std::make_pair(current_note, current_note);
-                        } else {
-                            chart->longNoteBeingCreated->second =
-                                Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
-                        }
+                    if (not chart->longNoteBeingCreated) {
+                        Note current_note =
+                            Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
+                        chart->longNoteBeingCreated =
+                            std::make_pair(current_note, current_note);
+                    } else {
+                        chart->longNoteBeingCreated->second =
+                            Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
                     }
                 }
                 ImGui::PopStyleColor(3);

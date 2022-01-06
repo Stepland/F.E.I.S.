@@ -5,3 +5,10 @@ executable(
     dependencies: deps,
     include_directories: inc,
 )
+
+executable(
+    'mouse_events',
+    'mouse_events.cpp',
+    dependencies: deps,
+    include_directories: inc,
+)

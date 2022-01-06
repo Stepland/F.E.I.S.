@@ -6,7 +6,7 @@
         - copy/pasting notes
         - the audio file changes or is unloaded (because of an invalid path for example) (or more generally when the end point of the chart changes without the notes changing)
     - correctly shows up for charts without music !
-
+- Fixed the bug that made a long note dummy appear when right clicking outside the playfield *then* hovering over a button, Fixes #10
 
 ## 🍒 Small improvements 🍒
 - Frendlier error message when the UI font is not found in the assets folder
@@ -15,6 +15,7 @@
 ## 🚧 Small Changes 🚧
 - Force using the asset folder next to the executable
 - Sound files in the assets have been renamed
+- The long note currently being created (by holding right click) is dropped when the mouse stops hovering over the playfield
 
 # v1.1.0
 ## 🍓 New Stuff 🍓
