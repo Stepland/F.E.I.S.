@@ -1,0 +1,9 @@
+[wrap-git]
+url = https://github.com/jarikomppa/soloud
+revision = head
+
+# get submodules as well (only libmodplug as of writing this file)
+clone-recursive = true
+
+# Overlays subproject/packagefiles/soloud over the fresh git clone of soloud
+patch_directory = soloud
