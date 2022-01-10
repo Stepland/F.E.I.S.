@@ -16,10 +16,17 @@ subdir('src')  # fills in all the above lists
 
 includes = include_directories('include')
 
+if target_machine.system() != 'windows'
+    dependencies += dependency('threads')
+    compiler = meson.get_compiler('cpp')
+    dependencies += compiler.find_library('dl')
+endif
+
 soloud_lib = static_library(
     'soloud',
     sources,
     include_directories: includes,
+    dependencies: dependencies,
     cpp_args: cpp_args,
 )
 

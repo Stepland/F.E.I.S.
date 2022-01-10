@@ -62,3 +62,9 @@ foreach backend_name, specifics : backends
         cpp_args += '-DWITH_' + backend_name.to_upper()
     endif
 endforeach
+
+summary(
+    'cpp_args',
+    cpp_args,
+    section: 'Backends arguments',
+)

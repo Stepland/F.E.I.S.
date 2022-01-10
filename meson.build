@@ -22,7 +22,7 @@ deps = [
     dependency('sfml-graphics', version: '>=2.5.1'),
     dependency('sfml-audio', version: '>=2.5.1'),
     dependency('gl'),
-    dependency('soloud', default_options: ['portaudio=enabled']),
+    dependency('soloud'),
 ]
 
 subdir('tests')
