@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/jarikomppa/soloud
-revision = head
+revision = RELEASE_20200207
 
 # get submodules as well (only libmodplug as of writing this file)
 clone-recursive = true
