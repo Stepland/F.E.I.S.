@@ -8,7 +8,7 @@ project(
     meson_version : '>=0.60.3',
 )
 
-cpp_args = []
+backend_defines = []
 dependencies = []
 sources = []
 
@@ -27,7 +27,8 @@ soloud_lib = static_library(
     sources,
     include_directories: includes,
     dependencies: dependencies,
-    cpp_args: cpp_args,
+    cpp_args: backend_defines,
+    c_args: backend_defines,
 )
 
 soloud_dep = declare_dependency(

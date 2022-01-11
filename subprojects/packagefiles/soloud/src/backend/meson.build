@@ -53,18 +53,19 @@ foreach backend_name, specifics : backends
         filename = specifics.get('name', backend_name)
         cpp_file = 'soloud_' + filename + '.cpp'
         sources += files(backend_name / cpp_file)
+
         if specifics.get('dll', false)
             dll_c_file = 'soloud_' + filename + '_dll.c'
             sources += files(backend_name / dll_c_file)
         endif
 
         # Add macro
-        cpp_args += '-DWITH_' + backend_name.to_upper()
+        backend_defines += '-DWITH_' + backend_name.to_upper()
     endif
 endforeach
 
 summary(
     'cpp_args',
-    cpp_args,
-    section: 'Backends arguments',
+    backend_defines,
+    section: 'Backends defines',
 )
