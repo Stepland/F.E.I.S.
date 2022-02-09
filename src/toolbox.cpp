@@ -119,22 +119,10 @@ bool Toolbox::InputTextColored(
     return return_value;
 }
 
-/*
- * Quick formula to get an exponential function of the integer volume setting
- * mapping 0 to 0.f and 10 to 100.f
- */
-float Toolbox::convertToLogarithmicVolume(int x) {
-    if (x > 10) {
-        return 100.f;
-    } else if (x < 0) {
-        return 0.f;
-    }
-    return static_cast<float>(
-        pow(2.f, static_cast<float>(x) * log(101.f) / (10 * log(2.f))) - 1.f);
-}
-
-void Toolbox::updateVolume(sf::SoundSource& soundSource, int volume) {
-    soundSource.setVolume(Toolbox::convertToLogarithmicVolume(volume));
+float Toolbox::convertVolumeToNormalizedDB(int input) {
+    auto vol = std::clamp(static_cast<float>(input) / 10.f, 0.f, 1.f);
+    const auto b = 10.f;
+    return (std::pow(b, vol) - 1.f) / (b - 1.f);
 }
 
 int Toolbox::getNextDivisor(int number, int starting_point) {

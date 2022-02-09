@@ -629,11 +629,27 @@ void EditorState::setMusicSpeed(int newMusicSpeed) {
     }
 }
 
+void EditorState::musicSpeedUp() {
+    setMusicSpeed(musicSpeed + 1);
+}
+
+void EditorState::musicSpeedDown() {
+    setMusicSpeed(musicSpeed - 1);
+}
+
 void EditorState::setMusicVolume(int newMusicVolume) {
     musicVolume = std::clamp(newMusicVolume, 0, 10);
     if (music) {
-        Toolbox::updateVolume(*music, musicVolume);
+        music->setVolume(Toolbox::convertVolumeToNormalizedDB(musicVolume)*100.f);
     }
+}
+
+void EditorState::musicVolumeUp() {
+    setMusicVolume(musicVolume + 1);
+}
+
+void EditorState::musicVolumeDown() {
+    setMusicVolume(musicVolume -1 );
 }
 
 const sf::Time& EditorState::getPreviewEnd() {

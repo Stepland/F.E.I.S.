@@ -3,15 +3,15 @@
 
 #define IM_MAX(_A, _B) (((_A) >= (_B)) ? (_A) : (_B))
 
-#include <SFML/Audio.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Shape.hpp>
+#include <SFML/System/Time.hpp>
 #include <filesystem>
 #include <functional>
 #include <imgui.h>
 
 /*
- * I just dump things here where I'm unsure whether they deserve a special file
+ * I just dump things here when I'm unsure whether they deserve a special file
  * for them or not
  */
 namespace Toolbox {
@@ -46,8 +46,7 @@ namespace Toolbox {
         ImGuiInputTextFlags flags = 0,
         ImGuiInputTextCallback callback = NULL,
         void* user_data = NULL);
-    float convertToLogarithmicVolume(int);
-    void updateVolume(sf::SoundSource& soundSource, int volume);
+    float convertVolumeToNormalizedDB(int);
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);
     std::string toOrdinal(int number);
