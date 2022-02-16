@@ -12,3 +12,10 @@ executable(
     dependencies: deps,
     include_directories: inc,
 )
+
+executable(
+    'more_precise_music',
+    'more_precise_music.cpp',
+    dependencies: deps + [dependency('openal')],
+    include_directories: inc,
+)
