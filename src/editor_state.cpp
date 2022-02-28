@@ -33,18 +33,13 @@ void EditorState::reloadFromFumen(std::filesystem::path assets) {
  * Updates playbackPosition and previewEnd as well
  */
 void EditorState::reloadMusic() {
-    music.emplace();
-
-    std::filesystem::path music_path =
-        std::filesystem::path(fumen.path).parent_path() / fumen.musicPath;
-
-    if (
-        fumen.musicPath.empty()
-        or not std::filesystem::exists(music_path)
-        or not music->openFromFile(music_path.string())
-    ) {
+    const auto music_path = std::filesystem::path(fumen.path).parent_path() / fumen.musicPath;
+    try {
+        music.emplace(music_path);
+    } catch (const std::exception& e) {
         music.reset();
     }
+
     reloadPreviewEnd();
 
     auto seconds_position = std::clamp(playbackPosition.asSeconds(), -(fumen.offset), previewEnd.asSeconds());
@@ -374,7 +369,7 @@ void EditorState::displayPlaybackStatus() {
                 ImVec4(0.53, 0.53, 0.53, 1),
                 "Music File Offset :");
             ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(music->getPlayingOffset()).c_str());
+            ImGui::TextUnformatted(Toolbox::to_string(music->getPrecisePlayingOffset()).c_str());
             ImGui::SameLine();
         }
         ImGui::TextColored(ImVec4(0.53, 0.53, 0.53, 1), "Timeline Position :");

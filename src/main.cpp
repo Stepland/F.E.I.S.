@@ -436,7 +436,7 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Music::Playing:
                             editorState->playbackPosition =
-                                editorState->music->getPlayingOffset();
+                                editorState->music->getPrecisePlayingOffset();
                             break;
                         default:
                             break;

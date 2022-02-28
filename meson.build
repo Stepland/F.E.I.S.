@@ -22,6 +22,7 @@ deps = [
     dependency('sfml-graphics', version : '>=2.5.1'),
     dependency('sfml-audio', version : '>=2.5.1'),
     dependency('gl'),
+    dependency('openal'),
 ]
 
 subdir('tests')

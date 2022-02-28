@@ -11,6 +11,7 @@
 #include "history_actions.hpp"
 #include "marker.hpp"
 #include "notes_clipboard.hpp"
+#include "precise_music.hpp"
 #include "time_selection.hpp"
 #include "widgets/linear_view.hpp"
 #include "widgets/playfield.hpp"
@@ -44,7 +45,7 @@ public:
     // than 4ths
     int snap = 1;
 
-    std::optional<sf::Music> music;
+    std::optional<PreciseMusic> music;
     int musicVolume = 10;  // 0 -> 10
     void setMusicVolume(int newMusicVolume);
     void musicVolumeUp();

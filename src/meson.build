@@ -12,6 +12,7 @@ sources += files(
     'notes_clipboard.cpp',
     'notification.cpp',
     'notifications_queue.cpp',
+    'precise_music.cpp',
     'preferences.cpp',
     'sound_effect.cpp',
     'toolbox.cpp',
