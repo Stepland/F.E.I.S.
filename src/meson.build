@@ -1,6 +1,7 @@
 sources += files(
     'chart.cpp',
     'chart_with_history.cpp',
+    'delayed_sound.cpp',
     'editor_state_actions.cpp',
     'editor_state.cpp',
     'fumen.cpp',

@@ -5,14 +5,15 @@
 #include <filesystem>
 #include <iostream>
 
+#include "delayed_sound.hpp"
+
 /*
- * Holds an sf::Sound and can display some controls associated with it (volume
- * and on/off toggle)
+ * Wraps a DelayedSound with GUI volume control and on/off toggle
  */
 class SoundEffect {
 public:
     explicit SoundEffect(std::filesystem::path path);
-    void play();
+    void playIn(const sf::Time& time);
 
     int getVolume() const;
     void setVolume(int volume);
@@ -21,15 +22,14 @@ public:
 
     bool shouldPlay;
     bool toggle() {
-        shouldPlay = !shouldPlay;
+        shouldPlay = not shouldPlay;
         return shouldPlay;
     };
 
     void displayControls();
 
 private:
-    sf::SoundBuffer buffer;
-    sf::Sound sound;
+    DelayedSound sound;
     int volume;
 };
 
