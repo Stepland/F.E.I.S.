@@ -11,24 +11,30 @@ MorePreciseMusic::MorePreciseMusic(const std::filesystem::path& path) {
         throw std::runtime_error("Error: AL_SOFT_source_latency not supported");
     }
 
-    (alGetSourcedvSOFT) = reinterpret_cast<LPALGETSOURCEDVSOFT>(alGetProcAddress("alGetSourcedvSOFT"));
+    alGetSourcedvSOFT = reinterpret_cast<LPALGETSOURCEDVSOFT>(alGetProcAddress("alGetSourcedvSOFT"));
 
     if (not this->openFromFile(path.string())) {
         throw std::runtime_error("Could not open "+path.string());
     }
 }
 
-bool MorePreciseMusic::onGetData(sf::SoundStream::Chunk& data) {
-    auto result = sf::Music::onGetData(data);
-    time_since_last_mix.restart();
+std::array<sf::Time, 2> MorePreciseMusic::alSecOffsetLatencySoft() const {
     ALdouble offsets[2];
     alGetSourcedvSOFT(m_source, AL_SEC_OFFSET_LATENCY_SOFT, offsets);
-    open_al_playback_position_from_lag = sf::seconds(offsets[0]);
-    open_al_lag = sf::seconds(offsets[1]);
-    ALfloat secs = 0.f;
-    alGetSourcef(m_source, AL_SEC_OFFSET, &secs);
-    open_al_offset = sf::seconds(secs);
-    return result;
+    return {sf::seconds(offsets[0]), sf::seconds(offsets[1])};
+}
+
+void MorePreciseMusic::play() {
+    sf::Music::play();
+    lag = this->alSecOffsetLatencySoft()[1];
+}
+
+sf::Time MorePreciseMusic::getPrecisePlayingOffset() const {
+    if (this->getStatus() != sf::Music::Playing) {
+        return sf::Music::getPlayingOffset();
+    } else {
+        return sf::Music::getPlayingOffset() - this->alSecOffsetLatencySoft()[1] + lag;
+    }
 }
 
 int main(int argc, char** argv) {
@@ -40,14 +46,11 @@ int main(int argc, char** argv) {
 
     auto music = MorePreciseMusic{args[1]};
     music.play();
-    std::cout << "getPlayingOffset, time_since_last_mix, open_al_playback_position_from_lag, open_al_lag, open_al_offset" << std::endl;
-    for (int i = 0; i < 5000; i++) {
-    //while (music.getStatus() == sf::Music::Playing) {
-        std::cout << music.getPlayingOffset().asMicroseconds() << ", ";
-        std::cout << music.time_since_last_mix.getElaspedTime().asMicroseconds() << ", ";
-        std::cout << music.open_al_playback_position_from_lag.asMicroseconds() << ", ";
-        std::cout << music.open_al_lag.asMicroseconds() << ", ";
-        std::cout << music.open_al_offset.asMicroseconds() << std::endl;
+    std::cout << "normal,Precise" << std::endl;
+    while(music.getStatus() == sf::Music::Playing) {
+    //for (int i = 0; i < 3000; i++) {
+        std::cout << music.getPlayingOffset().asMicroseconds() << ",";
+        std::cout << music.getPrecisePlayingOffset().asMicroseconds() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
