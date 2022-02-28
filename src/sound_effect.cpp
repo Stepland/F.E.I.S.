@@ -21,7 +21,7 @@ void SoundEffect::play() {
 
 void SoundEffect::setVolume(int newVolume) {
     volume = std::clamp(newVolume, 0, 10);
-    Toolbox::updateVolume(sound, volume);
+    sound.setVolume(Toolbox::convertVolumeToNormalizedDB(volume));
 }
 
 int SoundEffect::getVolume() const {
