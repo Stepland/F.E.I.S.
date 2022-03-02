@@ -1,5 +1,4 @@
-#ifndef FEIS_LINEARVIEW_H
-#define FEIS_LINEARVIEW_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
@@ -63,5 +62,3 @@ private:
     int zoom = 0;
     const std::filesystem::path font_path;
 };
-
-#endif  // FEIS_LINEARVIEW_H

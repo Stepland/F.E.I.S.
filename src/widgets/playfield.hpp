@@ -1,5 +1,4 @@
-#ifndef FEIS_PLAYFIELD_H
-#define FEIS_PLAYFIELD_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>
@@ -50,5 +49,3 @@ public:
 private:
     const std::filesystem::path texture_path;
 };
-
-#endif  // FEIS_PLAYFIELD_H

@@ -1,5 +1,4 @@
-#ifndef FEIS_NOTIFICATIONSQUEUE_H
-#define FEIS_NOTIFICATIONSQUEUE_H
+#pragma once
 
 #include <SFML/System.hpp>
 #include <deque>
@@ -26,5 +25,3 @@ private:
     const unsigned int max_size;
     std::deque<std::shared_ptr<Notification>> queue;
 };
-
-#endif  // FEIS_NOTIFICATIONSQUEUE_H

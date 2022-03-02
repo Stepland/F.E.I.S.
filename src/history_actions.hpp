@@ -1,7 +1,4 @@
-
-
-#ifndef FEIS_HISTORYSTATE_H
-#define FEIS_HISTORYSTATE_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -60,5 +57,3 @@ protected:
 };
 
 std::string get_message(const std::shared_ptr<ActionWithMessage>& awm);
-
-#endif  // FEIS_HISTORYSTATE_H

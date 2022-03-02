@@ -1,5 +1,4 @@
-#ifndef FEIS_DENSITYGRAPH_H
-#define FEIS_DENSITYGRAPH_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include <imgui-SFML.h>
@@ -37,5 +36,3 @@ private:
     void computeDensities(int height, float chartRuntime, Chart& chart, float BPM, int resolution);
     void updateGraphTexture();
 };
-
-#endif  // FEIS_DENSITYGRAPH_H

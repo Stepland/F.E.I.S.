@@ -1,5 +1,4 @@
-#ifndef FEIS_PREFERENCES_H
-#define FEIS_PREFERENCES_H
+#pragma once
 
 #include <filesystem>
 #include <fstream>
@@ -21,5 +20,3 @@ public:
     MarkerEndingState markerEndingState;
     const std::filesystem::path file_path;
 };
-
-#endif  // FEIS_PREFERENCES_H

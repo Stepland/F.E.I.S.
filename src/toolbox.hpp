@@ -1,5 +1,4 @@
-#ifndef FEIS_TOOLBOX_H
-#define FEIS_TOOLBOX_H
+#pragma once
 
 #define IM_MAX(_A, _B) (((_A) >= (_B)) ? (_A) : (_B))
 
@@ -98,5 +97,3 @@ private:
     T low_output;
     T high_output;
 };
-
-#endif  // FEIS_TOOLBOX_H

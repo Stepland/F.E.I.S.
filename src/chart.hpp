@@ -1,5 +1,4 @@
-#ifndef FEIS_CHART_H
-#define FEIS_CHART_H
+#pragma once
 
 #include <iostream>
 #include <set>
@@ -33,5 +32,3 @@ public:
 private:
     int resolution;
 };
-
-#endif  // FEIS_CHART_H

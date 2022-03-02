@@ -1,5 +1,4 @@
-#ifndef FEIS_BLANKSCREEN_H
-#define FEIS_BLANKSCREEN_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 
@@ -15,5 +14,3 @@ private:
     sf::Texture tex_FEIS_logo;
     sf::Sprite FEIS_logo;
 };
-
-#endif  // FEIS_BLANKSCREEN_H

@@ -1,5 +1,4 @@
-#ifndef FEIS_NOTESCLIPBOARD_H
-#define FEIS_NOTESCLIPBOARD_H
+#pragma once
 
 #include <set>
 
@@ -17,5 +16,3 @@ public:
 private:
     std::set<Note> contents;
 };
-
-#endif  // FEIS_NOTESCLIPBOARD_H

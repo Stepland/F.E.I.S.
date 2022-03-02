@@ -1,5 +1,4 @@
-#ifndef FEIS_NOTIFICATION_H
-#define FEIS_NOTIFICATION_H
+#pragma once
 
 #include <string>
 
@@ -55,5 +54,3 @@ public:
 
     const std::string message;
 };
-
-#endif  // FEIS_NOTIFICATION_H

@@ -1,5 +1,5 @@
-#ifndef FEIS_MARKER_H
-#define FEIS_MARKER_H
+#pragma once
+
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <filesystem>
@@ -51,5 +51,3 @@ private:
 };
 
 Marker first_available_marker_from_folder(std::filesystem::path assets_folder);
-
-#endif  // FEIS_MARKER_H

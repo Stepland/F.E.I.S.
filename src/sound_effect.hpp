@@ -1,5 +1,4 @@
-#ifndef FEIS_SOUNDEFFECT_H
-#define FEIS_SOUNDEFFECT_H
+#pragma once
 
 #include <SFML/Audio.hpp>
 #include <filesystem>
@@ -32,5 +31,3 @@ private:
     sf::Sound sound;
     int volume;
 };
-
-#endif  // FEIS_SOUNDEFFECT_H

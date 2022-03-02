@@ -1,5 +1,4 @@
-#ifndef FEIS_FUMEN_H
-#define FEIS_FUMEN_H
+#pragma once
 
 #include <filesystem>
 #include <fstream>
@@ -56,5 +55,3 @@ public:
 
     float getChartRuntime(Chart c);
 };
-
-#endif  // FEIS_FUMEN_H

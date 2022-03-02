@@ -1,5 +1,4 @@
-#ifndef FEIS_TIMESELECTION_H
-#define FEIS_TIMESELECTION_H
+#pragma once
 
 #include <variant>
 
@@ -13,5 +12,3 @@ struct TimeSelection {
 };
 
 typedef std::variant<std::monostate, unsigned int, TimeSelection> SelectionState;
-
-#endif  // FEIS_TIMESELECTION_H

@@ -1,5 +1,4 @@
-#ifndef FEIS_PRECISE_MUSIC_H
-#define FEIS_PRECISE_MUSIC_H
+#pragma once
 
 #include <filesystem>
 #include <array>
@@ -18,5 +17,3 @@ struct PreciseMusic : sf::Music {
 protected:
     LPALGETSOURCEDVSOFT alGetSourcedvSOFT;
 };
-
-#endif  // FEIS_PRECISE_MUSIC_H

@@ -1,5 +1,4 @@
-#ifndef FEIS_CHARTWITHHIST_H
-#define FEIS_CHARTWITHHIST_H
+#pragma once
 
 #include "chart.hpp"
 #include "history.hpp"
@@ -24,5 +23,3 @@ struct Chart_with_History {
     std::optional<Note> makeLongNoteDummy(int current_tick) const;
     std::optional<Note> makeCurrentLongNote() const;
 };
-
-#endif  // FEIS_CHARTWITHHIST_H

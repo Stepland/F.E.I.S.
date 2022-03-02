@@ -13,8 +13,7 @@
 //  based chart validation. since it removes the need for a fancy consistency
 //  check between the note and its tail positions
 
-#ifndef FEIS_NOTE_H
-#define FEIS_NOTE_H
+#pragma once
 
 /*
  * A Note has :
@@ -75,5 +74,3 @@ private:
 
     void initAsClosestLongNote(const Note& start, int end_timing, int wanted_tail_pos);
 };
-
-#endif  // FEIS_NOTE_H

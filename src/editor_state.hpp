@@ -1,5 +1,4 @@
-#ifndef FEIS_EDITORSTATE_H
-#define FEIS_EDITORSTATE_H
+#pragma once
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
@@ -173,5 +172,3 @@ namespace ESHelper {
         bool showCustomDifName = false;
     };
 }
-
-#endif  // FEIS_EDITORSTATE_H

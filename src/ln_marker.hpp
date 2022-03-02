@@ -1,5 +1,4 @@
-#ifndef FEIS_LNMARKER_H
-#define FEIS_LNMARKER_H
+#pragma once
 
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/Sprite.hpp>
@@ -73,5 +72,3 @@ private:
         }
     }
 };
-
-#endif  // FEIS_LNMARKER_H
