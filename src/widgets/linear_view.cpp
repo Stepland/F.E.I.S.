@@ -51,7 +51,7 @@ void LinearView::resize(unsigned int width, unsigned int height) {
 }
 
 void LinearView::update(
-    const std::optional<Chart_with_History>& chart,
+    const std::optional<ChartState>& chart,
     const sf::Time& playbackPosition,
     const float& ticksAtPlaybackPosition,
     const float& BPM,
@@ -142,7 +142,7 @@ void LinearView::update(
             static_cast<int>(SecondsToTicks.transform(
                 PixelsToSeconds.transform(static_cast<float>(y)) + 0.5f)));
 
-        auto notes = chart->ref.getVisibleNotesBetween(lower_bound_ticks, upper_bound_ticks);
+        auto notes = chart->chart.getVisibleNotesBetween(lower_bound_ticks, upper_bound_ticks);
         auto currentLongNote = chart->makeCurrentLongNote();
         if (currentLongNote) {
             notes.insert(*currentLongNote);
@@ -200,16 +200,16 @@ void LinearView::update(
          * Draw the timeSelection
          */
         selection.setSize({static_cast<float>(x) - 80.f, 0.f});
-        if (std::holds_alternative<unsigned int>(chart->timeSelection)) {
-            unsigned int ticks = std::get<unsigned int>(chart->timeSelection);
+        if (std::holds_alternative<unsigned int>(chart->time_selection)) {
+            unsigned int ticks = std::get<unsigned int>(chart->time_selection);
             float selection_y =
                 PixelsToTicks.backwards_transform(static_cast<float>(ticks));
             if (selection_y > 0.f and selection_y < static_cast<float>(y)) {
                 selection.setPosition(50.f, selection_y);
                 view.draw(selection);
             }
-        } else if (std::holds_alternative<TimeSelection>(chart->timeSelection)) {
-            const auto& ts = std::get<TimeSelection>(chart->timeSelection);
+        } else if (std::holds_alternative<TimeSelection>(chart->time_selection)) {
+            const auto& ts = std::get<TimeSelection>(chart->time_selection);
             float selection_start_y =
                 PixelsToTicks.backwards_transform(static_cast<float>(ts.start));
             float selection_end_y = PixelsToTicks.backwards_transform(

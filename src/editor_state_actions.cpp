@@ -4,7 +4,7 @@ void Move::backwardsInTime(std::optional<EditorState>& ed) {
     if (ed and ed->chart) {
         float floatTicks = ed->getCurrentTick();
         auto prevTick = static_cast<int>(floorf(floatTicks));
-        int step = ed->getSnapStep();
+        int step = ed->get_snap_step();
         int prevTickInSnap = prevTick;
         if (prevTick % step == 0) {
             prevTickInSnap -= step;
@@ -19,7 +19,7 @@ void Move::forwardsInTime(std::optional<EditorState>& ed) {
     if (ed and ed->chart) {
         float floatTicks = ed->getCurrentTick();
         auto nextTick = static_cast<int>(ceilf(floatTicks));
-        int step = ed->getSnapStep();
+        int step = ed->get_snap_step();
         int nextTickInSnap = nextTick + (step - nextTick % step);
         ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(nextTickInSnap)));
     }

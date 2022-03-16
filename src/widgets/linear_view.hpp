@@ -4,7 +4,7 @@
 #include <cmath>
 #include <filesystem>
 
-#include "../chart_with_history.hpp"
+#include "../chart_state.hpp"
 #include "../time_selection.hpp"
 #include "../toolbox.hpp"
 
@@ -15,7 +15,7 @@ public:
     sf::RenderTexture view;
 
     void update(
-        const std::optional<Chart_with_History>& chart,
+        const std::optional<ChartState>& chart,
         const sf::Time& playbackPosition,
         const float& ticksAtPlaybackPosition,
         const float& BPM,

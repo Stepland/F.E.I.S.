@@ -9,7 +9,7 @@
 #include "AL/alext.h"
 
 struct PreciseMusic : sf::Music {
-    PreciseMusic(const std::filesystem::path& path);
+    explicit PreciseMusic(const std::filesystem::path& path);
     std::array<sf::Time, 2> alSecOffsetLatencySoft() const;
     sf::Time getPrecisePlayingOffset() const;
     sf::Time lag = sf::Time::Zero;

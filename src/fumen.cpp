@@ -139,7 +139,7 @@ void Fumen::saveAsMemon(std::filesystem::path path) {
  * Returns how long the chart is in seconds as a float, from beat 0 to the last
  * note
  */
-float Fumen::getChartRuntime(Chart c) {
+float Fumen::get_chart_runtime(Chart c) {
     if (!c.Notes.empty()) {
         Note last_note = *c.Notes.rbegin();
         auto beats = static_cast<float>(last_note.getTiming()) / c.getResolution();

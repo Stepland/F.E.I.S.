@@ -20,17 +20,12 @@ DensityGraph::DensityGraph(std::filesystem::path assets) :
     collision_square.setTextureRect({496, 270, 6, 6});
 }
 
-void DensityGraph::update(int height, float chartRuntime, Chart& chart, float BPM, int resolution) {
-    this->computeDensities(height, chartRuntime, chart, BPM, resolution);
-    this->updateGraphTexture();
+void DensityGraph::update(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to) {
+    this->compute_densities(height, chart, from, to);
+    this->update_graph_texture();
 }
 
-void DensityGraph::computeDensities(int height, float chartRuntime, Chart& chart, float BPM, int resolution) {
-    auto ticksToSeconds = [BPM, resolution](int ticks) -> float {
-        return (60.f * ticks) / (BPM * resolution);
-    };
-    int ticks_threshold = static_cast<int>((1.f / 60.f) * BPM * resolution);
-
+void DensityGraph::compute_densities(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to) {
     last_height = height;
 
     // minus the slider cursor thiccccnesss
@@ -41,13 +36,13 @@ void DensityGraph::computeDensities(int height, float chartRuntime, Chart& chart
     if (sections >= 1) {
         densities.resize(static_cast<unsigned int>(sections), {0, false});
 
-        float section_length = chartRuntime / sections;
-        last_section_length = section_length;
+        sf::Time section_duration = (to - from) / static_cast<sf::Int64>(sections);
+        last_section_duration = section_duration;
 
-        for (auto const& note : chart.Notes) {
+        for (auto const& note : chart.notes) {
             auto note_time = note.getTiming();
-            auto note_seconds = ticksToSeconds(note_time);
-            auto float_section = note_seconds / section_length;
+            auto note_seconds = chart.timing.time_at(ticksToSeconds(note_time));
+            auto float_section = note_seconds / section_duration;
             auto int_section = static_cast<int>(float_section);
             auto section = std::clamp(int_section, 0, sections - 1);
             densities.at(section).density += 1;
@@ -59,7 +54,7 @@ void DensityGraph::computeDensities(int height, float chartRuntime, Chart& chart
     }
 }
 
-void DensityGraph::updateGraphTexture() {
+void DensityGraph::update_graph_texture() {
     if (!graph.create(45, static_cast<unsigned int>(*last_height))) {
         std::cerr << "Unable to create DensityGraph's RenderTexture";
         throw std::runtime_error(

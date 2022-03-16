@@ -18,5 +18,7 @@ public:
 
     std::string marker;
     MarkerEndingState markerEndingState;
-    const std::filesystem::path file_path;
+
+private:
+    std::filesystem::path file_path;
 };

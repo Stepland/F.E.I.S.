@@ -4,11 +4,12 @@
 #include <SFML/Graphics.hpp>
 #include <optional>
 
-#include "chart_with_history.hpp"
-#include "fumen.hpp"
+#include "better_song.hpp"
+#include "chart_state.hpp"
 #include "history.hpp"
 #include "history_actions.hpp"
 #include "marker.hpp"
+#include "music_state.hpp"
 #include "notes_clipboard.hpp"
 #include "precise_music.hpp"
 #include "time_selection.hpp"
@@ -31,73 +32,64 @@ enum saveChangesResponses {
  */
 class EditorState {
 public:
-    EditorState(Fumen& fumen, std::filesystem::path assets);
+    EditorState(
+        const better::Song& song,
+        const std::filesystem::path& song_path,
+        const std::filesystem::path& assets
+    ) :
+        song(song),
+        playfield(assets),
+        linear_view(assets),
+        edited_music_path(song.metadata.audio.value_or("")),
+        song_path(song_path)
+    {
+        if (not this->song.charts.empty()) {
+            this->chart_state.emplace(this->song.charts.begin()->second, assets);
+        }
+        reload_music();
+        reload_album_cover();
+    };
 
-    std::optional<Chart_with_History> chart;
+    better::Song song;
+    std::optional<ChartState> chart_state;
 
-    Fumen fumen;
+    std::optional<MusicState> music_state;
 
     Playfield playfield;
-    LinearView linearView;
+    LinearView linear_view;
 
     // the snap but divided by 4 because you can't set a snap to anything lower
     // than 4ths
     int snap = 1;
 
-    std::optional<PreciseMusic> music;
-    int musicVolume = 10;  // 0 -> 10
-    void setMusicVolume(int newMusicVolume);
-    void musicVolumeUp();
-    void musicVolumeDown();
-
-    int musicSpeed = 10;  // 1 -> 20
-    void setMusicSpeed(int newMusicSpeed);
-    void musicSpeedUp();
-    void musicSpeedDown();
-
-    std::optional<sf::Texture> albumCover;
+    std::optional<sf::Texture> album_cover;
 
     bool playing;
 
-    sf::Time previousPos;
-    sf::Time playbackPosition;
+    sf::Time previous_pos;
+    sf::Time playback_position;
 
-private:
-    sf::Time previewEnd;  // sf::Time (in the audio file "coordinates") at which the chart preview stops, can be
-                          // after the end of the actual audio file
+    const sf::Time& get_preview_end();
 
-public:
-    const sf::Time& getPreviewEnd();
+    void set_playback_and_music_position(sf::Time new_position);
 
-public:
-    void setPlaybackAndMusicPosition(sf::Time newPosition);
-
-    float getBeats() { return getBeatsAt(playbackPosition.asSeconds()); };
+    float getBeats() { return getBeatsAt(playback_position.asSeconds()); };
     float getBeatsAt(float seconds) {
-        return ((seconds + fumen.offset) / 60.f) * fumen.BPM;
+        return ((seconds + song.offset) / 60.f) * song.BPM;
     };
-    float getCurrentTick() { return getTicksAt(playbackPosition.asSeconds()); };
+    float getCurrentTick() { return getTicksAt(playback_position.asSeconds()); };
     float getTicksAt(float seconds) {
-        return getBeatsAt(seconds) * getResolution();
+        return getBeatsAt(seconds) * get_resolution();
     }
     float getSecondsAt(int tick) {
-        return (60.f * tick) / (fumen.BPM * getResolution()) - fumen.offset;
+        return (60.f * tick) / (song.BPM * get_resolution()) - song.offset;
     };
-    int getResolution() { return chart ? chart->ref.getResolution() : 240; };
-    int getSnapStep() { return getResolution() / snap; };
+    int get_resolution() { return chart_state ? chart_state->chart.getResolution() : 240; };
+    int get_snap_step() { return get_resolution() / snap; };
 
-    float ticksToSeconds(int ticks) {
-        return (60.f * ticks) / (fumen.BPM * getResolution());
-    };
 
-    float getChartRuntime() {
-        return getPreviewEnd().asSeconds() + fumen.offset;
-    };
-
-    void reloadFromFumen(std::filesystem::path assets);
-    void reloadMusic();
-    void reloadAlbumCover();
-    void reloadPreviewEnd();
+    void reload_album_cover();
+    void reload_preview_end();
 
     bool showPlayfield = true;
     bool showProperties;
@@ -126,6 +118,15 @@ public:
     std::set<Note> visibleNotes;
 
     void toggleNoteAtCurrentTime(int pos);
+
+private:
+    sf::Time preview_end;  // sf::Time (in the audio file "coordinates") at which the chart preview stops, can be
+                        // after the end of the actual audio file
+    
+    std::string edited_music_path;
+    void reload_music();
+
+    std::filesystem::path song_path;
 };
 
 namespace ESHelper {

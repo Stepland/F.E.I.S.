@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     MarkerEndingState markerEndingState = preferences.markerEndingState;
 
     BlankScreen bg{assets_folder};
-    std::optional<EditorState> editorState;
+    std::optional<EditorState> editor_state;
     NotificationsQueue notificationsQueue;
     ESHelper::NewChartDialog newChartDialog;
     ESHelper::ChartPropertiesDialog chartPropertiesDialog;
@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
             switch (event.type) {
                 case sf::Event::Closed:
                     preferences.save();
-                    if (ESHelper::saveOrCancel(editorState)) {
+                    if (ESHelper::saveOrCancel(editor_state)) {
                         window.close();
                     }
                     break;
@@ -101,8 +101,8 @@ int main(int argc, char** argv) {
                 case sf::Event::MouseButtonPressed:
                     switch (event.mouseButton.button) {
                         case sf::Mouse::Button::Right:
-                            if (editorState and editorState->chart) {
-                                editorState->chart->creatingLongNote = true;
+                            if (editor_state and editor_state->chart_state) {
+                                editor_state->chart_state->creating_long_note = true;
                             }
                             break;
                         default:
@@ -112,15 +112,15 @@ int main(int argc, char** argv) {
                 case sf::Event::MouseButtonReleased:
                     switch (event.mouseButton.button) {
                         case sf::Mouse::Button::Right:
-                            if (editorState and editorState->chart) {
-                                if (editorState->chart->longNoteBeingCreated) {
-                                    auto pair = *editorState->chart->longNoteBeingCreated;
+                            if (editor_state and editor_state->chart_state) {
+                                if (editor_state->chart_state->longNoteBeingCreated) {
+                                    auto pair = *editor_state->chart->longNoteBeingCreated;
                                     Note new_note = Note(pair.first, pair.second);
                                     std::set<Note> new_note_set = {new_note};
-                                    editorState->chart->ref.Notes.insert(new_note);
-                                    editorState->chart->longNoteBeingCreated.reset();
-                                    editorState->chart->creatingLongNote = false;
-                                    editorState->chart->history.push(
+                                    editor_state->chart->ref.Notes.insert(new_note);
+                                    editor_state->chart->longNoteBeingCreated.reset();
+                                    editor_state->chart->creatingLongNote = false;
+                                    editor_state->chart->history.push(
                                         std::make_shared<ToggledNotes>(new_note_set, true));
                                 }
                             }
@@ -136,11 +136,11 @@ int main(int argc, char** argv) {
                                 std::floor(event.mouseWheelScroll.delta));
                             if (delta >= 0) {
                                 for (int i = 0; i < delta; ++i) {
-                                    Move::backwardsInTime(editorState);
+                                    Move::backwardsInTime(editor_state);
                                 }
                             } else {
                                 for (int i = 0; i < -delta; ++i) {
-                                    Move::forwardsInTime(editorState);
+                                    Move::forwardsInTime(editor_state);
                                 }
                             }
                         } break;
@@ -157,43 +157,43 @@ int main(int argc, char** argv) {
                         // Discard, in that order : timeSelection,
                         // selected_notes
                         case sf::Keyboard::Escape:
-                            if (editorState and editorState->chart) {
+                            if (editor_state and editor_state->chart) {
                                 if (not std::holds_alternative<std::monostate>(
-                                        editorState->chart->timeSelection)) {
-                                    editorState->chart->timeSelection.emplace<std::monostate>();
-                                } else if (not editorState->chart->selectedNotes.empty()) {
-                                    editorState->chart->selectedNotes.clear();
+                                        editor_state->chart->timeSelection)) {
+                                    editor_state->chart->timeSelection.emplace<std::monostate>();
+                                } else if (not editor_state->chart->selectedNotes.empty()) {
+                                    editor_state->chart->selectedNotes.clear();
                                 }
                             }
                             break;
 
                         // Modify timeSelection
                         case sf::Keyboard::Tab:
-                            if (editorState and editorState->chart) {
+                            if (editor_state and editor_state->chart) {
                                 // if no timeSelection was previously made
                                 if (std::holds_alternative<std::monostate>(
-                                        editorState->chart->timeSelection)) {
+                                        editor_state->chart->timeSelection)) {
                                     // set the start of the timeSelection to the
                                     // current time
-                                    editorState->chart->timeSelection =
+                                    editor_state->chart->timeSelection =
                                         static_cast<unsigned int>(
-                                            editorState->getCurrentTick());
+                                            editor_state->getCurrentTick());
 
                                     // if the start of the timeSelection is
                                     // already set
                                 } else if (std::holds_alternative<unsigned int>(
-                                               editorState->chart->timeSelection)) {
+                                               editor_state->chart->timeSelection)) {
                                     auto current_tick =
-                                        static_cast<int>(editorState->getCurrentTick());
+                                        static_cast<int>(editor_state->getCurrentTick());
                                     auto selection_start =
                                         static_cast<int>(std::get<unsigned int>(
-                                            editorState->chart->timeSelection));
+                                            editor_state->chart->timeSelection));
 
                                     // if we are on the same tick as the
                                     // timeSelection start we discard the
                                     // timeSelection
                                     if (current_tick == selection_start) {
-                                        editorState->chart->timeSelection.emplace<std::monostate>();
+                                        editor_state->chart->timeSelection.emplace<std::monostate>();
 
                                         // else we create a full timeSelection
                                         // while paying attention to the order
@@ -202,24 +202,24 @@ int main(int argc, char** argv) {
                                             std::min(current_tick, selection_start));
                                         auto duration = static_cast<unsigned int>(
                                             std::abs(current_tick - selection_start));
-                                        editorState->chart->timeSelection.emplace<TimeSelection>(
+                                        editor_state->chart->timeSelection.emplace<TimeSelection>(
                                             new_selection_start,
                                             duration);
-                                        editorState->chart->selectedNotes =
-                                            editorState->chart->ref.getNotesBetween(
+                                        editor_state->chart->selectedNotes =
+                                            editor_state->chart->ref.getNotesBetween(
                                                 new_selection_start,
                                                 new_selection_start + duration);
                                     }
 
                                     // if a full timeSelection already exists
                                 } else if (std::holds_alternative<TimeSelection>(
-                                               editorState->chart->timeSelection)) {
+                                               editor_state->chart->timeSelection)) {
                                     // discard the current timeSelection and set
                                     // the start of the timeSelection to the
                                     // current time
-                                    editorState->chart->timeSelection =
+                                    editor_state->chart->timeSelection =
                                         static_cast<unsigned int>(
-                                            editorState->getCurrentTick());
+                                            editor_state->getCurrentTick());
                                 }
                             }
                             break;
@@ -227,7 +227,7 @@ int main(int argc, char** argv) {
                         // Delete selected notes from the chart and discard
                         // timeSelection
                         case sf::Keyboard::Delete:
-                            Edit::delete_(editorState, notificationsQueue);
+                            Edit::delete_(editor_state, notificationsQueue);
                             break;
 
                         /*
@@ -235,49 +235,49 @@ int main(int argc, char** argv) {
                          */
                         case sf::Keyboard::Up:
                             if (event.key.shift) {
-                                if (editorState) {
-                                    editorState->musicVolumeUp();
+                                if (editor_state) {
+                                    editor_state->musicVolumeUp();
                                     std::stringstream ss;
                                     ss << "Music Volume : "
-                                       << editorState->musicVolume * 10 << "%";
+                                       << editor_state->musicVolume * 10 << "%";
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
-                                Move::backwardsInTime(editorState);
+                                Move::backwardsInTime(editor_state);
                             }
                             break;
                         case sf::Keyboard::Down:
                             if (event.key.shift) {
-                                if (editorState) {
-                                    editorState->musicVolumeDown();
+                                if (editor_state) {
+                                    editor_state->musicVolumeDown();
                                     std::stringstream ss;
                                     ss << "Music Volume : "
-                                       << editorState->musicVolume * 10 << "%";
+                                       << editor_state->musicVolume * 10 << "%";
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
-                                Move::forwardsInTime(editorState);
+                                Move::forwardsInTime(editor_state);
                             }
                             break;
                         case sf::Keyboard::Left:
                             if (event.key.shift) {
-                                if (editorState) {
-                                    editorState->musicSpeedDown();
+                                if (editor_state) {
+                                    editor_state->musicSpeedDown();
                                     std::stringstream ss;
-                                    ss << "Speed : " << editorState->musicSpeed * 10 << "%";
+                                    ss << "Speed : " << editor_state->musicSpeed * 10 << "%";
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(ss.str()));
                                 }
                             } else {
-                                if (editorState and editorState->chart) {
-                                    editorState->snap = Toolbox::getPreviousDivisor(
-                                        editorState->chart->ref.getResolution(),
-                                        editorState->snap);
+                                if (editor_state and editor_state->chart) {
+                                    editor_state->snap = Toolbox::getPreviousDivisor(
+                                        editor_state->chart->ref.getResolution(),
+                                        editor_state->snap);
                                     std::stringstream ss;
                                     ss << "Snap : "
-                                       << Toolbox::toOrdinal(4 * editorState->snap);
+                                       << Toolbox::toOrdinal(4 * editor_state->snap);
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(ss.str()));
                                 }
@@ -285,19 +285,19 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Keyboard::Right:
                             if (event.key.shift) {
-                                editorState->musicSpeedUp();
+                                editor_state->musicSpeedUp();
                                 std::stringstream ss;
-                                ss << "Speed : " << editorState->musicSpeed * 10 << "%";
+                                ss << "Speed : " << editor_state->musicSpeed * 10 << "%";
                                 notificationsQueue.push(
                                     std::make_shared<TextNotification>(ss.str()));
                             } else {
-                                if (editorState and editorState->chart) {
-                                    editorState->snap = Toolbox::getNextDivisor(
-                                        editorState->chart->ref.getResolution(),
-                                        editorState->snap);
+                                if (editor_state and editor_state->chart) {
+                                    editor_state->snap = Toolbox::getNextDivisor(
+                                        editor_state->chart->ref.getResolution(),
+                                        editor_state->snap);
                                     std::stringstream ss;
                                     ss << "Snap : "
-                                       << Toolbox::toOrdinal(4 * editorState->snap);
+                                       << Toolbox::toOrdinal(4 * editor_state->snap);
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(ss.str()));
                                 }
@@ -339,21 +339,21 @@ int main(int argc, char** argv) {
                             break;
                         case sf::Keyboard::Space:
                             if (not ImGui::GetIO().WantTextInput) {
-                                if (editorState) {
-                                    editorState->playing = not editorState->playing;
+                                if (editor_state) {
+                                    editor_state->playing = not editor_state->playing;
                                 }
                             }
                             break;
                         case sf::Keyboard::Add:
-                            if (editorState) {
-                                editorState->linearView.zoom_in();
+                            if (editor_state) {
+                                editor_state->linearView.zoom_in();
                                 notificationsQueue.push(std::make_shared<TextNotification>(
                                     "Zoom in"));
                             }
                             break;
                         case sf::Keyboard::Subtract:
-                            if (editorState) {
-                                editorState->linearView.zoom_out();
+                            if (editor_state) {
+                                editor_state->linearView.zoom_out();
                                 notificationsQueue.push(std::make_shared<TextNotification>(
                                     "Zoom out"));
                             }
@@ -363,46 +363,46 @@ int main(int argc, char** argv) {
                          */
                         case sf::Keyboard::C:
                             if (event.key.control) {
-                                Edit::copy(editorState, notificationsQueue);
+                                Edit::copy(editor_state, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
-                                if (ESHelper::saveOrCancel(editorState)) {
-                                    ESHelper::open(editorState, assets_folder, settings_folder);
+                                if (ESHelper::saveOrCancel(editor_state)) {
+                                    ESHelper::open(editor_state, assets_folder, settings_folder);
                                 }
                             }
                             break;
                         case sf::Keyboard::P:
                             if (event.key.shift) {
-                                editorState->showProperties = true;
+                                editor_state->showProperties = true;
                             }
                             break;
                         case sf::Keyboard::S:
                             if (event.key.control) {
-                                ESHelper::save(*editorState);
+                                ESHelper::save(*editor_state);
                                 notificationsQueue.push(std::make_shared<TextNotification>(
                                     "Saved file"));
                             }
                             break;
                         case sf::Keyboard::V:
                             if (event.key.control) {
-                                Edit::paste(editorState, notificationsQueue);
+                                Edit::paste(editor_state, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::X:
                             if (event.key.control) {
-                                Edit::cut(editorState, notificationsQueue);
+                                Edit::cut(editor_state, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::Y:
                             if (event.key.control) {
-                                Edit::redo(editorState, notificationsQueue);
+                                Edit::redo(editor_state, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::Z:
                             if (event.key.control) {
-                                Edit::undo(editorState, notificationsQueue);
+                                Edit::undo(editor_state, notificationsQueue);
                             }
                             break;
                         default:
@@ -418,46 +418,46 @@ int main(int argc, char** argv) {
         ImGui::SFML::Update(window, delta);
 
         // Audio playback management
-        if (editorState) {
-            editorState->updateVisibleNotes();
-            if (editorState->playing) {
-                editorState->previousPos = editorState->playbackPosition;
-                editorState->playbackPosition += delta * (editorState->musicSpeed / 10.f);
-                if (editorState->music) {
-                    switch (editorState->music->getStatus()) {
+        if (editor_state) {
+            editor_state->updateVisibleNotes();
+            if (editor_state->playing) {
+                editor_state->previousPos = editor_state->playbackPosition;
+                editor_state->playbackPosition += delta * (editor_state->musicSpeed / 10.f);
+                if (editor_state->music) {
+                    switch (editor_state->music->getStatus()) {
                         case sf::Music::Stopped:
                         case sf::Music::Paused:
-                            if (editorState->playbackPosition.asSeconds() >= 0
-                                and editorState->playbackPosition
-                                    < editorState->music->getDuration()) {
-                                editorState->music->setPlayingOffset(editorState->playbackPosition);
-                                editorState->music->play();
+                            if (editor_state->playbackPosition.asSeconds() >= 0
+                                and editor_state->playbackPosition
+                                    < editor_state->music->getDuration()) {
+                                editor_state->music->setPlayingOffset(editor_state->playbackPosition);
+                                editor_state->music->play();
                             }
                             break;
                         case sf::Music::Playing:
-                            editorState->playbackPosition =
-                                editorState->music->getPrecisePlayingOffset();
+                            editor_state->playbackPosition =
+                                editor_state->music->getPrecisePlayingOffset();
                             break;
                         default:
                             break;
                     }
                 }
                 if (beatTick.shouldPlay) {
-                    auto previous_tick = static_cast<int>(editorState->getTicksAt(
-                        editorState->previousPos.asSeconds()));
-                    auto current_tick = static_cast<int>(editorState->getTicksAt(
-                        editorState->playbackPosition.asSeconds()));
-                    if (previous_tick / editorState->getResolution()
-                        != current_tick / editorState->getResolution()) {
+                    auto previous_tick = static_cast<int>(editor_state->getTicksAt(
+                        editor_state->previousPos.asSeconds()));
+                    auto current_tick = static_cast<int>(editor_state->getTicksAt(
+                        editor_state->playbackPosition.asSeconds()));
+                    if (previous_tick / editor_state->getResolution()
+                        != current_tick / editor_state->getResolution()) {
                         beatTick.play();
                     }
                 }
                 if (noteTick.shouldPlay) {
                     int note_count = 0;
-                    for (auto note : editorState->visibleNotes) {
-                        float noteTiming = editorState->getSecondsAt(note.getTiming());
-                        if (noteTiming >= editorState->previousPos.asSeconds()
-                            and noteTiming <= editorState->playbackPosition.asSeconds()) {
+                    for (auto note : editor_state->visibleNotes) {
+                        float noteTiming = editor_state->getSecondsAt(note.getTiming());
+                        if (noteTiming >= editor_state->previousPos.asSeconds()
+                            and noteTiming <= editor_state->playbackPosition.asSeconds()) {
                             note_count++;
                         }
                     }
@@ -472,69 +472,69 @@ int main(int argc, char** argv) {
                     }
                 }
 
-                if (editorState->playbackPosition > editorState->getPreviewEnd()) {
-                    editorState->playing = false;
-                    editorState->playbackPosition = editorState->getPreviewEnd();
+                if (editor_state->playbackPosition > editor_state->getPreviewEnd()) {
+                    editor_state->playing = false;
+                    editor_state->playbackPosition = editor_state->getPreviewEnd();
                 }
             } else {
-                if (editorState->music) {
-                    if (editorState->music->getStatus() == sf::Music::Playing) {
-                        editorState->music->pause();
+                if (editor_state->music) {
+                    if (editor_state->music->getStatus() == sf::Music::Playing) {
+                        editor_state->music->pause();
                     }
                 }
             }
         }
 
         // Drawing
-        if (editorState) {
+        if (editor_state) {
             window.clear(sf::Color(0, 0, 0));
 
-            if (editorState->showHistory) {
-                editorState->chart->history.display(get_message);
+            if (editor_state->showHistory) {
+                editor_state->chart->history.display(get_message);
             }
-            if (editorState->showPlayfield) {
-                editorState->displayPlayfield(marker, markerEndingState);
+            if (editor_state->showPlayfield) {
+                editor_state->displayPlayfield(marker, markerEndingState);
             }
-            if (editorState->showLinearView) {
-                editorState->displayLinearView();
+            if (editor_state->showLinearView) {
+                editor_state->displayLinearView();
             }
-            if (editorState->linearView.shouldDisplaySettings) {
-                editorState->linearView.displaySettings();
+            if (editor_state->linearView.shouldDisplaySettings) {
+                editor_state->linearView.displaySettings();
             }
-            if (editorState->showProperties) {
-                editorState->displayProperties();
+            if (editor_state->showProperties) {
+                editor_state->displayProperties();
             }
-            if (editorState->showStatus) {
-                editorState->displayStatus();
+            if (editor_state->showStatus) {
+                editor_state->displayStatus();
             }
-            if (editorState->showPlaybackStatus) {
-                editorState->displayPlaybackStatus();
+            if (editor_state->showPlaybackStatus) {
+                editor_state->displayPlaybackStatus();
             }
-            if (editorState->showTimeline) {
-                editorState->displayTimeline();
+            if (editor_state->showTimeline) {
+                editor_state->displayTimeline();
             }
-            if (editorState->showChartList) {
-                editorState->displayChartList(assets_folder);
+            if (editor_state->showChartList) {
+                editor_state->displayChartList(assets_folder);
             }
-            if (editorState->showNewChartDialog) {
-                std::optional<Chart> c = newChartDialog.display(*editorState);
+            if (editor_state->showNewChartDialog) {
+                std::optional<Chart> c = newChartDialog.display(*editor_state);
                 if (c) {
-                    editorState->showNewChartDialog = false;
-                    if (editorState->fumen.Charts.try_emplace(c->dif_name, *c).second) {
-                        editorState->chart.emplace(editorState->fumen.Charts.at(c->dif_name), assets_folder);
+                    editor_state->showNewChartDialog = false;
+                    if (editor_state->song.Charts.try_emplace(c->dif_name, *c).second) {
+                        editor_state->chart.emplace(editor_state->song.Charts.at(c->dif_name), assets_folder);
                     }
                 }
             } else {
                 newChartDialog.resetValues();
             }
-            if (editorState->showChartProperties) {
-                chartPropertiesDialog.display(*editorState, assets_folder);
+            if (editor_state->showChartProperties) {
+                chartPropertiesDialog.display(*editor_state, assets_folder);
             } else {
                 chartPropertiesDialog.shouldRefreshValues = true;
             }
 
-            if (editorState->showSoundSettings) {
-                ImGui::Begin("Sound Settings", &editorState->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize);
+            if (editor_state->showSoundSettings) {
+                ImGui::Begin("Sound Settings", &editor_state->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize);
                 {
                     if (ImGui::TreeNode("Beat Tick")) {
                         beatTick.displayControls();
@@ -561,7 +561,7 @@ int main(int argc, char** argv) {
         {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
-                    if (ESHelper::saveOrCancel(editorState)) {
+                    if (ESHelper::saveOrCancel(editor_state)) {
                         const char* _filepath =
                             tinyfd_saveFileDialog("New File", nullptr, 0, nullptr, nullptr);
                         if (_filepath != nullptr) {
@@ -569,9 +569,9 @@ int main(int argc, char** argv) {
                             try {
                                 Fumen f(filepath);
                                 f.autoSaveAsMemon();
-                                editorState.emplace(f, assets_folder);
+                                editor_state.emplace(f, assets_folder);
                                 Toolbox::pushNewRecentFile(std::filesystem::canonical(
-                                    editorState->fumen.path), settings_folder);
+                                    editor_state->song.path), settings_folder);
                             } catch (const std::exception& e) {
                                 tinyfd_messageBox(
                                     "Error",
@@ -585,8 +585,8 @@ int main(int argc, char** argv) {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Open", "Ctrl+O")) {
-                    if (ESHelper::saveOrCancel(editorState)) {
-                        ESHelper::open(editorState, assets_folder, settings_folder);
+                    if (ESHelper::saveOrCancel(editor_state)) {
+                        ESHelper::open(editor_state, assets_folder, settings_folder);
                     }
                 }
                 if (ImGui::BeginMenu("Recent Files")) {
@@ -594,8 +594,8 @@ int main(int argc, char** argv) {
                     for (const auto& file : Toolbox::getRecentFiles(settings_folder)) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
-                            if (ESHelper::saveOrCancel(editorState)) {
-                                ESHelper::openFromFile(editorState, file, assets_folder, settings_folder);
+                            if (ESHelper::saveOrCancel(editor_state)) {
+                                ESHelper::openFromFile(editor_state, file, assets_folder, settings_folder);
                             }
                         }
                         ImGui::PopID();
@@ -603,109 +603,109 @@ int main(int argc, char** argv) {
                     }
                     ImGui::EndMenu();
                 }
-                if (ImGui::MenuItem("Close", "", false, editorState.has_value())) {
-                    if (ESHelper::saveOrCancel(editorState)) {
-                        editorState.reset();
+                if (ImGui::MenuItem("Close", "", false, editor_state.has_value())) {
+                    if (ESHelper::saveOrCancel(editor_state)) {
+                        editor_state.reset();
                     }
                 }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Save", "Ctrl+S", false, editorState.has_value())) {
-                    ESHelper::save(*editorState);
+                if (ImGui::MenuItem("Save", "Ctrl+S", false, editor_state.has_value())) {
+                    ESHelper::save(*editor_state);
                 }
-                if (ImGui::MenuItem("Save As", "", false, editorState.has_value())) {
+                if (ImGui::MenuItem("Save As", "", false, editor_state.has_value())) {
                     char const* options[1] = {"*.memon"};
                     const char* _filepath(
                         tinyfd_saveFileDialog("Save File", nullptr, 1, options, nullptr));
                     if (_filepath != nullptr) {
                         std::filesystem::path filepath(_filepath);
                         try {
-                            editorState->fumen.saveAsMemon(filepath);
+                            editor_state->song.saveAsMemon(filepath);
                         } catch (const std::exception& e) {
                             tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
                         }
                     }
                 }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Properties", "Shift+P", false, editorState.has_value())) {
-                    editorState->showProperties = true;
+                if (ImGui::MenuItem("Properties", "Shift+P", false, editor_state.has_value())) {
+                    editor_state->showProperties = true;
                 }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
-                    Edit::undo(editorState, notificationsQueue);
+                    Edit::undo(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Redo", "Ctrl+Y")) {
-                    Edit::redo(editorState, notificationsQueue);
+                    Edit::redo(editor_state, notificationsQueue);
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Cut", "Ctrl+X")) {
-                    Edit::cut(editorState, notificationsQueue);
+                    Edit::cut(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Copy", "Ctrl+C")) {
-                    Edit::copy(editorState, notificationsQueue);
+                    Edit::copy(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Paste", "Ctrl+V")) {
-                    Edit::paste(editorState, notificationsQueue);
+                    Edit::paste(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Delete", "Delete")) {
-                    Edit::delete_(editorState, notificationsQueue);
+                    Edit::delete_(editor_state, notificationsQueue);
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Chart", editorState.has_value())) {
+            if (ImGui::BeginMenu("Chart", editor_state.has_value())) {
                 if (ImGui::MenuItem("Chart List")) {
-                    editorState->showChartList = true;
+                    editor_state->showChartList = true;
                 }
                 if (ImGui::MenuItem(
                         "Properties##Chart",
                         nullptr,
                         false,
-                        editorState->chart.has_value())) {
-                    editorState->showChartProperties = true;
+                        editor_state->chart.has_value())) {
+                    editor_state->showChartProperties = true;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("New Chart")) {
-                    editorState->showNewChartDialog = true;
+                    editor_state->showNewChartDialog = true;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem(
                         "Delete Chart",
                         nullptr,
                         false,
-                        editorState->chart.has_value())) {
-                    editorState->fumen.Charts.erase(editorState->chart->ref.dif_name);
-                    editorState->chart.reset();
+                        editor_state->chart.has_value())) {
+                    editor_state->song.Charts.erase(editor_state->chart->ref.dif_name);
+                    editor_state->chart.reset();
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("View", editorState.has_value())) {
-                if (ImGui::MenuItem("Playfield", nullptr, editorState->showPlayfield)) {
-                    editorState->showPlayfield = not editorState->showPlayfield;
+            if (ImGui::BeginMenu("View", editor_state.has_value())) {
+                if (ImGui::MenuItem("Playfield", nullptr, editor_state->showPlayfield)) {
+                    editor_state->showPlayfield = not editor_state->showPlayfield;
                 }
-                if (ImGui::MenuItem("Linear View", nullptr, editorState->showLinearView)) {
-                    editorState->showLinearView = not editorState->showLinearView;
+                if (ImGui::MenuItem("Linear View", nullptr, editor_state->showLinearView)) {
+                    editor_state->showLinearView = not editor_state->showLinearView;
                 }
-                if (ImGui::MenuItem("Playback Status", nullptr, editorState->showPlaybackStatus)) {
-                    editorState->showPlaybackStatus = not editorState->showPlaybackStatus;
+                if (ImGui::MenuItem("Playback Status", nullptr, editor_state->showPlaybackStatus)) {
+                    editor_state->showPlaybackStatus = not editor_state->showPlaybackStatus;
                 }
-                if (ImGui::MenuItem("Timeline", nullptr, editorState->showTimeline)) {
-                    editorState->showTimeline = not editorState->showTimeline;
+                if (ImGui::MenuItem("Timeline", nullptr, editor_state->showTimeline)) {
+                    editor_state->showTimeline = not editor_state->showTimeline;
                 }
-                if (ImGui::MenuItem("Editor Status", nullptr, editorState->showStatus)) {
-                    editorState->showStatus = not editorState->showStatus;
+                if (ImGui::MenuItem("Editor Status", nullptr, editor_state->showStatus)) {
+                    editor_state->showStatus = not editor_state->showStatus;
                 }
-                if (ImGui::MenuItem("History", nullptr, editorState->showHistory)) {
-                    editorState->showHistory = not editorState->showHistory;
+                if (ImGui::MenuItem("History", nullptr, editor_state->showHistory)) {
+                    editor_state->showHistory = not editor_state->showHistory;
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Settings", editorState.has_value())) {
+            if (ImGui::BeginMenu("Settings", editor_state.has_value())) {
                 if (ImGui::MenuItem("Sound")) {
-                    editorState->showSoundSettings = true;
+                    editor_state->showSoundSettings = true;
                 }
                 if (ImGui::MenuItem("Linear View")) {
-                    editorState->linearView.shouldDisplaySettings = true;
+                    editor_state->linearView.shouldDisplaySettings = true;
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;

@@ -5,7 +5,7 @@
 #include <string>
 #include <filesystem>
 
-#include "../chart.hpp"
+#include "../better_song.hpp"
 
 class DensityGraph {
 public:
@@ -26,13 +26,13 @@ public:
     std::vector<DensityGraph::density_entry> densities;
 
     std::optional<int> last_height;
-    std::optional<float> last_section_length;
+    std::optional<sf::Time> last_section_duration;
 
-    void update(int height, float chartRuntime, Chart& chart, float BPM, int resolution);
+    void update(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to);
 
 private:
     const std::filesystem::path texture_path;
 
-    void computeDensities(int height, float chartRuntime, Chart& chart, float BPM, int resolution);
-    void updateGraphTexture();
+    void compute_densities(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to);
+    void update_graph_texture();
 };

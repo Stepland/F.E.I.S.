@@ -9,13 +9,13 @@ In other words, how to create a new F.E.I.S. executable from the source code.
     $ cd F.E.I.S./
     ```
 
-0. Setup the `build` directory
+0. Setup a build directory called `build`
 
     ```console
     $ meson setup build
     ```
 
-0. Build
+0. Compile in that directory
 
     ```console
     $ meson compile -C build

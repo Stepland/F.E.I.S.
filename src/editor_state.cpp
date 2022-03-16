@@ -9,102 +9,87 @@
 #include <imgui_stdlib.h>
 #include <tinyfiledialogs.h>
 
-EditorState::EditorState(Fumen& fumen, std::filesystem::path assets) :
-    fumen(fumen),
-    playfield(assets),
-    linearView(assets)
-{
-    reloadFromFumen(assets);
-}
-
-void EditorState::reloadFromFumen(std::filesystem::path assets) {
-    if (not this->fumen.Charts.empty()) {
-        this->chart.emplace(this->fumen.Charts.begin()->second, assets);
-    } else {
-        this->chart.reset();
-    }
-    reloadMusic();
-    reloadAlbumCover();
-}
-
 /*
- * Reloads music from what's indicated in the "music path" field of the fumen
+ * Reloads music from what's indicated in the "music path" field of the song
  * Resets the music state in case anything fails
- * Updates playbackPosition and previewEnd as well
+ * Updates playbackPosition and preview_end as well
  */
-void EditorState::reloadMusic() {
-    const auto music_path = std::filesystem::path(fumen.path).parent_path() / fumen.musicPath;
+void EditorState::reload_music() {
+    const auto absolute_music_path = song_path.parent_path() / edited_music_path;
     try {
-        music.emplace(music_path);
+        music_state.emplace(absolute_music_path);
     } catch (const std::exception& e) {
-        music.reset();
+        music_state.reset();
     }
 
-    reloadPreviewEnd();
+    reload_preview_end();
 
-    auto seconds_position = std::clamp(playbackPosition.asSeconds(), -(fumen.offset), previewEnd.asSeconds());
-    playbackPosition = sf::seconds(seconds_position);
-    previousPos = playbackPosition;
+    auto preview_start = sf::Time::Zero;
+    if (chart_state) {
+        preview_start = std::min(preview_start, chart_state->chart.timing.time_at(0));
+    }
+    playback_position = std::clamp(playback_position, preview_start, preview_end);
+    previous_pos = playback_position;
 }
 
-void EditorState::reloadPreviewEnd() {
-    auto old_previewEnd = previewEnd;
-    float music_duration = 0;
-    if (music) {
-        music_duration = music->getDuration().asSeconds();
+void EditorState::reload_preview_end() {
+    auto old_preview_end = this->preview_end;
+    sf::Time music_duration = sf::Time::Zero;
+    if (music_state) {
+        music_duration = music_state->getDuration();
     }
 
-    float chart_runtime = 0;
+    float chart_end = 0;
     if (chart) {
-        chart_runtime = fumen.getChartRuntime(chart->ref);
+        chart_end = chart->ref
+            .time_of_last_event()
+            .value_or(sf::Time::Zero)
+            .asSeconds();
     }
 
-    // Chart end in seconds using the music file "coordinate system"
-    // (beat 0 is at -offset seconds)
-    float chart_end = std::max(chart_runtime - fumen.offset, 0.f);
-    float preview_end_seconds = std::max(music_duration, chart_end) ;
+    float preview_end_seconds = std::max(music_duration, chart_end);
     
     // Add some extra time at the end to allow for more notes to be placed
     // after the end of the chart
     // TODO: is this really the way to do it ?
     preview_end_seconds += 2.f;
-    previewEnd = sf::seconds(preview_end_seconds);
-    if (old_previewEnd != previewEnd and chart) {
-        chart->densityGraph.should_recompute = true;
+    this->preview_end = sf::seconds(preview_end_seconds);
+    if (old_preview_end != this->preview_end and this->chart.has_value()) {
+        chart->density_graph.should_recompute = true;
     }
 }
 
 /*
  * Reloads the album cover from what's indicated in the "album cover path" field
- * of the fumen Resets the album cover state if anything fails
+ * of the song Resets the album cover state if anything fails
  */
-void EditorState::reloadAlbumCover() {
-    albumCover.emplace();
+void EditorState::reload_album_cover() {
+    album_cover.emplace();
 
     std::filesystem::path album_cover_path =
-        std::filesystem::path(fumen.path).parent_path() / fumen.albumCoverPath;
+        std::filesystem::path(song.path).parent_path() / song.albumCoverPath;
 
-    if (fumen.albumCoverPath.empty() or not std::filesystem::exists(album_cover_path)
-        or not albumCover->loadFromFile(album_cover_path.string())) {
-        albumCover.reset();
+    if (song.albumCoverPath.empty() or not std::filesystem::exists(album_cover_path)
+        or not album_cover->loadFromFile(album_cover_path.string())) {
+        album_cover.reset();
     }
 }
 
-void EditorState::setPlaybackAndMusicPosition(sf::Time newPosition) {
-    reloadPreviewEnd();
+void EditorState::set_playback_and_music_position(sf::Time newPosition) {
+    reload_preview_end();
 
     newPosition = sf::seconds(
         std::clamp(
             newPosition.asSeconds(),
-            -fumen.offset,
-            previewEnd.asSeconds()
+            -song.offset,
+            this->preview_end.asSeconds()
         )
     );
-    previousPos = sf::seconds(newPosition.asSeconds() - 1.f / 60.f);
-    playbackPosition = newPosition;
+    previous_pos = sf::seconds(newPosition.asSeconds() - 1.f / 60.f);
+    playback_position = newPosition;
     if (music) {
-        if (playbackPosition.asSeconds() >= 0 and playbackPosition < music->getDuration()) {
-            music->setPlayingOffset(playbackPosition);
+        if (playback_position.asSeconds() >= 0 and playback_position < music->getDuration()) {
+            music->setPlayingOffset(playback_position);
         } else {
             music->stop();
         }
@@ -119,10 +104,10 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         Toolbox::CustomConstraints::ContentSquare);
 
     if (ImGui::Begin("Playfield", &showPlayfield, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-        if (not ImGui::IsWindowHovered() and chart and chart->creatingLongNote) {
+        if (not ImGui::IsWindowHovered() and chart and chart->creating_long_note) {
             // cancel long note creation if the mouse is or goes out of the playfield
-            chart->longNoteBeingCreated.reset();
-            chart->creatingLongNote = false;
+            chart->long_note_being_created.reset();
+            chart->creating_long_note = false;
         }
         float squareSize = ImGui::GetWindowSize().x / 4.f;
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
@@ -136,15 +121,15 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             if (longNoteDummy) {
                 playfield.drawLongNote(
                     *longNoteDummy,
-                    playbackPosition,
+                    playback_position,
                     getCurrentTick(),
-                    fumen.BPM,
+                    song.BPM,
                     getResolution());
             }
 
             for (auto const& note : visibleNotes) {
                 float note_offset =
-                    (playbackPosition.asSeconds() - getSecondsAt(note.getTiming()));
+                    (playback_position.asSeconds() - getSecondsAt(note.getTiming()));
                 // auto frame = static_cast<long long
                 // int>(std::floor(note_offset * 30.f));
                 int x = note.getPos() % 4;
@@ -166,9 +151,9 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                 } else {
                     playfield.drawLongNote(
                         note,
-                        playbackPosition,
+                        playback_position,
                         getCurrentTick(),
-                        fumen.BPM,
+                        song.BPM,
                         getResolution(),
                         marker,
                         markerEndingState);
@@ -196,15 +181,15 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                 if (ImGui::ImageButton(playfield.button, {squareSize, squareSize}, 0)) {
                     toggleNoteAtCurrentTime(x + 4 * y);
                 }
-                if (ImGui::IsItemHovered() and chart and chart->creatingLongNote) {
+                if (ImGui::IsItemHovered() and chart and chart->creating_long_note) {
                     // Deal with long note creation stuff
-                    if (not chart->longNoteBeingCreated) {
+                    if (not chart->long_note_being_created) {
                         Note current_note =
                             Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
-                        chart->longNoteBeingCreated =
+                        chart->long_note_being_created =
                             std::make_pair(current_note, current_note);
                     } else {
-                        chart->longNoteBeingCreated->second =
+                        chart->long_note_being_created->second =
                             Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
                     }
                 }
@@ -216,7 +201,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         if (chart) {
             // Check for collisions then display them
             auto ticks_threshold =
-                static_cast<int>((1.f / 60.f) * fumen.BPM * getResolution());
+                static_cast<int>((1.f / 60.f) * song.BPM * get_resolution());
 
             std::array<bool, 16> collisions = {};
 
@@ -239,7 +224,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
 
             // Display selected notes
             for (auto const& note : visibleNotes) {
-                if (chart->selectedNotes.find(note) != chart->selectedNotes.end()) {
+                if (chart->selected_notes.find(note) != chart->selected_notes.end()) {
                     int x = note.getPos() % 4;
                     int y = note.getPos() / 4;
                     ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
@@ -263,36 +248,36 @@ void EditorState::displayProperties() {
     {
         ImGui::Columns(2, nullptr, false);
 
-        if (albumCover) {
-            ImGui::Image(*albumCover, sf::Vector2f(200, 200));
+        if (album_cover) {
+            ImGui::Image(*album_cover, sf::Vector2f(200, 200));
         } else {
             ImGui::BeginChild("Album Cover", ImVec2(200, 200), true);
             ImGui::EndChild();
         }
 
         ImGui::NextColumn();
-        ImGui::InputText("Title", &fumen.songTitle);
-        ImGui::InputText("Artist", &fumen.artist);
+        ImGui::InputText("Title", &song.songTitle);
+        ImGui::InputText("Artist", &song.artist);
         if (Toolbox::InputTextColored(
                 music.has_value(),
                 "Invalid Music Path",
                 "Music",
-                &fumen.musicPath)) {
-            reloadMusic();
+                &edited_music_path)) {
+            reload_music();
         }
         if (Toolbox::InputTextColored(
-                albumCover.has_value(),
+                album_cover.has_value(),
                 "Invalid Album Cover Path",
                 "Album Cover",
-                &fumen.albumCoverPath)) {
-            reloadAlbumCover();
+                &song.albumCoverPath)) {
+            reload_album_cover();
         }
-        if (ImGui::InputFloat("BPM", &fumen.BPM, 1.0f, 10.0f)) {
-            if (fumen.BPM <= 0.0f) {
-                fumen.BPM = 0.0f;
+        if (ImGui::InputFloat("BPM", &song.BPM, 1.0f, 10.0f)) {
+            if (song.BPM <= 0.0f) {
+                song.BPM = 0.0f;
             }
         }
-        ImGui::InputFloat("offset", &fumen.offset, 0.01f, 1.f);
+        ImGui::InputFloat("offset", &song.offset, 0.01f, 1.f);
     }
     ImGui::End();
 }
@@ -305,11 +290,11 @@ void EditorState::displayStatus() {
     ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
     {
         if (not music) {
-            if (not fumen.musicPath.empty()) {
+            if (not song.musicPath.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
                     "Invalid music path : %s",
-                    fumen.musicPath.c_str());
+                    song.musicPath.c_str());
             } else {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -317,20 +302,20 @@ void EditorState::displayStatus() {
             }
         }
 
-        if (not albumCover) {
-            if (not fumen.albumCoverPath.empty()) {
+        if (not album_cover) {
+            if (not song.albumCoverPath.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
                     "Invalid albumCover path : %s",
-                    fumen.albumCoverPath.c_str());
+                    song.albumCoverPath.c_str());
             } else {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
                     "No albumCover loaded");
             }
         }
-        if (ImGui::SliderInt("Music Volume", &musicVolume, 0, 10)) {
-            setMusicVolume(musicVolume);
+        if (ImGui::SliderInt("Music Volume", &music_volume, 0, 10)) {
+            set_music_volume(music_volume);
         }
     }
     ImGui::End();
@@ -374,7 +359,7 @@ void EditorState::displayPlaybackStatus() {
         }
         ImGui::TextColored(ImVec4(0.53, 0.53, 0.53, 1), "Timeline Position :");
         ImGui::SameLine();
-        ImGui::TextUnformatted(Toolbox::to_string(playbackPosition).c_str());
+        ImGui::TextUnformatted(Toolbox::to_string(playback_position).c_str());
     }
     ImGui::End();
     ImGui::PopStyleVar();
@@ -383,35 +368,23 @@ void EditorState::displayPlaybackStatus() {
 void EditorState::displayTimeline() {
     ImGuiIO& io = ImGui::GetIO();
 
-    float height = io.DisplaySize.y * 0.9f;
+    float raw_height = io.DisplaySize.y * 0.9f;
+    auto height = static_cast<int>(raw_height);
 
-    if (chart) {
-        if (chart->densityGraph.should_recompute) {
-            chart->densityGraph.should_recompute = false;
-            chart->densityGraph.update(
-                static_cast<int>(height),
-                getChartRuntime(),
+    if (
+        chart.has_value()
+        and (
+            chart->density_graph.should_recompute
+            or height != chart->density_graph.last_height.value_or(height)
+        )
+    ) {
+            chart->density_graph.should_recompute = false;
+            chart->density_graph.update(
+                height,
                 chart->ref,
-                fumen.BPM,
-                getResolution());
-        } else {
-            if (chart->densityGraph.last_height) {
-                if (static_cast<int>(height) != *(chart->densityGraph.last_height)) {
-                    chart->densityGraph.update(
-                        static_cast<int>(height),
-                        getChartRuntime(),
-                        chart->ref,
-                        fumen.BPM,
-                        getResolution());
-                }
-            } else {
-                chart->densityGraph.update(
-                    static_cast<int>(height),
-                    getChartRuntime(),
-                    chart->ref,
-                    fumen.BPM,
-                    getResolution());
-            }
+                song.BPM,
+                get_resolution()
+            );
         }
     }
 
@@ -438,7 +411,7 @@ void EditorState::displayTimeline() {
         if (chart) {
             ImGui::SetCursorPos({0, 0});
             ImGui::Image(chart->densityGraph.graph);
-            AffineTransform<float> scroll(-fumen.offset, previewEnd.asSeconds(), 1.f, 0.f);
+            AffineTransform<float> scroll(-song.offset, this->preview_end.asSeconds(), 1.f, 0.f);
             float slider_pos = scroll.transform(playbackPosition.asSeconds());
             ImGui::SetCursorPos({0, 0});
             if (ImGui::VSliderFloat("TimelineSlider", ImGui::GetContentRegionMax(), &slider_pos, 0.f, 1.f, "")) {
@@ -453,7 +426,7 @@ void EditorState::displayTimeline() {
 
 void EditorState::displayChartList(std::filesystem::path assets) {
     if (ImGui::Begin("Chart List", &showChartList, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (this->fumen.Charts.empty()) {
+        if (this->song.Charts.empty()) {
             ImGui::Dummy({100, 0});
             ImGui::SameLine();
             ImGui::Text("- no charts -");
@@ -469,7 +442,7 @@ void EditorState::displayChartList(std::filesystem::path assets) {
             ImGui::TextDisabled("Note Count");
             ImGui::NextColumn();
             ImGui::Separator();
-            for (auto& tuple : fumen.Charts) {
+            for (auto& tuple : song.Charts) {
                 if (ImGui::Selectable(
                         tuple.first.c_str(),
                         chart ? chart->ref == tuple.second : false,
@@ -497,16 +470,16 @@ void EditorState::displayLinearView() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
     if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (chart) {
-            linearView.update(
+            linear_view.update(
                 chart,
                 playbackPosition,
                 getCurrentTick(),
-                fumen.BPM,
+                song.BPM,
                 getResolution(),
                 ImGui::GetContentRegionMax());
             auto cursor_y = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, cursor_y});
-            ImGui::Image(linearView.view);
+            ImGui::Image(linear_view.view);
         } else {
             ImGui::TextDisabled("- no chart selected -");
         }
@@ -566,7 +539,7 @@ void EditorState::updateVisibleNotes() {
     visibleNotes.clear();
 
     if (chart) {
-        float position = playbackPosition.asSeconds();
+        float position = playback_position.asSeconds();
 
         for (auto const& note : chart->ref.Notes) {
             float note_timing_in_seconds = getSecondsAt(note.getTiming());
@@ -613,48 +586,18 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
         }
 
         chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
-        chart->densityGraph.should_recompute = true;
+        chart->density_graph.should_recompute = true;
     }
 }
 
-void EditorState::setMusicSpeed(int newMusicSpeed) {
-    musicSpeed = std::clamp(newMusicSpeed, 1, 20);
-    if (music) {
-        music->setPitch(musicSpeed / 10.f);
-    }
-}
-
-void EditorState::musicSpeedUp() {
-    setMusicSpeed(musicSpeed + 1);
-}
-
-void EditorState::musicSpeedDown() {
-    setMusicSpeed(musicSpeed - 1);
-}
-
-void EditorState::setMusicVolume(int newMusicVolume) {
-    musicVolume = std::clamp(newMusicVolume, 0, 10);
-    if (music) {
-        music->setVolume(Toolbox::convertVolumeToNormalizedDB(musicVolume)*100.f);
-    }
-}
-
-void EditorState::musicVolumeUp() {
-    setMusicVolume(musicVolume + 1);
-}
-
-void EditorState::musicVolumeDown() {
-    setMusicVolume(musicVolume -1 );
-}
-
-const sf::Time& EditorState::getPreviewEnd() {
-    reloadPreviewEnd();
-    return previewEnd;
+const sf::Time& EditorState::get_preview_end() {
+    reload_preview_end();
+    return preview_end;
 }
 
 void ESHelper::save(EditorState& ed) {
     try {
-        ed.fumen.autoSaveAsMemon();
+        ed.song.autoSaveAsMemon();
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
@@ -679,7 +622,7 @@ void ESHelper::openFromFile(
         Fumen f(file);
         f.autoLoadFromMemon();
         ed.emplace(f, assets);
-        Toolbox::pushNewRecentFile(std::filesystem::canonical(ed->fumen.path), settings);
+        Toolbox::pushNewRecentFile(std::filesystem::canonical(ed->song.path), settings);
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
@@ -717,8 +660,8 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState& editorState)
         }
         if (ImGui::BeginCombo("Difficulty", comboPreview.c_str())) {
             for (auto dif_name : {"BSC", "ADV", "EXT"}) {
-                if (editorState.fumen.Charts.find(dif_name)
-                    == editorState.fumen.Charts.end()) {
+                if (editorState.song.Charts.find(dif_name)
+                    == editorState.song.Charts.end()) {
                     if (ImGui::Selectable(dif_name, dif_name == difficulty)) {
                         showCustomDifName = false;
                         difficulty = dif_name;
@@ -735,8 +678,8 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState& editorState)
         }
         if (showCustomDifName) {
             Toolbox::InputTextColored(
-                editorState.fumen.Charts.find(difficulty)
-                    == editorState.fumen.Charts.end(),
+                editorState.song.Charts.find(difficulty)
+                    == editorState.song.Charts.end(),
                 "Chart name has to be unique",
                 "Difficulty Name",
                 &difficulty);
@@ -765,8 +708,8 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState& editorState)
         }
         ImGui::Separator();
         if (difficulty.empty()
-            or (editorState.fumen.Charts.find(difficulty)
-                != editorState.fumen.Charts.end())) {
+            or (editorState.song.Charts.find(difficulty)
+                != editorState.song.Charts.end())) {
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             ImGui::Button("Create Chart##New Chart");
@@ -798,7 +741,7 @@ void ESHelper::ChartPropertiesDialog::display(EditorState& editorState, std::fil
         std::set<std::string> difNames {"BSC", "ADV", "EXT"};
         showCustomDifName = (difNames.find(difficulty_name) == difNames.end());
 
-        for (auto const& tuple : editorState.fumen.Charts) {
+        for (auto const& tuple : editorState.song.Charts) {
             if (tuple.second != editorState.chart->ref) {
                 difNamesInUse.insert(tuple.first);
             }
@@ -855,17 +798,17 @@ void ESHelper::ChartPropertiesDialog::display(EditorState& editorState, std::fil
             if (ImGui::Button("Apply##New Chart")) {
                 try {
                     Chart modified_chart =
-                        editorState.fumen.Charts.at(editorState.chart->ref.dif_name);
-                    editorState.fumen.Charts.erase(editorState.chart->ref.dif_name);
+                        editorState.song.Charts.at(editorState.chart->ref.dif_name);
+                    editorState.song.Charts.erase(editorState.chart->ref.dif_name);
                     modified_chart.dif_name = this->difficulty_name;
                     modified_chart.level = this->level;
-                    if (not(editorState.fumen.Charts.emplace(modified_chart.dif_name, modified_chart))
+                    if (not(editorState.song.Charts.emplace(modified_chart.dif_name, modified_chart))
                                .second) {
                         throw std::runtime_error(
-                            "Could not insert modified chart in fumen");
+                            "Could not insert modified chart in song");
                     } else {
                         editorState.chart.emplace(
-                            editorState.fumen.Charts.at(modified_chart.dif_name),
+                            editorState.song.Charts.at(modified_chart.dif_name),
                             assets
                         );
                         shouldRefreshValues = true;
