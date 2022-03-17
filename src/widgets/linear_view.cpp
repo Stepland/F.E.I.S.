@@ -143,7 +143,7 @@ void LinearView::update(
                 PixelsToSeconds.transform(static_cast<float>(y)) + 0.5f)));
 
         auto notes = chart->chart.getVisibleNotesBetween(lower_bound_ticks, upper_bound_ticks);
-        auto currentLongNote = chart->makeCurrentLongNote();
+        auto currentLongNote = chart->make_current_long_note();
         if (currentLongNote) {
             notes.insert(*currentLongNote);
         }

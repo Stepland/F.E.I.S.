@@ -40,7 +40,7 @@ ToggledNotes::ToggledNotes(std::set<Note> n, bool have_been_added) :
 }
 
 void ToggledNotes::doAction(EditorState& ed) const {
-    ed.setPlaybackAndMusicPosition(sf::seconds(ed.getSecondsAt(notes.begin()->getTiming())));
+    ed.setPlaybackAndMusicPosition(sf::seconds(ed.seconds_at(notes.begin()->getTiming())));
     if (have_been_added) {
         for (auto note : notes) {
             if (ed.chart->ref.Notes.find(note) == ed.chart->ref.Notes.end()) {
@@ -57,7 +57,7 @@ void ToggledNotes::doAction(EditorState& ed) const {
 }
 
 void ToggledNotes::undoAction(EditorState& ed) const {
-    ed.setPlaybackAndMusicPosition(sf::seconds(ed.getSecondsAt(notes.begin()->getTiming())));
+    ed.setPlaybackAndMusicPosition(sf::seconds(ed.seconds_at(notes.begin()->getTiming())));
     if (not have_been_added) {
         for (auto note : notes) {
             if (ed.chart->ref.Notes.find(note) == ed.chart->ref.Notes.end()) {

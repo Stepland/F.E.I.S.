@@ -17,8 +17,8 @@ namespace better {
             0 1 2 3
         y 0 □ □ □ □
         ↓ 1 □ □ □ □
-        2 □ □ □ □
-        3 □ □ □ □
+          2 □ □ □ □
+          3 □ □ □ □
     */
     class Position {
     public:
@@ -51,12 +51,14 @@ namespace better {
     class LongNote {
     public:
         LongNote(Fraction time, Position position, Fraction duration, Position tail_tip);
-
+        
         Fraction get_time() const;
         Position get_position() const;
         Fraction get_end() const;
         Fraction get_duration() const;
         Position get_tail_tip() const;
+        unsigned int get_tail_length() const;
+        unsigned int get_tail_angle() const;
     private:
         Fraction time;
         Position position;

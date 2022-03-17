@@ -48,10 +48,19 @@ namespace better {
         Timing(const std::vector<BPMAtBeat>& events, const SecondsAtBeat& offset);
 
         Fraction fractional_seconds_at(Fraction beats) const;
+        Fraction fractional_seconds_between(Fraction beat_a, Fraction beat_b) const;
         sf::Time time_at(Fraction beats) const;
+        sf::Time time_between(Fraction beat_a, Fraction beat_b) const;
 
+        Fraction beats_at(sf::Time time) const;
+        
     private:
         std::set<BPMEvent, decltype(order_by_beats)> events_by_beats{order_by_beats};
         std::set<BPMEvent, decltype(order_by_seconds)> events_by_seconds{order_by_seconds};
+    };
+
+    const auto frac_to_time = [](const Fraction& f) {
+        auto microseconds = f * 1000000;
+        return sf::microseconds(microseconds.convert_to<sf::Int64>());
     };
 }

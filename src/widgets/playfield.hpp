@@ -1,9 +1,12 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <imgui-SFML.h>
 #include <string>
 
+#include "../better_note.hpp"
+#include "../better_timing.hpp"
 #include "../ln_marker.hpp"
 #include "../marker.hpp"
 #include "../note.hpp"
@@ -17,34 +20,39 @@ public:
     sf::Sprite note_selected;
     sf::Sprite note_collision;
 
-    sf::RenderTexture markerLayer;
-    sf::Sprite markerSprite;
+    sf::RenderTexture marker_layer;
+    sf::Sprite marker_sprite;
 
-    LNMarker longNoteMarker;
-    sf::RenderTexture longNoteLayer;
-    sf::Sprite LNSquareBackgroud;
-    sf::Sprite LNSquareOutline;
-    sf::Sprite LNSquareHighlight;
-    sf::Sprite LNTail;
-    sf::Sprite LNTriangle;
+    struct LongNote {
+        template<class... Args>
+        LongNote(Args&& ...args) : marker(std::forward<Args>(args)...) {};
+
+        LNMarker marker;
+        sf::RenderTexture layer;
+        sf::Sprite backgroud;
+        sf::Sprite outline;
+        sf::Sprite highlight;
+        sf::Sprite tail;
+        sf::Sprite triangle;
+    };
+
+    LongNote long_note;
 
     void resize(unsigned int width);
 
-    void drawLongNote(
-        const Note& note,
+    void draw_long_note(
+        const better::LongNote& note,
         const sf::Time& playbackPosition,
-        const float& ticksAtPlaybackPosition,
-        const float& BPM,
-        const int& resolution);
+        const better::Timing& timing
+    );
 
     void drawLongNote(
         const Note& note,
         const sf::Time& playbackPosition,
-        const float& ticksAtPlaybackPosition,
-        const float& BPM,
-        const int& resolution,
+        const better::Timing& timing,
         Marker& marker,
-        MarkerEndingState& markerEndingState);
+        MarkerEndingState& markerEndingState
+    );
 
 private:
     const std::filesystem::path texture_path;

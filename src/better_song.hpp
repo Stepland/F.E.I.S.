@@ -63,5 +63,6 @@ namespace better {
             decltype(order_by_difficulty_name)
         > charts{order_by_difficulty_name};
         Metadata metadata;
+        Timing timing;
     };
 }

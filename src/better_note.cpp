@@ -86,6 +86,39 @@ namespace better {
     Position LongNote::get_tail_tip() const {
         return tail_tip;
     };
+
+    const auto abs_diff = [](const auto& a, const auto& b){
+        if (a > b) {
+            return a - b;
+        } else {
+            return b - a;
+        }
+    };
+
+    unsigned int LongNote::get_tail_length() const {
+        if (position.get_x() == tail_tip.get_x()) {
+            return abs_diff(position.get_y(), tail_tip.get_y());
+        } else {
+            return abs_diff(position.get_x(), tail_tip.get_x());
+        }
+    }
+
+    unsigned int LongNote::get_tail_angle() const {
+        if (position.get_x() == tail_tip.get_x()) {
+            if (position.get_y() > tail_tip.get_y()) {
+                return 0;
+            } else {
+                return 180;
+            }
+        } else {
+            if (position.get_x() > tail_tip.get_x()) {
+                return 270;
+            } else {
+                return 90;
+            }
+        }
+    }
+
     
     auto _time_bounds = VariantVisitor {
         [](const TapNote& t) -> std::pair<Fraction, Fraction> { return {t.get_time(), t.get_time()}; },

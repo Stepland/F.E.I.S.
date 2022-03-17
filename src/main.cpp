@@ -177,14 +177,14 @@ int main(int argc, char** argv) {
                                     // current time
                                     editor_state->chart->timeSelection =
                                         static_cast<unsigned int>(
-                                            editor_state->getCurrentTick());
+                                            editor_state->current_tick());
 
                                     // if the start of the timeSelection is
                                     // already set
                                 } else if (std::holds_alternative<unsigned int>(
                                                editor_state->chart->timeSelection)) {
                                     auto current_tick =
-                                        static_cast<int>(editor_state->getCurrentTick());
+                                        static_cast<int>(editor_state->current_tick());
                                     auto selection_start =
                                         static_cast<int>(std::get<unsigned int>(
                                             editor_state->chart->timeSelection));
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
                                     // current time
                                     editor_state->chart->timeSelection =
                                         static_cast<unsigned int>(
-                                            editor_state->getCurrentTick());
+                                            editor_state->current_tick());
                                 }
                             }
                             break;
@@ -443,9 +443,9 @@ int main(int argc, char** argv) {
                     }
                 }
                 if (beatTick.shouldPlay) {
-                    auto previous_tick = static_cast<int>(editor_state->getTicksAt(
+                    auto previous_tick = static_cast<int>(editor_state->ticks_at(
                         editor_state->previousPos.asSeconds()));
-                    auto current_tick = static_cast<int>(editor_state->getTicksAt(
+                    auto current_tick = static_cast<int>(editor_state->ticks_at(
                         editor_state->playbackPosition.asSeconds()));
                     if (previous_tick / editor_state->getResolution()
                         != current_tick / editor_state->getResolution()) {

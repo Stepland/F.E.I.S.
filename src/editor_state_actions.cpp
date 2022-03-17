@@ -2,7 +2,7 @@
 
 void Move::backwardsInTime(std::optional<EditorState>& ed) {
     if (ed and ed->chart) {
-        float floatTicks = ed->getCurrentTick();
+        float floatTicks = ed->current_tick();
         auto prevTick = static_cast<int>(floorf(floatTicks));
         int step = ed->get_snap_step();
         int prevTickInSnap = prevTick;
@@ -11,17 +11,17 @@ void Move::backwardsInTime(std::optional<EditorState>& ed) {
         } else {
             prevTickInSnap -= prevTick % step;
         }
-        ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(prevTickInSnap)));
+        ed->setPlaybackAndMusicPosition(sf::seconds(ed->seconds_at(prevTickInSnap)));
     }
 }
 
 void Move::forwardsInTime(std::optional<EditorState>& ed) {
     if (ed and ed->chart) {
-        float floatTicks = ed->getCurrentTick();
+        float floatTicks = ed->current_tick();
         auto nextTick = static_cast<int>(ceilf(floatTicks));
         int step = ed->get_snap_step();
         int nextTickInSnap = nextTick + (step - nextTick % step);
-        ed->setPlaybackAndMusicPosition(sf::seconds(ed->getSecondsAt(nextTickInSnap)));
+        ed->setPlaybackAndMusicPosition(sf::seconds(ed->seconds_at(nextTickInSnap)));
     }
 }
 
@@ -81,7 +81,7 @@ void Edit::copy(std::optional<EditorState>& ed, NotificationsQueue& nq) {
 
 void Edit::paste(std::optional<EditorState>& ed, NotificationsQueue& nq) {
     if (ed and ed->chart and (not ed->chart->notesClipboard.empty())) {
-        auto tick_offset = static_cast<int>(ed->getCurrentTick());
+        auto tick_offset = static_cast<int>(ed->current_tick());
         std::set<Note> pasted_notes = ed->chart->notesClipboard.paste(tick_offset);
 
         std::stringstream ss;

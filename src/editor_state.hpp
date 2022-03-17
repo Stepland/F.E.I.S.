@@ -12,6 +12,7 @@
 #include "music_state.hpp"
 #include "notes_clipboard.hpp"
 #include "precise_music.hpp"
+#include "time_interval.hpp"
 #include "time_selection.hpp"
 #include "widgets/linear_view.hpp"
 #include "widgets/playfield.hpp"
@@ -28,29 +29,19 @@ enum saveChangesResponses {
 
 /*
  * The god class, holds everything there is to know about the currently open
- * .memon file
+ * file
  */
 class EditorState {
 public:
     EditorState(
         const better::Song& song,
-        const std::filesystem::path& song_path,
-        const std::filesystem::path& assets
-    ) :
-        song(song),
-        playfield(assets),
-        linear_view(assets),
-        edited_music_path(song.metadata.audio.value_or("")),
-        song_path(song_path)
-    {
-        if (not this->song.charts.empty()) {
-            this->chart_state.emplace(this->song.charts.begin()->second, assets);
-        }
-        reload_music();
-        reload_album_cover();
-    };
+        const std::filesystem::path& assets,
+        const std::filesystem::path& save_path
+    );
 
     better::Song song;
+    std::optional<std::filesystem::path> song_path;
+
     std::optional<ChartState> chart_state;
 
     std::optional<MusicState> music_state;
@@ -58,38 +49,23 @@ public:
     Playfield playfield;
     LinearView linear_view;
 
-    // the snap but divided by 4 because you can't set a snap to anything lower
-    // than 4ths
     int snap = 1;
 
-    std::optional<sf::Texture> album_cover;
+    std::optional<sf::Texture> jacket;
 
     bool playing;
 
-    sf::Time previous_pos;
+    sf::Time previous_playback_position;
     sf::Time playback_position;
 
-    const sf::Time& get_preview_end();
+    const TimeInterval& get_editable_range();
 
-    void set_playback_and_music_position(sf::Time new_position);
+    void set_playback_position(sf::Time new_position);
 
-    float getBeats() { return getBeatsAt(playback_position.asSeconds()); };
-    float getBeatsAt(float seconds) {
-        return ((seconds + song.offset) / 60.f) * song.BPM;
-    };
-    float getCurrentTick() { return getTicksAt(playback_position.asSeconds()); };
-    float getTicksAt(float seconds) {
-        return getBeatsAt(seconds) * get_resolution();
-    }
-    float getSecondsAt(int tick) {
-        return (60.f * tick) / (song.BPM * get_resolution()) - song.offset;
-    };
-    int get_resolution() { return chart_state ? chart_state->chart.getResolution() : 240; };
-    int get_snap_step() { return get_resolution() / snap; };
-
-
-    void reload_album_cover();
-    void reload_preview_end();
+    float current_beats();
+    float beats_at(sf::Time time);
+    float seconds_at(Fraction beat);
+    Fraction get_snap_step();
 
     bool showPlayfield = true;
     bool showProperties;
@@ -120,13 +96,25 @@ public:
     void toggleNoteAtCurrentTime(int pos);
 
 private:
-    sf::Time preview_end;  // sf::Time (in the audio file "coordinates") at which the chart preview stops, can be
-                        // after the end of the actual audio file
+    /*
+    sf::Time bounds (in the audio file "coordinates") which are accessible
+    (and maybe editable) from the editor, can extend before and after
+    the actual audio file
+    */
+    TimeInterval editable_range;
+
+    void reload_album_cover();
+    void reload_editable_range();
     
-    std::string edited_music_path;
+    std::string music_path_in_gui;
     void reload_music();
 
-    std::filesystem::path song_path;
+    better::Timing& applicable_timing;
+    void reload_applicable_timing();
+
+    void open_chart(better::Chart& chart);
+
+    std::filesystem::path assets;
 };
 
 namespace ESHelper {

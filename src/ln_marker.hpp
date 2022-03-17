@@ -8,6 +8,8 @@
 #include <list>
 #include <map>
 
+using opt_tex_ref = std::optional<std::reference_wrapper<sf::Texture>>;
+
 /*
  * Stores every rotated variant of the long note marker
  * This approach is absolutely terrible, I should just dig a little bit into the
@@ -18,15 +20,11 @@ class LNMarker {
 public:
     explicit LNMarker(std::filesystem::path folder);
 
-    std::optional<std::reference_wrapper<sf::Texture>> getTriangleTexture(float seconds);
-
-    std::optional<std::reference_wrapper<sf::Texture>>
-    getSquareHighlightTexture(float seconds);
-    std::optional<std::reference_wrapper<sf::Texture>> getSquareOutlineTexture(float seconds);
-    std::optional<std::reference_wrapper<sf::Texture>>
-    getSquareBackgroundTexture(float seconds);
-
-    std::optional<std::reference_wrapper<sf::Texture>> getTailTexture(float seconds);
+    opt_tex_ref triangle_at(int frame);
+    opt_tex_ref highlight_at(int frame);
+    opt_tex_ref outline_at(int frame);
+    opt_tex_ref background_at(int frame);
+    opt_tex_ref tail_at(int frame);
 
 private:
     std::array<sf::Texture, 16> triangle_appearance;
@@ -45,7 +43,8 @@ private:
         const std::filesystem::path& folder,
         const std::string& prefix,
         int left_padding = 3,
-        const std::string& extension = ".png") {
+        const std::string& extension = ".png"
+    ) {
         std::array<sf::Texture, number> res;
         for (int frame = first; frame <= first + number - 1; frame++) {
             std::stringstream filename;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "better_note.hpp"
 #include "better_song.hpp"
 #include "history.hpp"
 #include "history_actions.hpp"
@@ -15,11 +16,11 @@ struct ChartState {
     std::set<Note> selected_notes;
     NotesClipboard notes_clipboard;
     SelectionState time_selection;
-    std::optional<std::pair<Note, Note>> long_note_being_created;
+    std::optional<better::LongNote> long_note_being_created;
     bool creating_long_note;
     History<std::shared_ptr<ActionWithMessage>> history;
     DensityGraph density_graph;
 
-    std::optional<Note> makeLongNoteDummy(int current_tick) const;
-    std::optional<Note> makeCurrentLongNote() const;
+    std::optional<better::LongNote> make_long_note_dummy(Fraction current_beat) const;
+    std::optional<better::LongNote> make_current_long_note() const;
 };

@@ -117,19 +117,49 @@ namespace better {
     change
     */
     Fraction Timing::fractional_seconds_at(Fraction beats) const {
-        auto bpm_change = this->events_by_beats
-            .upper_bound(BPMEvent(beats, 0, 0));
+        auto bpm_change = this->events_by_beats.upper_bound(BPMEvent(beats, 0, 0));
         if (bpm_change != this->events_by_beats.begin()) {
             bpm_change = std::prev(bpm_change);
         }
         auto beats_since_previous_event = beats - bpm_change->get_beats();
-        auto seconds_since_previous_event =
-            (60 * beats_since_previous_event) / bpm_change->get_bpm();
+        auto seconds_since_previous_event = (
+            Fraction{60}
+            * beats_since_previous_event
+            / bpm_change->get_bpm()
+        );
         return bpm_change->get_seconds() + seconds_since_previous_event;
     };
 
+    Fraction Timing::fractional_seconds_between(
+        Fraction beat_a,
+        Fraction beat_b
+    ) const {
+        return (
+            fractional_seconds_at(beat_b)
+            - fractional_seconds_at(beat_a)
+        );
+    };
+
     sf::Time Timing::time_at(Fraction beats) const {
-        auto microseconds = fractional_seconds_at(beats) * 1000000;
-        return sf::microseconds(microseconds.convert_to<sf::Int64>());
-    }
+        return frac_to_time(fractional_seconds_at(beats));
+    };
+
+    sf::Time Timing::time_between(Fraction beat_a, Fraction beat_b) const {
+        return frac_to_time(fractional_seconds_between(beat_a, beat_b));
+    };
+
+    Fraction Timing::beats_at(sf::Time time) const {
+        Fraction fractional_seconds{time.asMicroseconds(), 1000000};
+        auto bpm_change = this->events_by_seconds.upper_bound(BPMEvent(0, fractional_seconds, 0));
+        if (bpm_change != this->events_by_seconds.begin()) {
+            bpm_change = std::prev(bpm_change);
+        }
+        auto seconds_since_previous_event = fractional_seconds - bpm_change->get_seconds();
+        auto beats_since_previous_event = (
+            bpm_change->get_bpm()
+            * seconds_since_previous_event
+            / Fraction{60}
+        );
+        return bpm_change->get_beats() + beats_since_previous_event;
+    };
 }
