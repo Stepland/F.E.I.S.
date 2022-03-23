@@ -7,3 +7,6 @@ cmake-default
 
 build/**
 imgui.ini
+
+subprojects/*
+!subprojects/*.wrap

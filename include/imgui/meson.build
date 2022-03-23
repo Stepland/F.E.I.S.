@@ -8,3 +8,5 @@ include_sources += {
         'imgui_widgets.cpp',
     )
 }
+
+include_sources += {'imgui-demo': files('imgui_demo.cpp')}

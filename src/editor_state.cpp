@@ -9,18 +9,24 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <tinyfiledialogs.h>
-#include "src/time_interval.hpp"
+
+#include "better_note.hpp"
+#include "chart_state.hpp"
+#include "history_actions.hpp"
+#include "metadata_in_gui.hpp"
+#include "time_interval.hpp"
+#include "variant_visitor.hpp"
 
 EditorState::EditorState(
     const better::Song& song_,
     const std::filesystem::path& assets_,
     const std::filesystem::path& song_path = {}
 ) : 
-    song(song_),
     song_path(song_path),
     playfield(assets_),
     linear_view(assets_),
-    music_path_in_gui(song.metadata.audio.value_or("")),
+    song(song_),
+    metadata_in_gui(song_.metadata),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -28,78 +34,13 @@ EditorState::EditorState(
         open_chart(this->song.charts.begin()->second);
     }
     reload_music();
-    reload_album_cover();
+    reload_jacket();
 };
 
-/*
- * Reloads music from what's indicated in the "music path" field of the song
- * Resets the music state in case anything fails
- * Updates playbackPosition and preview_end as well
- */
-void EditorState::reload_music() {
-    if (not song_path.has_value()) {
-        music_state.reset();
-        return;
-    }
 
-    const auto absolute_music_path = song_path->parent_path() / music_path_in_gui;
-    try {
-        music_state.emplace(absolute_music_path);
-    } catch (const std::exception& e) {
-        music_state.reset();
-    }
-
+const TimeInterval& EditorState::get_editable_range() {
     reload_editable_range();
-    playback_position = std::clamp(
-        playback_position,
-        editable_range.start,
-        editable_range.end
-    );
-    previous_playback_position = playback_position;
-}
-
-void EditorState::reload_editable_range() {
-    auto old_range = this->editable_range;
-    TimeInterval new_range;
-    if (music_state) {
-        new_range += music_state->music.getDuration();
-    }
-    if (chart_state) {
-        new_range += chart_state->chart.time_of_last_event().value_or(sf::Time::Zero);
-    }
-
-    new_range.end += sf::seconds(10);
-
-    // If there is no music, make sure we can edit at least the first whole minute
-    if (not music_state) {
-        new_range += sf::seconds(60);
-    }
-
-    this->editable_range = new_range;
-    if (old_range != new_range and this->chart_state.has_value()) {
-        chart_state->density_graph.should_recompute = true;
-    }
-}
-
-/*
- * Reloads the album cover from what's indicated in the "album cover path" field
- * of the song Resets the album cover state if anything fails
- */
-void EditorState::reload_album_cover() {
-    if (not song_path.has_value() or not song.metadata.jacket.has_value()) {
-        jacket.reset();
-        return;
-    }
-
-    jacket.emplace();
-    auto jacket_path = song_path->parent_path() / *song.metadata.jacket;
-
-    if (
-        not std::filesystem::exists(jacket_path)
-        or not jacket->loadFromFile(jacket_path.string())
-    ) {
-        jacket.reset();
-    }
+    return editable_range;
 }
 
 void EditorState::set_playback_position(sf::Time newPosition) {
@@ -118,30 +59,34 @@ void EditorState::set_playback_position(sf::Time newPosition) {
     }
 }
 
-float EditorState::current_beats() {
-    return beats_at(playback_position);
+Fraction EditorState::current_exact_beats() const {
+    return applicable_timing.beats_at(playback_position);
 };
 
-float EditorState::beats_at(sf::Time time) {
-    auto frac_beats = applicable_timing.beats_at(time);
-    return static_cast<float>(frac_beats);
+Fraction EditorState::current_snaped_beats() const {
+    const auto exact = current_exact_beats();
+    return round_beats(exact, snap);
 };
 
-float EditorState::seconds_at(Fraction beat) {
-    auto frac_seconds = applicable_timing.fractional_seconds_at(beat);
-    return static_cast<float>(frac_seconds);
+Fraction EditorState::beats_at(sf::Time time) const {
+    return applicable_timing.beats_at(time);
 };
 
-Fraction EditorState::get_snap_step() {
+sf::Time EditorState::time_at(Fraction beat) const {
+    return applicable_timing.time_at(beat);
+};
+
+Fraction EditorState::get_snap_step() const {
     return Fraction{1, snap};
 };
 
-void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndingState) {
+void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndingState) {
     ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),
         ImVec2(FLT_MAX, FLT_MAX),
-        Toolbox::CustomConstraints::ContentSquare);
+        Toolbox::CustomConstraints::ContentSquare
+    );
 
     if (ImGui::Begin("Playfield", &showPlayfield, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (
@@ -153,6 +98,7 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             chart_state->long_note_being_created.reset();
             chart_state->creating_long_note = false;
         }
+
         float squareSize = ImGui::GetWindowSize().x / 4.f;
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
         int ImGuiIndex = 0;
@@ -160,57 +106,55 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         if (chart_state) {
             playfield.resize(static_cast<unsigned int>(ImGui::GetWindowSize().x));
             if (chart_state->long_note_being_created) {
-                playfield.drawLongNote(
-                    *chart_state->long_note_being_created,
+                playfield.draw_tail_and_receptor(
+                    make_long_note_dummy(
+                        current_exact_beats(),
+                        *chart_state->long_note_being_created
+                    ),
                     playback_position,
-                    getCurrentTick(),
-                    song.BPM,
-                    getResolution()
+                    applicable_timing
                 );
             }
 
-            for (auto const& note : visibleNotes) {
-                float note_offset =
-                    (playback_position.asSeconds() - seconds_at(note.getTiming()));
-                // auto frame = static_cast<long long
-                // int>(std::floor(note_offset * 30.f));
-                int x = note.getPos() % 4;
-                int y = note.getPos() / 4;
-
-                if (note.getLength() == 0) {
-                    // Display normal note
-
-                    auto t = marker.getSprite(markerEndingState, note_offset);
-
+            auto display = VariantVisitor {
+                [&, this](const better::TapNote& tap_note){
+                    auto note_offset = (playback_position - this->time_at(tap_note.get_time()));
+                    auto t = marker.getSprite(markerEndingState, note_offset.asSeconds());
                     if (t) {
-                        ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
+                        ImGui::SetCursorPos({
+                            tap_note.get_position().get_x() * squareSize,
+                            TitlebarHeight + tap_note.get_position().get_y() * squareSize
+                        });
                         ImGui::PushID(ImGuiIndex);
                         ImGui::Image(*t, {squareSize, squareSize});
                         ImGui::PopID();
                         ++ImGuiIndex;
                     }
-
-                } else {
-                    playfield.drawLongNote(
-                        note,
+                },
+                [&, this](const better::LongNote& long_note){
+                    this->playfield.draw_long_note(
+                        long_note,
                         playback_position,
-                        current_tick(),
-                        song.BPM,
-                        getResolution(),
+                        applicable_timing,
                         marker,
-                        markerEndingState);
-                }
+                        markerEndingState
+                    );
+                },
+            };
+
+            for (auto const& [_, note] : visibleNotes) {
+                note.visit(display);
             }
 
             ImGui::SetCursorPos({0, TitlebarHeight});
-            ImGui::Image(playfield.long_note_layer);
+            ImGui::Image(playfield.long_note.layer);
             ImGui::SetCursorPos({0, TitlebarHeight});
             ImGui::Image(playfield.marker_layer);
         }
 
         // Display button grid
-        for (int y = 0; y < 4; ++y) {
-            for (int x = 0; x < 4; ++x) {
+        for (unsigned int y = 0; y < 4; ++y) {
+            for (unsigned int x = 0; x < 4; ++x) {
                 ImGui::PushID(x + 4 * y);
                 ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
                 ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4) ImColor::HSV(0, 0, 0, 0));
@@ -225,14 +169,13 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
                 }
                 if (ImGui::IsItemHovered() and chart_state and chart_state->creating_long_note) {
                     // Deal with long note creation stuff
-                    if (not chart->long_note_being_created) {
-                        Note current_note =
-                            Note(x + 4 * y, static_cast<int>(roundf(current_tick())));
-                        chart->long_note_being_created =
-                            std::make_pair(current_note, current_note);
+                    if (not chart_state->long_note_being_created) {
+                        better::TapNote current_note{current_snaped_beats(), {x, y}};
+                        chart_state->long_note_being_created.emplace(current_note, current_note);
                     } else {
-                        chart->long_note_being_created->second =
-                            Note(x + 4 * y, static_cast<int>(roundf(getCurrentTick())));
+                        chart_state->long_note_being_created->second = better::TapNote{
+                            current_snaped_beats(), {x, y}
+                        };
                     }
                 }
                 ImGui::PopStyleColor(3);
@@ -240,16 +183,12 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             }
         }
 
-        if (chart) {
+        if (chart_state) {
             // Check for collisions then display them
-            auto ticks_threshold =
-                static_cast<int>((1.f / 60.f) * song.BPM * get_resolution());
-
             std::array<bool, 16> collisions = {};
-
-            for (auto const& note : visibleNotes) {
-                if (chart->ref.is_colliding(note, ticks_threshold)) {
-                    collisions[note.getPos()] = true;
+            for (auto const& [_, note] : visibleNotes) {
+                if (chart_state->chart.is_colliding(note)) {
+                    collisions[note.get_position().index()] = true;
                 }
             }
             for (int i = 0; i < 16; ++i) {
@@ -265,11 +204,12 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
             }
 
             // Display selected notes
-            for (auto const& note : visibleNotes) {
-                if (chart->selected_notes.find(note) != chart->selected_notes.end()) {
-                    int x = note.getPos() % 4;
-                    int y = note.getPos() / 4;
-                    ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
+            for (auto const& [_, note] : visibleNotes) {
+                if (chart_state->selected_notes.find(note) != chart_state->selected_notes.end()) {
+                    ImGui::SetCursorPos({
+                        note.get_position().get_x() * squareSize,
+                        TitlebarHeight + note.get_position().get_y() * squareSize
+                    });
                     ImGui::PushID(ImGuiIndex);
                     ImGui::Image(playfield.note_selected, {squareSize, squareSize});
                     ImGui::PopID();
@@ -279,64 +219,75 @@ void EditorState::displayPlayfield(Marker& marker, MarkerEndingState markerEndin
         }
     }
     ImGui::End();
-}
+};
 
 /*
- * Display all metadata in an editable form
- */
-void EditorState::displayProperties() {
-    ImGui::SetNextWindowSize(ImVec2(500, 240));
-    ImGui::Begin("Properties", &showProperties, ImGuiWindowFlags_NoResize);
-    {
-        ImGui::Columns(2, nullptr, false);
-
-        if (jacket) {
-            ImGui::Image(*jacket, sf::Vector2f(200, 200));
-        } else {
-            ImGui::BeginChild("Album Cover", ImVec2(200, 200), true);
-            ImGui::EndChild();
+Display all metadata in an editable form
+*/
+void EditorState::display_properties() {
+    if (ImGui::Begin("Properties", &showProperties)) {
+        if (ImGui::BeginChild("Album Cover", ImVec2(400, 0), true)) {
+            if (jacket) {
+                ImGui::Image(*jacket);
+            }
         }
+        ImGui::EndChild();
 
-        ImGui::NextColumn();
-        ImGui::InputText("Title", &song.songTitle);
-        ImGui::InputText("Artist", &song.artist);
+        ImGui::InputText("Title", &metadata_in_gui.title);
+        ImGui::InputText("Artist", &metadata_in_gui.artist);
+
         if (Toolbox::InputTextColored(
-                music.has_value(),
-                "Invalid Music Path",
-                "Music",
-                &edited_music_path)) {
+            "Audio",
+            &metadata_in_gui.audio,
+            music_state.has_value(),
+            "Invalid Audio Path"
+        )) {
             reload_music();
         }
         if (Toolbox::InputTextColored(
-                jacket.has_value(),
-                "Invalid Album Cover Path",
-                "Album Cover",
-                &song.albumCoverPath)) {
-            reload_album_cover();
+            "Jacket",
+            &metadata_in_gui.jacket,
+            jacket.has_value(),
+            "Invalid Jacket Path"
+        )) {
+            reload_jacket();
         }
-        if (ImGui::InputFloat("BPM", &song.BPM, 1.0f, 10.0f)) {
-            if (song.BPM <= 0.0f) {
-                song.BPM = 0.0f;
+
+        ImGui::Separator();
+        
+        ImGui::Text("Preview");
+        ImGui::Checkbox("Use separate preview file", &metadata_in_gui.use_preview_file);
+        if (metadata_in_gui.use_preview_file) {
+            if (Toolbox::InputTextColored(
+                "File",
+                &metadata_in_gui.preview_file,
+                preview_audio.has_value(),
+                "Invalid Path"
+            )) {
+                reload_preview_audio();
             }
+        } else {
+            ImGui::Input
         }
-        ImGui::InputFloat("offset", &song.offset, 0.01f, 1.f);
+
+
     }
     ImGui::End();
-}
+};
 
 /*
- * Display any information that would be useful for the user to troubleshoot the
- * status of the editor will appear in the "Editor Status" window
- */
-void EditorState::displayStatus() {
+Display any information that would be useful for the user to troubleshoot the
+status of the editor. Will appear in the "Editor Status" window
+*/
+void EditorState::display_status() {
     ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
     {
-        if (not music) {
-            if (not song.musicPath.empty()) {
+        if (not music_state) {
+            if (not metadata_in_gui.audio.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
                     "Invalid music path : %s",
-                    song.musicPath.c_str());
+                    metadata_in_gui.audio.c_str());
             } else {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -345,25 +296,22 @@ void EditorState::displayStatus() {
         }
 
         if (not jacket) {
-            if (not song.albumCoverPath.empty()) {
+            if (not metadata_in_gui.jacket.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
-                    "Invalid albumCover path : %s",
-                    song.albumCoverPath.c_str());
+                    "Invalid jacket path : %s",
+                    metadata_in_gui.jacket.c_str());
             } else {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
-                    "No albumCover loaded");
+                    "No jacket loaded");
             }
-        }
-        if (ImGui::SliderInt("Music Volume", &music_volume, 0, 10)) {
-            set_music_volume(music_volume);
         }
     }
     ImGui::End();
-}
+};
 
-void EditorState::displayPlaybackStatus() {
+void EditorState::display_playback_status() {
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(
         ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y - 25),
@@ -405,9 +353,9 @@ void EditorState::displayPlaybackStatus() {
     }
     ImGui::End();
     ImGui::PopStyleVar();
-}
+};
 
-void EditorState::displayTimeline() {
+void EditorState::display_timeline() {
     ImGuiIO& io = ImGui::GetIO();
 
     float raw_height = io.DisplaySize.y * 0.9f;
@@ -420,14 +368,13 @@ void EditorState::displayTimeline() {
             or height != chart->density_graph.last_height.value_or(height)
         )
     ) {
-            chart->density_graph.should_recompute = false;
-            chart->density_graph.update(
-                height,
-                chart->ref,
-                song.BPM,
-                get_resolution()
-            );
-        }
+        chart->density_graph.should_recompute = false;
+        chart->density_graph.update(
+            height,
+            chart->ref,
+            song.BPM,
+            get_resolution()
+        );
     }
 
     ImGui::SetNextWindowPos(
@@ -464,9 +411,9 @@ void EditorState::displayTimeline() {
     ImGui::End();
     ImGui::PopStyleColor(6);
     ImGui::PopStyleVar(3);
-}
+};
 
-void EditorState::displayChartList(std::filesystem::path assets) {
+void EditorState::display_chart_list() {
     if (ImGui::Begin("Chart List", &showChartList, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (this->song.Charts.empty()) {
             ImGui::Dummy({100, 0});
@@ -490,7 +437,7 @@ void EditorState::displayChartList(std::filesystem::path assets) {
                         chart ? chart->ref == tuple.second : false,
                         ImGuiSelectableFlags_SpanAllColumns)) {
                     ESHelper::save(*this);
-                    chart.emplace(tuple.second, assets);
+                    chart.emplace(tuple.second, this->assets);
                 }
                 ImGui::NextColumn();
                 ImGui::Text("%d", tuple.second.level);
@@ -503,9 +450,9 @@ void EditorState::displayChartList(std::filesystem::path assets) {
         }
     }
     ImGui::End();
-}
+};
 
-void EditorState::displayLinearView() {
+void EditorState::display_linear_view() {
     ImGui::SetNextWindowSize(ImVec2(204, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(ImVec2(204, 204), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
@@ -528,7 +475,7 @@ void EditorState::displayLinearView() {
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
-}
+};
 
 saveChangesResponses EditorState::alertSaveChanges() {
     if (chart and (not chart->history.empty())) {
@@ -556,11 +503,11 @@ saveChangesResponses EditorState::alertSaveChanges() {
     } else {
         return saveChangesDidNotDisplayDialog;
     }
-}
+};
 
 /*
- * Saves if asked and returns false if user canceled
- */
+Saves if asked and returns false if user canceled
+*/
 bool EditorState::saveChangesOrCancel() {
     switch (alertSaveChanges()) {
         case saveChangesYes:
@@ -572,11 +519,11 @@ bool EditorState::saveChangesOrCancel() {
         default:
             return false;
     }
-}
+};
 
 /*
- * This SCREAAAAMS for optimisation, but in the meantime it works !
- */
+This SCREAAAAMS for optimisation, but in the meantime it works !
+*/
 void EditorState::updateVisibleNotes() {
     visibleNotes.clear();
 
@@ -603,12 +550,12 @@ void EditorState::updateVisibleNotes() {
             }
         }
     }
-}
+};
 
 /*
- * If a note is visible for the given pos, delete it
- * Otherwise create note at nearest tick
- */
+If a note is visible for the given pos, delete it
+Otherwise create note at nearest tick
+*/
 void EditorState::toggleNoteAtCurrentTime(int pos) {
     if (chart) {
         std::set<Note> toggledNotes = {};
@@ -630,17 +577,209 @@ void EditorState::toggleNoteAtCurrentTime(int pos) {
         chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
         chart->density_graph.should_recompute = true;
     }
+};
+
+void EditorState::move_backwards_in_time() {
+    auto beats = current_exact_beats();
+    if (beats % get_snap_step() == 0) {
+        beats -= get_snap_step();
+    } else {
+        beats -= beats % get_snap_step();
+    }
+    set_playback_position(applicable_timing.time_at(beats));
+};
+
+void EditorState::move_forwards_in_time() {
+    auto beats = current_exact_beats();
+    beats -= beats % get_snap_step();
+    beats += get_snap_step();
+    set_playback_position(applicable_timing.time_at(beats));
+};
+
+void EditorState::undo(NotificationsQueue& nq) {
+    if (chart_state) {
+        auto previous = chart_state->history.get_previous();
+        if (previous) {
+            nq.push(std::make_shared<UndoNotification>(**previous));
+            (*previous)->undoAction(*this);
+            chart_state->densityGraph.should_recompute = true;
+        }
+    }
+};
+
+void EditorState::redo(NotificationsQueue& nq) {
+    if (chart_state) {
+        auto next = chart_state->history.get_next();
+        if (next) {
+            nq.push(std::make_shared<RedoNotification>(**next));
+            (*next)->doAction(*this);
+            chart_state->densityGraph.should_recompute = true;
+        }
+    }
+};
+
+void EditorState::cut(NotificationsQueue& nq) {
+    if (chart_state and (not chart_state->selectedNotes.empty())) {
+        std::stringstream ss;
+        ss << "Cut " << chart_state->selectedNotes.size() << " note";
+        if (ed->chart->selectedNotes.size() > 1) {
+            ss << "s";
+        }
+        nq.push(std::make_shared<TextNotification>(ss.str()));
+
+        chart_state->notesClipboard.copy(ed->chart->selectedNotes);
+        for (auto note : chart_state->selectedNotes) {
+            chart_state->chart.Notes.erase(note);
+        }
+        chart_state->history.push(
+            std::make_shared<RemoveNotes>(chart_state->selectedNotes)
+        );
+        chart_state->selectedNotes.clear();
+    }
+};
+
+void EditorState::copy(NotificationsQueue& nq) {
+    if (chart_state and (not chart_state->selectedNotes.empty())) {
+        std::stringstream ss;
+        ss << "Copied " << chart_state->selectedNotes.size() << " note";
+        if (chart_state->selectedNotes.size() > 1) {
+            ss << "s";
+        }
+        nq.push(std::make_shared<TextNotification>(ss.str()));
+        chart_state->notesClipboard.copy(chart_state->selectedNotes);
+    }
+};
+
+void EditorState::paste(NotificationsQueue& nq) {
+    if (chart_state and (not chart_state->notesClipboard.empty())) {
+        auto current_beat = current_snaped_beats();
+        std::set<Note> pasted_notes = chart_state->notesClipboard.paste(current_beat);
+        std::stringstream ss;
+        ss << "Pasted " << pasted_notes.size() << " note";
+        if (pasted_notes.size() > 1) {
+            ss << "s";
+        }
+        nq.push(std::make_shared<TextNotification>(ss.str()));
+
+        for (auto note : pasted_notes) {
+            chart_state->chart.Notes.insert(note);
+        }
+        chart_state->selectedNotes = pasted_notes;
+        chart_state->history.push(std::make_shared<AddNotes>(chart_state->selectedNotes));
+        chart_state->densityGraph.should_recompute = true;
+    }
+};
+
+void EditorState::delete_(NotificationsQueue& nq) {
+    if (chart_state and (not chart_state->selectedNotes.empty())) {
+        chart_state->history.push(
+            std::make_shared<RemoveNotes>(chart_state->selectedNotes)
+        );
+        nq.push(
+            std::make_shared<TextNotification>("Deleted selected notes")
+        );
+        for (auto note : chart_state->selectedNotes) {
+            chart_state->chart.Notes.erase(note);
+        }
+        chart_state->selectedNotes.clear();
+    }
 }
 
-const TimeInterval& EditorState::get_editable_range() {
+
+void EditorState::reload_editable_range() {
+    auto old_range = this->editable_range;
+    TimeInterval new_range;
+    if (music_state) {
+        new_range += music_state->music.getDuration();
+    }
+    if (chart_state) {
+        new_range += chart_state->chart.time_of_last_event().value_or(sf::Time::Zero);
+    }
+
+    new_range.end += sf::seconds(10);
+
+    // If there is no music, make sure we can edit at least the first whole minute
+    if (not music_state) {
+        new_range += sf::seconds(60);
+    }
+
+    this->editable_range = new_range;
+    if (old_range != new_range and this->chart_state.has_value()) {
+        chart_state->density_graph.should_recompute = true;
+    }
+};
+
+/*
+ * Reloads the album cover from what's indicated in the "album cover path" field
+ * of the song Resets the album cover state if anything fails
+ */
+void EditorState::reload_jacket() {
+    if (not song_path.has_value() or not song.metadata.jacket.has_value()) {
+        jacket.reset();
+        return;
+    }
+
+    jacket.emplace();
+    auto jacket_path = song_path->parent_path() / metadata_in_gui.jacket;
+
+    if (
+        not std::filesystem::exists(jacket_path)
+        or not jacket->loadFromFile(jacket_path.string())
+    ) {
+        jacket.reset();
+    }
+};
+
+/*
+ * Reloads music from what's indicated in the "music path" field of the song
+ * Resets the music state in case anything fails
+ * Updates playbackPosition and preview_end as well
+ */
+void EditorState::reload_music() {
+    if (not song_path.has_value()) {
+        music_state.reset();
+        return;
+    }
+
+    const auto absolute_music_path = song_path->parent_path() / metadata_in_gui.audio;
+    try {
+        music_state.emplace(absolute_music_path);
+    } catch (const std::exception& e) {
+        music_state.reset();
+    }
+
     reload_editable_range();
-    return editable_range;
+    playback_position = std::clamp(
+        playback_position,
+        editable_range.start,
+        editable_range.end
+    );
+    previous_playback_position = playback_position;
+};
+
+void EditorState::reload_preview_audio() {
+    if (not song_path.has_value()) {
+        preview_audio.reset();
+        return;
+    }
+
+    const auto path = song_path->parent_path() / metadata_in_gui.preview_file;
+    try {
+        preview_audio.emplace(path);
+    } catch (const std::exception& e) {
+        preview_audio.reset();
+    }
+};
+
+void reload_applicable_timing() {
+    // TODO: implement
 }
 
 void EditorState::open_chart(better::Chart& chart) {
     chart_state.emplace(chart, assets);
-
-}
+    reload_applicable_timing();
+    reload_editable_range();
+};
 
 void ESHelper::save(EditorState& ed) {
     try {

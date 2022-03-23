@@ -2,22 +2,22 @@
 
 namespace better {
     std::pair<Notes::iterator, bool> Notes::insert(const Note& note) {
-        std::optional<Notes::iterator> conflicting_note;
-        in(
-            note.get_time_bounds(),
-            [&](iterator it){
-                if (it->second.get_position() == note.get_position()) {
-                    if (not conflicting_note.has_value()) {
-                        conflicting_note = it;
-                    }
-                }
-            }
-        );
-        if (conflicting_note.has_value()) {
-            return {*conflicting_note, false};
+        auto conflicting_note = interval_tree::find(note.get_time_bounds());
+        if (conflicting_note != end()) {
+            return {conflicting_note, false};
         } else {
             auto it = interval_tree::insert({note.get_time_bounds(), note});
             return {it, true};
         }
     };
+
+    Notes::const_iterator Notes::find(const Note& note) const {
+        auto conflicting_note = interval_tree::end();
+        in(note.get_time_bounds(), [&](Notes::iterator it){
+            if (it->second == note and conflicting_note == end()) {
+                conflicting_note = it;
+            }
+        });
+        return conflicting_note;
+    }
 }

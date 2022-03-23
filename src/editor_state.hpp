@@ -9,8 +9,10 @@
 #include "history.hpp"
 #include "history_actions.hpp"
 #include "marker.hpp"
+#include "metadata_in_gui.hpp"
 #include "music_state.hpp"
 #include "notes_clipboard.hpp"
+#include "notifications_queue.hpp"
 #include "precise_music.hpp"
 #include "time_interval.hpp"
 #include "time_selection.hpp"
@@ -39,78 +41,101 @@ public:
         const std::filesystem::path& save_path
     );
 
-    better::Song song;
     std::optional<std::filesystem::path> song_path;
 
     std::optional<ChartState> chart_state;
 
     std::optional<MusicState> music_state;
 
+    std::optional<sf::Music> preview_audio;
+
     Playfield playfield;
     LinearView linear_view;
 
-    int snap = 1;
+    unsigned int snap = 1;
 
     std::optional<sf::Texture> jacket;
 
     bool playing;
 
-    sf::Time previous_playback_position;
     sf::Time playback_position;
+    sf::Time previous_playback_position;
 
     const TimeInterval& get_editable_range();
 
     void set_playback_position(sf::Time new_position);
 
-    float current_beats();
-    float beats_at(sf::Time time);
-    float seconds_at(Fraction beat);
-    Fraction get_snap_step();
+    Fraction current_exact_beats() const;
+    Fraction current_snaped_beats() const;
+    Fraction beats_at(sf::Time time) const;
+    sf::Time time_at(Fraction beat) const;
+    Fraction get_snap_step() const;
 
     bool showPlayfield = true;
+    void display_playfield(Marker& marker, MarkerEndingState markerEndingState);
+
     bool showProperties;
+    void display_properties();
+
     bool showStatus;
+    void display_status();
+
     bool showPlaybackStatus = true;
+    void display_playback_status();
+
     bool showTimeline = true;
+    void display_timeline();
+
     bool showChartList;
+    void display_chart_list(std::filesystem::path assets);
+
+    bool showLinearView;
+    void display_linear_view();
+
     bool showNewChartDialog;
     bool showChartProperties;
     bool showHistory;
     bool showSoundSettings;
-    bool showLinearView;
-
-    void displayPlayfield(Marker& marker, MarkerEndingState markerEndingState);
-    void displayProperties();
-    void displayStatus();
-    void displayPlaybackStatus();
-    void displayTimeline();
-    void displayChartList(std::filesystem::path assets);
-    void displayLinearView();
 
     saveChangesResponses alertSaveChanges();
     bool saveChangesOrCancel();
 
     void updateVisibleNotes();
-    std::set<Note> visibleNotes;
+    better::Notes visibleNotes;
 
     void toggleNoteAtCurrentTime(int pos);
 
+    void move_backwards_in_time();
+    void move_forwards_in_time();
+
+    void undo(NotificationsQueue& nq);
+    void redo(NotificationsQueue& nq);
+
+    void cut(NotificationsQueue& nq);
+    void copy(NotificationsQueue& nq);
+    void paste(NotificationsQueue& nq);
+    void delete_(NotificationsQueue& nq);
+
 private:
+
+    better::Song song;
+
+    MetadataInGui metadata_in_gui;
     /*
     sf::Time bounds (in the audio file "coordinates") which are accessible
     (and maybe editable) from the editor, can extend before and after
-    the actual audio file
+    the audio file
     */
     TimeInterval editable_range;
-
-    void reload_album_cover();
     void reload_editable_range();
-    
-    std::string music_path_in_gui;
+    void reload_jacket();
     void reload_music();
+    void reload_preview_audio();
 
     better::Timing& applicable_timing;
     void reload_applicable_timing();
+
+
 
     void open_chart(better::Chart& chart);
 

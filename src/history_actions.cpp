@@ -15,62 +15,71 @@ OpenChart::OpenChart(Chart c) : notes(c.Notes) {
 }
 
 void OpenChart::doAction(EditorState& ed) const {
-    ed.chart->ref.Notes = notes;
+    ed.chart_state->chart.Notes = notes;
 }
 
-ToggledNotes::ToggledNotes(std::set<Note> n, bool have_been_added) :
-    have_been_added(have_been_added),
-    notes(n) {
+AddNotes::AddNotes(std::set<Note> n) : notes(n) {
     if (n.empty()) {
         throw std::invalid_argument(
-            "Can't construct a ToogledNotes History Action with an empty note "
-            "set");
+            "Can't construct a AddedNotes History Action with an empty note "
+            "set"
+        );
     }
-
     std::stringstream ss;
-    if (have_been_added) {
-        ss << "Added " << n.size() << " Note";
-    } else {
-        ss << "Removed " << n.size() << " Note";
-    }
+    ss << "Added " << n.size() << " Note";
     if (n.size() > 1) {
         ss << "s";
     }
     message = ss.str();
 }
 
-void ToggledNotes::doAction(EditorState& ed) const {
-    ed.setPlaybackAndMusicPosition(sf::seconds(ed.seconds_at(notes.begin()->getTiming())));
-    if (have_been_added) {
-        for (auto note : notes) {
-            if (ed.chart->ref.Notes.find(note) == ed.chart->ref.Notes.end()) {
-                ed.chart->ref.Notes.insert(note);
-            }
-        }
-    } else {
-        for (auto note : notes) {
-            if (ed.chart->ref.Notes.find(note) != ed.chart->ref.Notes.end()) {
-                ed.chart->ref.Notes.erase(note);
-            }
+void AddNotes::doAction(EditorState& ed) const {
+    ed.set_playback_position(ed.time_at(notes.begin()->getTiming()));
+    for (auto note : notes) {
+        if (
+            ed.chart_state->chart.Notes.find(note)
+            == ed.chart_state->chart.Notes.end()
+        ) {
+            ed.chart_state->chart.Notes.insert(note);
         }
     }
 }
 
-void ToggledNotes::undoAction(EditorState& ed) const {
-    ed.setPlaybackAndMusicPosition(sf::seconds(ed.seconds_at(notes.begin()->getTiming())));
-    if (not have_been_added) {
-        for (auto note : notes) {
-            if (ed.chart->ref.Notes.find(note) == ed.chart->ref.Notes.end()) {
-                ed.chart->ref.Notes.insert(note);
-            }
-        }
-    } else {
-        for (auto note : notes) {
-            if (ed.chart->ref.Notes.find(note) != ed.chart->ref.Notes.end()) {
-                ed.chart->ref.Notes.erase(note);
-            }
+void AddNotes::undoAction(EditorState& ed) const {
+    ed.set_playback_position(ed.time_at(notes.begin()->getTiming()));
+    for (auto note : notes) {
+        if (
+            ed.chart_state->chart.Notes.find(note)
+            != ed.chart_state->chart.Notes.end()
+        ) {
+            ed.chart_state->chart.Notes.erase(note);
         }
     }
+}
+
+
+RemoveNotes::RemoveNotes(std::set<Note> n) : AddNotes(n) {
+    if (n.empty()) {
+        throw std::invalid_argument(
+            "Can't construct a RemovedNotes History Action with an empty note "
+            "set"
+        );
+    }
+
+    std::stringstream ss;
+    ss << "Removed " << n.size() << " Note";
+    if (n.size() > 1) {
+        ss << "s";
+    }
+    message = ss.str();
+}
+
+void RemoveNotes::doAction(EditorState& ed) const {
+    AddNotes::undoAction(ed);
+}
+
+void RemoveNotes::undoAction(EditorState& ed) const {
+    AddNotes::doAction(ed);
 }
 
 std::string get_message(const std::shared_ptr<ActionWithMessage>& awm) {

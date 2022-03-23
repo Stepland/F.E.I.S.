@@ -1,4 +1,5 @@
 #include "better_note.hpp"
+#include <variant>
 
 namespace better {
     Position::Position(unsigned int index) : x(index % 4), y (index / 4) {
@@ -59,9 +60,14 @@ namespace better {
             ss << duration;
             throw std::invalid_argument(ss.str());
         }
+        if (tail_tip == position) {
+            throw std::invalid_argument(
+                "Attempted to create a LongNote with a zero-length tail"
+            );
+        }
         if (tail_tip.get_x() != position.get_x() and tail_tip.get_y() != position.get_y()) {
             std::stringstream ss;
-            ss << "Attempted to create a LongNote with invalid tail tip : ";
+            ss << "Attempted to create a LongNote with and invalid tail : ";
             ss << "position: " << position << " , tail_tip: " << tail_tip;
             throw std::invalid_argument(ss.str());
         }
@@ -123,6 +129,10 @@ namespace better {
     auto _time_bounds = VariantVisitor {
         [](const TapNote& t) -> std::pair<Fraction, Fraction> { return {t.get_time(), t.get_time()}; },
         [](const LongNote& l) -> std::pair<Fraction, Fraction> { return {l.get_time(), l.get_end()}; },
+    };
+
+    Fraction Note::get_time() const {
+        return std::visit([](const auto& n){return n.get_time();}, this->note);
     };
 
     std::pair<Fraction, Fraction> Note::get_time_bounds() const {

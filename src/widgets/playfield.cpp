@@ -69,7 +69,7 @@ void Playfield::resize(unsigned int width) {
     marker_layer.clear(sf::Color::Transparent);
 }
 
-void Playfield::draw_long_note(
+void Playfield::draw_tail_and_receptor(
     const better::LongNote& note,
     const sf::Time& playbackPosition,
     const better::Timing& timing
@@ -180,15 +180,14 @@ void Playfield::draw_long_note(
     }
 }
 
-void Playfield::drawLongNote(
-    const Note& note,
+void Playfield::draw_long_note(
+    const better::LongNote& note,
     const sf::Time& playbackPosition,
-    const float& ticksAtPlaybackPosition,
-    const float& BPM,
-    const int& resolution,
+    const better::Timing& timing,
     Marker& marker,
-    MarkerEndingState& markerEndingState) {
-    draw_long_note(note, playbackPosition, ticksAtPlaybackPosition, BPM, resolution);
+    MarkerEndingState& markerEndingState
+) {
+    draw_tail_and_receptor(note, playbackPosition, ticksAtPlaybackPosition, BPM, resolution);
 
     float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
 

@@ -21,12 +21,22 @@ namespace better {
         std::optional<std::set<Fraction>> hakus;
         Notes notes;
 
+        /*
+        Returns true if the given note (assumed to already be part of the
+        chart) is colliding with ANOTHER note in the chart (this method does
+        NOT take identical notes into account for collision detection)
+        */
+        bool is_colliding(const better::Note& note);
+
         std::optional<sf::Time> time_of_last_event() const;
     };
 
     class PreviewLoop {
     public:
         PreviewLoop(Decimal start, Decimal duration);
+
+        Decimal get_start() const;
+        Decimal get_duration() const;
     private:
         Decimal start;
         Decimal duration;

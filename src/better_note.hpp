@@ -43,6 +43,9 @@ namespace better {
         TapNote(Fraction time, Position position);
         Fraction get_time() const;
         Position get_position() const;
+
+        bool operator==(const TapNote&) const = default;
+
     private:
         Fraction time;
         Position position;
@@ -59,6 +62,8 @@ namespace better {
         Position get_tail_tip() const;
         unsigned int get_tail_length() const;
         unsigned int get_tail_angle() const;
+
+        bool operator==(const LongNote&) const = default;
     private:
         Fraction time;
         Position position;
@@ -70,9 +75,15 @@ namespace better {
     public:
         template<typename ...Ts>
         Note(Ts&&... Args) : note(std::forward<Ts...>(Args...)) {};
+        Fraction get_time() const;
         std::pair<Fraction, Fraction> get_time_bounds() const;
         Position get_position() const;
         Fraction get_end() const;
+
+        template<typename T>
+        auto visit(T& visitor) const {std::visit(visitor, this->note);};
+
+        bool operator==(const Note&) const = default;
     private:
         std::variant<TapNote, LongNote> note;
     };

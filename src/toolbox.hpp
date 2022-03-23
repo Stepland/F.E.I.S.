@@ -37,14 +37,7 @@ namespace Toolbox {
     };
 
     std::string to_string(sf::Time time);
-    bool InputTextColored(
-        bool isValid,
-        const std::string& hoverHelpText,
-        const char* label,
-        std::string* str,
-        ImGuiInputTextFlags flags = 0,
-        ImGuiInputTextCallback callback = NULL,
-        void* user_data = NULL);
+    bool InputTextColored(const char* label, std::string* str, bool isValid, const std::string& hoverHelpText);
     float convertVolumeToNormalizedDB(int);
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);

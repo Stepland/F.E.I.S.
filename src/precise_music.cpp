@@ -30,7 +30,7 @@ sf::Time PreciseMusic::getPrecisePlayingOffset() const {
         return (
             sf::Music::getPlayingOffset()
             - (this->alSecOffsetLatencySoft()[1] * this->getPitch())
-            + lag
+            + (lag * this->getPitch())
         );
     }
 }

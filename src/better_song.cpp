@@ -1,4 +1,5 @@
 #include "better_song.hpp"
+#include <SFML/System/Time.hpp>
 
 namespace better {
     std::optional<sf::Time> Chart::time_of_last_event() const {
@@ -8,6 +9,33 @@ namespace better {
             return timing.time_at(notes.crbegin()->second.get_end());
         }
     };
+
+    bool Chart::is_colliding(const better::Note& note) {
+        const auto [start_beat, end_beat] = note.get_time_bounds();
+
+        /*
+        Two notes collide if they are within ~one second of each other :
+        Approach and burst animations of original jubeat markers last 16 frames
+        at (supposedly) 30 fps, which means a note needs ~half a second both
+        before *and* after itself, so two consecutive notes on the same button
+        cannot be closer than ~one second from each other
+        */
+        const auto collision_start = timing.beats_at(timing.time_at(start_beat) - sf::seconds(1));
+        const auto collision_end = timing.beats_at(timing.time_at(end_beat) + sf::seconds(1));
+
+        bool found_collision = false;
+        notes.in(
+            {collision_start, collision_end},
+            [&](Notes::const_iterator it){
+                if (it->second.get_position() == note.get_position()) {
+                    if (it->second != note) {
+                        found_collision = true;
+                    }
+                }
+            }
+        );
+        return found_collision;
+    }
 
     PreviewLoop::PreviewLoop(Decimal start, Decimal duration) :
         start(start),
@@ -26,5 +54,13 @@ namespace better {
             ss << "duration : " << duration;
             throw std::invalid_argument(ss.str());
         }
+    };
+
+    Decimal PreviewLoop::get_start() const {
+        return start;
+    };
+
+    Decimal PreviewLoop::get_duration() const {
+        return duration;
     };
 }

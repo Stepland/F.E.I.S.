@@ -1,13 +1,18 @@
 sources += files(
+    'better_note.cpp',
+    'better_notes.cpp',
+    'better_song.cpp',
+    'better_timing.cpp',
+    'chart_state.cpp',
     'chart.cpp',
-    'chart_with_history.cpp',
-    'editor_state_actions.cpp',
     'editor_state.cpp',
     'fumen.cpp',
     'history_actions.cpp',
     'ln_marker.cpp',
     'main.cpp',
     'marker.cpp',
+    'metadata_in_gui.cpp',
+    'music_state.cpp',
     'note.cpp',
     'notes_clipboard.cpp',
     'notification.cpp',
@@ -15,6 +20,7 @@ sources += files(
     'precise_music.cpp',
     'preferences.cpp',
     'sound_effect.cpp',
+    'time_interval.cpp',
     'toolbox.cpp',
 )
 

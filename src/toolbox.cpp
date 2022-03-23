@@ -79,16 +79,14 @@ std::string Toolbox::to_string(sf::Time time) {
  * change if the input is empty;
  */
 bool Toolbox::InputTextColored(
-    bool isValid,
-    const std::string& hoverHelpText,
     const char* label,
     std::string* str,
-    ImGuiInputTextFlags flags,
-    ImGuiInputTextCallback callback,
-    void* user_data) {
+    bool isValid,
+    const std::string& hoverHelpText
+) {
     bool return_value;
     if (str->empty()) {
-        return_value = ImGui::InputText(label, str, flags, callback, user_data);
+        return ImGui::InputText(label, str);
     } else {
         Toolbox::CustomColors colors;
         if (not isValid) {
@@ -108,15 +106,15 @@ bool Toolbox::InputTextColored(
                 ImGuiCol_FrameBgActive,
                 colors.FrameBgActive_Green.Value);
         }
-        return_value = ImGui::InputText(label, str, flags, callback, user_data);
+        return_value = ImGui::InputText(label, str);
         if (ImGui::IsItemHovered() and (not isValid)) {
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(hoverHelpText.c_str());
             ImGui::EndTooltip();
         }
         ImGui::PopStyleColor(3);
+        return return_value;
     }
-    return return_value;
 }
 
 float Toolbox::convertVolumeToNormalizedDB(int input) {

@@ -1,4 +1,21 @@
 executable(
+    'imgui_demo',
+    'imgui_demo.cpp',
+    include_sources['imgui'],
+    include_sources['imgui-demo'],
+    dependencies: deps,
+    include_directories: inc,
+)
+
+executable(
+    'imgui_input_decimal',
+    'imgui_input_decimal.cpp',
+    include_sources['imgui'],
+    dependencies: deps,
+    include_directories: inc,
+)
+
+executable(
     'scrollwheel',
     'scrollwheel.cpp',
     include_sources['imgui'],

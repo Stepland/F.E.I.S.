@@ -26,7 +26,6 @@ int main(int argc, char** argv) {
     auto settings_folder = executable_folder / "settings";
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
-    // sf::RenderWindow& ref_window = window;
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(60);
 
@@ -490,31 +489,31 @@ int main(int argc, char** argv) {
             window.clear(sf::Color(0, 0, 0));
 
             if (editor_state->showHistory) {
-                editor_state->chart->history.display(get_message);
+                editor_state->chart_state->history.display();
             }
             if (editor_state->showPlayfield) {
-                editor_state->displayPlayfield(marker, markerEndingState);
+                editor_state->display_playfield(marker, markerEndingState);
             }
             if (editor_state->showLinearView) {
-                editor_state->displayLinearView();
+                editor_state->display_linear_view();
             }
             if (editor_state->linearView.shouldDisplaySettings) {
                 editor_state->linearView.displaySettings();
             }
             if (editor_state->showProperties) {
-                editor_state->displayProperties();
+                editor_state->display_properties();
             }
             if (editor_state->showStatus) {
-                editor_state->displayStatus();
+                editor_state->display_status();
             }
             if (editor_state->showPlaybackStatus) {
-                editor_state->displayPlaybackStatus();
+                editor_state->display_playback_status();
             }
             if (editor_state->showTimeline) {
-                editor_state->displayTimeline();
+                editor_state->display_timeline();
             }
             if (editor_state->showChartList) {
-                editor_state->displayChartList(assets_folder);
+                editor_state->display_chart_list(assets_folder);
             }
             if (editor_state->showNewChartDialog) {
                 std::optional<Chart> c = newChartDialog.display(*editor_state);

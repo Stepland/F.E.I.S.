@@ -44,16 +44,23 @@ protected:
 /*
  * Some notes have been toggled, either on or off depending on have_been_added
  */
-class ToggledNotes : public ActionWithMessage {
+class AddNotes : public ActionWithMessage {
 public:
-    ToggledNotes(std::set<Note> notes, bool have_been_added);
+    AddNotes(std::set<Note> notes);
 
     void doAction(EditorState& ed) const override;
     void undoAction(EditorState& ed) const override;
 
-protected:
-    const bool have_been_added;
-    const std::set<Note> notes;
+private:
+    std::set<Note> notes;
+};
+
+class RemoveNotes : public AddNotes {
+public:
+    RemoveNotes(std::set<Note> notes);
+
+    void doAction(EditorState& ed) const override;
+    void undoAction(EditorState& ed) const override;
 };
 
 std::string get_message(const std::shared_ptr<ActionWithMessage>& awm);

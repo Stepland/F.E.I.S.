@@ -40,14 +40,14 @@ public:
 
     void resize(unsigned int width);
 
-    void draw_long_note(
+    void draw_tail_and_receptor(
         const better::LongNote& note,
         const sf::Time& playbackPosition,
         const better::Timing& timing
     );
 
-    void drawLongNote(
-        const Note& note,
+    void draw_long_note(
+        const better::LongNote& note,
         const sf::Time& playbackPosition,
         const better::Timing& timing,
         Marker& marker,

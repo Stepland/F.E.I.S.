@@ -14,5 +14,6 @@ namespace better {
     class Notes: public interval_tree<Fraction, Note> {
     public:
         std::pair<iterator, bool> insert(const Note& note);
+        const_iterator find(const Note& note) const;
     };
 }

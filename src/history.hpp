@@ -59,11 +59,11 @@ public:
         }
     }
 
-    void display(std::function<std::string(T)> printer) {
+    void display() {
         if (ImGui::Begin("History")) {
             ImGui::Indent();
             for (auto it = next_actions.crbegin(); it != next_actions.crend(); ++it) {
-                ImGui::TextUnformatted(printer(*it).c_str());
+                ImGui::TextUnformatted((*it)->get_message().c_str());
             }
             ImGui::Unindent();
             if (previous_actions.empty()) {
@@ -72,11 +72,11 @@ public:
             } else {
                 auto it = previous_actions.cbegin();
                 ImGui::Bullet();
-                ImGui::TextUnformatted(printer(*it).c_str());
+                ImGui::TextUnformatted((*it)->get_message().c_str());
                 ImGui::Indent();
                 ++it;
                 while (it != previous_actions.cend()) {
-                    ImGui::TextUnformatted(printer(*it).c_str());
+                    ImGui::TextUnformatted((*it)->get_message().c_str());
                     ++it;
                 }
                 ImGui::Unindent();
