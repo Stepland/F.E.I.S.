@@ -1,8 +1,9 @@
 #include "chart_state.hpp"
 #include "src/better_note.hpp"
 
-ChartState::ChartState(better::Chart& c, std::filesystem::path assets) :
+ChartState::ChartState(better::Chart& c, const std::string& name, std::filesystem::path assets) :
     chart(c),
+    difficulty_name(name),
     density_graph(assets)
 {
     history.push(std::make_shared<OpenChart>(c));

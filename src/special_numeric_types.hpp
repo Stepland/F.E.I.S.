@@ -19,8 +19,9 @@ inline std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs
 };
 
 Fraction operator%(Fraction a, const Fraction& b);
-Fraction floor_fraction(Fraction f);
-Fraction round_fraction(Fraction f);
+Fraction floor_fraction(const Fraction& f);
+Fraction round_fraction(const Fraction& f);
+Decimal convert_to_decimal(const Fraction& f, unsigned int precision);
 
 // Rounds a given beat to the nearest given division (defaults to nearest 1/240th)
 const auto round_beats = [](Fraction beats, unsigned int denominator = 240) {

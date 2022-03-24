@@ -1,5 +1,4 @@
 #include "toolbox.hpp"
-#include "imgui/custom.hpp"
 
 #include <cmath>
 #include <fstream>
@@ -8,6 +7,8 @@
 #include <iomanip>
 #include <list>
 #include <set>
+
+#include "imgui_extras.hpp"
 
 const std::string recent_files_file = "recent files.txt";
 
@@ -70,51 +71,6 @@ std::string Toolbox::to_string(sf::Time time) {
                  << "." << std::setw(3) << miliseconds;
     //("-%02d:%02d.%03d",minutes,seconds,miliseconds);
     return stringStream.str();
-}
-
-/*
- * Imgui::InputText that gets colored Red when isValid is false and
- * hoverTextHelp gets displayed when hovering over invalid input When input is
- * valid InputText gets colored green Displays InputText without any style
- * change if the input is empty;
- */
-bool Toolbox::InputTextColored(
-    const char* label,
-    std::string* str,
-    bool isValid,
-    const std::string& hoverHelpText
-) {
-    bool return_value;
-    if (str->empty()) {
-        return ImGui::InputText(label, str);
-    } else {
-        Toolbox::CustomColors colors;
-        if (not isValid) {
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, colors.FrameBg_Red.Value);
-            ImGui::PushStyleColor(
-                ImGuiCol_FrameBgHovered,
-                colors.FrameBgHovered_Red.Value);
-            ImGui::PushStyleColor(
-                ImGuiCol_FrameBgActive,
-                colors.FrameBgActive_Red.Value);
-        } else {
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, colors.FrameBg_Green.Value);
-            ImGui::PushStyleColor(
-                ImGuiCol_FrameBgHovered,
-                colors.FrameBgHovered_Green.Value);
-            ImGui::PushStyleColor(
-                ImGuiCol_FrameBgActive,
-                colors.FrameBgActive_Green.Value);
-        }
-        return_value = ImGui::InputText(label, str);
-        if (ImGui::IsItemHovered() and (not isValid)) {
-            ImGui::BeginTooltip();
-            ImGui::TextUnformatted(hoverHelpText.c_str());
-            ImGui::EndTooltip();
-        }
-        ImGui::PopStyleColor(3);
-        return return_value;
-    }
 }
 
 float Toolbox::convertVolumeToNormalizedDB(int input) {
@@ -185,7 +141,7 @@ void Toolbox::center(sf::Shape& s) {
 
 bool Toolbox::editFillColor(const char* label, sf::Shape& s) {
     sf::Color col = s.getFillColor();
-    if (ImGui::ColorEdit4(label, col)) {
+    if (feis::ColorEdit4(label, col)) {
         s.setFillColor(col);
         return true;
     }

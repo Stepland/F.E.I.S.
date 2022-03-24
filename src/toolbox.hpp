@@ -14,15 +14,6 @@
  * for them or not
  */
 namespace Toolbox {
-
-    struct CustomColors {
-        ImColor FrameBg_Green = {0.163f, 0.480f, 0.160f, 0.540f};
-        ImColor FrameBgHovered_Green = {0.261f, 0.980f, 0.261f, 0.400f};
-        ImColor FrameBgActive_Green = {0.261f, 0.980f, 0.261f, 0.671f};
-        ImColor FrameBg_Red = {0.480f, 0.160f, 0.160f, 0.540f};
-        ImColor FrameBgHovered_Red = {0.980f, 0.261f, 0.261f, 0.400f};
-        ImColor FrameBgActive_Red = {0.980f, 0.261f, 0.261f, 0.671f};
-    };
     void pushNewRecentFile(std::filesystem::path file, std::filesystem::path settings);
     std::vector<std::string> getRecentFiles(std::filesystem::path settings);
 
@@ -37,7 +28,6 @@ namespace Toolbox {
     };
 
     std::string to_string(sf::Time time);
-    bool InputTextColored(const char* label, std::string* str, bool isValid, const std::string& hoverHelpText);
     float convertVolumeToNormalizedDB(int);
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);

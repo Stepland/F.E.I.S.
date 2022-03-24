@@ -8,6 +8,7 @@ sources += files(
     'editor_state.cpp',
     'fumen.cpp',
     'history_actions.cpp',
+    'imgui_extras.cpp',
     'ln_marker.cpp',
     'main.cpp',
     'marker.cpp',
@@ -24,5 +25,4 @@ sources += files(
     'toolbox.cpp',
 )
 
-subdir('imgui')
 subdir('widgets')

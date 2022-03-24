@@ -18,8 +18,9 @@
 using TapNotePair = std::pair<better::TapNote, better::TapNote>;
 
 struct ChartState {
-    explicit ChartState(better::Chart& c, std::filesystem::path assets);
+    ChartState(better::Chart& c, const std::string& name, std::filesystem::path assets);
     better::Chart& chart;
+    const std::string& difficulty_name;
     better::Notes selected_notes;
     NotesClipboard notes_clipboard;
     SelectionState time_selection;

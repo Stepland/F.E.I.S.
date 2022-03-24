@@ -1,0 +1,1 @@
+include_sources += {'fmt': files('format.cc')}

@@ -1,19 +1,25 @@
 #include "editor_state.hpp"
 
-#include <SFML/System/Time.hpp>
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+
+#include <fmt/core.h>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <sstream>
+#include <SFML/System/Time.hpp>
 #include <tinyfiledialogs.h>
 
 #include "better_note.hpp"
 #include "chart_state.hpp"
 #include "history_actions.hpp"
+#include "imgui_extras.hpp"
 #include "metadata_in_gui.hpp"
+#include "special_numeric_types.hpp"
+#include "std_optional_extras.hpp"
 #include "time_interval.hpp"
 #include "variant_visitor.hpp"
 
@@ -236,7 +242,7 @@ void EditorState::display_properties() {
         ImGui::InputText("Title", &metadata_in_gui.title);
         ImGui::InputText("Artist", &metadata_in_gui.artist);
 
-        if (Toolbox::InputTextColored(
+        if (feis::InputTextColored(
             "Audio",
             &metadata_in_gui.audio,
             music_state.has_value(),
@@ -244,7 +250,7 @@ void EditorState::display_properties() {
         )) {
             reload_music();
         }
-        if (Toolbox::InputTextColored(
+        if (feis::InputTextColored(
             "Jacket",
             &metadata_in_gui.jacket,
             jacket.has_value(),
@@ -258,7 +264,7 @@ void EditorState::display_properties() {
         ImGui::Text("Preview");
         ImGui::Checkbox("Use separate preview file", &metadata_in_gui.use_preview_file);
         if (metadata_in_gui.use_preview_file) {
-            if (Toolbox::InputTextColored(
+            if (feis::InputTextColored(
                 "File",
                 &metadata_in_gui.preview_file,
                 preview_audio.has_value(),
@@ -267,7 +273,37 @@ void EditorState::display_properties() {
                 reload_preview_audio();
             }
         } else {
-            ImGui::Input
+            if (feis::InputDecimal("Start", &metadata_in_gui.preview_loop.start)) {
+                metadata_in_gui.preview_loop.start = std::max(
+                    Decimal{0},
+                    metadata_in_gui.preview_loop.start
+                );
+                if (music_state.has_value()) {
+                    metadata_in_gui.preview_loop.start = std::min(
+                        Decimal{music_state->music.getDuration().asMicroseconds()} / 1000000,
+                        metadata_in_gui.preview_loop.start
+                    );
+                }
+            }
+            if (feis::InputDecimal("Duration", &metadata_in_gui.preview_loop.duration)) {
+                metadata_in_gui.preview_loop.duration = std::max(
+                    Decimal{0},
+                    metadata_in_gui.preview_loop.duration
+                );
+                if (music_state.has_value()) {
+                    metadata_in_gui.preview_loop.start = std::min(
+                        (
+                            Decimal{
+                                music_state->music
+                                .getDuration()
+                                .asMicroseconds()
+                            } / 1000000 
+                            - metadata_in_gui.preview_loop.start
+                        ),
+                        metadata_in_gui.preview_loop.start
+                    );
+                }
+            }
         }
 
 
@@ -324,30 +360,34 @@ void EditorState::display_playback_status() {
         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs
             | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
     {
-        if (chart) {
-            ImGui::Text("%s %d", chart->ref.dif_name.c_str(), chart->ref.level);
+        if (chart_state) {
+            ImGui::TextUnformatted(
+                fmt::format(
+                    "{} {}",
+                    chart_state->difficulty_name,
+                    feis::stringify_level(chart_state->chart.level)
+                ).c_str()
+            );
             ImGui::SameLine();
         } else {
             ImGui::TextDisabled("No chart selected");
             ImGui::SameLine();
         }
-        ImGui::TextDisabled("Snap : ");
+        ImGui::TextDisabled("Snap :");
         ImGui::SameLine();
         ImGui::Text("%s", Toolbox::toOrdinal(snap * 4).c_str());
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.53, 0.53, 0.53, 1), "Beats :");
+        ImGui::TextDisabled("Beats :");
         ImGui::SameLine();
-        ImGui::Text("%02.2f", this->get_current_beats());
+        ImGui::TextUnformatted(convert_to_decimal(this->current_exact_beats(), 3).format(".3f").c_str());
         ImGui::SameLine();
-        if (music) {
-            ImGui::TextColored(
-                ImVec4(0.53, 0.53, 0.53, 1),
-                "Music File Offset :");
+        if (music_state) {
+            ImGui::TextDisabled("Music File Offset :");
             ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(music->getPrecisePlayingOffset()).c_str());
+            ImGui::TextUnformatted(Toolbox::to_string(music_state->music.getPrecisePlayingOffset()).c_str());
             ImGui::SameLine();
         }
-        ImGui::TextColored(ImVec4(0.53, 0.53, 0.53, 1), "Timeline Position :");
+        ImGui::TextDisabled("Timeline Position :");
         ImGui::SameLine();
         ImGui::TextUnformatted(Toolbox::to_string(playback_position).c_str());
     }
@@ -362,18 +402,18 @@ void EditorState::display_timeline() {
     auto height = static_cast<int>(raw_height);
 
     if (
-        chart.has_value()
+        chart_state.has_value()
         and (
-            chart->density_graph.should_recompute
-            or height != chart->density_graph.last_height.value_or(height)
+            chart_state->density_graph.should_recompute
+            or height != chart_state->density_graph.last_height.value_or(height)
         )
     ) {
-        chart->density_graph.should_recompute = false;
-        chart->density_graph.update(
+        chart_state->density_graph.should_recompute = false;
+        chart_state->density_graph.update(
             height,
-            chart->ref,
-            song.BPM,
-            get_resolution()
+            chart_state->chart,
+            editable_range.start,
+            editable_range.end
         );
     }
 
@@ -381,7 +421,7 @@ void EditorState::display_timeline() {
         ImVec2(io.DisplaySize.x - 35, io.DisplaySize.y * 0.5f),
         ImGuiCond_Always,
         ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize({45, height}, ImGuiCond_Always);
+    ImGui::SetNextWindowSize({45.f, static_cast<float>(height)}, ImGuiCond_Always);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
@@ -397,14 +437,22 @@ void EditorState::display_timeline() {
         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration
             | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
     {
-        if (chart) {
+        if (chart_state) {
             ImGui::SetCursorPos({0, 0});
-            ImGui::Image(chart->densityGraph.graph);
-            AffineTransform<float> scroll(-song.offset, this->preview_end.asSeconds(), 1.f, 0.f);
-            float slider_pos = scroll.transform(playbackPosition.asSeconds());
+            ImGui::Image(chart_state->density_graph.graph);
+            // The output is reversed because we are repurposing a vertical
+            // slider, which goes from 0 AT THE BOTTOM to 1 AT THE TOP, which is
+            // the opposite of what we want
+            AffineTransform<float> scroll(
+                editable_range.start.asSeconds(),
+                editable_range.end.asSeconds(),
+                1.f,
+                0.f
+            );
+            float slider_pos = scroll.transform(playback_position.asSeconds());
             ImGui::SetCursorPos({0, 0});
             if (ImGui::VSliderFloat("TimelineSlider", ImGui::GetContentRegionMax(), &slider_pos, 0.f, 1.f, "")) {
-                setPlaybackAndMusicPosition(sf::seconds(scroll.backwards_transform(slider_pos)));
+                set_playback_position(sf::seconds(scroll.backwards_transform(slider_pos)));
             }
         }
     }
@@ -415,7 +463,7 @@ void EditorState::display_timeline() {
 
 void EditorState::display_chart_list() {
     if (ImGui::Begin("Chart List", &showChartList, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (this->song.Charts.empty()) {
+        if (this->song.charts.empty()) {
             ImGui::Dummy({100, 0});
             ImGui::SameLine();
             ImGui::Text("- no charts -");
@@ -431,21 +479,20 @@ void EditorState::display_chart_list() {
             ImGui::TextDisabled("Note Count");
             ImGui::NextColumn();
             ImGui::Separator();
-            for (auto& tuple : song.Charts) {
+            for (auto& [name, chart] : song.charts) {
                 if (ImGui::Selectable(
-                        tuple.first.c_str(),
-                        chart ? chart->ref == tuple.second : false,
-                        ImGuiSelectableFlags_SpanAllColumns)) {
+                    name.c_str(),
+                    chart_state ? chart_state->difficulty_name == name : false,
+                    ImGuiSelectableFlags_SpanAllColumns
+                )) {
                     ESHelper::save(*this);
-                    chart.emplace(tuple.second, this->assets);
+                    chart_state.emplace(chart, name, this->assets);
                 }
                 ImGui::NextColumn();
-                ImGui::Text("%d", tuple.second.level);
+                ImGui::TextUnformatted(feis::stringify_level(chart.level).c_str());
                 ImGui::NextColumn();
-                ImGui::Text("%d", static_cast<int>(tuple.second.Notes.size()));
+                ImGui::Text("%d", static_cast<int>(chart.notes.size()));
                 ImGui::NextColumn();
-                ImGui::PushID(&tuple);
-                ImGui::PopID();
             }
         }
     }
@@ -458,10 +505,10 @@ void EditorState::display_linear_view() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
     if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-        if (chart) {
+        if (chart_state) {
             linear_view.update(
-                chart,
-                playbackPosition,
+                chart_state,
+                playback_position,
                 getCurrentTick(),
                 song.BPM,
                 getResolution(),
@@ -773,6 +820,10 @@ void EditorState::reload_preview_audio() {
 
 void reload_applicable_timing() {
     // TODO: implement
+}
+
+std::string feis::stringify_level(std::optional<Decimal> level) {
+    return stringify_or(level, "(no level defined)");
 }
 
 void EditorState::open_chart(better::Chart& chart) {

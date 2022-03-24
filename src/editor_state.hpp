@@ -87,7 +87,7 @@ public:
     void display_timeline();
 
     bool showChartList;
-    void display_chart_list(std::filesystem::path assets);
+    void display_chart_list();
 
     bool showLinearView;
     void display_linear_view();
@@ -141,6 +141,10 @@ private:
 
     std::filesystem::path assets;
 };
+
+namespace feis {
+    std::string stringify_level(std::optional<Decimal> level);
+}
 
 namespace ESHelper {
     void save(EditorState& ed);
