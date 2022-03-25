@@ -14,7 +14,6 @@
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
 
 LinearView::LinearView(std::filesystem::path assets) :
-    beats_to_pixels(0, 1, cursor_y - 100, cursor_y),
     beats_to_pixels_proportional(0, 1, 0, 100),
     font_path(assets / font_file)
 {
@@ -25,7 +24,7 @@ LinearView::LinearView(std::filesystem::path assets) :
 
     cursor.setFillColor(sf::Color(66, 150, 250, 200));
     cursor.setOrigin(0.f, 2.f);
-    cursor.setPosition({48.f, 75.f});
+    cursor.setPosition({48.f, cursor_y});
 
     selection.setFillColor(sf::Color(153, 255, 153, 92));
     selection.setOutlineColor(sf::Color(153, 255, 153, 189));
@@ -65,6 +64,7 @@ void LinearView::update(
 
     // Just in case, clamp the beat cursor inside the window, with some margin
     cursor_y = std::clamp(cursor_y, 25.f, static_cast<float>(y) - 25.f);
+    cursor.setPosition({48.f, cursor_y});
 
     // Here we compute the range of visible beats from the size of the window
     // in pixels, we know by definition that the current beat is exactly at
@@ -87,7 +87,10 @@ void LinearView::update(
 
     auto next_beat_line_y = beats_to_pixels_absolute.backwards_transform(next_beat);
 
-    sf::RectangleShape beat_line(sf::Vector2f(static_cast<float>(x) - 80.f, 1.f));
+    float timeline_width = static_cast<float>(x) - 80.f;
+    float timeline_x = 50.f;
+
+    sf::RectangleShape beat_line(sf::Vector2f(timeline_width, 1.f));
 
     sf::Text beat_number;
     beat_number.setFont(beat_number_font);
@@ -98,7 +101,7 @@ void LinearView::update(
     while (next_beat_line_y < y) {
         if (next_beat % 4 == 0) {
             beat_line.setFillColor(sf::Color::White);
-            beat_line.setPosition({50.f, static_cast<float>(next_beat_line_y)});
+            beat_line.setPosition({timeline_x, static_cast<float>(next_beat_line_y)});
             view.draw(beat_line);
 
             ss.str(std::string());
@@ -113,28 +116,28 @@ void LinearView::update(
 
         } else {
             beat_line.setFillColor(sf::Color(255, 255, 255, 127));
-            beat_line.setPosition({50.f, static_cast<float>(next_beat_line_y)});
+            beat_line.setPosition({timeline_x, static_cast<float>(next_beat_line_y)});
             view.draw(beat_line);
         }
         next_beat += 1;
         next_beat_line_y = beats_to_pixels_absolute.backwards_transform(next_beat);
     }
 
-    // Draw the notes
+    float note_width = timeline_width / 16.f;
+    float collizion_zone_width = note_width - 2.f;
+    float long_note_rect_width = note_width * 0.75f;
 
     // Pre-size & center the shapes that can be
-    float note_width = (static_cast<float>(x) - 80.f) / 16.f;
-    float collizion_zone_width = note_width - 2.f;
-    float tail_width = note_width * 0.75f;
     tap_note_rect.setSize({note_width, 6.f});
     Toolbox::center(tap_note_rect);
 
     note_selected.setSize({note_width + 2.f, 8.f});
     Toolbox::center(note_selected);
 
+    // Draw the notes
     auto draw_note = VariantVisitor {
         [&, this](const better::TapNote& tap_note){
-            float note_x = 50.f + note_width * (tap_note.get_position().index() + 0.5f);
+            float note_x = timeline_x + note_width * (tap_note.get_position().index() + 0.5f);
             float note_y = static_cast<float>(beats_to_pixels_absolute.transform(tap_note.get_time()));
             const auto note_seconds = chart_state.chart.timing.time_at(tap_note.get_time());
             const auto first_colliding_beat = chart_state.chart.timing.beats_at(note_seconds - sf::milliseconds(500));
@@ -153,7 +156,7 @@ void LinearView::update(
             }
         },
         [&, this](const better::LongNote& long_note){
-            float note_x = 50.f + note_width * (long_note.get_position().index() + 0.5f);
+            float note_x = timeline_x + note_width * (long_note.get_position().index() + 0.5f);
             float note_y = static_cast<float>(beats_to_pixels_absolute.transform(long_note.get_time()));
             const auto note_start_seconds = chart_state.chart.timing.time_at(long_note.get_time());
             const auto first_colliding_beat = chart_state.chart.timing.beats_at(note_start_seconds - sf::milliseconds(500));
@@ -165,8 +168,8 @@ void LinearView::update(
             Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);
             note_collision_zone.setPosition(note_x, static_cast<float>(collision_zone_y));
             this->view.draw(note_collision_zone);
-            const auto tail_height = beats_to_pixels_proportional.transform(long_note.get_duration());
-            long_note_rect.setSize({tail_width, static_cast<float>(tail_height)});
+            const auto long_note_rect_height = beats_to_pixels_proportional.transform(long_note.get_duration());
+            long_note_rect.setSize({long_note_rect_width, static_cast<float>(long_note_rect_height)});
             Toolbox::set_local_origin_normalized(long_note_rect, 0.5f, 0.f);
             long_note_rect.setPosition(note_x, note_y);
             this->view.draw(long_note_rect);
@@ -192,83 +195,49 @@ void LinearView::update(
     }
 
     // Draw the cursor
-    cursor.setSize({static_cast<float>(x) - 76.f, 4.f});
+    float cursor_width = timeline_width + 4.f;
+    cursor.setSize({cursor_width, 4.f});
     view.draw(cursor);
 
     // Draw the time selection
-    selection.setSize({static_cast<float>(x) - 80.f, 0.f});
-    if (std::holds_alternative<unsigned int>(chart_state.time_selection)) {
-        unsigned int ticks = std::get<unsigned int>(chart->time_selection);
-        float selection_y =
-            PixelsToTicks.backwards_transform(static_cast<float>(ticks));
-        if (selection_y > 0.f and selection_y < static_cast<float>(y)) {
-            selection.setPosition(50.f, selection_y);
-            view.draw(selection);
-        }
-    } else if (std::holds_alternative<TimeSelection>(chart->time_selection)) {
-        const auto& ts = std::get<TimeSelection>(chart->time_selection);
-        float selection_start_y =
-            PixelsToTicks.backwards_transform(static_cast<float>(ts.start));
-        float selection_end_y = PixelsToTicks.backwards_transform(
-            static_cast<float>(ts.start + ts.duration));
-        if ((selection_start_y > 0.f and selection_start_y < static_cast<float>(y))
-            or (selection_end_y > 0.f and selection_end_y < static_cast<float>(y))) {
-            selection.setSize({static_cast<float>(x) - 80.f, selection_end_y - selection_start_y});
-            selection.setPosition(50.f, selection_start_y);
+    float selection_width = timeline_width;
+    selection.setSize({selection_width, 0.f});
+    if (chart_state.time_selection.has_value()) {
+        const auto pixel_interval = Interval{
+            beats_to_pixels_absolute.transform(chart_state.time_selection->start),
+            beats_to_pixels_absolute.transform(chart_state.time_selection->end)
+        };
+        if (pixel_interval.intersects({0, y})) {
+            selection.setSize({
+                selection_width,
+                static_cast<float>(pixel_interval.width()),
+            });
+            selection.setPosition(timeline_x, static_cast<float>(pixel_interval.start));
             view.draw(selection);
         }
     }
 }
 
 void LinearView::setZoom(int newZoom) {
-    zoom = std::clamp(newZoom, -5, 5);
-    shouldReloadTransforms = true;
+    zoom = std::clamp(newZoom, -10, 10);
+    reload_transforms();
 }
 
 void LinearView::displaySettings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
         Toolbox::editFillColor("Cursor", cursor);
         Toolbox::editFillColor("Note", tap_note_rect);
-        if (Toolbox::editFillColor("Note Collision Zone", note_collision_zone)) {
-            long_note_collision_zone.setFillColor(note_collision_zone.getFillColor());
-        }
+        Toolbox::editFillColor("Note Collision Zone", note_collision_zone);
         Toolbox::editFillColor("Long Note Tail", long_note_rect);
     }
     ImGui::End();
 }
 
-void LinearView::reloadTransforms(
-    const sf::Time& playbackPosition,
-    const float& ticksAtPlaybackPosition,
-    const float& BPM,
-    const int& resolution
-) {
-    if (shouldReloadTransforms or last_BPM != BPM or last_resolution != resolution) {
-        shouldReloadTransforms = false;
-        last_BPM = BPM;
-        last_resolution = resolution;
-        SecondsToTicksProportional =
-            AffineTransform<float>(0.f, (60.f / BPM), 0.f, resolution);
-        PixelsToSecondsProprotional =
-            AffineTransform<float>(0.f, 100.f, 0.f, (60.f / BPM) / timeFactor());
-        SecondsToTicks = AffineTransform<float>(
-            playbackPosition.asSeconds() - (60.f / BPM) / timeFactor(),
-            playbackPosition.asSeconds(),
-            ticksAtPlaybackPosition - resolution / timeFactor(),
-            ticksAtPlaybackPosition);
-        PixelsToSeconds = AffineTransform<float>(
-            -25.f,
-            75.f,
-            playbackPosition.asSeconds() - (60.f / BPM) / timeFactor(),
-            playbackPosition.asSeconds());
-        PixelsToTicks = AffineTransform<float>(
-            -25.f,
-            75.f,
-            ticksAtPlaybackPosition - resolution / timeFactor(),
-            ticksAtPlaybackPosition);
-    } else {
-        PixelsToSeconds.setB(
-            playbackPosition.asSeconds() - 0.75f * (60.f / BPM) / timeFactor());
-        PixelsToTicks.setB(ticksAtPlaybackPosition - 0.75f * resolution / timeFactor());
-    }
+void LinearView::reload_transforms() {
+    beats_to_pixels_proportional = {
+        Fraction{0},
+        Fraction{1, timeFactor()},
+        Fraction{0},
+        Fraction{100}
+    };
 }

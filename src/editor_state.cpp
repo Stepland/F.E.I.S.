@@ -20,7 +20,6 @@
 #include "metadata_in_gui.hpp"
 #include "special_numeric_types.hpp"
 #include "std_optional_extras.hpp"
-#include "time_interval.hpp"
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(
@@ -44,7 +43,7 @@ EditorState::EditorState(
 };
 
 
-const TimeInterval& EditorState::get_editable_range() {
+const Interval<sf::Time>& EditorState::get_editable_range() {
     reload_editable_range();
     return editable_range;
 }
@@ -509,10 +508,8 @@ void EditorState::display_linear_view() {
             linear_view.update(
                 *chart_state,
                 playback_position,
-                getCurrentTick(),
-                song.BPM,
-                getResolution(),
-                ImGui::GetContentRegionMax());
+                ImGui::GetContentRegionMax()
+            );
             auto cursor_y = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, cursor_y});
             ImGui::Image(linear_view.view);
@@ -525,7 +522,7 @@ void EditorState::display_linear_view() {
 };
 
 saveChangesResponses EditorState::alertSaveChanges() {
-    if (chart and (not chart->history.empty())) {
+    if (chart_state and (not chart_state->history.empty())) {
         int response = tinyfd_messageBox(
             "Warning",
             "Do you want to save changes ?",
@@ -555,7 +552,7 @@ saveChangesResponses EditorState::alertSaveChanges() {
 /*
 Saves if asked and returns false if user canceled
 */
-bool EditorState::saveChangesOrCancel() {
+bool EditorState::save_changes_or_cancel() {
     switch (alertSaveChanges()) {
         case saveChangesYes:
             ESHelper::save(*this);
@@ -571,9 +568,8 @@ bool EditorState::saveChangesOrCancel() {
 /*
 This SCREAAAAMS for optimisation, but in the meantime it works !
 */
-void EditorState::updateVisibleNotes() {
+void EditorState::update_visible_notes() {
     visibleNotes.clear();
-
     if (chart) {
         float position = playback_position.asSeconds();
 
@@ -735,7 +731,7 @@ void EditorState::delete_(NotificationsQueue& nq) {
 
 void EditorState::reload_editable_range() {
     auto old_range = this->editable_range;
-    TimeInterval new_range;
+    Interval<sf::Time> new_range;
     if (music_state) {
         new_range += music_state->music.getDuration();
     }
@@ -871,7 +867,7 @@ void ESHelper::openFromFile(
  */
 bool ESHelper::saveOrCancel(std::optional<EditorState>& ed) {
     if (ed) {
-        return ed->saveChangesOrCancel();
+        return ed->save_changes_or_cancel();
     } else {
         return true;
     }

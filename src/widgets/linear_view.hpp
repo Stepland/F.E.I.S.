@@ -5,7 +5,6 @@
 #include <filesystem>
 
 #include "../chart_state.hpp"
-#include "../time_selection.hpp"
 #include "../toolbox.hpp"
 
 class LinearView {
@@ -38,21 +37,12 @@ private:
     sf::RectangleShape note_selected;
     sf::RectangleShape note_collision_zone;
 
-    float last_BPM = 120.0f;
-    int last_resolution = 240;
-    bool shouldReloadTransforms;
-
     float cursor_y = 75.f;
-    AffineTransform<Fraction> beats_to_pixels;
     AffineTransform<Fraction> beats_to_pixels_proportional;
 
     void resize(unsigned int width, unsigned int height);
 
-    void reloadTransforms(
-        const sf::Time& playbackPosition,
-        const float& ticksAtPlaybackPosition,
-        const float& BPM,
-        const int& resolution);
+    void reload_transforms();
 
     int zoom = 0;
     const std::filesystem::path font_path;

@@ -6,6 +6,7 @@
 
 #include "better_song.hpp"
 #include "chart_state.hpp"
+#include "generic_interval.hpp"
 #include "history.hpp"
 #include "history_actions.hpp"
 #include "marker.hpp"
@@ -14,7 +15,6 @@
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "precise_music.hpp"
-#include "time_interval.hpp"
 #include "time_selection.hpp"
 #include "widgets/linear_view.hpp"
 #include "widgets/playfield.hpp"
@@ -61,7 +61,7 @@ public:
     sf::Time playback_position;
     sf::Time previous_playback_position;
 
-    const TimeInterval& get_editable_range();
+    const Interval<sf::Time>& get_editable_range();
 
     void set_playback_position(sf::Time new_position);
 
@@ -98,9 +98,9 @@ public:
     bool showSoundSettings;
 
     saveChangesResponses alertSaveChanges();
-    bool saveChangesOrCancel();
+    bool save_changes_or_cancel();
 
-    void updateVisibleNotes();
+    void update_visible_notes();
     better::Notes visibleNotes;
 
     void toggleNoteAtCurrentTime(int pos);
@@ -126,7 +126,7 @@ private:
     (and maybe editable) from the editor, can extend before and after
     the audio file
     */
-    TimeInterval editable_range;
+    Interval<sf::Time> editable_range;
     void reload_editable_range();
     void reload_jacket();
     void reload_music();
