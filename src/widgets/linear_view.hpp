@@ -15,12 +15,10 @@ public:
     sf::RenderTexture view;
 
     void update(
-        const std::optional<ChartState>& chart,
+        const ChartState& chart_state,
         const sf::Time& playbackPosition,
-        const float& ticksAtPlaybackPosition,
-        const float& BPM,
-        const int& resolution,
-        const ImVec2& size);
+        const ImVec2& size
+    );
 
     void setZoom(int zoom);
     void zoom_in() { setZoom(zoom + 1); };
@@ -35,9 +33,8 @@ private:
     sf::Font beat_number_font;
     sf::RectangleShape cursor;
     sf::RectangleShape selection;
-    sf::RectangleShape note_rect;
+    sf::RectangleShape tap_note_rect;
     sf::RectangleShape long_note_rect;
-    sf::RectangleShape long_note_collision_zone;
     sf::RectangleShape note_selected;
     sf::RectangleShape note_collision_zone;
 
@@ -45,11 +42,9 @@ private:
     int last_resolution = 240;
     bool shouldReloadTransforms;
 
-    AffineTransform<float> SecondsToTicks;
-    AffineTransform<float> SecondsToTicksProportional;
-    AffineTransform<float> PixelsToSeconds;
-    AffineTransform<float> PixelsToSecondsProprotional;
-    AffineTransform<float> PixelsToTicks;
+    float cursor_y = 75.f;
+    AffineTransform<Fraction> beats_to_pixels;
+    AffineTransform<Fraction> beats_to_pixels_proportional;
 
     void resize(unsigned int width, unsigned int height);
 

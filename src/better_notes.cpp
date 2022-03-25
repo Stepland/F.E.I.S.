@@ -20,4 +20,8 @@ namespace better {
         });
         return conflicting_note;
     }
+
+    bool Notes::contains(const Note& note) const {
+        return find(note) != end();
+    }
 }

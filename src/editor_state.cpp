@@ -211,7 +211,7 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
 
             // Display selected notes
             for (auto const& [_, note] : visibleNotes) {
-                if (chart_state->selected_notes.find(note) != chart_state->selected_notes.end()) {
+                if (chart_state->selected_notes.contains(note)) {
                     ImGui::SetCursorPos({
                         note.get_position().get_x() * squareSize,
                         TitlebarHeight + note.get_position().get_y() * squareSize
@@ -507,7 +507,7 @@ void EditorState::display_linear_view() {
     if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (chart_state) {
             linear_view.update(
-                chart_state,
+                *chart_state,
                 playback_position,
                 getCurrentTick(),
                 song.BPM,

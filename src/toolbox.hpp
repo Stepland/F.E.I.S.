@@ -34,6 +34,18 @@ namespace Toolbox {
     std::string toOrdinal(int number);
     void center(sf::Shape& s);
     bool editFillColor(const char* label, sf::Shape& s);
+
+    template<class T>
+    void set_origin_normalized(T& s, float x, float y) {
+        auto bounds = s.getGlobalBounds();
+        s.setOrigin(bounds.left+x*bounds.width, bounds.top+y*bounds.height);
+    }
+
+    template<class T>
+    void set_local_origin_normalized(T& s, float x, float y) {
+        auto bounds = s.getLocalBounds();
+        s.setOrigin(bounds.left+x*bounds.width, bounds.top+y*bounds.height);
+    }
 }
 
 template<typename T>
@@ -52,11 +64,11 @@ public:
         a = (high_output - low_output) / (high_input - low_input);
         b = (high_input * low_output - high_output * low_input) / (high_input - low_input);
     };
-    T transform(T val) { return a * val + b; };
-    T clampedTransform(T val) {
+    T transform(T val) const { return a * val + b; };
+    T clampedTransform(T val) const {
         return transform(std::clamp(val, low_input, high_input));
     };
-    T backwards_transform(T val) {
+    T backwards_transform(T val) const {
         // if we're too close to zero
         if (std::abs(a) < 10e-10) {
             throw std::runtime_error(

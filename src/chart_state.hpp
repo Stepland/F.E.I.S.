@@ -40,10 +40,11 @@ struct ChartState {
 };
 
 /*
-Construct a note to be displayed to preview the long note currently being
-created. It's basically the same at the real long note being created but
-its start time is set to exactly the (given) current beat so the long note
-drawing routine can be repurposed as-is for the preview
+Construct a note to be displayed on the playfield as a preview of the long note
+currently being created. It's basically the same at the real long note being
+created but its start time is set to exactly the (given) current beat so the
+long note drawing routine of the playfield can be repurposed as-is for the
+preview
 */
 better::LongNote make_long_note_dummy(
     Fraction current_beat,

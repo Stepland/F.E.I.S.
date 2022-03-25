@@ -23,8 +23,9 @@ namespace better {
 
         /*
         Returns true if the given note (assumed to already be part of the
-        chart) is colliding with ANOTHER note in the chart (this method does
-        NOT take identical notes into account for collision detection)
+        chart) is colliding with ANOTHER note in the chart. This means notes
+        exactly equal to the one passed as an argument are NOT taken into
+        account.
         */
         bool is_colliding(const better::Note& note);
 
