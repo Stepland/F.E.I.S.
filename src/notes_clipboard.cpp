@@ -1,27 +1,25 @@
 #include "notes_clipboard.hpp"
+#include <utility>
 
-NotesClipboard::NotesClipboard(const std::set<Note>& notes) {
-    copy(notes);
-}
+#include "src/better_note.hpp"
+#include "variant_visitor.hpp"
 
-void NotesClipboard::copy(const std::set<Note>& notes) {
+void NotesClipboard::copy(const better::Notes& notes) {
     contents.clear();
     if (not notes.empty()) {
-        int timing_offset = notes.cbegin()->getTiming();
-        for (const auto& note : notes) {
-            contents.emplace(
-                note.getPos(),
-                note.getTiming() - timing_offset,
-                note.getLength(),
-                note.getTail_pos());
+        const auto offset = notes.cbegin()->second.get_time();
+        const auto shift = shifter(-offset);
+        for (const auto& [_, note] : notes) {
+            contents.insert(note.visit(shift));
         }
     }
 }
 
-std::set<Note> NotesClipboard::paste(int tick_offset) {
-    std::set<Note> res = {};
-    for (auto note : contents) {
-        res.emplace(note.getPos(), note.getTiming() + tick_offset, note.getLength(), note.getTail_pos());
+better::Notes NotesClipboard::paste(Fraction offset) {
+    better::Notes res;
+    const auto shift = shifter(offset);
+    for (const auto& [_, note] : contents) {
+        res.insert(note.visit(shift));
     }
     return res;
 }

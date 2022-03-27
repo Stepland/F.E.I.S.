@@ -15,7 +15,7 @@
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "precise_music.hpp"
-#include "time_selection.hpp"
+#include "src/better_note.hpp"
 #include "widgets/linear_view.hpp"
 #include "widgets/playfield.hpp"
 
@@ -97,24 +97,16 @@ public:
     bool showHistory;
     bool showSoundSettings;
 
-    saveChangesResponses alertSaveChanges();
+    saveChangesResponses alert_save_changes();
     bool save_changes_or_cancel();
 
-    void update_visible_notes();
-    better::Notes visibleNotes;
-
-    void toggleNoteAtCurrentTime(int pos);
+    void toggle_note_at_current_time(const better::Position& pos);
 
     void move_backwards_in_time();
     void move_forwards_in_time();
 
     void undo(NotificationsQueue& nq);
     void redo(NotificationsQueue& nq);
-
-    void cut(NotificationsQueue& nq);
-    void copy(NotificationsQueue& nq);
-    void paste(NotificationsQueue& nq);
-    void delete_(NotificationsQueue& nq);
 
 private:
 
@@ -142,10 +134,6 @@ private:
     std::filesystem::path assets;
 };
 
-namespace feis {
-    std::string stringify_level(std::optional<Decimal> level);
-}
-
 namespace ESHelper {
     void save(EditorState& ed);
     void open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings);
@@ -160,7 +148,7 @@ namespace ESHelper {
 
     class NewChartDialog {
     public:
-        std::optional<Chart> display(EditorState& editorState);
+        std::optional<better::Chart> display(EditorState& editorState);
         void resetValues() {
             level = 1;
             resolution = 240;

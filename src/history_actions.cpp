@@ -1,77 +1,79 @@
 #include "history_actions.hpp"
 
+#include <functional>
 #include <sstream>
+#include <tuple>
 
+#include <fmt/core.h>
+
+#include "better_song.hpp"
 #include "editor_state.hpp"
+#include "std_optional_extras.hpp"
+
 
 const std::string& ActionWithMessage::getMessage() const {
     return message;
 }
 
-OpenChart::OpenChart(Chart c) : notes(c.Notes) {
-    std::stringstream ss;
-    ss << "Opened Chart " << c.dif_name << " (Level " << c.level << ")";
-    message = ss.str();
+OpenChart::OpenChart(better::Chart c, const std::string& difficulty) : notes(c.notes) {
+    message = fmt::format(
+        "Opened Chart {} (level {})",
+        difficulty,
+        better::stringify_level(c.level)
+    );
 }
 
 void OpenChart::doAction(EditorState& ed) const {
-    ed.chart_state->chart.Notes = notes;
+    if (ed.chart_state) {
+        ed.chart_state->chart.notes = notes;
+    }
 }
 
-AddNotes::AddNotes(std::set<Note> n) : notes(n) {
-    if (n.empty()) {
+AddNotes::AddNotes(const better::Notes& notes) : notes(notes) {
+    if (notes.empty()) {
         throw std::invalid_argument(
             "Can't construct a AddedNotes History Action with an empty note "
             "set"
         );
     }
-    std::stringstream ss;
-    ss << "Added " << n.size() << " Note";
-    if (n.size() > 1) {
-        ss << "s";
-    }
-    message = ss.str();
+    message = fmt::format(
+        "Added {} Note{}",
+        notes.size(),
+        notes.size() > 1 ? "s" : ""
+    );
 }
 
 void AddNotes::doAction(EditorState& ed) const {
-    ed.set_playback_position(ed.time_at(notes.begin()->getTiming()));
-    for (auto note : notes) {
-        if (
-            ed.chart_state->chart.Notes.find(note)
-            == ed.chart_state->chart.Notes.end()
-        ) {
-            ed.chart_state->chart.Notes.insert(note);
+    ed.set_playback_position(ed.time_at(notes.begin()->second.get_time()));
+    if (ed.chart_state) {
+        for (auto note : notes) {
+            ed.chart_state->chart.notes.insert(note);
         }
     }
 }
 
 void AddNotes::undoAction(EditorState& ed) const {
-    ed.set_playback_position(ed.time_at(notes.begin()->getTiming()));
-    for (auto note : notes) {
-        if (
-            ed.chart_state->chart.Notes.find(note)
-            != ed.chart_state->chart.Notes.end()
-        ) {
-            ed.chart_state->chart.Notes.erase(note);
+    ed.set_playback_position(ed.time_at(notes.begin()->second.get_time()));
+    if (ed.chart_state) {
+        for (auto note : notes) {
+            ed.chart_state->chart.notes.erase(note);
         }
     }
 }
 
 
-RemoveNotes::RemoveNotes(std::set<Note> n) : AddNotes(n) {
-    if (n.empty()) {
+RemoveNotes::RemoveNotes(const better::Notes& notes) : AddNotes(notes) {
+    if (notes.empty()) {
         throw std::invalid_argument(
             "Can't construct a RemovedNotes History Action with an empty note "
             "set"
         );
     }
-
-    std::stringstream ss;
-    ss << "Removed " << n.size() << " Note";
-    if (n.size() > 1) {
-        ss << "s";
-    }
-    message = ss.str();
+    message = fmt::format(
+        "Removed {} Note{}",
+        notes.size(),
+        notes.size() > 1 ? "s" : ""
+    );
 }
 
 void RemoveNotes::doAction(EditorState& ed) const {

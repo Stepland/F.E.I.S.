@@ -5,7 +5,8 @@
 #include <utility>
 #include <variant>
 
-#include "chart.hpp"
+#include "better_notes.hpp"
+#include "better_song.hpp"
 
 class EditorState;
 
@@ -33,12 +34,12 @@ protected:
  */
 class OpenChart : public ActionWithMessage {
 public:
-    explicit OpenChart(Chart c);
+    explicit OpenChart(better::Chart c, const std::string& difficulty);
 
     void doAction(EditorState& ed) const override;
 
 protected:
-    const std::set<Note> notes;
+    better::Notes notes;
 };
 
 /*
@@ -46,18 +47,18 @@ protected:
  */
 class AddNotes : public ActionWithMessage {
 public:
-    AddNotes(std::set<Note> notes);
+    AddNotes(const better::Notes& notes);
 
     void doAction(EditorState& ed) const override;
     void undoAction(EditorState& ed) const override;
 
-private:
-    std::set<Note> notes;
+protected:
+    better::Notes notes;
 };
 
 class RemoveNotes : public AddNotes {
 public:
-    RemoveNotes(std::set<Note> notes);
+    RemoveNotes(const better::Notes& notes);
 
     void doAction(EditorState& ed) const override;
     void undoAction(EditorState& ed) const override;

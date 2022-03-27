@@ -1,5 +1,8 @@
 #include "better_song.hpp"
+
 #include <SFML/System/Time.hpp>
+
+#include "std_optional_extras.hpp"
 
 namespace better {
     std::optional<sf::Time> Chart::time_of_last_event() const {
@@ -16,9 +19,15 @@ namespace better {
         /*
         Two notes collide if they are within ~one second of each other :
         Approach and burst animations of original jubeat markers last 16 frames
-        at (supposedly) 30 fps, which means a note needs ~half a second both
-        before *and* after itself, so two consecutive notes on the same button
-        cannot be closer than ~one second from each other
+        at (supposedly) 30 fps, which means a note needs (a bit more than) half
+        a second of leeway both before *and* after itself, consequently, two
+        consecutive notes on the same button cannot be closer than ~one second
+        from each other.
+
+        I don't really know why I shrink the collision zone down here ?
+        Shouldn't it be 32/30 seconds ? (1.0666... seconds instead of 1 ?)
+
+        TODO: Make the collision zone customizable
         */
         const auto collision_start = timing.beats_at(timing.time_at(start_beat) - sf::seconds(1));
         const auto collision_end = timing.beats_at(timing.time_at(end_beat) + sf::seconds(1));
@@ -62,5 +71,9 @@ namespace better {
 
     Decimal PreviewLoop::get_duration() const {
         return duration;
+    };
+
+    std::string stringify_level(std::optional<Decimal> level) {
+        return stringify_or(level, "(no level defined)");
     };
 }

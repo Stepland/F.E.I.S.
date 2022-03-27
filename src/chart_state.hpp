@@ -15,14 +15,32 @@
 #include "history.hpp"
 #include "history_actions.hpp"
 #include "notes_clipboard.hpp"
+#include "notifications_queue.hpp"
 #include "widgets/density_graph.hpp"
 
 using TapNotePair = std::pair<better::TapNote, better::TapNote>;
+
+enum class NotesToggle {
+    Inserted,
+    Removed
+};
 
 struct ChartState {
     ChartState(better::Chart& c, const std::string& name, std::filesystem::path assets);
     better::Chart& chart;
     const std::string& difficulty_name;
+
+    void cut(NotificationsQueue& nq);
+    void copy(NotificationsQueue& nq);
+    void paste(NotificationsQueue& nq, Fraction at_beat);
+    void delete_(NotificationsQueue& nq);
+
+    Interval<Fraction> visible_beats(const sf::Time& playback_position);
+    void update_visible_notes(const sf::Time& playback_position);
+    std::vector<better::Note> visible_notes;
+
+    void toggle_note(const sf::Time& playback_position, unsigned int snap, const better::Position& button);
+
     better::Notes selected_notes;
     NotesClipboard notes_clipboard;
     std::optional<Interval<Fraction>> time_selection;

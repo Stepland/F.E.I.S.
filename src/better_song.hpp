@@ -32,6 +32,8 @@ namespace better {
         std::optional<sf::Time> time_of_last_event() const;
     };
 
+    std::string stringify_level(std::optional<Decimal> level);
+
     class PreviewLoop {
     public:
         PreviewLoop(Decimal start, Decimal duration);

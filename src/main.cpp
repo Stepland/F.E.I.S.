@@ -418,7 +418,9 @@ int main(int argc, char** argv) {
 
         // Audio playback management
         if (editor_state) {
-            editor_state->updateVisibleNotes();
+            if (editor_state->chart_state) {
+                editor_state->chart_state->update_visible_notes();
+            }
             if (editor_state->playing) {
                 editor_state->previousPos = editor_state->playbackPosition;
                 editor_state->playbackPosition += delta * (editor_state->musicSpeed / 10.f);

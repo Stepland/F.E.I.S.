@@ -19,6 +19,7 @@
 #include "imgui_extras.hpp"
 #include "metadata_in_gui.hpp"
 #include "special_numeric_types.hpp"
+#include "src/chart.hpp"
 #include "std_optional_extras.hpp"
 #include "variant_visitor.hpp"
 
@@ -147,7 +148,7 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
                 },
             };
 
-            for (auto const& [_, note] : visibleNotes) {
+            for (auto const& note : chart_state->visible_notes) {
                 note.visit(display);
             }
 
@@ -170,7 +171,9 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
                     ImGuiCol_ButtonActive,
                     (ImVec4) ImColor::HSV(0, 0, 1.f, 0.5f));
                 if (ImGui::ImageButton(playfield.button, {squareSize, squareSize}, 0)) {
-                    toggleNoteAtCurrentTime(x + 4 * y);
+                    if (chart_state) {
+                        chart_state->toggle_note(playback_position, snap, {x, y});
+                    }
                 }
                 if (ImGui::IsItemHovered() and chart_state and chart_state->creating_long_note) {
                     // Deal with long note creation stuff
@@ -191,7 +194,7 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
         if (chart_state) {
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
-            for (auto const& [_, note] : visibleNotes) {
+            for (auto const& note : chart_state->visible_notes) {
                 if (chart_state->chart.is_colliding(note)) {
                     collisions[note.get_position().index()] = true;
                 }
@@ -209,7 +212,7 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
             }
 
             // Display selected notes
-            for (auto const& [_, note] : visibleNotes) {
+            for (auto const& note : chart_state->visible_notes) {
                 if (chart_state->selected_notes.contains(note)) {
                     ImGui::SetCursorPos({
                         note.get_position().get_x() * squareSize,
@@ -364,7 +367,7 @@ void EditorState::display_playback_status() {
                 fmt::format(
                     "{} {}",
                     chart_state->difficulty_name,
-                    feis::stringify_level(chart_state->chart.level)
+                    better::stringify_level(chart_state->chart.level)
                 ).c_str()
             );
             ImGui::SameLine();
@@ -488,7 +491,7 @@ void EditorState::display_chart_list() {
                     chart_state.emplace(chart, name, this->assets);
                 }
                 ImGui::NextColumn();
-                ImGui::TextUnformatted(feis::stringify_level(chart.level).c_str());
+                ImGui::TextUnformatted(better::stringify_level(chart.level).c_str());
                 ImGui::NextColumn();
                 ImGui::Text("%d", static_cast<int>(chart.notes.size()));
                 ImGui::NextColumn();
@@ -521,7 +524,7 @@ void EditorState::display_linear_view() {
     ImGui::PopStyleVar(2);
 };
 
-saveChangesResponses EditorState::alertSaveChanges() {
+saveChangesResponses EditorState::alert_save_changes() {
     if (chart_state and (not chart_state->history.empty())) {
         int response = tinyfd_messageBox(
             "Warning",
@@ -553,7 +556,7 @@ saveChangesResponses EditorState::alertSaveChanges() {
 Saves if asked and returns false if user canceled
 */
 bool EditorState::save_changes_or_cancel() {
-    switch (alertSaveChanges()) {
+    switch (alert_save_changes()) {
         case saveChangesYes:
             ESHelper::save(*this);
         case saveChangesNo:
@@ -562,63 +565,6 @@ bool EditorState::save_changes_or_cancel() {
         case saveChangesCancel:
         default:
             return false;
-    }
-};
-
-/*
-This SCREAAAAMS for optimisation, but in the meantime it works !
-*/
-void EditorState::update_visible_notes() {
-    visibleNotes.clear();
-    if (chart) {
-        float position = playback_position.asSeconds();
-
-        for (auto const& note : chart->ref.Notes) {
-            float note_timing_in_seconds = getSecondsAt(note.getTiming());
-
-            // we can leave early if the note is happening too far after the
-            // position
-            if (position > note_timing_in_seconds - 16.f / 30.f) {
-                if (note.getLength() == 0) {
-                    if (position < note_timing_in_seconds + 16.f / 30.f) {
-                        visibleNotes.insert(note);
-                    }
-                } else {
-                    float tail_end_in_seconds =
-                        getSecondsAt(note.getTiming() + note.getLength());
-                    if (position < tail_end_in_seconds + 16.f / 30.f) {
-                        visibleNotes.insert(note);
-                    }
-                }
-            }
-        }
-    }
-};
-
-/*
-If a note is visible for the given pos, delete it
-Otherwise create note at nearest tick
-*/
-void EditorState::toggleNoteAtCurrentTime(int pos) {
-    if (chart) {
-        std::set<Note> toggledNotes = {};
-
-        bool deleted_something = false;
-        for (auto note : visibleNotes) {
-            if (note.getPos() == pos) {
-                toggledNotes.insert(note);
-                chart->ref.Notes.erase(note);
-                deleted_something = true;
-                break;
-            }
-        }
-        if (not deleted_something) {
-            toggledNotes.emplace(pos, static_cast<int>(roundf(getCurrentTick())));
-            chart->ref.Notes.emplace(pos, static_cast<int>(roundf(getCurrentTick())));
-        }
-
-        chart->history.push(std::make_shared<ToggledNotes>(toggledNotes, not deleted_something));
-        chart->density_graph.should_recompute = true;
     }
 };
 
@@ -645,7 +591,7 @@ void EditorState::undo(NotificationsQueue& nq) {
         if (previous) {
             nq.push(std::make_shared<UndoNotification>(**previous));
             (*previous)->undoAction(*this);
-            chart_state->densityGraph.should_recompute = true;
+            chart_state->density_graph.should_recompute = true;
         }
     }
 };
@@ -656,77 +602,10 @@ void EditorState::redo(NotificationsQueue& nq) {
         if (next) {
             nq.push(std::make_shared<RedoNotification>(**next));
             (*next)->doAction(*this);
-            chart_state->densityGraph.should_recompute = true;
+            chart_state->density_graph.should_recompute = true;
         }
     }
 };
-
-void EditorState::cut(NotificationsQueue& nq) {
-    if (chart_state and (not chart_state->selectedNotes.empty())) {
-        std::stringstream ss;
-        ss << "Cut " << chart_state->selectedNotes.size() << " note";
-        if (ed->chart->selectedNotes.size() > 1) {
-            ss << "s";
-        }
-        nq.push(std::make_shared<TextNotification>(ss.str()));
-
-        chart_state->notesClipboard.copy(ed->chart->selectedNotes);
-        for (auto note : chart_state->selectedNotes) {
-            chart_state->chart.Notes.erase(note);
-        }
-        chart_state->history.push(
-            std::make_shared<RemoveNotes>(chart_state->selectedNotes)
-        );
-        chart_state->selectedNotes.clear();
-    }
-};
-
-void EditorState::copy(NotificationsQueue& nq) {
-    if (chart_state and (not chart_state->selectedNotes.empty())) {
-        std::stringstream ss;
-        ss << "Copied " << chart_state->selectedNotes.size() << " note";
-        if (chart_state->selectedNotes.size() > 1) {
-            ss << "s";
-        }
-        nq.push(std::make_shared<TextNotification>(ss.str()));
-        chart_state->notesClipboard.copy(chart_state->selectedNotes);
-    }
-};
-
-void EditorState::paste(NotificationsQueue& nq) {
-    if (chart_state and (not chart_state->notesClipboard.empty())) {
-        auto current_beat = current_snaped_beats();
-        std::set<Note> pasted_notes = chart_state->notesClipboard.paste(current_beat);
-        std::stringstream ss;
-        ss << "Pasted " << pasted_notes.size() << " note";
-        if (pasted_notes.size() > 1) {
-            ss << "s";
-        }
-        nq.push(std::make_shared<TextNotification>(ss.str()));
-
-        for (auto note : pasted_notes) {
-            chart_state->chart.Notes.insert(note);
-        }
-        chart_state->selectedNotes = pasted_notes;
-        chart_state->history.push(std::make_shared<AddNotes>(chart_state->selectedNotes));
-        chart_state->densityGraph.should_recompute = true;
-    }
-};
-
-void EditorState::delete_(NotificationsQueue& nq) {
-    if (chart_state and (not chart_state->selectedNotes.empty())) {
-        chart_state->history.push(
-            std::make_shared<RemoveNotes>(chart_state->selectedNotes)
-        );
-        nq.push(
-            std::make_shared<TextNotification>("Deleted selected notes")
-        );
-        for (auto note : chart_state->selectedNotes) {
-            chart_state->chart.Notes.erase(note);
-        }
-        chart_state->selectedNotes.clear();
-    }
-}
 
 
 void EditorState::reload_editable_range() {
@@ -816,10 +695,6 @@ void EditorState::reload_preview_audio() {
 
 void reload_applicable_timing() {
     // TODO: implement
-}
-
-std::string feis::stringify_level(std::optional<Decimal> level) {
-    return stringify_or(level, "(no level defined)");
 }
 
 void EditorState::open_chart(better::Chart& chart) {

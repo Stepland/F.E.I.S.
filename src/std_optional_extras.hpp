@@ -23,5 +23,5 @@ std::string stringify_or(std::optional<A> opt, std::string fallback) {
             return ss.str();
         },
         fallback
-    )
+    );
 }

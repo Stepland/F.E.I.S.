@@ -1,18 +1,49 @@
 #pragma once
 
-#include <set>
+#include <vector>
+#include <utility>
 
-#include "note.hpp"
+#include "better_note.hpp"
+#include "special_numeric_types.hpp"
+#include "src/better_notes.hpp"
+#include "variant_visitor.hpp"
 
+/*
+Stores a vector of notes with times relative to the first note in the vector,
+to allow pasting notes at another time in the chart by simply shifting
+all the note starting times.
+*/
 class NotesClipboard {
 public:
-    explicit NotesClipboard(const std::set<Note>& notes = {});
-
-    void copy(const std::set<Note>& notes);
-    std::set<Note> paste(int tick_offset);
+    NotesClipboard() = default;
+    void copy(const better::Notes& notes);
+    better::Notes paste(Fraction beat);
 
     bool empty() { return contents.empty(); };
 
 private:
-    std::set<Note> contents;
+    better::Notes contents = {};
 };
+
+const auto shifter = [](Fraction offset){
+    return VariantVisitor {
+        [=](const better::TapNote& tap_note) {
+            return better::Note{
+                std::in_place_type<better::TapNote>,
+                tap_note.get_time() + offset,
+                tap_note.get_position()
+            };
+        },
+        [=](const better::LongNote& long_note) {
+            return better::Note{
+                std::in_place_type<better::LongNote>,
+                long_note.get_time() + offset,
+                long_note.get_position(),
+                long_note.get_duration(),
+                long_note.get_tail_tip()
+            };
+        },
+    };
+};
+
+

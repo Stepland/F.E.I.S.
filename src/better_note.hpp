@@ -81,7 +81,7 @@ namespace better {
         Fraction get_end() const;
 
         template<typename T>
-        auto visit(T& visitor) const {std::visit(visitor, this->note);};
+        auto visit(T& visitor) const {return std::visit(visitor, this->note);};
 
         bool operator==(const Note&) const = default;
     private:
