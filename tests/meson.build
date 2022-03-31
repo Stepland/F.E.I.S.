@@ -23,6 +23,13 @@ executable(
 )
 
 executable(
+    'nowide',
+    'nowide.cpp',
+    dependencies: deps,
+    include_directories: inc,
+)
+
+executable(
     'scrollwheel',
     'scrollwheel.cpp',
     include_sources['imgui'],

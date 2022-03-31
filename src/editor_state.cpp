@@ -9,8 +9,10 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <nowide/fstream.hpp>
 #include <sstream>
 #include <SFML/System/Time.hpp>
+#include <stdexcept>
 #include <tinyfiledialogs.h>
 
 #include "better_note.hpp"
@@ -37,7 +39,8 @@ EditorState::EditorState(
     assets(assets_)
 {
     if (not song.charts.empty()) {
-        open_chart(this->song.charts.begin()->second);
+        auto& [name, chart] = *this->song.charts.begin();
+        open_chart(chart, name);
     }
     reload_music();
     reload_jacket();
@@ -195,7 +198,7 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
             for (auto const& note : chart_state->visible_notes) {
-                if (chart_state->chart.is_colliding(note)) {
+                if (chart_state->chart.notes.is_colliding(note, applicable_timing)) {
                     collisions[note.get_position().index()] = true;
                 }
             }
@@ -487,8 +490,7 @@ void EditorState::display_chart_list() {
                     chart_state ? chart_state->difficulty_name == name : false,
                     ImGuiSelectableFlags_SpanAllColumns
                 )) {
-                    ESHelper::save(*this);
-                    chart_state.emplace(chart, name, this->assets);
+                    open_chart(chart, name);
                 }
                 ImGui::NextColumn();
                 ImGui::TextUnformatted(better::stringify_level(chart.level).c_str());
@@ -524,31 +526,33 @@ void EditorState::display_linear_view() {
     ImGui::PopStyleVar(2);
 };
 
-saveChangesResponses EditorState::alert_save_changes() {
-    if (chart_state and (not chart_state->history.empty())) {
-        int response = tinyfd_messageBox(
+UserWantsToSave EditorState::ask_if_user_wishes_to_save() {
+    if (chart_state and (not chart_state->history.current_state_is_saved())) {
+        int response_code = tinyfd_messageBox(
             "Warning",
             "Do you want to save changes ?",
             "yesnocancel",
             "warning",
-            1);
-        switch (response) {
+            1
+        );
+        switch (response_code) {
             // cancel
             case 0:
-                return saveChangesCancel;
+                return UserWantsToSave::Cancel;
             // yes
             case 1:
-                return saveChangesYes;
+                return UserWantsToSave::Yes;
             // no
             case 2:
-                return saveChangesNo;
+                return UserWantsToSave::No;
             default:
-                std::stringstream ss;
-                ss << "Got unexcpected result from tinyfd_messageBox : " << response;
-                throw std::runtime_error(ss.str());
+                throw std::runtime_error(fmt::format(
+                    "Got unexcpected response code from tinyfd_messageBox : {}",
+                    response_code
+                ));
         }
     } else {
-        return saveChangesDidNotDisplayDialog;
+        return UserWantsToSave::DidNotDisplayDialog;
     }
 };
 
@@ -556,13 +560,13 @@ saveChangesResponses EditorState::alert_save_changes() {
 Saves if asked and returns false if user canceled
 */
 bool EditorState::save_changes_or_cancel() {
-    switch (alert_save_changes()) {
-        case saveChangesYes:
-            ESHelper::save(*this);
-        case saveChangesNo:
-        case saveChangesDidNotDisplayDialog:
+    switch (ask_if_user_wishes_to_save()) {
+        case UserWantsToSave::Yes:
+            save();
+        case UserWantsToSave::No:
+        case UserWantsToSave::DidNotDisplayDialog:
             return true;
-        case saveChangesCancel:
+        case UserWantsToSave::Cancel:
         default:
             return false;
     }
@@ -587,7 +591,7 @@ void EditorState::move_forwards_in_time() {
 
 void EditorState::undo(NotificationsQueue& nq) {
     if (chart_state) {
-        auto previous = chart_state->history.get_previous();
+        auto previous = chart_state->history.pop_previous();
         if (previous) {
             nq.push(std::make_shared<UndoNotification>(**previous));
             (*previous)->undoAction(*this);
@@ -598,7 +602,7 @@ void EditorState::undo(NotificationsQueue& nq) {
 
 void EditorState::redo(NotificationsQueue& nq) {
     if (chart_state) {
-        auto next = chart_state->history.get_next();
+        auto next = chart_state->history.gpop_next();
         if (next) {
             nq.push(std::make_shared<RedoNotification>(**next));
             (*next)->doAction(*this);
@@ -614,8 +618,9 @@ void EditorState::reload_editable_range() {
     if (music_state) {
         new_range += music_state->music.getDuration();
     }
-    if (chart_state) {
-        new_range += chart_state->chart.time_of_last_event().value_or(sf::Time::Zero);
+    if (chart_state and not chart_state->chart.notes.empty()) {
+        const auto beat_of_last_event = chart_state->chart.notes.crbegin()->second.get_end();
+        new_range += applicable_timing.time_at(beat_of_last_event);
     }
 
     new_range.end += sf::seconds(10);
@@ -686,9 +691,8 @@ void EditorState::reload_preview_audio() {
     }
 
     const auto path = song_path->parent_path() / song.metadata.preview_file;
-    try {
-        preview_audio.emplace(path.string());
-    } catch (const std::exception& e) {
+    preview_audio.emplace();
+    if (not preview_audio->openFromFile(path.string())) {
         preview_audio.reset();
     }
 };
@@ -703,12 +707,28 @@ void EditorState::reload_applicable_timing() {
 
 void EditorState::open_chart(better::Chart& chart, const std::string& name) {
     chart_state.emplace(chart, name, assets);
-    reload_applicable_timing();
     reload_editable_range();
+    reload_applicable_timing();
 };
 
-void EditorState::save(const std::filesystem::path& file) {
-    const auto memon = song.dump_as_memon_1_0_0();
+void EditorState::save(const std::filesystem::path& path) {
+    const auto memon = song.dump_for_memon_1_0_0();
+    nowide::ofstream file{path};
+    if (not file) {
+        throw std::runtime_error(
+            fmt::format("Cannot write to file {}", path.string())
+        );
+    }
+    file << memon.dump(4) << std::endl;
+    file.close();
+    if (not file) {
+        throw std::runtime_error(
+            fmt::format("Error while closing file {}", path.string())
+        );
+    }
+    if (chart_state) {
+        chart_state->history.mark_as_saved();
+    }
 }
 
 void ESHelper::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
@@ -722,7 +742,7 @@ void ESHelper::open(std::optional<EditorState>& ed, std::filesystem::path assets
 
 void ESHelper::openFromFile(
     std::optional<EditorState>& ed,
-    std::filesystem::path file,
+    std::filesystem::path song_path,
     std::filesystem::path assets,
     std::filesystem::path settings
 ) {
@@ -751,8 +771,8 @@ bool ESHelper::saveOrCancel(std::optional<EditorState>& ed) {
 /*
  * Returns the newly created chart if there is one
  */
-std::optional<Chart> ESHelper::NewChartDialog::display(EditorState& editorState) {
-    std::optional<Chart> newChart;
+std::optional<better::Chart> ESHelper::NewChartDialog::display(EditorState& editorState) {
+    std::optional<better::Chart> newChart;
     if (ImGui::Begin(
             "New Chart",
             &editorState.showNewChartDialog,
@@ -768,8 +788,8 @@ std::optional<Chart> ESHelper::NewChartDialog::display(EditorState& editorState)
         }
         if (ImGui::BeginCombo("Difficulty", comboPreview.c_str())) {
             for (auto dif_name : {"BSC", "ADV", "EXT"}) {
-                if (editorState.song.Charts.find(dif_name)
-                    == editorState.song.Charts.end()) {
+                if (editorState.song.charts.find(dif_name)
+                    == editorState.song.charts.end()) {
                     if (ImGui::Selectable(dif_name, dif_name == difficulty)) {
                         showCustomDifName = false;
                         difficulty = dif_name;

@@ -62,6 +62,8 @@ namespace better {
         std::set<BPMEvent, decltype(order_by_seconds)> events_by_seconds{order_by_seconds};
     };
 
+    const Timing fallback_fiming({{0, 120}}, {0,0});
+
     const auto frac_to_time = [](const Fraction& f) {
         auto microseconds = f * 1000000;
         return sf::microseconds(microseconds.convert_to<sf::Int64>());

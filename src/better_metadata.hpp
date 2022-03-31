@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <json.hpp>
+
 #include "special_numeric_types.hpp"
 
 namespace better {
@@ -18,5 +20,7 @@ namespace better {
         PreviewLoop preview_loop;
         std::string preview_file = "";
         bool use_preview_file = false;
+
+        nlohmann::ordered_json dump_for_memon_1_0_0() const;
     };
 }

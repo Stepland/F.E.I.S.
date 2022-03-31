@@ -44,10 +44,9 @@ namespace better {
             decltype(order_by_difficulty_name)
         > charts{order_by_difficulty_name};
         Metadata metadata;
-        std::optional<Timing> timing;
+        Timing timing;
         std::optional<Hakus> hakus;
 
-        nlohmann::ordered_json dump_as_memon_1_0_0() const;
-        nlohmann::ordered_json dump_metadata_1_0_0() const;
+        nlohmann::ordered_json dump_for_memon_1_0_0() const;
     };
 }

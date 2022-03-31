@@ -16,7 +16,7 @@
 #include "sound_effect.hpp"
 #include "widgets/blank_screen.hpp"
 
-int main(int argc, char** argv) {
+int main() {
     // TODO : Make the playfield not appear when there's no chart selected
     // TODO : Make the linear preview display the end of the chart
     // TODO : Make the linear preview timebar height movable
@@ -562,6 +562,18 @@ int main(int argc, char** argv) {
         {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
+                    if (editor_state) {
+                        switch (editor_state->ask_if_user_wishes_to_save()) {
+                            case UserWantsToSave::Yes:
+                                editor_state->save(path);
+                                break;
+                            case UserWantsToSave::No:
+                            case UserWantsToSave::DidNotDisplayDialog: // Already saved
+                                break;
+                            case UserWantsToSave::Cancel:
+                                break;
+                        }
+                    }
                     if (ESHelper::saveOrCancel(editor_state)) {
                         const char* _filepath =
                             tinyfd_saveFileDialog("New File", nullptr, 0, nullptr, nullptr);
@@ -579,7 +591,8 @@ int main(int argc, char** argv) {
                                     e.what(),
                                     "ok",
                                     "error",
-                                    1);
+                                    1
+                                );
                             }
                         }
                     }

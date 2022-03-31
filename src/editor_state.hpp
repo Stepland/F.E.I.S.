@@ -22,11 +22,11 @@
 class ActionWithMessage;
 class OpenChart;
 
-enum saveChangesResponses {
-    saveChangesYes,
-    saveChangesNo,
-    saveChangesCancel,
-    saveChangesDidNotDisplayDialog
+enum class UserWantsToSave {
+    Yes,
+    No,
+    Cancel,
+    DidNotDisplayDialog
 };
 
 /*
@@ -97,7 +97,7 @@ public:
     bool showHistory;
     bool showSoundSettings;
 
-    saveChangesResponses alert_save_changes();
+    UserWantsToSave ask_if_user_wishes_to_save();
     bool save_changes_or_cancel();
 
     void toggle_note_at_current_time(const better::Position& pos);
@@ -108,7 +108,7 @@ public:
     void undo(NotificationsQueue& nq);
     void redo(NotificationsQueue& nq);
 
-    void save(const std::filesystem::path& file);
+    void save(const std::filesystem::path& path);
 
 private:
 
@@ -131,6 +131,8 @@ private:
     void open_chart(better::Chart& chart, const std::string& name);
 
     std::filesystem::path assets;
+
+    friend class ESHelper::NewChartDialog;
 };
 
 namespace ESHelper {

@@ -179,12 +179,10 @@ namespace better {
 
     nlohmann::ordered_json Timing::dump_for_memon_1_0_0() const {
         nlohmann::ordered_json j;
-        j["offset"] = convert_to_decimal(fractional_seconds_at(0), 5).format("f");
+        const auto offset = fractional_seconds_at(0);
+        j["offset"] = convert_to_decimal(offset, 5).format("f");
         auto bpms = nlohmann::ordered_json::array();
         for (const auto& bpm_change : events_by_beats) {
-            nlohmann::ordered_json bpm_event;
-            bpm_event["beat"] = beat_to_best_form(bpm_change.get_beats());
-            bpm_event["bpm"] = bpm_change.get_bpm().format("f");
             bpms.push_back({
                 {"beat", beat_to_best_form(bpm_change.get_beats())},
                 {"bpm", bpm_change.get_bpm().format("f")}

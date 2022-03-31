@@ -25,6 +25,7 @@ deps = [
     dependency('openal'),
     dependency('boost'),
     dependency('mpdec++', fallback: ['mpdecimal', 'mpdecpp_dep']),
+    dependency('nowide')
 ]
 
 subdir('tests')
