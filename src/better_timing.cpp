@@ -1,7 +1,12 @@
 #include "better_timing.hpp"
 
+#include <json.hpp>
+
+#include "better_beats.hpp"
+#include "src/better_beats.hpp"
+
 namespace better {
-    BPMAtBeat::BPMAtBeat(Fraction beats, Fraction bpm) : beats(beats), bpm(bpm) {
+    BPMAtBeat::BPMAtBeat(Fraction beats, Decimal bpm) : beats(beats), bpm(bpm) {
         if (bpm <= 0) {
             std::stringstream ss;
             ss << "Attempted to create a BPMAtBeat with negative BPM : ";
@@ -10,14 +15,23 @@ namespace better {
         }
     };
 
-    BPMEvent::BPMEvent(Fraction beats, Fraction seconds, Fraction bpm) :
+    BPMEvent::BPMEvent(Fraction beats, Fraction seconds, Decimal bpm) :
         BPMAtBeat(beats, bpm),
         seconds(seconds)
     {};
 
+    Fraction BPMAtBeat::get_beats() const {
+        return beats;
+    }
+
+    Decimal BPMAtBeat::get_bpm() const {
+        return bpm;
+    }
+
     Fraction BPMEvent::get_seconds() const {
         return seconds;
     };
+
     
     /*
     Create a Time Map from a list of BPM changes with times given in
@@ -75,7 +89,7 @@ namespace better {
             auto beats_since_last_event =
                 current->get_beats() - previous->get_beats();
             auto seconds_since_last_event = 
-                (60 * beats_since_last_event) / previous->get_bpm();
+                (60 * beats_since_last_event) / convert_to_fraction(previous->get_bpm());
             current_second += seconds_since_last_event;
             bpm_changes.emplace_back(
                 current->get_beats(),
@@ -125,7 +139,7 @@ namespace better {
         auto seconds_since_previous_event = (
             Fraction{60}
             * beats_since_previous_event
-            / bpm_change->get_bpm()
+            / convert_to_fraction(bpm_change->get_bpm())
         );
         return bpm_change->get_seconds() + seconds_since_previous_event;
     };
@@ -156,10 +170,27 @@ namespace better {
         }
         auto seconds_since_previous_event = fractional_seconds - bpm_change->get_seconds();
         auto beats_since_previous_event = (
-            bpm_change->get_bpm()
+            convert_to_fraction(bpm_change->get_bpm())
             * seconds_since_previous_event
             / Fraction{60}
         );
         return bpm_change->get_beats() + beats_since_previous_event;
     };
+
+    nlohmann::ordered_json Timing::dump_for_memon_1_0_0() const {
+        nlohmann::ordered_json j;
+        j["offset"] = convert_to_decimal(fractional_seconds_at(0), 5).format("f");
+        auto bpms = nlohmann::ordered_json::array();
+        for (const auto& bpm_change : events_by_beats) {
+            nlohmann::ordered_json bpm_event;
+            bpm_event["beat"] = beat_to_best_form(bpm_change.get_beats());
+            bpm_event["bpm"] = bpm_change.get_bpm().format("f");
+            bpms.push_back({
+                {"beat", beat_to_best_form(bpm_change.get_beats())},
+                {"bpm", bpm_change.get_bpm().format("f")}
+            });
+        }
+        j["bpms"] = bpms;
+        return j;
+    }
 }

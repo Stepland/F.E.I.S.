@@ -9,6 +9,7 @@
 
 #include <SFML/System/Time.hpp>
 
+#include "json.hpp"
 #include "special_numeric_types.hpp"
 
 namespace better {
@@ -19,17 +20,17 @@ namespace better {
 
     class BPMAtBeat {
     public:
-        BPMAtBeat(Fraction beats, Fraction bpm);
+        BPMAtBeat(Fraction beats, Decimal bpm);
         Fraction get_beats() const;
-        Fraction get_bpm() const;
+        Decimal get_bpm() const;
     private:
         Fraction beats;
-        Fraction bpm;
+        Decimal bpm;
     };
 
     class BPMEvent : public BPMAtBeat {
     public:
-        BPMEvent(Fraction beats, Fraction seconds, Fraction bpm);
+        BPMEvent(Fraction beats, Fraction seconds, Decimal bpm);
         Fraction get_seconds() const;
     private:
         Fraction seconds;
@@ -53,6 +54,8 @@ namespace better {
         sf::Time time_between(Fraction beat_a, Fraction beat_b) const;
 
         Fraction beats_at(sf::Time time) const;
+
+        nlohmann::ordered_json dump_for_memon_1_0_0() const;
         
     private:
         std::set<BPMEvent, decltype(order_by_beats)> events_by_beats{order_by_beats};

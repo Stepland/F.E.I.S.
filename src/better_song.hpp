@@ -8,50 +8,18 @@
 #include <string>
 #include <tuple>
 
+#include <json.hpp>
 #include <SFML/System/Time.hpp>
 
+#include "better_chart.hpp"
+#include "better_hakus.hpp"
+#include "better_metadata.hpp"
 #include "better_notes.hpp"
 #include "better_timing.hpp"
 #include "special_numeric_types.hpp"
 
 namespace better {
-    struct Chart {
-        std::optional<Decimal> level;
-        Timing timing;
-        std::optional<std::set<Fraction>> hakus;
-        Notes notes;
-
-        /*
-        Returns true if the given note (assumed to already be part of the
-        chart) is colliding with ANOTHER note in the chart. This means notes
-        exactly equal to the one passed as an argument are NOT taken into
-        account.
-        */
-        bool is_colliding(const better::Note& note);
-
-        std::optional<sf::Time> time_of_last_event() const;
-    };
-
     std::string stringify_level(std::optional<Decimal> level);
-
-    class PreviewLoop {
-    public:
-        PreviewLoop(Decimal start, Decimal duration);
-
-        Decimal get_start() const;
-        Decimal get_duration() const;
-    private:
-        Decimal start;
-        Decimal duration;
-    };
-
-    struct Metadata {
-        std::optional<std::string> title;
-        std::optional<std::string> artist;
-        std::optional<std::filesystem::path> audio;
-        std::optional<std::filesystem::path> jacket;
-        std::optional<std::variant<PreviewLoop, std::filesystem::path>> preview;
-    };
 
     const auto difficulty_name_comp_key = [](const std::string& s) {
         if (s == "BSC") {
@@ -76,6 +44,10 @@ namespace better {
             decltype(order_by_difficulty_name)
         > charts{order_by_difficulty_name};
         Metadata metadata;
-        Timing timing;
+        std::optional<Timing> timing;
+        std::optional<Hakus> hakus;
+
+        nlohmann::ordered_json dump_as_memon_1_0_0() const;
+        nlohmann::ordered_json dump_metadata_1_0_0() const;
     };
 }

@@ -1,5 +1,7 @@
 #include "special_numeric_types.hpp"
 
+#include <boost/math/special_functions/math_fwd.hpp>
+#include <boost/math/special_functions/pow.hpp>
 #include <boost/multiprecision/gmp.hpp>
 #include <boost/multiprecision/number.hpp>
 
@@ -36,4 +38,16 @@ Decimal convert_to_decimal(const Fraction& f, unsigned int precision) {
         Decimal{static_cast<long long>(boost::multiprecision::numerator(floored))}
         / Decimal{static_cast<long long>(boost::multiprecision::denominator(floored))}
     );
+}
+
+Fraction convert_to_fraction(const Decimal& d) {
+    const auto reduced = d.reduce();
+    const auto sign = reduced.sign();
+    const auto exponent = reduced.exponent();
+    const auto coefficient = reduced.coeff().u64();
+    if (exponent >= 0) {
+        return Fraction{sign > 0 ? 1 : -1} * Fraction{coefficient} * fast_pow(Fraction{10}, exponent);
+    } else {
+        return Fraction{sign > 0 ? 1 : -1} * Fraction{coefficient} / fast_pow(Fraction{10}, exponent);
+    }
 }

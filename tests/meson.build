@@ -16,6 +16,13 @@ executable(
 )
 
 executable(
+    'json_decimal',
+    'json_decimal.cpp',
+    dependencies: deps,
+    include_directories: inc,
+)
+
+executable(
     'scrollwheel',
     'scrollwheel.cpp',
     include_sources['imgui'],

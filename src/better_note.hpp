@@ -6,6 +6,8 @@
 #include <utility>
 #include <variant>
 
+#include <json.hpp>
+
 #include "special_numeric_types.hpp"
 #include "variant_visitor.hpp"
 
@@ -46,6 +48,7 @@ namespace better {
 
         bool operator==(const TapNote&) const = default;
 
+        nlohmann::ordered_json dump_for_memon_1_0_0() const;
     private:
         Fraction time;
         Position position;
@@ -64,6 +67,9 @@ namespace better {
         unsigned int get_tail_angle() const;
 
         bool operator==(const LongNote&) const = default;
+
+        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        int tail_as_6_notation() const;
     private:
         Fraction time;
         Position position;
@@ -84,6 +90,8 @@ namespace better {
         auto visit(T& visitor) const {return std::visit(visitor, this->note);};
 
         bool operator==(const Note&) const = default;
+
+        nlohmann::ordered_json dump_for_memon_1_0_0() const;
     private:
         std::variant<TapNote, LongNote> note;
     };

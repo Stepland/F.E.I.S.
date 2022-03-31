@@ -1,4 +1,6 @@
 sources += files(
+    'better_chart.cpp',
+    'better_metadata.cpp',
     'better_note.cpp',
     'better_notes.cpp',
     'better_song.cpp',
@@ -9,6 +11,7 @@ sources += files(
     'fumen.cpp',
     'history_actions.cpp',
     'imgui_extras.cpp',
+    'json_decimal_parser.cpp',
     'ln_marker.cpp',
     'main.cpp',
     'marker.cpp',
@@ -21,7 +24,6 @@ sources += files(
     'precise_music.cpp',
     'preferences.cpp',
     'sound_effect.cpp',
-    'time_interval.cpp',
     'toolbox.cpp',
 )
 

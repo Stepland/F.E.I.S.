@@ -1,5 +1,8 @@
 #include "better_note.hpp"
+
 #include <variant>
+
+#include "better_beats.hpp"
 
 namespace better {
     Position::Position(unsigned int index) : x(index % 4), y (index / 4) {
@@ -45,6 +48,13 @@ namespace better {
 
     Position TapNote::get_position() const {
         return position;
+    };
+
+    nlohmann::ordered_json TapNote::dump_for_memon_1_0_0() const {
+        return {
+            {"n", position.index()},
+            {"t", beat_to_best_form(time)}
+        };
     };
 
     LongNote::LongNote(Fraction time, Position position, Fraction duration, Position tail_tip)
@@ -123,8 +133,24 @@ namespace better {
                 return 90;
             }
         }
-    }
+    };
 
+    nlohmann::ordered_json LongNote::dump_for_memon_1_0_0() const {
+        return {
+            {"n", position.index()},
+            {"t", beat_to_best_form(time)},
+            {"l", beat_to_best_form(duration)},
+            {"p", tail_as_6_notation()}
+        };
+    };
+
+    int LongNote::tail_as_6_notation() const {
+        if (tail_tip.get_y() == position.get_y()) {
+            return tail_tip.get_x() - static_cast<int>(tail_tip.get_x() > position.get_x());
+        } else {
+            return 3 + tail_tip.get_y() - int(tail_tip.get_y() > position.get_y());
+        }
+    }
     
     auto _time_bounds = VariantVisitor {
         [](const TapNote& t) -> std::pair<Fraction, Fraction> { return {t.get_time(), t.get_time()}; },
@@ -145,6 +171,10 @@ namespace better {
 
     Fraction Note::get_end() const {
         return this->get_time_bounds().second;
+    }
+
+    nlohmann::ordered_json Note::dump_for_memon_1_0_0() const {
+        return std::visit([](const auto& n){return n.dump_for_memon_1_0_0();}, this->note);
     }
 }
 

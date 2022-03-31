@@ -19,6 +19,7 @@
 #include "imgui_extras.hpp"
 #include "metadata_in_gui.hpp"
 #include "special_numeric_types.hpp"
+#include "src/better_song.hpp"
 #include "src/chart.hpp"
 #include "std_optional_extras.hpp"
 #include "variant_visitor.hpp"
@@ -32,7 +33,6 @@ EditorState::EditorState(
     playfield(assets_),
     linear_view(assets_),
     song(song_),
-    metadata_in_gui(song_.metadata),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -241,12 +241,12 @@ void EditorState::display_properties() {
         }
         ImGui::EndChild();
 
-        ImGui::InputText("Title", &metadata_in_gui.title);
-        ImGui::InputText("Artist", &metadata_in_gui.artist);
+        ImGui::InputText("Title", &song.metadata.title);
+        ImGui::InputText("Artist", &song.metadata.artist);
 
         if (feis::InputTextColored(
             "Audio",
-            &metadata_in_gui.audio,
+            &song.metadata.audio,
             music_state.has_value(),
             "Invalid Audio Path"
         )) {
@@ -254,7 +254,7 @@ void EditorState::display_properties() {
         }
         if (feis::InputTextColored(
             "Jacket",
-            &metadata_in_gui.jacket,
+            &song.metadata.jacket,
             jacket.has_value(),
             "Invalid Jacket Path"
         )) {
@@ -264,45 +264,45 @@ void EditorState::display_properties() {
         ImGui::Separator();
         
         ImGui::Text("Preview");
-        ImGui::Checkbox("Use separate preview file", &metadata_in_gui.use_preview_file);
-        if (metadata_in_gui.use_preview_file) {
+        ImGui::Checkbox("Use separate preview file", &song.metadata.use_preview_file);
+        if (song.metadata.use_preview_file) {
             if (feis::InputTextColored(
                 "File",
-                &metadata_in_gui.preview_file,
+                &song.metadata.preview_file,
                 preview_audio.has_value(),
                 "Invalid Path"
             )) {
                 reload_preview_audio();
             }
         } else {
-            if (feis::InputDecimal("Start", &metadata_in_gui.preview_loop.start)) {
-                metadata_in_gui.preview_loop.start = std::max(
+            if (feis::InputDecimal("Start", &song.metadata.preview_loop.start)) {
+                song.metadata.preview_loop.start = std::max(
                     Decimal{0},
-                    metadata_in_gui.preview_loop.start
+                    song.metadata.preview_loop.start
                 );
                 if (music_state.has_value()) {
-                    metadata_in_gui.preview_loop.start = std::min(
+                    song.metadata.preview_loop.start = std::min(
                         Decimal{music_state->music.getDuration().asMicroseconds()} / 1000000,
-                        metadata_in_gui.preview_loop.start
+                        song.metadata.preview_loop.start
                     );
                 }
             }
-            if (feis::InputDecimal("Duration", &metadata_in_gui.preview_loop.duration)) {
-                metadata_in_gui.preview_loop.duration = std::max(
+            if (feis::InputDecimal("Duration", &song.metadata.preview_loop.duration)) {
+                song.metadata.preview_loop.duration = std::max(
                     Decimal{0},
-                    metadata_in_gui.preview_loop.duration
+                    song.metadata.preview_loop.duration
                 );
                 if (music_state.has_value()) {
-                    metadata_in_gui.preview_loop.start = std::min(
+                    song.metadata.preview_loop.start = std::min(
                         (
                             Decimal{
                                 music_state->music
                                 .getDuration()
                                 .asMicroseconds()
                             } / 1000000 
-                            - metadata_in_gui.preview_loop.start
+                            - song.metadata.preview_loop.start
                         ),
-                        metadata_in_gui.preview_loop.start
+                        song.metadata.preview_loop.start
                     );
                 }
             }
@@ -321,11 +321,11 @@ void EditorState::display_status() {
     ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
     {
         if (not music_state) {
-            if (not metadata_in_gui.audio.empty()) {
+            if (not song.metadata.audio.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
                     "Invalid music path : %s",
-                    metadata_in_gui.audio.c_str());
+                    song.metadata.audio.c_str());
             } else {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -334,11 +334,11 @@ void EditorState::display_status() {
         }
 
         if (not jacket) {
-            if (not metadata_in_gui.jacket.empty()) {
+            if (not song.metadata.jacket.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
                     "Invalid jacket path : %s",
-                    metadata_in_gui.jacket.c_str());
+                    song.metadata.jacket.c_str());
             } else {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -636,13 +636,13 @@ void EditorState::reload_editable_range() {
  * of the song Resets the album cover state if anything fails
  */
 void EditorState::reload_jacket() {
-    if (not song_path.has_value() or not song.metadata.jacket.has_value()) {
+    if (not song_path.has_value() or song.metadata.jacket.empty()) {
         jacket.reset();
         return;
     }
 
     jacket.emplace();
-    auto jacket_path = song_path->parent_path() / metadata_in_gui.jacket;
+    auto jacket_path = song_path->parent_path() / song.metadata.jacket;
 
     if (
         not std::filesystem::exists(jacket_path)
@@ -658,12 +658,12 @@ void EditorState::reload_jacket() {
  * Updates playbackPosition and preview_end as well
  */
 void EditorState::reload_music() {
-    if (not song_path.has_value()) {
+    if (not song_path.has_value() or song.metadata.audio.empty()) {
         music_state.reset();
         return;
     }
 
-    const auto absolute_music_path = song_path->parent_path() / metadata_in_gui.audio;
+    const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
     try {
         music_state.emplace(absolute_music_path);
     } catch (const std::exception& e) {
@@ -680,35 +680,35 @@ void EditorState::reload_music() {
 };
 
 void EditorState::reload_preview_audio() {
-    if (not song_path.has_value()) {
+    if (not song_path.has_value() or song.metadata.preview_file.empty()) {
         preview_audio.reset();
         return;
     }
 
-    const auto path = song_path->parent_path() / metadata_in_gui.preview_file;
+    const auto path = song_path->parent_path() / song.metadata.preview_file;
     try {
-        preview_audio.emplace(path);
+        preview_audio.emplace(path.string());
     } catch (const std::exception& e) {
         preview_audio.reset();
     }
 };
 
-void reload_applicable_timing() {
-    // TODO: implement
+void EditorState::reload_applicable_timing() {
+    if (chart_state) {
+        applicable_timing = chart_state->chart.timing;
+    } else {
+        applicable_timing = song.timing;
+    }
 }
 
-void EditorState::open_chart(better::Chart& chart) {
-    chart_state.emplace(chart, assets);
+void EditorState::open_chart(better::Chart& chart, const std::string& name) {
+    chart_state.emplace(chart, name, assets);
     reload_applicable_timing();
     reload_editable_range();
 };
 
-void ESHelper::save(EditorState& ed) {
-    try {
-        ed.song.autoSaveAsMemon();
-    } catch (const std::exception& e) {
-        tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
-    }
+void EditorState::save(const std::filesystem::path& file) {
+    const auto memon = song.dump_as_memon_1_0_0();
 }
 
 void ESHelper::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {

@@ -108,11 +108,12 @@ public:
     void undo(NotificationsQueue& nq);
     void redo(NotificationsQueue& nq);
 
+    void save(const std::filesystem::path& file);
+
 private:
 
     better::Song song;
 
-    MetadataInGui metadata_in_gui;
     /*
     sf::Time bounds (in the audio file "coordinates") which are accessible
     (and maybe editable) from the editor, can extend before and after
@@ -127,15 +128,12 @@ private:
     better::Timing& applicable_timing;
     void reload_applicable_timing();
 
-
-
-    void open_chart(better::Chart& chart);
+    void open_chart(better::Chart& chart, const std::string& name);
 
     std::filesystem::path assets;
 };
 
 namespace ESHelper {
-    void save(EditorState& ed);
     void open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings);
     void openFromFile(
         std::optional<EditorState>& ed,
