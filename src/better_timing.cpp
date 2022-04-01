@@ -32,6 +32,13 @@ namespace better {
         return seconds;
     };
 
+    /*
+    Create a default-constructed Timing, which corresponds to the fallback
+    timing object from the memon spec : 120 BPM, offset 0
+    */
+    Timing::Timing():
+        Timing({{0, 120}}, {0,0})
+    {};
     
     /*
     Create a Time Map from a list of BPM changes with times given in

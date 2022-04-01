@@ -8,6 +8,7 @@ sources += files(
     'chart_state.cpp',
     'chart.cpp',
     'editor_state.cpp',
+    'file_dialogs.cpp',
     'fumen.cpp',
     'history_actions.cpp',
     'imgui_extras.cpp',

@@ -35,11 +35,14 @@ enum class UserWantsToSave {
  */
 class EditorState {
 public:
+    explicit EditorState(const std::filesystem::path& assets);
     EditorState(
         const better::Song& song,
         const std::filesystem::path& assets,
         const std::filesystem::path& save_path
     );
+        
+    better::Song song;
 
     std::optional<std::filesystem::path> song_path;
 
@@ -97,7 +100,18 @@ public:
     bool showHistory;
     bool showSoundSettings;
 
-    UserWantsToSave ask_if_user_wishes_to_save();
+    /*
+    Return ::DidNotDisplayDialog if the current chart state is marked as saved,
+    otherwise ask the user if they want to save and return their answer
+    */
+    UserWantsToSave ask_to_save_if_needed();
+
+    /*
+    If the given song already has a dedicated file on disk, returns its path.
+    Otherwise use a dialog box to ask the user for a path and return it, or
+    return nothing if the user canceled
+    */
+    std::optional<std::filesystem::path> ask_for_save_path_if_needed();
     bool save_changes_or_cancel();
 
     void toggle_note_at_current_time(const better::Position& pos);
@@ -111,8 +125,6 @@ public:
     void save(const std::filesystem::path& path);
 
 private:
-
-    better::Song song;
 
     /*
     sf::Time bounds (in the audio file "coordinates") which are accessible
@@ -135,7 +147,7 @@ private:
     friend class ESHelper::NewChartDialog;
 };
 
-namespace ESHelper {
+namespace feis {
     void open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings);
     void openFromFile(
         std::optional<EditorState>& ed,

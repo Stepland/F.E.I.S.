@@ -46,6 +46,7 @@ namespace better {
 
     class Timing {
     public:
+        Timing();
         Timing(const std::vector<BPMAtBeat>& events, const SecondsAtBeat& offset);
 
         Fraction fractional_seconds_at(Fraction beats) const;
@@ -61,8 +62,6 @@ namespace better {
         std::set<BPMEvent, decltype(order_by_beats)> events_by_beats{order_by_beats};
         std::set<BPMEvent, decltype(order_by_seconds)> events_by_seconds{order_by_seconds};
     };
-
-    const Timing fallback_fiming({{0, 120}}, {0,0});
 
     const auto frac_to_time = [](const Fraction& f) {
         auto microseconds = f * 1000000;

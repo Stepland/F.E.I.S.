@@ -562,39 +562,27 @@ int main() {
         {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
+                    bool user_canceled = false;
                     if (editor_state) {
-                        switch (editor_state->ask_if_user_wishes_to_save()) {
+                        switch (editor_state->ask_to_save_if_needed()) {
                             case UserWantsToSave::Yes:
-                                editor_state->save(path);
+                                const auto path = editor_state->ask_for_save_path_if_needed();
+                                if (path) {
+                                    editor_state->save(*path);
+                                } else {
+                                    user_canceled = true;
+                                }
                                 break;
                             case UserWantsToSave::No:
                             case UserWantsToSave::DidNotDisplayDialog: // Already saved
                                 break;
                             case UserWantsToSave::Cancel:
+                                user_canceled = true;
                                 break;
                         }
                     }
-                    if (ESHelper::saveOrCancel(editor_state)) {
-                        const char* _filepath =
-                            tinyfd_saveFileDialog("New File", nullptr, 0, nullptr, nullptr);
-                        if (_filepath != nullptr) {
-                            std::filesystem::path filepath(_filepath);
-                            try {
-                                Fumen f(filepath);
-                                f.autoSaveAsMemon();
-                                editor_state.emplace(f, assets_folder);
-                                Toolbox::pushNewRecentFile(std::filesystem::canonical(
-                                    editor_state->song.path), settings_folder);
-                            } catch (const std::exception& e) {
-                                tinyfd_messageBox(
-                                    "Error",
-                                    e.what(),
-                                    "ok",
-                                    "error",
-                                    1
-                                );
-                            }
-                        }
+                    if (not user_canceled) {
+                        editor_state.emplace(assets_folder);
                     }
                 }
                 ImGui::Separator();

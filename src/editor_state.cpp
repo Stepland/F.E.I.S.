@@ -17,6 +17,7 @@
 
 #include "better_note.hpp"
 #include "chart_state.hpp"
+#include "file_dialogs.hpp"
 #include "history_actions.hpp"
 #include "imgui_extras.hpp"
 #include "metadata_in_gui.hpp"
@@ -26,15 +27,25 @@
 #include "std_optional_extras.hpp"
 #include "variant_visitor.hpp"
 
+EditorState::EditorState(const std::filesystem::path& assets_) : 
+    playfield(assets_),
+    linear_view(assets_),
+    applicable_timing(song.timing),
+    assets(assets_)
+{
+    reload_music();
+    reload_jacket();
+};
+
 EditorState::EditorState(
     const better::Song& song_,
     const std::filesystem::path& assets_,
     const std::filesystem::path& song_path = {}
 ) : 
+    song(song_),
     song_path(song_path),
     playfield(assets_),
     linear_view(assets_),
-    song(song_),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -526,7 +537,7 @@ void EditorState::display_linear_view() {
     ImGui::PopStyleVar(2);
 };
 
-UserWantsToSave EditorState::ask_if_user_wishes_to_save() {
+UserWantsToSave EditorState::ask_to_save_if_needed() {
     if (chart_state and (not chart_state->history.current_state_is_saved())) {
         int response_code = tinyfd_messageBox(
             "Warning",
@@ -556,11 +567,19 @@ UserWantsToSave EditorState::ask_if_user_wishes_to_save() {
     }
 };
 
+std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() {
+    if (song_path) {
+        return song_path;
+    } else {
+        return feis::ask_for_save_path();
+    }
+}
+
 /*
 Saves if asked and returns false if user canceled
 */
 bool EditorState::save_changes_or_cancel() {
-    switch (ask_if_user_wishes_to_save()) {
+    switch (ask_to_save_if_needed()) {
         case UserWantsToSave::Yes:
             save();
         case UserWantsToSave::No:
