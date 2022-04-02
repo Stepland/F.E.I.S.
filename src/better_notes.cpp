@@ -99,10 +99,10 @@ namespace better {
         return found_collision;
     };
 
-    nlohmann::ordered_json Notes::dump_for_memon_1_0_0() const {
+    nlohmann::ordered_json Notes::dump_to_memon_1_0_0() const {
         auto json_notes = nlohmann::ordered_json::array();
         for (const auto& [_, note] : *this) {
-            json_notes.push_back(note.dump_for_memon_1_0_0());
+            json_notes.push_back(note.dump_to_memon_1_0_0());
         }
         return json_notes;
     }

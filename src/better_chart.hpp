@@ -18,9 +18,14 @@ namespace better {
         std::optional<Hakus> hakus;
         Notes notes;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0(
+        nlohmann::ordered_json dump_to_memon_1_0_0(
             const nlohmann::ordered_json& fallback_timing_object
         ) const;
+
+        static Chart load_from_memon_legacy(
+            const nlohmann::json& json,
+            const Timing& timing
+        );
     };
 
     /*

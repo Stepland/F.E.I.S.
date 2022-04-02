@@ -537,35 +537,61 @@ void EditorState::display_linear_view() {
     ImGui::PopStyleVar(2);
 };
 
-UserWantsToSave EditorState::ask_to_save_if_needed() {
-    if (chart_state and (not chart_state->history.current_state_is_saved())) {
-        int response_code = tinyfd_messageBox(
-            "Warning",
-            "Do you want to save changes ?",
-            "yesnocancel",
-            "warning",
-            1
-        );
-        switch (response_code) {
-            // cancel
-            case 0:
-                return UserWantsToSave::Cancel;
-            // yes
-            case 1:
-                return UserWantsToSave::Yes;
-            // no
-            case 2:
-                return UserWantsToSave::No;
-            default:
-                throw std::runtime_error(fmt::format(
-                    "Got unexcpected response code from tinyfd_messageBox : {}",
-                    response_code
-                ));
-        }
+bool EditorState::needs_to_save() const {
+    if (chart_state) {
+        return not chart_state->history.current_state_is_saved();
     } else {
-        return UserWantsToSave::DidNotDisplayDialog;
+        return false;
+    }
+}
+
+EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
+    int response_code = tinyfd_messageBox(
+        "Warning",
+        "Do you want to save changes ?",
+        "yesnocancel",
+        "warning",
+        1
+    );
+    switch (response_code) {
+        // cancel
+        case 0:
+            return EditorState::UserWantsToSave::Cancel;
+        // yes
+        case 1:
+            return EditorState::UserWantsToSave::Yes;
+        // no
+        case 2:
+            return EditorState::UserWantsToSave::No;
+        default:
+            throw std::runtime_error(fmt::format(
+                "Got unexcpected response code from tinyfd_messageBox : {}",
+                response_code
+            ));
     }
 };
+
+EditorState::SaveOutcome EditorState::save_if_needed() {
+    if (not needs_to_save()) {
+        return EditorState::SaveOutcome::NoSavingNeeded;
+    }
+    switch (ask_if_user_wants_to_save()) {
+        case EditorState::UserWantsToSave::Yes:
+            {
+                const auto path = ask_for_save_path_if_needed();
+                if (not path) {
+                    return EditorState::SaveOutcome::UserCanceled; 
+                } else {
+                    save(*path);
+                    return EditorState::SaveOutcome::UserSaved;
+                }
+            }
+        case EditorState::UserWantsToSave::No:
+            return EditorState::SaveOutcome::UserDeclindedSaving;
+        case EditorState::UserWantsToSave::Cancel:
+            return EditorState::SaveOutcome::UserCanceled;
+    }
+}
 
 std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() {
     if (song_path) {
@@ -574,22 +600,6 @@ std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() 
         return feis::ask_for_save_path();
     }
 }
-
-/*
-Saves if asked and returns false if user canceled
-*/
-bool EditorState::save_changes_or_cancel() {
-    switch (ask_to_save_if_needed()) {
-        case UserWantsToSave::Yes:
-            save();
-        case UserWantsToSave::No:
-        case UserWantsToSave::DidNotDisplayDialog:
-            return true;
-        case UserWantsToSave::Cancel:
-        default:
-            return false;
-    }
-};
 
 void EditorState::move_backwards_in_time() {
     auto beats = current_exact_beats();
@@ -621,7 +631,7 @@ void EditorState::undo(NotificationsQueue& nq) {
 
 void EditorState::redo(NotificationsQueue& nq) {
     if (chart_state) {
-        auto next = chart_state->history.gpop_next();
+        auto next = chart_state->history.pop_next();
         if (next) {
             nq.push(std::make_shared<RedoNotification>(**next));
             (*next)->doAction(*this);
@@ -731,7 +741,7 @@ void EditorState::open_chart(better::Chart& chart, const std::string& name) {
 };
 
 void EditorState::save(const std::filesystem::path& path) {
-    const auto memon = song.dump_for_memon_1_0_0();
+    const auto memon = song.dump_to_memon_1_0_0();
     nowide::ofstream file{path};
     if (not file) {
         throw std::runtime_error(
@@ -750,16 +760,16 @@ void EditorState::save(const std::filesystem::path& path) {
     }
 }
 
-void ESHelper::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
+void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
     const char* _filepath =
         tinyfd_openFileDialog("Open File", nullptr, 0, nullptr, nullptr, false);
     if (_filepath != nullptr) {
         auto filepath = std::filesystem::path{_filepath};
-        ESHelper::openFromFile(ed, filepath, assets, settings);
+        feis::openFromFile(ed, filepath, assets, settings);
     }
 }
 
-void ESHelper::openFromFile(
+void feis::openFromFile(
     std::optional<EditorState>& ed,
     std::filesystem::path song_path,
     std::filesystem::path assets,
@@ -776,21 +786,9 @@ void ESHelper::openFromFile(
 }
 
 /*
- * returns true if user saved or if saving wasn't necessary
- * returns false if user canceled
- */
-bool ESHelper::saveOrCancel(std::optional<EditorState>& ed) {
-    if (ed) {
-        return ed->save_changes_or_cancel();
-    } else {
-        return true;
-    }
-}
-
-/*
  * Returns the newly created chart if there is one
  */
-std::optional<better::Chart> ESHelper::NewChartDialog::display(EditorState& editorState) {
+std::optional<better::Chart> feis::NewChartDialog::display(EditorState& editorState) {
     std::optional<better::Chart> newChart;
     if (ImGui::Begin(
             "New Chart",
@@ -876,7 +874,7 @@ std::optional<better::Chart> ESHelper::NewChartDialog::display(EditorState& edit
     return newChart;
 }
 
-void ESHelper::ChartPropertiesDialog::display(EditorState& editorState, std::filesystem::path assets) {
+void feis::ChartPropertiesDialog::display(EditorState& editorState, std::filesystem::path assets) {
     assert(editorState.chart.has_value());
 
     if (this->shouldRefreshValues) {

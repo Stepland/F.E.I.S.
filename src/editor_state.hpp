@@ -19,15 +19,6 @@
 #include "widgets/linear_view.hpp"
 #include "widgets/playfield.hpp"
 
-class ActionWithMessage;
-class OpenChart;
-
-enum class UserWantsToSave {
-    Yes,
-    No,
-    Cancel,
-    DidNotDisplayDialog
-};
 
 /*
  * The god class, holds everything there is to know about the currently open
@@ -100,11 +91,24 @@ public:
     bool showHistory;
     bool showSoundSettings;
 
-    /*
-    Return ::DidNotDisplayDialog if the current chart state is marked as saved,
-    otherwise ask the user if they want to save and return their answer
-    */
-    UserWantsToSave ask_to_save_if_needed();
+    enum class SaveOutcome {
+        UserSaved,
+        UserDeclindedSaving,
+        UserCanceled,
+        NoSavingNeeded,
+    };
+
+    SaveOutcome save_if_needed();
+
+    bool needs_to_save() const;
+
+    enum class UserWantsToSave {
+        Yes,
+        No,
+        Cancel,
+    };
+
+    UserWantsToSave ask_if_user_wants_to_save() const;
 
     /*
     If the given song already has a dedicated file on disk, returns its path.
@@ -112,7 +116,6 @@ public:
     return nothing if the user canceled
     */
     std::optional<std::filesystem::path> ask_for_save_path_if_needed();
-    bool save_changes_or_cancel();
 
     void toggle_note_at_current_time(const better::Position& pos);
 
@@ -143,8 +146,6 @@ private:
     void open_chart(better::Chart& chart, const std::string& name);
 
     std::filesystem::path assets;
-
-    friend class ESHelper::NewChartDialog;
 };
 
 namespace feis {
@@ -155,8 +156,6 @@ namespace feis {
         std::filesystem::path assets,
         std::filesystem::path settings
     );
-
-    bool saveOrCancel(std::optional<EditorState>& ed);
 
     class NewChartDialog {
     public:

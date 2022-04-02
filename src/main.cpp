@@ -77,8 +77,8 @@ int main() {
     BlankScreen bg{assets_folder};
     std::optional<EditorState> editor_state;
     NotificationsQueue notificationsQueue;
-    ESHelper::NewChartDialog newChartDialog;
-    ESHelper::ChartPropertiesDialog chartPropertiesDialog;
+    feis::NewChartDialog newChartDialog;
+    feis::ChartPropertiesDialog chartPropertiesDialog;
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
@@ -89,8 +89,10 @@ int main() {
             switch (event.type) {
                 case sf::Event::Closed:
                     preferences.save();
-                    if (ESHelper::saveOrCancel(editor_state)) {
-                        window.close();
+                    if (editor_state) {
+                        if (editor_state->save_if_needed() != EditorState::SaveOutcome::UserCanceled) {
+                            window.close();
+                        }
                     }
                     break;
                 case sf::Event::Resized:
@@ -112,8 +114,8 @@ int main() {
                     switch (event.mouseButton.button) {
                         case sf::Mouse::Button::Right:
                             if (editor_state and editor_state->chart_state) {
-                                if (editor_state->chart_state->longNoteBeingCreated) {
-                                    auto pair = *editor_state->chart->longNoteBeingCreated;
+                                if (editor_state->chart_state->long_note_being_created) {
+                                    auto pair = *editor_state->chart_state->long_note_being_created;
                                     Note new_note = Note(pair.first, pair.second);
                                     std::set<Note> new_note_set = {new_note};
                                     editor_state->chart->ref.Notes.insert(new_note);
@@ -367,8 +369,8 @@ int main() {
                             break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
-                                if (ESHelper::saveOrCancel(editor_state)) {
-                                    ESHelper::open(editor_state, assets_folder, settings_folder);
+                                if (feis::saveOrCancel(editor_state)) {
+                                    feis::open(editor_state, assets_folder, settings_folder);
                                 }
                             }
                             break;
@@ -379,7 +381,7 @@ int main() {
                             break;
                         case sf::Keyboard::S:
                             if (event.key.control) {
-                                ESHelper::save(*editor_state);
+                                feis::save(*editor_state);
                                 notificationsQueue.push(std::make_shared<TextNotification>(
                                     "Saved file"));
                             }
@@ -564,7 +566,7 @@ int main() {
                 if (ImGui::MenuItem("New")) {
                     bool user_canceled = false;
                     if (editor_state) {
-                        switch (editor_state->ask_to_save_if_needed()) {
+                        switch (editor_state->ask_if_user_wants_to_save()) {
                             case UserWantsToSave::Yes:
                                 const auto path = editor_state->ask_for_save_path_if_needed();
                                 if (path) {
@@ -587,8 +589,8 @@ int main() {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Open", "Ctrl+O")) {
-                    if (ESHelper::saveOrCancel(editor_state)) {
-                        ESHelper::open(editor_state, assets_folder, settings_folder);
+                    if (feis::saveOrCancel(editor_state)) {
+                        feis::open(editor_state, assets_folder, settings_folder);
                     }
                 }
                 if (ImGui::BeginMenu("Recent Files")) {
@@ -596,8 +598,8 @@ int main() {
                     for (const auto& file : Toolbox::getRecentFiles(settings_folder)) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
-                            if (ESHelper::saveOrCancel(editor_state)) {
-                                ESHelper::openFromFile(editor_state, file, assets_folder, settings_folder);
+                            if (feis::saveOrCancel(editor_state)) {
+                                feis::openFromFile(editor_state, file, assets_folder, settings_folder);
                             }
                         }
                         ImGui::PopID();
@@ -606,13 +608,13 @@ int main() {
                     ImGui::EndMenu();
                 }
                 if (ImGui::MenuItem("Close", "", false, editor_state.has_value())) {
-                    if (ESHelper::saveOrCancel(editor_state)) {
+                    if (feis::saveOrCancel(editor_state)) {
                         editor_state.reset();
                     }
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save", "Ctrl+S", false, editor_state.has_value())) {
-                    ESHelper::save(*editor_state);
+                    feis::save(*editor_state);
                 }
                 if (ImGui::MenuItem("Save As", "", false, editor_state.has_value())) {
                     char const* options[1] = {"*.memon"};

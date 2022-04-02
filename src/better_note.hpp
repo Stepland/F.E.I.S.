@@ -48,7 +48,7 @@ namespace better {
 
         bool operator==(const TapNote&) const = default;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
     private:
         Fraction time;
         Position position;
@@ -68,7 +68,7 @@ namespace better {
 
         bool operator==(const LongNote&) const = default;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
         int tail_as_6_notation() const;
     private:
         Fraction time;
@@ -76,6 +76,8 @@ namespace better {
         Fraction duration;
         Position tail_tip;
     };
+
+    Position legacy_memon_tail_index_to_position(const Position& pos, unsigned int tail_index);
 
     class Note {
     public:
@@ -91,7 +93,12 @@ namespace better {
 
         bool operator==(const Note&) const = default;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
+
+        static Note load_from_memon_legacy(
+            const nlohmann::json& json,
+            unsigned int resolution
+        );
     private:
         std::variant<TapNote, LongNote> note;
     };

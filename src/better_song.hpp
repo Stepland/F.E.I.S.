@@ -47,6 +47,51 @@ namespace better {
         Timing timing;
         std::optional<Hakus> hakus;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
+
+        /*
+        Read the json file as memon by trying to guess version.
+        Throws various exceptions on error
+        */
+        static Song load_from_memon(const nlohmann::json& memon);
+
+        /*
+        Read the json file as memon v1.0.0.
+        https://memon-spec.readthedocs.io/en/latest/changelog.html#v1-0-0
+        */
+        static Song load_from_memon_1_0_0(const nlohmann::json& memon);
+
+        /*
+        Read the json file as memon v0.3.0.
+        https://memon-spec.readthedocs.io/en/latest/changelog.html#v0-3-0
+        */
+        static Song load_from_memon_0_3_0(const nlohmann::json& memon);
+
+        /*
+        Read the json file as memon v0.2.0.
+        https://memon-spec.readthedocs.io/en/latest/changelog.html#v0-2-0
+        */
+        static Song load_from_memon_0_2_0(const nlohmann::json& memon);
+
+        /*
+        Read the json file as memon v0.1.0.
+        https://memon-spec.readthedocs.io/en/latest/changelog.html#v0-1-0
+        */
+        static Song load_from_memon_0_1_0(const nlohmann::json& memon);
+
+        /*
+        Read the json file as a "legacy" (pre-versionning) memon file.
+
+        Notable quirks of this archaïc schema :
+        - "data" is an array of charts
+        - the difficulty name of a chart is stored as "dif_name" in the chart
+            object
+        - the album cover path field is named "jacket path"
+        */
+        static Song load_from_memon_legacy(const nlohmann::json& memon);
     };
+
+    Note load_legacy_note(const nlohmann::json& legacy_note, unsigned int resolution);
+
+    Position legacy_memon_tail_index_to_position(const Position& pos, unsigned int tail_index);
 }

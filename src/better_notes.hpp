@@ -32,6 +32,6 @@ namespace better {
         */
         bool is_colliding(const better::Note& note, const better::Timing& timing);
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
     };
 }

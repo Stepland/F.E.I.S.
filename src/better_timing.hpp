@@ -56,7 +56,9 @@ namespace better {
 
         Fraction beats_at(sf::Time time) const;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
+
+        static Timing load_from_memon_legacy(Decimal bpm, Fraction offset);
         
     private:
         std::set<BPMEvent, decltype(order_by_beats)> events_by_beats{order_by_beats};

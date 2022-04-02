@@ -21,6 +21,8 @@ namespace better {
         std::string preview_file = "";
         bool use_preview_file = false;
 
-        nlohmann::ordered_json dump_for_memon_1_0_0() const;
+        nlohmann::ordered_json dump_to_memon_1_0_0() const;
+
+        static Metadata load_from_memon_legacy(const nlohmann::json& json);
     };
 }

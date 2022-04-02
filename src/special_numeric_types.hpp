@@ -37,7 +37,8 @@ const auto floor_beats = [](Fraction beats, unsigned int denominator = 240) {
     return nearest / Fraction{denominator};
 };
 
-// Stolen from : https://github.com/progrock-libraries/kickstart/blob/d62c22efc92006dd76d455cf8f9d4f2a045e9126/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36
+// Stolen from :
+// https://github.com/progrock-libraries/kickstart/blob/master/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36
 // Essentially this is Horner's rule adapted to calculating a power, so that the
 // number of floating point multiplications is at worst O(log₂n).
 template<class Number>

@@ -95,7 +95,7 @@ public:
         }
     }
 
-    bool current_state_is_saved() {
+    bool current_state_is_saved() const {
         return last_saved_action == previous_actions.front();
     };
 

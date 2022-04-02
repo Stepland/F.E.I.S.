@@ -50,7 +50,7 @@ namespace better {
         return position;
     };
 
-    nlohmann::ordered_json TapNote::dump_for_memon_1_0_0() const {
+    nlohmann::ordered_json TapNote::dump_to_memon_1_0_0() const {
         return {
             {"n", position.index()},
             {"t", beat_to_best_form(time)}
@@ -135,7 +135,7 @@ namespace better {
         }
     };
 
-    nlohmann::ordered_json LongNote::dump_for_memon_1_0_0() const {
+    nlohmann::ordered_json LongNote::dump_to_memon_1_0_0() const {
         return {
             {"n", position.index()},
             {"t", beat_to_best_form(time)},
@@ -149,6 +149,31 @@ namespace better {
             return tail_tip.get_x() - static_cast<int>(tail_tip.get_x() > position.get_x());
         } else {
             return 3 + tail_tip.get_y() - int(tail_tip.get_y() > position.get_y());
+        }
+    }
+
+    /*
+     *  legacy long note tail index is given relative to the note position :
+     *  
+     *          8
+     *          4
+     *          0
+     *   11 7 3 . 1 5 9
+     *          2
+     *          6
+     *         10
+     */
+    Position legacy_memon_tail_index_to_position(const Position& pos, unsigned int tail_index) {
+        auto length = (tail_index / 4) + 1;
+        switch (tail_index % 4) {
+            case 0: // up
+                return {pos.get_x(), pos.get_y() - length};
+            case 1: // right
+                return {pos.get_x() + length, pos.get_y()};
+            case 2: // down
+                return {pos.get_x(), pos.get_y() + length};
+            case 3: // left
+                return {pos.get_x() - length, pos.get_y()};
         }
     }
     
@@ -173,8 +198,31 @@ namespace better {
         return this->get_time_bounds().second;
     }
 
-    nlohmann::ordered_json Note::dump_for_memon_1_0_0() const {
-        return std::visit([](const auto& n){return n.dump_for_memon_1_0_0();}, this->note);
+    nlohmann::ordered_json Note::dump_to_memon_1_0_0() const {
+        return std::visit([](const auto& n){return n.dump_to_memon_1_0_0();}, this->note);
+    }
+
+    Note Note::load_from_memon_legacy(const nlohmann::json& json, unsigned int resolution) {
+        const auto position = Position{json["n"].get<unsigned int>()};
+        const auto time = Fraction{
+            json["t"].get<unsigned int>(),
+            resolution,
+        };
+        const auto duration = Fraction{
+            json["l"].get<unsigned int>(),
+            resolution,
+        };
+        const auto tail_index = json["n"].get<unsigned int>();
+        if (duration > 0) {
+            return LongNote{
+                time,
+                position,
+                duration,
+                legacy_memon_tail_index_to_position(position, tail_index)
+            };
+        } else {
+            return TapNote{time, position};
+        }
     }
 }
 

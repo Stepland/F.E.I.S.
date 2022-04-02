@@ -184,7 +184,7 @@ namespace better {
         return bpm_change->get_beats() + beats_since_previous_event;
     };
 
-    nlohmann::ordered_json Timing::dump_for_memon_1_0_0() const {
+    nlohmann::ordered_json Timing::dump_to_memon_1_0_0() const {
         nlohmann::ordered_json j;
         const auto offset = fractional_seconds_at(0);
         j["offset"] = convert_to_decimal(offset, 5).format("f");
@@ -197,5 +197,15 @@ namespace better {
         }
         j["bpms"] = bpms;
         return j;
+    }
+
+    /*
+    For this function, offset is the OPPOSITE of the time (in seconds) at which
+    the first beat occurs in the music file
+    */
+    Timing Timing::load_from_memon_legacy(Decimal bpm, Fraction offset) {
+        const BPMAtBeat bpm_at_beat{0, bpm};
+        const SecondsAtBeat seconds_at_beat{-1 * offset, 0};
+        return Timing{{bpm_at_beat}, seconds_at_beat};
     }
 }
