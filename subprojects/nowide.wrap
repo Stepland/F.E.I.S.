@@ -2,6 +2,6 @@
 url = https://github.com/boostorg/nowide
 # closest commit to v11.1.4 on the standalone branch
 revision = 960c2016a259275fa9dda68f34624bde87d887bd 
-# Overlays subproject/packagefiles/nowide-standalone over the fresh git
+# Overlays subproject/packagefiles/nowide over the fresh git
 # clone of nowide
 patch_directory = nowide
