@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <filesystem>
+#include <iostream>
 
 #include <tinyfiledialogs.h>
 #include <nowide/args.hpp>
