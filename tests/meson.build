@@ -25,6 +25,7 @@ executable(
 executable(
     'nowide',
     'nowide.cpp',
+    include_sources['tinyfiledialogs'],
     dependencies: deps,
     include_directories: inc,
 )

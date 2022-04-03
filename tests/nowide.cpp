@@ -25,6 +25,6 @@ int main(int argc, char** argv) {
             total_lines++;
         }
     }
-    nowide::cout << "File " << argv[1] << " has " << total_lines << " lines" << std::endl;
+    nowide::cout << "File " << filepath << " has " << total_lines << " lines" << std::endl;
     return 0;
 }
