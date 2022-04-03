@@ -91,7 +91,7 @@ namespace better {
         static Song load_from_memon_legacy(const nlohmann::json& memon);
     };
 
-    Note load_legacy_note(const nlohmann::json& legacy_note, unsigned int resolution);
+    Note load_legacy_note(const nlohmann::json& legacy_note, std::uint64_t resolution);
 
-    Position legacy_memon_tail_index_to_position(const Position& pos, unsigned int tail_index);
+    Position convert_legacy_memon_tail_index_to_position(const Position& pos, std::uint64_t tail_index);
 }

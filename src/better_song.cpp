@@ -29,7 +29,7 @@ namespace better {
             memon["metadata"] = json_metadata;
         }
         nlohmann::json fallback_timing_object = R"(
-            {"offset": "0", "bpms": [{"beat": 0, "bpm": "120"}]}
+            {"offset": "0", "resolution": 240, "bpms": [{"beat": 0, "bpm": "120"}]}
         )"_json;
         auto song_timing = dump_memon_1_0_0_timing_object(timing, hakus, fallback_timing_object);
         if (not song_timing.empty()) {
@@ -79,27 +79,86 @@ namespace better {
     };
 
     Song Song::load_from_memon_1_0_0(const nlohmann::json& memon) {
-
+        Metadata metadata;
+        if (memon.contains("metadata")) {
+            metadata = Metadata::load_from_memon_1_0_0(memon["metadata"]);
+        }
+        nlohmann::json song_timing_json = R"(
+            {"offset": "0", "resolution": 240, "bpms": [{"beat": 0, "bpm": "120"}]}
+        )"_json;
+        if (memon.contains("timing")) {
+            song_timing_json.update(memon["timing"]);
+        }
+        const auto song_timing = Timing::load_from_memon_1_0_0(song_timing_json);
+        const auto hakus = load_hakus(song_timing_json);
+        Song song{
+            .charts = {},
+            .metadata = metadata,
+            .timing = song_timing,
+            .hakus = hakus
+        };
+        for (const auto& [dif, chart_json] : memon["data"].items()) {
+            const auto chart = Chart::load_from_memon_1_0_0(chart_json, song_timing_json);
+            song.charts[dif] = chart;
+        }
+        return song;
     };
 
     Song Song::load_from_memon_0_3_0(const nlohmann::json& memon) {
-
+        const auto json_metadata = memon["metadata"];
+        const auto metadata = Metadata::load_from_memon_0_3_0(memon["metadata"]);
+        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        Song song{
+            .charts = {},
+            .metadata = metadata,
+            .timing = timing,
+            .hakus = {}
+        };
+        for (const auto& [dif, chart_json] : memon["data"].items()) {
+            const auto chart = Chart::load_from_memon_legacy(chart_json);
+            song.charts[dif] = chart;
+        }
+        return song;
     };
 
     Song Song::load_from_memon_0_2_0(const nlohmann::json& memon) {
-
+        const auto json_metadata = memon["metadata"];
+        const auto metadata = Metadata::load_from_memon_0_2_0(memon["metadata"]);
+        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        Song song{
+            .charts = {},
+            .metadata = metadata,
+            .timing = timing,
+            .hakus = {}
+        };
+        for (const auto& [dif, chart_json] : memon["data"].items()) {
+            const auto chart = Chart::load_from_memon_legacy(chart_json);
+            song.charts[dif] = chart;
+        }
+        return song;
     };
 
     Song Song::load_from_memon_0_1_0(const nlohmann::json& memon) {
-
+        const auto json_metadata = memon["metadata"];
+        const auto metadata = Metadata::load_from_memon_0_1_0(memon["metadata"]);
+        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        Song song{
+            .charts = {},
+            .metadata = metadata,
+            .timing = timing,
+            .hakus = {}
+        };
+        for (const auto& [dif, chart_json] : memon["data"].items()) {
+            const auto chart = Chart::load_from_memon_legacy(chart_json);
+            song.charts[dif] = chart;
+        }
+        return song;
     };
 
     Song Song::load_from_memon_legacy(const nlohmann::json& memon) {
         const auto json_metadata = memon["metadata"];
         const auto metadata = Metadata::load_from_memon_legacy(memon["metadata"]);
-        const auto bpm = Decimal{json_metadata["BPM"].get<std::string>()};
-        const auto offset = convert_to_fraction(Decimal{json_metadata["offset"].get<std::string>()});
-        const auto timing = Timing::load_from_memon_legacy(bpm, offset);
+        const auto timing = Timing::load_from_memon_legacy(json_metadata);
         Song song{
             .charts = {},
             .metadata = metadata,
@@ -108,7 +167,7 @@ namespace better {
         };
         for (const auto& chart_json : memon["data"]) {
             const auto dif = chart_json["dif_name"].get<std::string>();
-            const auto chart = Chart::load_from_memon_legacy(chart_json, timing);
+            const auto chart = Chart::load_from_memon_legacy(chart_json);
             song.charts[dif] = chart;
         }
         return song;

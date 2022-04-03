@@ -23,6 +23,10 @@ namespace better {
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
+        static Metadata load_from_memon_1_0_0(const nlohmann::json& json);
+        static Metadata load_from_memon_0_3_0(const nlohmann::json& json);
+        static Metadata load_from_memon_0_2_0(const nlohmann::json& json);
+        static Metadata load_from_memon_0_1_0(const nlohmann::json& json);
         static Metadata load_from_memon_legacy(const nlohmann::json& json);
     };
 }

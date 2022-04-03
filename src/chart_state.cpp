@@ -107,7 +107,7 @@ void ChartState::update_visible_notes(const sf::Time& playback_position) {
 
 void ChartState::toggle_note(
     const sf::Time& playback_position,
-    unsigned int snap,
+    std::uint64_t snap,
     const better::Position& button
 ) {
     std::vector<better::Note> toggled_notes = {};

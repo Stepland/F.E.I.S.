@@ -14,7 +14,7 @@
 namespace better {
     struct Chart {
         std::optional<Decimal> level;
-        Timing timing;
+        std::optional<Timing> timing;
         std::optional<Hakus> hakus;
         Notes notes;
 
@@ -22,17 +22,15 @@ namespace better {
             const nlohmann::ordered_json& fallback_timing_object
         ) const;
 
-        static Chart load_from_memon_legacy(
-            const nlohmann::json& json,
-            const Timing& timing
-        );
+        static Chart load_from_memon_1_0_0(const nlohmann::json& json, const nlohmann::json& fallback_timing);
+        static Chart load_from_memon_legacy(const nlohmann::json& json);
     };
 
     /*
     Create a brand new json based on 'object' but with keys identical to
     'fallback' removed
     */
-    nlohmann::ordered_json remove_common_keys(
+    nlohmann::ordered_json remove_keys_already_in_fallback(
         const nlohmann::ordered_json& object,
         const nlohmann::ordered_json& fallback
     );

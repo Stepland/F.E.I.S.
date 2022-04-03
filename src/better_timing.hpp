@@ -20,12 +20,12 @@ namespace better {
 
     class BPMAtBeat {
     public:
-        BPMAtBeat(Fraction beats, Decimal bpm);
-        Fraction get_beats() const;
+        BPMAtBeat(Decimal bpm, Fraction beats);
         Decimal get_bpm() const;
+        Fraction get_beats() const;
     private:
-        Fraction beats;
         Decimal bpm;
+        Fraction beats;
     };
 
     class BPMEvent : public BPMAtBeat {
@@ -58,7 +58,8 @@ namespace better {
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
-        static Timing load_from_memon_legacy(Decimal bpm, Fraction offset);
+        static Timing load_from_memon_1_0_0(const nlohmann::json& json);
+        static Timing load_from_memon_legacy(const nlohmann::json& metadata);
         
     private:
         std::set<BPMEvent, decltype(order_by_beats)> events_by_beats{order_by_beats};

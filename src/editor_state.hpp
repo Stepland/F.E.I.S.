@@ -46,7 +46,7 @@ public:
     Playfield playfield;
     LinearView linear_view;
 
-    unsigned int snap = 1;
+    std::uint64_t snap = 1;
 
     std::optional<sf::Texture> jacket;
 
@@ -150,7 +150,7 @@ private:
 
 namespace feis {
     void open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings);
-    void openFromFile(
+    void open_from_file(
         std::optional<EditorState>& ed,
         std::filesystem::path file,
         std::filesystem::path assets,

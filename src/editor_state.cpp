@@ -765,11 +765,11 @@ void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, st
         tinyfd_openFileDialog("Open File", nullptr, 0, nullptr, nullptr, false);
     if (_filepath != nullptr) {
         auto filepath = std::filesystem::path{_filepath};
-        feis::openFromFile(ed, filepath, assets, settings);
+        feis::open_from_file(ed, filepath, assets, settings);
     }
 }
 
-void feis::openFromFile(
+void feis::open_from_file(
     std::optional<EditorState>& ed,
     std::filesystem::path song_path,
     std::filesystem::path assets,

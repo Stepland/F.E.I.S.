@@ -5,7 +5,7 @@
 #include "better_beats.hpp"
 
 namespace better {
-    Position::Position(unsigned int index) : x(index % 4), y (index / 4) {
+    Position::Position(std::uint64_t index) : x(index % 4), y (index / 4) {
         if (index > 15) {
             std::stringstream ss;
             ss << "Attempted to create Position from invalid index : " << index; 
@@ -13,7 +13,7 @@ namespace better {
         }
     };
 
-    Position::Position(unsigned int x, unsigned int y) : x(x), y(y) {
+    Position::Position(std::uint64_t x, std::uint64_t y) : x(x), y(y) {
         if (x > 3 or y > 3) {
             std::stringstream ss;
             ss << "Attempted to create Position from invalid coordinates : ";
@@ -22,15 +22,15 @@ namespace better {
         }
     };
 
-    unsigned int Position::index() const {
+    std::uint64_t Position::index() const {
         return x + y*4;
     };
 
-    unsigned int Position::get_x() const {
+    std::uint64_t Position::get_x() const {
         return x;
     };
 
-    unsigned int Position::get_y() const {
+    std::uint64_t Position::get_y() const {
         return y;
     };
 
@@ -111,7 +111,7 @@ namespace better {
         }
     };
 
-    unsigned int LongNote::get_tail_length() const {
+    std::uint64_t LongNote::get_tail_length() const {
         if (position.get_x() == tail_tip.get_x()) {
             return abs_diff(position.get_y(), tail_tip.get_y());
         } else {
@@ -119,7 +119,7 @@ namespace better {
         }
     }
 
-    unsigned int LongNote::get_tail_angle() const {
+    std::uint64_t LongNote::get_tail_angle() const {
         if (position.get_x() == tail_tip.get_x()) {
             if (position.get_y() > tail_tip.get_y()) {
                 return 0;
@@ -163,7 +163,7 @@ namespace better {
      *          6
      *         10
      */
-    Position legacy_memon_tail_index_to_position(const Position& pos, unsigned int tail_index) {
+    Position convert_legacy_memon_tail_index_to_position(const Position& pos, std::uint64_t tail_index) {
         auto length = (tail_index / 4) + 1;
         switch (tail_index % 4) {
             case 0: // up
@@ -174,6 +174,29 @@ namespace better {
                 return {pos.get_x(), pos.get_y() + length};
             case 3: // left
                 return {pos.get_x() - length, pos.get_y()};
+        }
+    }
+
+    /*
+    memon 1.0.0 stores tail positions as an number between 0 and 5 inclusive.
+    
+    Explainations here :
+    https://memon-spec.readthedocs.io/en/latest/schema.html#long-note
+    */
+    Position convert_6_notation_to_position(const Position& pos, std::uint64_t tail_index) {
+        if (tail_index < 3) {  // horizontal
+            if (tail_index < pos.get_x()) {
+                return {tail_index, pos.get_y()};
+            } else {
+                return {tail_index + 1, pos.get_y()};
+            }
+        } else {  // vertical
+            tail_index -= 3;
+            if (tail_index < pos.get_y()) {
+                return {pos.get_x(), tail_index};
+            } else {
+                return {pos.get_x(), tail_index + 1};
+            }
         }
     }
     
@@ -202,23 +225,40 @@ namespace better {
         return std::visit([](const auto& n){return n.dump_to_memon_1_0_0();}, this->note);
     }
 
-    Note Note::load_from_memon_legacy(const nlohmann::json& json, unsigned int resolution) {
-        const auto position = Position{json["n"].get<unsigned int>()};
+    Note Note::load_from_memon_0_1_0(const nlohmann::json& json, std::uint64_t resolution) {
+        const auto position = Position{json["n"].get<std::uint64_t>()};
+        const auto time = load_memon_1_0_0_beat(json["t"], resolution);
+        if (not json.contains("l")) {
+            return TapNote{time, position};
+        }
+        
+        const auto duration = load_memon_1_0_0_beat(json["l"], resolution);
+        const auto tail_index = json["n"].get<std::uint64_t>();
+        return LongNote{
+            time,
+            position,
+            duration,
+            convert_6_notation_to_position(position, tail_index)
+        };
+    }
+
+    Note Note::load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution) {
+        const auto position = Position{json["n"].get<std::uint64_t>()};
         const auto time = Fraction{
-            json["t"].get<unsigned int>(),
+            json["t"].get<std::uint64_t>(),
             resolution,
         };
         const auto duration = Fraction{
-            json["l"].get<unsigned int>(),
+            json["l"].get<std::uint64_t>(),
             resolution,
         };
-        const auto tail_index = json["n"].get<unsigned int>();
+        const auto tail_index = json["n"].get<std::uint64_t>();
         if (duration > 0) {
             return LongNote{
                 time,
                 position,
                 duration,
-                legacy_memon_tail_index_to_position(position, tail_index)
+                convert_legacy_memon_tail_index_to_position(position, tail_index)
             };
         } else {
             return TapNote{time, position};

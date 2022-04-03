@@ -25,7 +25,7 @@ Fraction round_fraction(const Fraction& f) {
     return floor_fraction(f + Fraction{1, 2});
 }
 
-Decimal convert_to_decimal(const Fraction& f, unsigned int precision) {
+Decimal convert_to_decimal(const Fraction& f, std::uint64_t precision) {
     const auto precision_mod = Fraction{
         1,
         boost::multiprecision::pow(

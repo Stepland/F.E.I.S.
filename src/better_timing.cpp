@@ -6,7 +6,7 @@
 #include "src/better_beats.hpp"
 
 namespace better {
-    BPMAtBeat::BPMAtBeat(Fraction beats, Decimal bpm) : beats(beats), bpm(bpm) {
+    BPMAtBeat::BPMAtBeat(Decimal bpm, Fraction beats) : bpm(bpm), beats(beats) {
         if (bpm <= 0) {
             std::stringstream ss;
             ss << "Attempted to create a BPMAtBeat with negative BPM : ";
@@ -15,18 +15,18 @@ namespace better {
         }
     };
 
-    BPMEvent::BPMEvent(Fraction beats, Fraction seconds, Decimal bpm) :
-        BPMAtBeat(beats, bpm),
-        seconds(seconds)
-    {};
-
+    Decimal BPMAtBeat::get_bpm() const {
+        return bpm;
+    }
+    
     Fraction BPMAtBeat::get_beats() const {
         return beats;
     }
 
-    Decimal BPMAtBeat::get_bpm() const {
-        return bpm;
-    }
+    BPMEvent::BPMEvent(Fraction beats, Fraction seconds, Decimal bpm) :
+        BPMAtBeat(bpm, beats),
+        seconds(seconds)
+    {};
 
     Fraction BPMEvent::get_seconds() const {
         return seconds;
@@ -37,7 +37,7 @@ namespace better {
     timing object from the memon spec : 120 BPM, offset 0
     */
     Timing::Timing():
-        Timing({{0, 120}}, {0,0})
+        Timing({{120, 0}}, {0,0})
     {};
     
     /*
@@ -199,12 +199,46 @@ namespace better {
         return j;
     }
 
+    Timing Timing::load_from_memon_1_0_0(const nlohmann::json& json) {
+        Fraction offset = 0;
+        if (json.contains("offset")) {
+            const auto string_offset = json["offset"].get<std::string>();
+            const auto decimal_offset = Decimal{string_offset};
+            offset = convert_to_fraction(decimal_offset);
+        }
+        std::uint64_t resolution = 240;
+        if (json.contains("resolution")) {
+            resolution = json["resolution"].get<std::uint64_t>();
+        }
+        std::vector<BPMAtBeat> bpms;
+        if (not json.contains("bpms")) {
+            bpms = {{120, 0}};
+        } else {
+            for (const auto& bpm_json : json["bpms"]) {
+                try {
+                    bpms.emplace_back(
+                        Decimal{bpm_json["bpm"].get<std::string>()},
+                        load_memon_1_0_0_beat(bpm_json["beat"], resolution)
+                    );
+                } catch (const std::exception&) {
+                    continue;
+                }
+            }
+        }
+        return {
+            bpms,
+            {offset, 0}
+        };
+    }
+
     /*
     For this function, offset is the OPPOSITE of the time (in seconds) at which
     the first beat occurs in the music file
     */
-    Timing Timing::load_from_memon_legacy(Decimal bpm, Fraction offset) {
-        const BPMAtBeat bpm_at_beat{0, bpm};
+    Timing Timing::load_from_memon_legacy(const nlohmann::json& metadata) {
+        const auto bpm = Decimal{metadata["BPM"].get<std::string>()};
+        const auto offset = convert_to_fraction(Decimal{metadata["offset"].get<std::string>()});
+        const BPMAtBeat bpm_at_beat{bpm, 0};
         const SecondsAtBeat seconds_at_beat{-1 * offset, 0};
         return Timing{{bpm_at_beat}, seconds_at_beat};
     }

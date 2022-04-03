@@ -24,18 +24,18 @@ namespace better {
     */
     class Position {
     public:
-        explicit Position(unsigned int index);
-        Position(unsigned int x, unsigned int y);
+        explicit Position(std::uint64_t index);
+        Position(std::uint64_t x, std::uint64_t y);
 
-        unsigned int index() const;
-        unsigned int get_x() const;
-        unsigned int get_y() const;
+        std::uint64_t index() const;
+        std::uint64_t get_x() const;
+        std::uint64_t get_y() const;
 
         auto operator<=>(const Position&) const = default;
 
     private:
-        unsigned int x;
-        unsigned int y;
+        std::uint64_t x;
+        std::uint64_t y;
     };
 
     std::ostream& operator<<(std::ostream& out, const Position& pos);
@@ -63,8 +63,8 @@ namespace better {
         Fraction get_end() const;
         Fraction get_duration() const;
         Position get_tail_tip() const;
-        unsigned int get_tail_length() const;
-        unsigned int get_tail_angle() const;
+        std::uint64_t get_tail_length() const;
+        std::uint64_t get_tail_angle() const;
 
         bool operator==(const LongNote&) const = default;
 
@@ -77,7 +77,8 @@ namespace better {
         Position tail_tip;
     };
 
-    Position legacy_memon_tail_index_to_position(const Position& pos, unsigned int tail_index);
+    Position convert_legacy_memon_tail_index_to_position(const Position& pos, std::uint64_t tail_index);
+    Position convert_6_notation_to_position(const Position& pos, std::uint64_t tail_index);
 
     class Note {
     public:
@@ -95,9 +96,14 @@ namespace better {
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
+        static Note load_from_memon_0_1_0(
+            const nlohmann::json& json,
+            std::uint64_t resolution
+        );
+
         static Note load_from_memon_legacy(
             const nlohmann::json& json,
-            unsigned int resolution
+            std::uint64_t resolution
         );
     private:
         std::variant<TapNote, LongNote> note;

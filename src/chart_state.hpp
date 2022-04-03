@@ -39,7 +39,7 @@ struct ChartState {
     void update_visible_notes(const sf::Time& playback_position);
     std::vector<better::Note> visible_notes;
 
-    void toggle_note(const sf::Time& playback_position, unsigned int snap, const better::Position& button);
+    void toggle_note(const sf::Time& playback_position, std::uint64_t snap, const better::Position& button);
 
     better::Notes selected_notes;
     NotesClipboard notes_clipboard;

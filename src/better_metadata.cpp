@@ -30,6 +30,66 @@ namespace better {
         return json_metadata;
     };
 
+    Metadata Metadata::load_from_memon_1_0_0(const nlohmann::json& json) {
+        Metadata metadata;
+        metadata.title = json.value("title", "");
+        metadata.artist = json.value("artist", "");
+        metadata.audio = json.value("audio", "");
+        metadata.jacket = json.value("jacket", "");
+        if (json.contains("preview")) {
+            if (json["preview"].is_string()) {
+                metadata.use_preview_file = true;
+                json["preview"].get_to(metadata.preview_file);
+            } else if (json["preview"].is_object()) {
+                metadata.use_preview_file = false;
+                json["preview"]["start"].get_to(metadata.preview_loop.start);
+                json["preview"]["duration"].get_to(metadata.preview_loop.duration);
+            }
+        }
+        return metadata;
+    };
+
+    Metadata Metadata::load_from_memon_0_3_0(const nlohmann::json& json) {
+        Metadata metadata;
+        json["song title"].get_to(metadata.title);
+        json["artist"].get_to(metadata.artist);
+        metadata.audio = json.value("music path", "");
+        metadata.jacket = json.value("album cover path", "");
+        if (json.contains("preview")) {
+            metadata.use_preview_file = false;
+            json["preview"]["position"].get_to(metadata.preview_loop.start);
+            json["preview"]["length"].get_to(metadata.preview_loop.duration);
+        }
+        if (json.contains("preview path")) {
+            metadata.use_preview_file = true;
+            json["preview path"].get_to(metadata.preview_file);
+        }
+        return metadata;
+    };
+
+    Metadata Metadata::load_from_memon_0_2_0(const nlohmann::json& json) {
+        Metadata metadata;
+        json["song title"].get_to(metadata.title);
+        json["artist"].get_to(metadata.artist);
+        json["music path"].get_to(metadata.audio);
+        json["album cover path"].get_to(metadata.jacket);
+        if (json.contains("preview")) {
+            metadata.use_preview_file = false;
+            json["preview"]["position"].get_to(metadata.preview_loop.start);
+            json["preview"]["length"].get_to(metadata.preview_loop.duration);
+        }
+        return metadata;
+    };
+
+    Metadata Metadata::load_from_memon_0_1_0(const nlohmann::json& json) {
+        Metadata metadata;
+        json["song title"].get_to(metadata.title);
+        json["artist"].get_to(metadata.artist);
+        json["music path"].get_to(metadata.audio);
+        json["album cover path"].get_to(metadata.jacket);
+        return metadata;
+    };
+
     Metadata Metadata::load_from_memon_legacy(const nlohmann::json& json) {
         Metadata metadata;
         json["song title"].get_to(metadata.title);
