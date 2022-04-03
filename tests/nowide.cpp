@@ -6,7 +6,7 @@
 #include <nowide/fstream.hpp>
 #include <nowide/iostream.hpp>
 
-int main(int argc, char** argv) {
+int main() {
     const char* _filepath = tinyfd_openFileDialog(
         "Open File", nullptr, 0, nullptr, nullptr, false
     );
@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     auto filepath = std::filesystem::path{_filepath};
     nowide::ifstream f(filepath.string().c_str()); // argv[1] - is UTF-8
     if(not f) {
-        nowide::cerr << "Can't open " << argv[1] << std::endl;
+        nowide::cerr << "Can't open " << filepath << std::endl;
         return 1;
     }
     std::size_t total_lines = 0;
