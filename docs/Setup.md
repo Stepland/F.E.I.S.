@@ -41,12 +41,14 @@ $ sudo apt install clang-format
 
 ## Windows
 
-### MSYS2
+### I just want to compile
 
-MSYS2 is the only windows compiling thingy I bother looking into nowadays,
-there has to be a way to adapt everything to other toolchains, but I didn't bother
-learning anything on this yet. I need help on this, reach out if you feel like you
-could give me a hand.
+#### MSYS2
+
+MSYS2 is not the *usual* way to compile things for windows but it's the only
+thing I know for now. If you know better, you're very welcome to do better
+(and to also shower me with some of your knowledge, I absolutely *suck* at
+build systems and would be delighted to hear from you)
 
 Installing MSYS2 is pretty simple. [Follow their instructions](https://www.msys2.org/)
 
@@ -58,5 +60,9 @@ $ pacman -S \
     mingw-w64-x86_64-meson \
     mingw-w64-x86_64-cmake \
     mingw-w64-x86_64-sfml \
-    mingw-w64-x86_64-boost
+    mingw-w64-x86_64-boost \
+    mingw-w64-x86_64-ntldd-git
 ```
+
+Once this is done, open a new `MSYS2 MinGW x64` terminal and follow the
+[instructions on how to compile](docs/Compiling.md)
