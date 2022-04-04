@@ -35,14 +35,21 @@ struct ChartState {
     void paste(NotificationsQueue& nq, Fraction at_beat);
     void delete_(NotificationsQueue& nq);
 
-    Interval<Fraction> visible_beats(const sf::Time& playback_position);
-    void update_visible_notes(const sf::Time& playback_position);
+    Interval<Fraction> visible_beats(const sf::Time& playback_position, const better::Timing& timing);
+    void update_visible_notes(const sf::Time& playback_position, const better::Timing& timing);
     std::vector<better::Note> visible_notes;
 
-    void toggle_note(const sf::Time& playback_position, std::uint64_t snap, const better::Position& button);
+    void toggle_note(
+        const sf::Time& playback_position,
+        std::uint64_t snap,
+        const better::Position& button,
+        const better::Timing& timing
+    );
 
     better::Notes selected_notes;
     NotesClipboard notes_clipboard;
+
+    void handle_time_selection_tab(Fraction beats);
     std::optional<Interval<Fraction>> time_selection;
 
     /*

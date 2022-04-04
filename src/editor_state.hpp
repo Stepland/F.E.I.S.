@@ -127,6 +127,8 @@ public:
 
     void save(const std::filesystem::path& path);
 
+    void open_chart(const std::string& name);
+
 private:
 
     /*
@@ -143,8 +145,6 @@ private:
     better::Timing& applicable_timing;
     void reload_applicable_timing();
 
-    void open_chart(better::Chart& chart, const std::string& name);
-
     std::filesystem::path assets;
 };
 
@@ -159,33 +159,31 @@ namespace feis {
 
     class NewChartDialog {
     public:
-        std::optional<better::Chart> display(EditorState& editorState);
+        std::optional<std::pair<std::string, better::Chart>> display(EditorState& editorState);
         void resetValues() {
             level = 1;
-            resolution = 240;
             difficulty = "";
-            comboPreview = "";
-            showCustomDifName = false;
+            combo_preview = "";
+            show_custom_dif_name = false;
         };
 
     private:
-        int level = 1;
-        int resolution = 240;
+        Decimal level = 1;
         std::string difficulty;
-        std::string comboPreview;
-        bool showCustomDifName = false;
+        std::string combo_preview;
+        bool show_custom_dif_name = false;
     };
 
     class ChartPropertiesDialog {
     public:
-        void display(EditorState& editorState, std::filesystem::path assets);
-        bool shouldRefreshValues = true;
+        void display(EditorState& editorState);
+        bool should_refresh_values = true;
 
     private:
-        int level;
+        Decimal level;
         std::string difficulty_name;
-        std::string comboPreview;
-        std::set<std::string> difNamesInUse;
-        bool showCustomDifName = false;
+        std::string combo_preview;
+        std::set<std::string> difficulty_names_in_use;
+        bool show_custom_dif_name = false;
     };
 }

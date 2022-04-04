@@ -1,16 +1,19 @@
 #define IMGUI_USER_CONFIG "imconfig-SFML.h"
 
-#include <SFML/Graphics.hpp>
 #include <filesystem>
+#include <variant>
+
+#include <fmt/core.h>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <SFML/Graphics.hpp>
 #include <tinyfiledialogs.h>
-#include <variant>
 #include <whereami++.hpp>
 
+#include "chart_state.hpp"
 #include "editor_state.hpp"
-#include "editor_state_actions.hpp"
+#include "history_actions.hpp"
 #include "notifications_queue.hpp"
 #include "preferences.hpp"
 #include "sound_effect.hpp"
@@ -115,14 +118,17 @@ int main() {
                         case sf::Mouse::Button::Right:
                             if (editor_state and editor_state->chart_state) {
                                 if (editor_state->chart_state->long_note_being_created) {
-                                    auto pair = *editor_state->chart_state->long_note_being_created;
-                                    Note new_note = Note(pair.first, pair.second);
-                                    std::set<Note> new_note_set = {new_note};
-                                    editor_state->chart->ref.Notes.insert(new_note);
-                                    editor_state->chart->longNoteBeingCreated.reset();
-                                    editor_state->chart->creatingLongNote = false;
-                                    editor_state->chart->history.push(
-                                        std::make_shared<ToggledNotes>(new_note_set, true));
+                                    auto new_note = make_long_note(
+                                        *editor_state->chart_state->long_note_being_created
+                                    );
+                                    better::Notes new_notes;
+                                    new_notes.insert(new_note);
+                                    editor_state->chart_state->chart.notes.insert(new_note);
+                                    editor_state->chart_state->long_note_being_created.reset();
+                                    editor_state->chart_state->creating_long_note = false;
+                                    editor_state->chart_state->history.push(
+                                        std::make_shared<AddNotes>(new_notes)
+                                    );
                                 }
                             }
                             break;
@@ -133,15 +139,17 @@ int main() {
                 case sf::Event::MouseWheelScrolled:
                     switch (event.mouseWheelScroll.wheel) {
                         case sf::Mouse::Wheel::VerticalWheel: {
-                            auto delta = static_cast<int>(
-                                std::floor(event.mouseWheelScroll.delta));
-                            if (delta >= 0) {
-                                for (int i = 0; i < delta; ++i) {
-                                    Move::backwardsInTime(editor_state);
-                                }
-                            } else {
-                                for (int i = 0; i < -delta; ++i) {
-                                    Move::forwardsInTime(editor_state);
+                            if (editor_state) {
+                                auto delta = static_cast<int>(
+                                    std::floor(event.mouseWheelScroll.delta));
+                                if (delta >= 0) {
+                                    for (int i = 0; i < delta; ++i) {
+                                        editor_state->move_backwards_in_time();
+                                    }
+                                } else {
+                                    for (int i = 0; i < -delta; ++i) {
+                                        editor_state->move_forwards_in_time();
+                                    }
                                 }
                             }
                         } break;
@@ -155,142 +163,99 @@ int main() {
                          * Selection related stuff
                          */
 
-                        // Discard, in that order : timeSelection,
-                        // selected_notes
+                        // Discard, in that order :
+                        // - time selection
+                        // - selected notes
                         case sf::Keyboard::Escape:
-                            if (editor_state and editor_state->chart) {
-                                if (not std::holds_alternative<std::monostate>(
-                                        editor_state->chart->timeSelection)) {
-                                    editor_state->chart->timeSelection.emplace<std::monostate>();
-                                } else if (not editor_state->chart->selectedNotes.empty()) {
-                                    editor_state->chart->selectedNotes.clear();
+                            if (editor_state and editor_state->chart_state) {
+                                if (editor_state->chart_state->time_selection) {
+                                    editor_state->chart_state->time_selection.reset();
+                                } else if (not editor_state->chart_state->selected_notes.empty()) {
+                                    editor_state->chart_state->selected_notes.clear();
                                 }
                             }
                             break;
 
-                        // Modify timeSelection
+                        // Modify time selection
                         case sf::Keyboard::Tab:
-                            if (editor_state and editor_state->chart) {
-                                // if no timeSelection was previously made
-                                if (std::holds_alternative<std::monostate>(
-                                        editor_state->chart->timeSelection)) {
-                                    // set the start of the timeSelection to the
-                                    // current time
-                                    editor_state->chart->timeSelection =
-                                        static_cast<unsigned int>(
-                                            editor_state->current_tick());
-
-                                    // if the start of the timeSelection is
-                                    // already set
-                                } else if (std::holds_alternative<unsigned int>(
-                                               editor_state->chart->timeSelection)) {
-                                    auto current_tick =
-                                        static_cast<int>(editor_state->current_tick());
-                                    auto selection_start =
-                                        static_cast<int>(std::get<unsigned int>(
-                                            editor_state->chart->timeSelection));
-
-                                    // if we are on the same tick as the
-                                    // timeSelection start we discard the
-                                    // timeSelection
-                                    if (current_tick == selection_start) {
-                                        editor_state->chart->timeSelection.emplace<std::monostate>();
-
-                                        // else we create a full timeSelection
-                                        // while paying attention to the order
-                                    } else {
-                                        auto new_selection_start = static_cast<unsigned int>(
-                                            std::min(current_tick, selection_start));
-                                        auto duration = static_cast<unsigned int>(
-                                            std::abs(current_tick - selection_start));
-                                        editor_state->chart->timeSelection.emplace<TimeSelection>(
-                                            new_selection_start,
-                                            duration);
-                                        editor_state->chart->selectedNotes =
-                                            editor_state->chart->ref.getNotesBetween(
-                                                new_selection_start,
-                                                new_selection_start + duration);
-                                    }
-
-                                    // if a full timeSelection already exists
-                                } else if (std::holds_alternative<TimeSelection>(
-                                               editor_state->chart->timeSelection)) {
-                                    // discard the current timeSelection and set
-                                    // the start of the timeSelection to the
-                                    // current time
-                                    editor_state->chart->timeSelection =
-                                        static_cast<unsigned int>(
-                                            editor_state->current_tick());
-                                }
+                            if (editor_state and editor_state->chart_state) {
+                                editor_state->chart_state->handle_time_selection_tab(
+                                    editor_state->current_snaped_beats()
+                                );
                             }
                             break;
 
                         // Delete selected notes from the chart and discard
-                        // timeSelection
+                        // time selection
                         case sf::Keyboard::Delete:
                             Edit::delete_(editor_state, notificationsQueue);
                             break;
 
-                        /*
-                         * Arrow keys
-                         */
+                        // Arrow keys
                         case sf::Keyboard::Up:
                             if (event.key.shift) {
-                                if (editor_state) {
-                                    editor_state->musicVolumeUp();
-                                    std::stringstream ss;
-                                    ss << "Music Volume : "
-                                       << editor_state->musicVolume * 10 << "%";
+                                if (editor_state and editor_state->music_state) {
+                                    editor_state->music_state->volume_up();
                                     notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                        std::make_shared<TextNotification>(fmt::format(
+                                            "Music Volume : {}%",
+                                            editor_state->music_state->volume * 10
+                                        ))
+                                    );
                                 }
                             } else {
-                                Move::backwardsInTime(editor_state);
+                                if (editor_state) {
+                                    editor_state->move_backwards_in_time();
+                                }
                             }
                             break;
                         case sf::Keyboard::Down:
                             if (event.key.shift) {
-                                if (editor_state) {
-                                    editor_state->musicVolumeDown();
-                                    std::stringstream ss;
-                                    ss << "Music Volume : "
-                                       << editor_state->musicVolume * 10 << "%";
+                                if (editor_state and editor_state->music_state) {
+                                    editor_state->music_state->volume_down();
                                     notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                        std::make_shared<TextNotification>(fmt::format(
+                                            "Music Volume : {}%",
+                                            editor_state->music_state->volume * 10
+                                        ))
+                                    );
                                 }
                             } else {
-                                Move::forwardsInTime(editor_state);
+                                if (editor_state) {
+                                    editor_state->move_forwards_in_time();
+                                }
                             }
                             break;
                         case sf::Keyboard::Left:
                             if (event.key.shift) {
-                                if (editor_state) {
-                                    editor_state->musicSpeedDown();
-                                    std::stringstream ss;
-                                    ss << "Speed : " << editor_state->musicSpeed * 10 << "%";
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                if (editor_state and editor_state->music_state) {
+                                    editor_state->music_state->speed_down();
+                                    notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
+                                        "Speed : {}%",
+                                        editor_state->music_state->speed * 10
+                                    )));
                                 }
                             } else {
-                                if (editor_state and editor_state->chart) {
-                                    editor_state->snap = Toolbox::getPreviousDivisor(
-                                        editor_state->chart->ref.getResolution(),
-                                        editor_state->snap);
-                                    std::stringstream ss;
-                                    ss << "Snap : "
-                                       << Toolbox::toOrdinal(4 * editor_state->snap);
+                                if (editor_state and editor_state->chart_state) {
+                                    editor_state->snap = Toolbox::getPreviousDivisor(240, editor_state->snap);
                                     notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                        std::make_shared<TextNotification>(fmt::format(
+                                            "Snap : {}%",
+                                            Toolbox::toOrdinal(4 * editor_state->snap)
+                                        ))
+                                    );
                                 }
                             }
                             break;
                         case sf::Keyboard::Right:
                             if (event.key.shift) {
-                                editor_state->musicSpeedUp();
-                                std::stringstream ss;
-                                ss << "Speed : " << editor_state->musicSpeed * 10 << "%";
-                                notificationsQueue.push(
-                                    std::make_shared<TextNotification>(ss.str()));
+                                if (editor_state and editor_state->music_state) {
+                                    editor_state->musicSpeedUp();
+                                    std::stringstream ss;
+                                    ss << "Speed : " << editor_state->musicSpeed * 10 << "%";
+                                    notificationsQueue.push(
+                                        std::make_shared<TextNotification>(ss.str()));
+                                }
                             } else {
                                 if (editor_state and editor_state->chart) {
                                     editor_state->snap = Toolbox::getNextDivisor(
@@ -533,7 +498,7 @@ int main() {
             if (editor_state->showChartProperties) {
                 chartPropertiesDialog.display(*editor_state, assets_folder);
             } else {
-                chartPropertiesDialog.shouldRefreshValues = true;
+                chartPropertiesDialog.should_refresh_values = true;
             }
 
             if (editor_state->showSoundSettings) {

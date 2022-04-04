@@ -99,6 +99,13 @@ namespace better {
         return found_collision;
     };
 
+    Notes Notes::between(const Interval<Fraction>& bounds) {
+        auto its = in(bounds.start, bounds.end);
+        Notes res;
+        res.interval_tree::insert(its.begin(), its.end());
+        return res;
+    }
+
     nlohmann::ordered_json Notes::dump_to_memon_1_0_0() const {
         auto json_notes = nlohmann::ordered_json::array();
         for (const auto& [_, note] : *this) {

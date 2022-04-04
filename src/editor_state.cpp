@@ -13,6 +13,7 @@
 #include <sstream>
 #include <SFML/System/Time.hpp>
 #include <stdexcept>
+#include <string>
 #include <tinyfiledialogs.h>
 
 #include "better_note.hpp"
@@ -20,6 +21,7 @@
 #include "file_dialogs.hpp"
 #include "history_actions.hpp"
 #include "imgui_extras.hpp"
+#include "json_decimal_parser.hpp"
 #include "metadata_in_gui.hpp"
 #include "special_numeric_types.hpp"
 #include "src/better_song.hpp"
@@ -50,8 +52,8 @@ EditorState::EditorState(
     assets(assets_)
 {
     if (not song.charts.empty()) {
-        auto& [name, chart] = *this->song.charts.begin();
-        open_chart(chart, name);
+        auto& [name, _] = *this->song.charts.begin();
+        open_chart(name);
     }
     reload_music();
     reload_jacket();
@@ -501,7 +503,7 @@ void EditorState::display_chart_list() {
                     chart_state ? chart_state->difficulty_name == name : false,
                     ImGuiSelectableFlags_SpanAllColumns
                 )) {
-                    open_chart(chart, name);
+                    open_chart(name);
                 }
                 ImGui::NextColumn();
                 ImGui::TextUnformatted(better::stringify_level(chart.level).c_str());
@@ -640,6 +642,13 @@ void EditorState::redo(NotificationsQueue& nq) {
     }
 };
 
+void EditorState::open_chart(const std::string& name) {
+    auto& [name_ref, chart] = *song.charts.find(name);
+    chart_state.emplace(chart, name_ref, assets);
+    reload_editable_range();
+    reload_applicable_timing();
+};
+
 
 void EditorState::reload_editable_range() {
     auto old_range = this->editable_range;
@@ -727,18 +736,12 @@ void EditorState::reload_preview_audio() {
 };
 
 void EditorState::reload_applicable_timing() {
-    if (chart_state) {
-        applicable_timing = chart_state->chart.timing;
+    if (chart_state and chart_state->chart.timing) {
+        applicable_timing = *chart_state->chart.timing;
     } else {
         applicable_timing = song.timing;
     }
 }
-
-void EditorState::open_chart(better::Chart& chart, const std::string& name) {
-    chart_state.emplace(chart, name, assets);
-    reload_editable_range();
-    reload_applicable_timing();
-};
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();
@@ -761,10 +764,13 @@ void EditorState::save(const std::filesystem::path& path) {
 }
 
 void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
-    const char* _filepath =
-        tinyfd_openFileDialog("Open File", nullptr, 0, nullptr, nullptr, false);
+    const char* _filepath = tinyfd_openFileDialog(
+        "Open File", nullptr, 0, nullptr, nullptr, false
+    );
+    // convert to u8string so std::filesystem::path works correctly on windows
+    const auto filepath_u8string = std::u8string{_filepath, _filepath+std::strlen(_filepath)};
     if (_filepath != nullptr) {
-        auto filepath = std::filesystem::path{_filepath};
+        auto filepath = std::filesystem::path{filepath_u8string};
         feis::open_from_file(ed, filepath, assets, settings);
     }
 }
@@ -776,10 +782,22 @@ void feis::open_from_file(
     std::filesystem::path settings
 ) {
     try {
-        Fumen f(file);
-        f.autoLoadFromMemon();
-        ed.emplace(f, assets);
-        Toolbox::pushNewRecentFile(std::filesystem::canonical(ed->song.path), settings);
+        // force utf-8 on windows
+        nowide::ifstream f{song_path.string()};
+        if (not f) {
+            tinyfd_messageBox(
+                "Error",
+                fmt::format("Could not open file {}", song_path.string()).c_str(),
+                "ok",
+                "error",
+                1
+            );
+            return;
+        };
+        const auto json = parse_decimal_json(f);
+        auto song = better::Song::load_from_memon(json);
+        ed.emplace(song, assets, song_path);
+        Toolbox::pushNewRecentFile(std::filesystem::canonical(song_path), settings);
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
@@ -788,27 +806,25 @@ void feis::open_from_file(
 /*
  * Returns the newly created chart if there is one
  */
-std::optional<better::Chart> feis::NewChartDialog::display(EditorState& editorState) {
-    std::optional<better::Chart> newChart;
+std::optional<std::pair<std::string, better::Chart>> feis::NewChartDialog::display(EditorState& editorState) {
     if (ImGui::Begin(
             "New Chart",
             &editorState.showNewChartDialog,
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (showCustomDifName) {
-            comboPreview = "Custom";
+        if (show_custom_dif_name) {
+            combo_preview = "Custom";
         } else {
             if (difficulty.empty()) {
-                comboPreview = "Choose One";
+                combo_preview = "Choose One";
             } else {
-                comboPreview = difficulty;
+                combo_preview = difficulty;
             }
         }
-        if (ImGui::BeginCombo("Difficulty", comboPreview.c_str())) {
+        if (ImGui::BeginCombo("Difficulty", combo_preview.c_str())) {
             for (auto dif_name : {"BSC", "ADV", "EXT"}) {
-                if (editorState.song.charts.find(dif_name)
-                    == editorState.song.charts.end()) {
+                if (not editorState.song.charts.contains(dif_name)) {
                     if (ImGui::Selectable(dif_name, dif_name == difficulty)) {
-                        showCustomDifName = false;
+                        show_custom_dif_name = false;
                         difficulty = dif_name;
                     }
                 } else {
@@ -816,101 +832,78 @@ std::optional<better::Chart> feis::NewChartDialog::display(EditorState& editorSt
                 }
             }
             ImGui::Separator();
-            if (ImGui::Selectable("Custom", &showCustomDifName)) {
+            if (ImGui::Selectable("Custom", &show_custom_dif_name)) {
                 difficulty = "";
             }
             ImGui::EndCombo();
         }
-        if (showCustomDifName) {
-            Toolbox::InputTextColored(
-                editorState.song.Charts.find(difficulty)
-                    == editorState.song.Charts.end(),
-                "Chart name has to be unique",
+        if (show_custom_dif_name) {
+            feis::InputTextColored(
                 "Difficulty Name",
-                &difficulty);
+                &difficulty,
+                not editorState.song.charts.contains(difficulty),
+                "Chart name has to be unique"
+            );
         }
-        ImGui::InputInt("Level", &level);
+        feis::InputDecimal("Level", &level);
         ImGui::Separator();
-        if (ImGui::TreeNode("Advanced##New Chart")) {
-            ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
-            if (ImGui::InputInt("Resolution", &resolution)) {
-                if (resolution < 1) {
-                    resolution = 1;
-                }
+        ImGui::BeginDisabled(difficulty.empty() or (editorState.song.charts.contains(difficulty)));
+        if (ImGui::Button("Create Chart##New Chart")) {
+            ImGui::EndDisabled();
+            ImGui::End();
+            try {
+                return {{difficulty, {.level = level}}};
+            } catch (const std::exception& e) {
+                tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
+                return {};
             }
-            ImGui::SameLine();
-            ImGui::TextDisabled("(?)");
-            if (ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
-                ImGui::TextUnformatted("Number of ticks in a beat");
-                ImGui::BulletText("Has nothing to do with time signature");
-                ImGui::BulletText(
-                    "Leave the default unless you know what you're doing");
-                ImGui::EndTooltip();
-            }
-            ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
-            ImGui::TreePop();
-        }
-        ImGui::Separator();
-        if (difficulty.empty()
-            or (editorState.song.Charts.find(difficulty)
-                != editorState.song.Charts.end())) {
-            ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            ImGui::Button("Create Chart##New Chart");
-            ImGui::PopItemFlag();
-            ImGui::PopStyleVar();
-        } else {
-            if (ImGui::Button("Create Chart##New Chart")) {
-                try {
-                    newChart.emplace(difficulty, level, resolution);
-                } catch (const std::exception& e) {
-                    tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
-                }
-            }
-        }
+        };
+        ImGui::EndDisabled();
     }
     ImGui::End();
-    return newChart;
+    return {};
 }
 
-void feis::ChartPropertiesDialog::display(EditorState& editorState, std::filesystem::path assets) {
-    assert(editorState.chart.has_value());
+void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
+    assert(editor_state.chart_state.has_value());
 
-    if (this->shouldRefreshValues) {
-        shouldRefreshValues = false;
+    if (this->should_refresh_values) {
+        should_refresh_values = false;
 
-        difNamesInUse.clear();
-        this->level = editorState.chart->ref.level;
-        this->difficulty_name = editorState.chart->ref.dif_name;
-        std::set<std::string> difNames {"BSC", "ADV", "EXT"};
-        showCustomDifName = (difNames.find(difficulty_name) == difNames.end());
+        difficulty_names_in_use.clear();
+        this->level = editor_state.chart_state->chart.level.value_or(0);
+        this->difficulty_name = editor_state.chart_state->difficulty_name;
+        this->show_custom_dif_name = (
+            difficulty_name == "BSC"
+            or difficulty_name == "ADV"
+            or difficulty_name == "EXT"
+        );
 
-        for (auto const& tuple : editorState.song.Charts) {
-            if (tuple.second != editorState.chart->ref) {
-                difNamesInUse.insert(tuple.first);
+        for (auto const& [name, _] : editor_state.song.charts) {
+            if (name != editor_state.chart_state->difficulty_name) {
+                difficulty_names_in_use.insert(name);
             }
         }
     }
 
     if (ImGui::Begin(
             "Chart Properties",
-            &editorState.showChartProperties,
+            &editor_state.showChartProperties,
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (showCustomDifName) {
-            comboPreview = "Custom";
+        if (show_custom_dif_name) {
+            combo_preview = "Custom";
         } else {
             if (difficulty_name.empty()) {
-                comboPreview = "Choose One";
+                combo_preview = "Choose One";
             } else {
-                comboPreview = difficulty_name;
+                combo_preview = difficulty_name;
             }
         }
-        if (ImGui::BeginCombo("Difficulty", comboPreview.c_str())) {
+        if (ImGui::BeginCombo("Difficulty", combo_preview.c_str())) {
             for (auto dif_name : {"BSC", "ADV", "EXT"}) {
-                if (difNamesInUse.find(dif_name) == difNamesInUse.end()) {
+                if (not difficulty_names_in_use.contains(dif_name)) {
                     if (ImGui::Selectable(dif_name, dif_name == difficulty_name)) {
-                        showCustomDifName = false;
+                        show_custom_dif_name = false;
                         difficulty_name = dif_name;
                     }
                 } else {
@@ -918,22 +911,23 @@ void feis::ChartPropertiesDialog::display(EditorState& editorState, std::filesys
                 }
             }
             ImGui::Separator();
-            if (ImGui::Selectable("Custom", &showCustomDifName)) {
+            if (ImGui::Selectable("Custom", &show_custom_dif_name)) {
                 difficulty_name = "";
             }
             ImGui::EndCombo();
         }
-        if (showCustomDifName) {
-            Toolbox::InputTextColored(
-                difNamesInUse.find(difficulty_name) == difNamesInUse.end(),
-                "Chart name has to be unique",
+        if (show_custom_dif_name) {
+            feis::InputTextColored(
                 "Difficulty Name",
-                &difficulty_name);
+                &difficulty_name,
+                not difficulty_names_in_use.contains(difficulty_name),
+                "Chart name has to be unique"
+            );
         }
-        ImGui::InputInt("Level", &level);
+        feis::InputDecimal("Level", &level);
         ImGui::Separator();
         if (difficulty_name.empty()
-            or (difNamesInUse.find(difficulty_name) != difNamesInUse.end())) {
+            or (difficulty_names_in_use.find(difficulty_name) != difficulty_names_in_use.end())) {
             ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             ImGui::Button("Apply##New Chart");
@@ -942,21 +936,15 @@ void feis::ChartPropertiesDialog::display(EditorState& editorState, std::filesys
         } else {
             if (ImGui::Button("Apply##New Chart")) {
                 try {
-                    Chart modified_chart =
-                        editorState.song.Charts.at(editorState.chart->ref.dif_name);
-                    editorState.song.Charts.erase(editorState.chart->ref.dif_name);
-                    modified_chart.dif_name = this->difficulty_name;
-                    modified_chart.level = this->level;
-                    if (not(editorState.song.Charts.emplace(modified_chart.dif_name, modified_chart))
-                               .second) {
-                        throw std::runtime_error(
-                            "Could not insert modified chart in song");
+                    auto modified_chart = editor_state.song.charts.extract(editor_state.chart_state->difficulty_name);
+                    modified_chart.key() = this->difficulty_name;
+                    modified_chart.mapped().level = this->level;
+                    const auto [_1, inserted, _2] = editor_state.song.charts.insert(std::move(modified_chart));
+                    if (not inserted) {
+                        throw std::runtime_error("Could not insert modified chart in song");
                     } else {
-                        editorState.chart.emplace(
-                            editorState.song.Charts.at(modified_chart.dif_name),
-                            assets
-                        );
-                        shouldRefreshValues = true;
+                        editor_state.open_chart(this->difficulty_name);
+                        should_refresh_values = true;
                     }
                 } catch (const std::exception& e) {
                     tinyfd_messageBox("Error", e.what(), "ok", "error", 1);

@@ -79,7 +79,7 @@ void ChartState::delete_(NotificationsQueue& nq) {
     }
 }
 
-Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position) {
+Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position, const better::Timing& timing) {
     /*
     Approach and burst animations last (at most) 16 frames at 30 fps on
     original jubeat markers, so we look for notes that have ended less than
@@ -88,15 +88,15 @@ Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position) 
     const auto earliest_visible_time = playback_position - sf::seconds(16.f/30.f);
     const auto latest_visible_time = playback_position + sf::seconds(16.f/30.f);
     
-    const auto earliest_visible_beat = chart.timing.beats_at(earliest_visible_time);
-    const auto latest_visible_beat = chart.timing.beats_at(latest_visible_time);
+    const auto earliest_visible_beat = timing.beats_at(earliest_visible_time);
+    const auto latest_visible_beat = timing.beats_at(latest_visible_time);
 
     return {earliest_visible_beat, latest_visible_beat};
 }
 
-void ChartState::update_visible_notes(const sf::Time& playback_position) {
+void ChartState::update_visible_notes(const sf::Time& playback_position, const better::Timing& timing) {
     visible_notes.clear();
-    const auto bounds = visible_beats(playback_position);
+    const auto bounds = visible_beats(playback_position, timing);
     chart.notes.in(
         {bounds.start, bounds.end},
         [this](const better::Notes::const_iterator& it){
@@ -108,10 +108,11 @@ void ChartState::update_visible_notes(const sf::Time& playback_position) {
 void ChartState::toggle_note(
     const sf::Time& playback_position,
     std::uint64_t snap,
-    const better::Position& button
+    const better::Position& button,
+    const better::Timing& timing
 ) {
     std::vector<better::Note> toggled_notes = {};
-    const auto bounds = visible_beats(playback_position);
+    const auto bounds = visible_beats(playback_position, timing);
     chart.notes.in(
         {bounds.start, bounds.end},
         [&](const better::Notes::const_iterator& it){
@@ -127,7 +128,7 @@ void ChartState::toggle_note(
         history.push(std::make_shared<RemoveNotes>(toggled_notes));
     } else {
         const auto rounded_beats = round_beats(
-            chart.timing.beats_at(playback_position),
+            timing.beats_at(playback_position),
             snap
         );
         const auto new_note = better::TapNote{rounded_beats, button};
@@ -136,6 +137,19 @@ void ChartState::toggle_note(
         history.push(std::make_shared<AddNotes>(toggled_notes));
     }
     density_graph.should_recompute = true;
+}
+
+void ChartState::handle_time_selection_tab(Fraction beats) {
+    if (not time_selection) {
+        time_selection.emplace(beats, beats);
+    } else {
+        if (time_selection->width() == 0) {
+            *time_selection += beats;
+            selected_notes = chart.notes.between(*time_selection);
+        } else {
+            time_selection.emplace(beats, beats);
+        }
+    }
 }
 
 better::LongNote make_long_note_dummy(
