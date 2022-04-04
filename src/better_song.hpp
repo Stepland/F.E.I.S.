@@ -21,28 +21,14 @@
 namespace better {
     std::string stringify_level(std::optional<Decimal> level);
 
-    const auto difficulty_name_comp_key = [](const std::string& s) {
-        if (s == "BSC") {
-            return std::make_tuple(1, std::string{});
-        } else if (s == "ADV") {
-            return std::make_tuple(2, std::string{});
-        } else if (s == "EXT") {
-            return std::make_tuple(3, std::string{});
-        } else {
-            return std::make_tuple(4, s);
-        }
-    };
+    std::tuple<int, std::string> difficulty_name_comp_key(const std::string& s);
 
-    const auto order_by_difficulty_name = [](const std::string& a, const std::string& b) {
-        return difficulty_name_comp_key(a) < difficulty_name_comp_key(b);
+    struct OrderByDifficultyName {
+        bool operator()(const std::string& a, const std::string& b);
     };
 
     struct Song {
-        std::map<
-            std::string,
-            better::Chart,
-            decltype(order_by_difficulty_name)
-        > charts{order_by_difficulty_name};
+        std::map<std::string, better::Chart, OrderByDifficultyName> charts;
         Metadata metadata;
         Timing timing;
         std::optional<Hakus> hakus;

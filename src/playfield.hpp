@@ -1,15 +1,16 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-#include <SFML/Graphics/RenderTexture.hpp>
-#include <imgui-SFML.h>
 #include <string>
 
-#include "../better_note.hpp"
-#include "../better_timing.hpp"
-#include "../ln_marker.hpp"
-#include "../marker.hpp"
-#include "../note.hpp"
+#include <imgui-SFML.h>
+
+#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
+
+#include "better_note.hpp"
+#include "better_timing.hpp"
+#include "ln_marker.hpp"
+#include "marker.hpp"
 
 class Playfield {
 public:

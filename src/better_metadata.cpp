@@ -42,8 +42,8 @@ namespace better {
                 json["preview"].get_to(metadata.preview_file);
             } else if (json["preview"].is_object()) {
                 metadata.use_preview_file = false;
-                json["preview"]["start"].get_to(metadata.preview_loop.start);
-                json["preview"]["duration"].get_to(metadata.preview_loop.duration);
+                metadata.preview_loop.start = Decimal{json["preview"]["start"].get<std::string>()};
+                metadata.preview_loop.duration = Decimal{json["preview"]["duration"].get<std::string>()};
             }
         }
         return metadata;
@@ -57,8 +57,8 @@ namespace better {
         metadata.jacket = json.value("album cover path", "");
         if (json.contains("preview")) {
             metadata.use_preview_file = false;
-            json["preview"]["position"].get_to(metadata.preview_loop.start);
-            json["preview"]["length"].get_to(metadata.preview_loop.duration);
+            metadata.preview_loop.start = Decimal{json["preview"]["position"].get<std::string>()};
+            metadata.preview_loop.duration = Decimal{json["preview"]["length"].get<std::string>()};
         }
         if (json.contains("preview path")) {
             metadata.use_preview_file = true;
@@ -75,8 +75,8 @@ namespace better {
         json["album cover path"].get_to(metadata.jacket);
         if (json.contains("preview")) {
             metadata.use_preview_file = false;
-            json["preview"]["position"].get_to(metadata.preview_loop.start);
-            json["preview"]["length"].get_to(metadata.preview_loop.duration);
+            metadata.preview_loop.start = Decimal{json["preview"]["position"].get<std::string>()};
+            metadata.preview_loop.duration = Decimal{json["preview"]["length"].get<std::string>()};
         }
         return metadata;
     };

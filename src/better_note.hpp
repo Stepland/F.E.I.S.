@@ -83,7 +83,7 @@ namespace better {
     class Note {
     public:
         template<typename ...Ts>
-        Note(Ts&&... Args) : note(std::forward<Ts...>(Args...)) {};
+        Note(Ts&&... Args) : note(std::forward<Ts>(Args)...) {};
         Fraction get_time() const;
         std::pair<Fraction, Fraction> get_time_bounds() const;
         Position get_position() const;

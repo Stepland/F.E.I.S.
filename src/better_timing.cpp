@@ -32,6 +32,14 @@ namespace better {
         return seconds;
     };
 
+    bool OrderByBeats::operator()(const BPMEvent& a, const BPMEvent& b) const {
+        return a.get_beats() < b.get_beats();
+    };
+
+    bool OrderBySeconds::operator()(const BPMEvent& a, const BPMEvent& b) const {
+        return a.get_seconds() < b.get_seconds();
+    };
+
     /*
     Create a default-constructed Timing, which corresponds to the fallback
     timing object from the memon spec : 120 BPM, offset 0
@@ -52,16 +60,8 @@ namespace better {
             );
         }
 
-        std::multiset<
-            BPMAtBeat,
-            decltype(order_by_beats)
-        > grouped_by_beats{
-            events.begin(), events.end(), order_by_beats
-        };
-
-        std::set<BPMAtBeat, decltype(order_by_beats)> sorted_events{
-            events.begin(), events.end(), order_by_beats
-        };
+        std::multiset<BPMAtBeat, OrderByBeats> grouped_by_beats{events.begin(), events.end()};
+        std::set<BPMAtBeat, OrderByBeats> sorted_events{events.begin(), events.end()};
 
         for (const auto& bpm_at_beat : sorted_events) {
             auto [begin, end] = grouped_by_beats.equal_range(bpm_at_beat);

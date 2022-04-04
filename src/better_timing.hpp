@@ -36,12 +36,12 @@ namespace better {
         Fraction seconds;
     };
 
-    const auto order_by_beats = [](const BPMAtBeat& a, const BPMAtBeat& b) {
-        return a.get_beats() < b.get_beats();
+    struct OrderByBeats {
+        bool operator()(const BPMEvent& a, const BPMEvent& b) const;
     };
-
-    const auto order_by_seconds = [](const BPMEvent& a, const BPMEvent& b) {
-        return a.get_seconds() < b.get_seconds();
+    
+    struct OrderBySeconds {
+        bool operator()(const BPMEvent& a, const BPMEvent& b) const;
     };
 
     class Timing {
@@ -62,8 +62,8 @@ namespace better {
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
         
     private:
-        std::set<BPMEvent, decltype(order_by_beats)> events_by_beats{order_by_beats};
-        std::set<BPMEvent, decltype(order_by_seconds)> events_by_seconds{order_by_seconds};
+        std::set<BPMEvent, OrderByBeats> events_by_beats;
+        std::set<BPMEvent, OrderBySeconds> events_by_seconds;
     };
 
     const auto frac_to_time = [](const Fraction& f) {

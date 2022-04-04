@@ -57,7 +57,7 @@ void ChartState::paste(NotificationsQueue& nq, Fraction at_beat) {
             pasted_notes.size() > 1 ? "s" : ""
         );
         nq.push(std::make_shared<TextNotification>(message));
-        for (const auto& note : pasted_notes) {
+        for (const auto& [_, note] : pasted_notes) {
             chart.notes.overwriting_insert(note);
         }
         selected_notes = pasted_notes;

@@ -1,6 +1,6 @@
 #include "playfield.hpp"
 
-#include "../toolbox.hpp"
+#include "toolbox.hpp"
 
 const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
 
@@ -74,14 +74,14 @@ void Playfield::draw_tail_and_receptor(
     const sf::Time& playbackPosition,
     const better::Timing& timing
 ) {
-    float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
-    auto note_time = timing.time_at(note.get_time());
-    auto note_offset = playbackPosition - note_time;
-    auto frame = static_cast<int>(std::floor(note_offset.asSeconds() * 30.f));
+    const float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
+    const auto note_time = timing.time_at(note.get_time());
+    const auto note_offset = playbackPosition - note_time;
+    const auto frame = static_cast<int>(std::floor(note_offset.asSeconds() * 30.f));
     const auto x = note.get_position().get_x();
     const auto y = note.get_position().get_y();
 
-    auto tail_end = timing.time_at(note.get_end());
+    const auto tail_end = timing.time_at(note.get_end());
 
     if (playbackPosition < tail_end) {
         // Before or During the long note
@@ -108,7 +108,7 @@ void Playfield::draw_tail_and_receptor(
                 long_note.highlight.setTexture(*tex, true);
             }
 
-            auto rect = long_note.tail.getTextureRect();
+            const auto rect = long_note.tail.getTextureRect();
             float tail_length_factor;
 
             if (frame < 8) {
@@ -158,7 +158,7 @@ void Playfield::draw_tail_and_receptor(
             rect = long_note.highlight.getTextureRect();
             long_note.highlight.setOrigin(rect.width / 2.f, rect.height / 2.f);
 
-            float scale = squareSize / rect.width;
+            const float scale = squareSize / rect.width;
             long_note.tail.setScale(scale, scale);
             long_note.triangle.setScale(scale, scale);
             long_note.backgroud.setScale(scale, scale);
@@ -187,21 +187,12 @@ void Playfield::draw_long_note(
     Marker& marker,
     MarkerEndingState& markerEndingState
 ) {
-    draw_tail_and_receptor(note, playbackPosition, ticksAtPlaybackPosition, BPM, resolution);
+    draw_tail_and_receptor(note, playbackPosition, timing);
 
-    float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
-
-    AffineTransform<float> SecondsToTicksProportional(0.f, (60.f / BPM), 0.f, resolution);
-    AffineTransform<float> SecondsToTicks(
-        playbackPosition.asSeconds() - (60.f / BPM),
-        playbackPosition.asSeconds(),
-        ticksAtPlaybackPosition - resolution,
-        ticksAtPlaybackPosition);
-
-    float note_offset = SecondsToTicksProportional.backwards_transform(
-        ticksAtPlaybackPosition - note.getTiming());
-    int x = note.getPos() % 4;
-    int y = note.getPos() / 4;
+    const float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
+    const auto note_time = timing.time_at(note.get_time());
+    const auto note_offset = playbackPosition - note_time;
+    const auto frame = static_cast<int>(std::floor(note_offset.asSeconds() * 30.f));
 
     float tail_end_in_seconds =
         SecondsToTicks.backwards_transform(note.getTiming() + note.getLength());
@@ -212,10 +203,13 @@ void Playfield::draw_long_note(
         // Display the beginning marker
         auto t = marker.getSprite(markerEndingState, note_offset);
         if (t) {
-            float scale = squareSize / t->get().getSize().x;
+            const float scale = squareSize / t->get().getSize().x;
             marker_sprite.setTexture(*t, true);
             marker_sprite.setScale(scale, scale);
-            marker_sprite.setPosition(x * squareSize, y * squareSize);
+            marker_sprite.setPosition(
+                note.get_position().get_x() * squareSize,
+                note.get_position().get_y() * squareSize
+            );
             marker_layer.draw(markerSprite);
         }
 
@@ -224,10 +218,13 @@ void Playfield::draw_long_note(
         if (tail_end_offset >= 0.0f) {
             auto t = marker.getSprite(markerEndingState, tail_end_offset);
             if (t) {
-                float scale = squareSize / t->get().getSize().x;
+                const float scale = squareSize / t->get().getSize().x;
                 marker_sprite.setTexture(*t, true);
                 marker_sprite.setScale(scale, scale);
-                marker_sprite.setPosition(x * squareSize, y * squareSize);
+                marker_sprite.setPosition(
+                    note.get_position().get_x() * squareSize,
+                    note.get_position().get_y() * squareSize
+                );
                 marker_layer.draw(markerSprite);
             }
         }

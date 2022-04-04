@@ -46,7 +46,7 @@ AddNotes::AddNotes(const better::Notes& notes) : notes(notes) {
 void AddNotes::doAction(EditorState& ed) const {
     ed.set_playback_position(ed.time_at(notes.begin()->second.get_time()));
     if (ed.chart_state) {
-        for (auto note : notes) {
+        for (const auto& [_, note] : notes) {
             ed.chart_state->chart.notes.insert(note);
         }
     }
@@ -55,7 +55,7 @@ void AddNotes::doAction(EditorState& ed) const {
 void AddNotes::undoAction(EditorState& ed) const {
     ed.set_playback_position(ed.time_at(notes.begin()->second.get_time()));
     if (ed.chart_state) {
-        for (auto note : notes) {
+        for (const auto& [_, note] : notes) {
             ed.chart_state->chart.notes.erase(note);
         }
     }

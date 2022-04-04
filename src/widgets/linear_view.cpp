@@ -54,6 +54,7 @@ void LinearView::resize(unsigned int width, unsigned int height) {
 
 void LinearView::update(
     const ChartState& chart_state,
+    const Timing& timing,
     const sf::Time& playback_position,
     const ImVec2& size
 ) {
@@ -71,7 +72,7 @@ void LinearView::update(
     // cursor_y pixels and we use this fact to compute the rest
     const auto beats_before_cursor = beats_to_pixels_proportional.backwards_transform(cursor_y);
     const auto beats_after_cursor = beats_to_pixels_proportional.backwards_transform(static_cast<float>(y) - cursor_y);
-    const auto current_beat = chart_state.chart.timing.beats_at(playback_position);
+    const auto current_beat = timing.beats_at(playback_position);
     Fraction first_visible_beat = current_beat - beats_before_cursor;
     Fraction last_visible_beat = current_beat + beats_after_cursor;
     AffineTransform<Fraction> beats_to_pixels_absolute{first_visible_beat, last_visible_beat, 0, y};
@@ -139,10 +140,10 @@ void LinearView::update(
         [&, this](const better::TapNote& tap_note){
             float note_x = timeline_x + note_width * (tap_note.get_position().index() + 0.5f);
             float note_y = static_cast<float>(beats_to_pixels_absolute.transform(tap_note.get_time()));
-            const auto note_seconds = chart_state.chart.timing.time_at(tap_note.get_time());
-            const auto first_colliding_beat = chart_state.chart.timing.beats_at(note_seconds - sf::milliseconds(500));
+            const auto note_seconds = timing.time_at(tap_note.get_time());
+            const auto first_colliding_beat = timing.beats_at(note_seconds - sf::milliseconds(500));
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
-            const auto last_colliding_beat = chart_state.chart.timing.beats_at(note_seconds + sf::milliseconds(500));
+            const auto last_colliding_beat = timing.beats_at(note_seconds + sf::milliseconds(500));
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
             note_collision_zone.setSize({collizion_zone_width, static_cast<float>(collision_zone_height)});
             Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);
@@ -158,11 +159,11 @@ void LinearView::update(
         [&, this](const better::LongNote& long_note){
             float note_x = timeline_x + note_width * (long_note.get_position().index() + 0.5f);
             float note_y = static_cast<float>(beats_to_pixels_absolute.transform(long_note.get_time()));
-            const auto note_start_seconds = chart_state.chart.timing.time_at(long_note.get_time());
-            const auto first_colliding_beat = chart_state.chart.timing.beats_at(note_start_seconds - sf::milliseconds(500));
+            const auto note_start_seconds = timing.time_at(long_note.get_time());
+            const auto first_colliding_beat = timing.beats_at(note_start_seconds - sf::milliseconds(500));
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
-            const auto note_end_seconds = chart_state.chart.timing.time_at(long_note.get_end());
-            const auto last_colliding_beat = chart_state.chart.timing.beats_at(note_end_seconds + sf::milliseconds(500));
+            const auto note_end_seconds = timing.time_at(long_note.get_end());
+            const auto last_colliding_beat = timing.beats_at(note_end_seconds + sf::milliseconds(500));
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
             note_collision_zone.setSize({collizion_zone_width, static_cast<float>(collision_zone_height)});
             Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);

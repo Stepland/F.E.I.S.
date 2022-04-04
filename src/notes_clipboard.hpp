@@ -28,20 +28,20 @@ private:
 const auto shifter = [](Fraction offset){
     return VariantVisitor {
         [=](const better::TapNote& tap_note) {
-            return better::Note{
+            return better::Note(
                 std::in_place_type<better::TapNote>,
                 tap_note.get_time() + offset,
                 tap_note.get_position()
-            };
+            );
         },
         [=](const better::LongNote& long_note) {
-            return better::Note{
+            return better::Note(
                 std::in_place_type<better::LongNote>,
                 long_note.get_time() + offset,
                 long_note.get_position(),
                 long_note.get_duration(),
                 long_note.get_tail_tip()
-            };
+            );
         },
     };
 };

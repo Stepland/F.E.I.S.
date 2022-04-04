@@ -5,9 +5,6 @@
 #include <variant>
 #include <utility>
 
-#include <boost/concept_check.hpp>
-#include <boost/multiprecision/detail/default_ops.hpp>
-
 #include "better_note.hpp"
 #include "better_notes.hpp"
 #include "better_song.hpp"

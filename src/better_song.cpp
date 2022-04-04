@@ -21,6 +21,22 @@ namespace better {
         return stringify_or(level, "(no level defined)");
     };
 
+    std::tuple<int, std::string> difficulty_name_comp_key(const std::string& s) {
+        if (s == "BSC") {
+            return std::make_tuple(1, std::string{});
+        } else if (s == "ADV") {
+            return std::make_tuple(2, std::string{});
+        } else if (s == "EXT") {
+            return std::make_tuple(3, std::string{});
+        } else {
+            return std::make_tuple(4, s);
+        }
+    };
+
+    bool OrderByDifficultyName::operator()(const std::string& a, const std::string& b) {
+        return difficulty_name_comp_key(a) < difficulty_name_comp_key(b);
+    };
+
     nlohmann::ordered_json Song::dump_to_memon_1_0_0() const {
         nlohmann::ordered_json memon;
         memon["version"] = "1.0.0";

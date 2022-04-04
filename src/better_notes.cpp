@@ -9,7 +9,7 @@ namespace better {
         auto conflicting_note = end();
         in(
             note.get_time_bounds(),
-            [&](Notes::iterator& it){
+            [&](const Notes::iterator& it){
                 if (
                     it->second.get_position() == note.get_position()
                     and conflicting_note == end()
@@ -30,7 +30,7 @@ namespace better {
         std::vector<better::Note> conflicting_notes = {};
         in(
             note.get_time_bounds(),
-            [&](Notes::iterator& it) {
+            [&](const Notes::iterator& it) {
                 if (it->second.get_position() == note.get_position()) {
                     conflicting_notes.push_back(it->second);
                 }
@@ -44,11 +44,14 @@ namespace better {
 
     Notes::const_iterator Notes::find(const Note& note) const {
         auto conflicting_note = interval_tree::end();
-        in(note.get_time_bounds(), [&](Notes::iterator& it){
-            if (it->second == note and conflicting_note == end()) {
-                conflicting_note = it;
+        in(
+            note.get_time_bounds(),
+            [&](const Notes::iterator& it){
+                if (it->second == note and conflicting_note == end()) {
+                    conflicting_note = it;
+                }
             }
-        });
+        );
         return conflicting_note;
     };
 
@@ -88,7 +91,7 @@ namespace better {
         bool found_collision = false;
         in(
             {collision_start, collision_end},
-            [&](Notes::const_iterator it){
+            [&](const Notes::iterator& it){
                 if (it->second.get_position() == note.get_position()) {
                     if (it->second != note) {
                         found_collision = true;

@@ -15,7 +15,8 @@ public:
 
     void update(
         const ChartState& chart_state,
-        const sf::Time& playbackPosition,
+        const Timing& timing,
+        const sf::Time& playback_position,
         const ImVec2& size
     );
 

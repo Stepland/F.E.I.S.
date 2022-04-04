@@ -4,20 +4,19 @@
 #include <SFML/Graphics.hpp>
 #include <optional>
 
+#include "better_note.hpp"
 #include "better_song.hpp"
 #include "chart_state.hpp"
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "history_actions.hpp"
 #include "marker.hpp"
-#include "metadata_in_gui.hpp"
 #include "music_state.hpp"
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
+#include "playfield.hpp"
 #include "precise_music.hpp"
-#include "src/better_note.hpp"
 #include "widgets/linear_view.hpp"
-#include "widgets/playfield.hpp"
 
 
 /*

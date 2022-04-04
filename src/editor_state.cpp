@@ -22,7 +22,6 @@
 #include "history_actions.hpp"
 #include "imgui_extras.hpp"
 #include "json_decimal_parser.hpp"
-#include "metadata_in_gui.hpp"
 #include "special_numeric_types.hpp"
 #include "src/better_song.hpp"
 #include "src/chart.hpp"
