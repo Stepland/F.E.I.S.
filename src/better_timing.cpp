@@ -32,14 +32,6 @@ namespace better {
         return seconds;
     };
 
-    bool OrderByBeats::operator()(const BPMEvent& a, const BPMEvent& b) const {
-        return a.get_beats() < b.get_beats();
-    };
-
-    bool OrderBySeconds::operator()(const BPMEvent& a, const BPMEvent& b) const {
-        return a.get_seconds() < b.get_seconds();
-    };
-
     /*
     Create a default-constructed Timing, which corresponds to the fallback
     timing object from the memon spec : 120 BPM, offset 0
@@ -170,7 +162,7 @@ namespace better {
     };
 
     Fraction Timing::beats_at(sf::Time time) const {
-        Fraction fractional_seconds{time.asMicroseconds(), 1000000};
+        Fraction fractional_seconds{convert_to_mpz(static_cast<std::uint64_t>(time.asMicroseconds())), 1000000};
         auto bpm_change = this->events_by_seconds.upper_bound(BPMEvent(0, fractional_seconds, 0));
         if (bpm_change != this->events_by_seconds.begin()) {
             bpm_change = std::prev(bpm_change);
@@ -242,4 +234,10 @@ namespace better {
         const SecondsAtBeat seconds_at_beat{-1 * offset, 0};
         return Timing{{bpm_at_beat}, seconds_at_beat};
     }
+
+    sf::Time frac_to_time(const Fraction& f) {
+        const Fraction microseconds = f * 1000000;
+        const mpz_class approximated = microseconds.get_num() / microseconds.get_den();
+        return sf::microseconds(convert_to_int64(approximated));
+    };
 }

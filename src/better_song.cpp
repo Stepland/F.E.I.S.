@@ -33,7 +33,7 @@ namespace better {
         }
     };
 
-    bool OrderByDifficultyName::operator()(const std::string& a, const std::string& b) {
+    bool OrderByDifficultyName::operator()(const std::string& a, const std::string& b) const {
         return difficulty_name_comp_key(a) < difficulty_name_comp_key(b);
     };
 

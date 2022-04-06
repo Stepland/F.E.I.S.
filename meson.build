@@ -23,9 +23,9 @@ deps = [
     dependency('sfml-audio', version : '>=2.5.1'),
     dependency('gl'),
     dependency('openal'),
-    dependency('boost'),
     dependency('mpdec++', fallback: ['mpdecimal', 'mpdecpp_dep']),
-    dependency('nowide')
+    dependency('nowide'),
+    dependency('gmp')
 ]
 
 subdir('tests')

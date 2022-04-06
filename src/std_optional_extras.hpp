@@ -15,13 +15,14 @@ B apply_or(std::optional<A> opt, B(*func)(A), B b) {
 
 template<class A>
 std::string stringify_or(std::optional<A> opt, std::string fallback) {
+    auto cb = [](const A& a){
+        std::stringstream ss;
+        ss << a;
+        return ss.str();
+    };
     return apply_or(
         opt,
-        [](const A& a){
-            std::stringstream ss;
-            ss << a;
-            return ss.str();
-        },
+        &cb,
         fallback
     );
 }

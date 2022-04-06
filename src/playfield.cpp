@@ -108,7 +108,7 @@ void Playfield::draw_tail_and_receptor(
                 long_note.highlight.setTexture(*tex, true);
             }
 
-            const auto rect = long_note.tail.getTextureRect();
+            auto rect = long_note.tail.getTextureRect();
             float tail_length_factor;
 
             if (frame < 8) {

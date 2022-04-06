@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iterator>
 #include <map>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -37,11 +38,17 @@ namespace better {
     };
 
     struct OrderByBeats {
-        bool operator()(const BPMEvent& a, const BPMEvent& b) const;
+        template<class T>
+        bool operator()(const T& a, const T& b) const {
+            return a.get_beats() < b.get_beats();
+        }
     };
     
     struct OrderBySeconds {
-        bool operator()(const BPMEvent& a, const BPMEvent& b) const;
+        template<class T>
+        bool operator()(const T& a, const T& b) const {
+            return a.get_seconds() < b.get_seconds();
+        }
     };
 
     class Timing {
@@ -66,8 +73,5 @@ namespace better {
         std::set<BPMEvent, OrderBySeconds> events_by_seconds;
     };
 
-    const auto frac_to_time = [](const Fraction& f) {
-        auto microseconds = f * 1000000;
-        return sf::microseconds(microseconds.convert_to<sf::Int64>());
-    };
+    sf::Time frac_to_time(const Fraction& f);
 }

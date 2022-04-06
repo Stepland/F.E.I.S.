@@ -4,6 +4,7 @@
 #include <cmath>
 #include <filesystem>
 
+#include "../better_timing.hpp"
 #include "../chart_state.hpp"
 #include "../toolbox.hpp"
 
@@ -15,7 +16,7 @@ public:
 
     void update(
         const ChartState& chart_state,
-        const Timing& timing,
+        const better::Timing& timing,
         const sf::Time& playback_position,
         const ImVec2& size
     );

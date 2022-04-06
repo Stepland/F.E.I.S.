@@ -62,7 +62,7 @@ EditorState::EditorState(
 const Interval<sf::Time>& EditorState::get_editable_range() {
     reload_editable_range();
     return editable_range;
-}
+};
 
 void EditorState::set_playback_position(sf::Time newPosition) {
     newPosition = std::clamp(newPosition, editable_range.start, editable_range.end);
@@ -78,7 +78,7 @@ void EditorState::set_playback_position(sf::Time newPosition) {
             music_state->music.stop();
         }
     }
-}
+};
 
 Fraction EditorState::current_exact_beats() const {
     return applicable_timing.beats_at(playback_position);
@@ -544,7 +544,7 @@ bool EditorState::needs_to_save() const {
     } else {
         return false;
     }
-}
+};
 
 EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
     int response_code = tinyfd_messageBox(
@@ -572,7 +572,7 @@ EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
     }
 };
 
-EditorState::SaveOutcome EditorState::save_if_needed() {
+EditorState::SaveOutcome EditorState::ask_to_save_if_needed() {
     if (not needs_to_save()) {
         return EditorState::SaveOutcome::NoSavingNeeded;
     }
@@ -592,7 +592,21 @@ EditorState::SaveOutcome EditorState::save_if_needed() {
         case EditorState::UserWantsToSave::Cancel:
             return EditorState::SaveOutcome::UserCanceled;
     }
-}
+};
+
+EditorState::SaveOutcome EditorState::save_if_needed() {
+    if (not needs_to_save()) {
+        return EditorState::SaveOutcome::NoSavingNeeded;
+    } else {
+        const auto path = ask_for_save_path_if_needed();
+        if (not path) {
+            return EditorState::SaveOutcome::UserCanceled; 
+        } else {
+            save(*path);
+            return EditorState::SaveOutcome::UserSaved;
+        }
+    }
+};
 
 std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() {
     if (song_path) {
@@ -600,7 +614,7 @@ std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() 
     } else {
         return feis::ask_for_save_path();
     }
-}
+};
 
 void EditorState::move_backwards_in_time() {
     auto beats = current_exact_beats();
@@ -740,7 +754,7 @@ void EditorState::reload_applicable_timing() {
     } else {
         applicable_timing = song.timing;
     }
-}
+};
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();
@@ -760,9 +774,13 @@ void EditorState::save(const std::filesystem::path& path) {
     if (chart_state) {
         chart_state->history.mark_as_saved();
     }
-}
+};
 
 void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
+    if (ed and ed->ask_to_save_if_needed() == EditorState::SaveOutcome::UserCanceled) {
+        return
+    }
+
     const char* _filepath = tinyfd_openFileDialog(
         "Open File", nullptr, 0, nullptr, nullptr, false
     );
@@ -772,7 +790,7 @@ void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, st
         auto filepath = std::filesystem::path{filepath_u8string};
         feis::open_from_file(ed, filepath, assets, settings);
     }
-}
+};
 
 void feis::open_from_file(
     std::optional<EditorState>& ed,
@@ -800,7 +818,7 @@ void feis::open_from_file(
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
-}
+};
 
 /*
  * Returns the newly created chart if there is one
@@ -861,7 +879,7 @@ std::optional<std::pair<std::string, better::Chart>> feis::NewChartDialog::displ
     }
     ImGui::End();
     return {};
-}
+};
 
 void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
     assert(editor_state.chart_state.has_value());
@@ -952,4 +970,4 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
         }
     }
     ImGui::End();
-}
+};

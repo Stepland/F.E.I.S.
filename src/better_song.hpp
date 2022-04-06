@@ -24,7 +24,7 @@ namespace better {
     std::tuple<int, std::string> difficulty_name_comp_key(const std::string& s);
 
     struct OrderByDifficultyName {
-        bool operator()(const std::string& a, const std::string& b);
+        bool operator()(const std::string& a, const std::string& b) const;
     };
 
     struct Song {

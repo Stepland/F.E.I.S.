@@ -1,23 +1,15 @@
 #pragma once
 
 #include <compare>
+#include <cstdint>
 
-#include <boost/multiprecision/gmp.hpp>
+#include <gmpxx.h>
 #include <libmpdec++/decimal.hh>
 
-using Fraction = boost::multiprecision::mpq_rational;
+using Fraction = mpq_class;
 using Decimal = decimal::Decimal;
 
-inline std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs) {
-    if (lhs < rhs) {
-        return std::strong_ordering::less;
-    } else if (lhs == rhs) {
-        return std::strong_ordering::equal;
-    } else {
-        return std::strong_ordering::greater;
-    }
-};
-
+std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs);
 Fraction operator%(Fraction a, const Fraction& b);
 Fraction floor_fraction(const Fraction& f);
 Fraction round_fraction(const Fraction& f);
@@ -25,24 +17,15 @@ Decimal convert_to_decimal(const Fraction& f, std::uint64_t precision);
 Fraction convert_to_fraction(const Decimal& d);
 
 // Rounds a given beat to the nearest given division (defaults to nearest 1/240th)
-const auto round_beats = [](Fraction beats, std::uint64_t denominator = 240) {
-    beats *= denominator;
-    const auto nearest = round_fraction(beats);
-    return nearest / Fraction{denominator};
-};
-
-const auto floor_beats = [](Fraction beats, std::uint64_t denominator = 240) {
-    beats *= denominator;
-    const auto nearest = floor_fraction(beats);
-    return nearest / Fraction{denominator};
-};
+Fraction round_beats(Fraction beats, std::uint64_t denominator = 240);
+Fraction floor_beats(Fraction beats, std::uint64_t denominator = 240);
 
 // Stolen from :
 // https://github.com/progrock-libraries/kickstart/blob/master/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36
 // Essentially this is Horner's rule adapted to calculating a power, so that the
 // number of floating point multiplications is at worst O(log₂n).
 template<class Number>
-Number fast_pow( const Number base, const std::uint64_t exponent ) {
+Number fast_pow(const Number base, const std::uint64_t exponent) {
     Number result = 1;
     Number weight = base;
     for (std::uint64_t n = exponent; n != 0; weight *= weight) {
@@ -52,4 +35,9 @@ Number fast_pow( const Number base, const std::uint64_t exponent ) {
         n /= 2;
     }
     return result;
-}
+};
+
+mpz_class convert_to_mpz(std::uint64_t u);
+mpz_class convert_to_mpz(std::int64_t i);
+std::uint64_t convert_to_uint64(const mpz_class& m);
+std::int64_t convert_to_int64(const mpz_class& m);

@@ -30,7 +30,7 @@ namespace better {
         std::vector<better::Note> conflicting_notes = {};
         in(
             note.get_time_bounds(),
-            [&](const Notes::iterator& it) {
+            [&](const Notes::const_iterator& it) {
                 if (it->second.get_position() == note.get_position()) {
                     conflicting_notes.push_back(it->second);
                 }
@@ -46,7 +46,7 @@ namespace better {
         auto conflicting_note = interval_tree::end();
         in(
             note.get_time_bounds(),
-            [&](const Notes::iterator& it){
+            [&](Notes::const_iterator it){
                 if (it->second == note and conflicting_note == end()) {
                     conflicting_note = it;
                 }
@@ -91,7 +91,7 @@ namespace better {
         bool found_collision = false;
         in(
             {collision_start, collision_end},
-            [&](const Notes::iterator& it){
+            [&](const Notes::const_iterator& it){
                 if (it->second.get_position() == note.get_position()) {
                     if (it->second != note) {
                         found_collision = true;
@@ -105,7 +105,7 @@ namespace better {
     Notes Notes::between(const Interval<Fraction>& bounds) {
         auto its = in(bounds.start, bounds.end);
         Notes res;
-        res.interval_tree::insert(its.begin(), its.end());
+        res.interval_tree::insert(*its.begin(), *its.end());
         return res;
     }
 

@@ -15,7 +15,7 @@ const std::string& ActionWithMessage::getMessage() const {
     return message;
 }
 
-OpenChart::OpenChart(better::Chart c, const std::string& difficulty) : notes(c.notes) {
+OpenChart::OpenChart(const better::Chart& c, const std::string& difficulty) : notes(c.notes) {
     message = fmt::format(
         "Opened Chart {} (level {})",
         difficulty,

@@ -15,7 +15,7 @@ ChartState::ChartState(better::Chart& c, const std::string& name, std::filesyste
     difficulty_name(name),
     density_graph(assets)
 {
-    history.push(std::make_shared<OpenChart>(c));
+    history.push(std::make_shared<OpenChart>(c, name));
 }
 
 void ChartState::cut(NotificationsQueue& nq) {
@@ -48,7 +48,7 @@ void ChartState::copy(NotificationsQueue& nq) {
     }
 };
 
-void ChartState::paste(NotificationsQueue& nq, Fraction at_beat) {
+void ChartState::paste(Fraction at_beat, NotificationsQueue& nq) {
     if (not notes_clipboard.empty()) {
         const auto pasted_notes = notes_clipboard.paste(at_beat);
         const auto message = fmt::format(
@@ -111,18 +111,18 @@ void ChartState::toggle_note(
     const better::Position& button,
     const better::Timing& timing
 ) {
-    std::vector<better::Note> toggled_notes = {};
+    better::Notes toggled_notes;
     const auto bounds = visible_beats(playback_position, timing);
     chart.notes.in(
         {bounds.start, bounds.end},
         [&](const better::Notes::const_iterator& it){
             if (it->second.get_position() == button) {
-                toggled_notes.push_back(it->second);
+                toggled_notes.insert(it->second);
             }
         }
     );
     if (not toggled_notes.empty()) {
-        for (const auto& note : toggled_notes) {
+        for (const auto& [_, note] : toggled_notes) {
             chart.notes.erase(note);
         }
         history.push(std::make_shared<RemoveNotes>(toggled_notes));
@@ -132,7 +132,7 @@ void ChartState::toggle_note(
             snap
         );
         const auto new_note = better::TapNote{rounded_beats, button};
-        toggled_notes.push_back(new_note);
+        toggled_notes.insert(new_note);
         chart.notes.insert(new_note);
         history.push(std::make_shared<AddNotes>(toggled_notes));
     }
@@ -174,7 +174,7 @@ better::LongNote make_long_note(
     if (start_time > end_time) {
         std::swap(start_time, end_time);
     }
-    const auto duration = boost::multiprecision::abs(start_time - end_time);
+    const auto duration = end_time - start_time;
     return better::LongNote(
         start_time,
         long_note_being_created.first.get_position(),

@@ -29,7 +29,7 @@ struct ChartState {
 
     void cut(NotificationsQueue& nq);
     void copy(NotificationsQueue& nq);
-    void paste(NotificationsQueue& nq, Fraction at_beat);
+    void paste(Fraction at_beat, NotificationsQueue& nq);
     void delete_(NotificationsQueue& nq);
 
     Interval<Fraction> visible_beats(const sf::Time& playback_position, const better::Timing& timing);

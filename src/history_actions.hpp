@@ -34,7 +34,7 @@ protected:
  */
 class OpenChart : public ActionWithMessage {
 public:
-    explicit OpenChart(better::Chart c, const std::string& difficulty);
+    explicit OpenChart(const better::Chart& c, const std::string& difficulty);
 
     void doAction(EditorState& ed) const override;
 

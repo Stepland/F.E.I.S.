@@ -93,7 +93,7 @@ int main() {
                 case sf::Event::Closed:
                     preferences.save();
                     if (editor_state) {
-                        if (editor_state->save_if_needed() != EditorState::SaveOutcome::UserCanceled) {
+                        if (editor_state->ask_to_save_if_needed() != EditorState::SaveOutcome::UserCanceled) {
                             window.close();
                         }
                     }
@@ -188,7 +188,9 @@ int main() {
                         // Delete selected notes from the chart and discard
                         // time selection
                         case sf::Keyboard::Delete:
-                            Edit::delete_(editor_state, notificationsQueue);
+                            if (editor_state and editor_state->chart_state) {
+                                editor_state->chart_state->delete_(notificationsQueue);
+                            }
                             break;
 
                         // Arrow keys
@@ -250,22 +252,21 @@ int main() {
                         case sf::Keyboard::Right:
                             if (event.key.shift) {
                                 if (editor_state and editor_state->music_state) {
-                                    editor_state->musicSpeedUp();
-                                    std::stringstream ss;
-                                    ss << "Speed : " << editor_state->musicSpeed * 10 << "%";
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                    editor_state->music_state->speed_up();
+                                    notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
+                                        "Speed : {}%",
+                                        editor_state->music_state->speed * 10
+                                    )));
                                 }
                             } else {
-                                if (editor_state and editor_state->chart) {
-                                    editor_state->snap = Toolbox::getNextDivisor(
-                                        editor_state->chart->ref.getResolution(),
-                                        editor_state->snap);
-                                    std::stringstream ss;
-                                    ss << "Snap : "
-                                       << Toolbox::toOrdinal(4 * editor_state->snap);
+                                if (editor_state and editor_state->chart_state) {
+                                    editor_state->snap = Toolbox::getNextDivisor(240, editor_state->snap);
                                     notificationsQueue.push(
-                                        std::make_shared<TextNotification>(ss.str()));
+                                        std::make_shared<TextNotification>(fmt::format(
+                                            "Snap : {}%",
+                                            Toolbox::toOrdinal(4 * editor_state->snap)
+                                        ))
+                                    );
                                 }
                             }
                             break;
@@ -312,16 +313,14 @@ int main() {
                             break;
                         case sf::Keyboard::Add:
                             if (editor_state) {
-                                editor_state->linearView.zoom_in();
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Zoom in"));
+                                editor_state->linear_view.zoom_in();
+                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom in"));
                             }
                             break;
                         case sf::Keyboard::Subtract:
                             if (editor_state) {
-                                editor_state->linearView.zoom_out();
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Zoom out"));
+                                editor_state->linear_view.zoom_out();
+                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
                             }
                             break;
                         /*
@@ -329,14 +328,14 @@ int main() {
                          */
                         case sf::Keyboard::C:
                             if (event.key.control) {
-                                Edit::copy(editor_state, notificationsQueue);
+                                if (editor_state and editor_state->chart_state) {
+                                    editor_state->chart_state->copy(notificationsQueue);
+                                }
                             }
                             break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
-                                if (feis::saveOrCancel(editor_state)) {
-                                    feis::open(editor_state, assets_folder, settings_folder);
-                                }
+                                feis::open(editor_state, assets_folder, settings_folder);
                             }
                             break;
                         case sf::Keyboard::P:
@@ -346,29 +345,42 @@ int main() {
                             break;
                         case sf::Keyboard::S:
                             if (event.key.control) {
-                                feis::save(*editor_state);
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Saved file"));
+                                if (editor_state) {
+                                    if (editor_state->save_if_needed() == EditorState::SaveOutcome::UserSaved) {
+                                        notificationsQueue.push(std::make_shared<TextNotification>("Saved file"));
+                                    }
+                                }
                             }
                             break;
                         case sf::Keyboard::V:
                             if (event.key.control) {
-                                Edit::paste(editor_state, notificationsQueue);
+                                if (editor_state and editor_state->chart_state) {
+                                    editor_state->chart_state->paste(
+                                        editor_state->current_snaped_beats(),
+                                        notificationsQueue
+                                    );
+                                }
                             }
                             break;
                         case sf::Keyboard::X:
                             if (event.key.control) {
-                                Edit::cut(editor_state, notificationsQueue);
+                                if (editor_state and editor_state->chart_state) {
+                                    editor_state->chart_state->cut(notificationsQueue);
+                                }
                             }
                             break;
                         case sf::Keyboard::Y:
                             if (event.key.control) {
-                                Edit::redo(editor_state, notificationsQueue);
+                                if (editor_state) {
+                                    editor_state->redo(notificationsQueue);
+                                }
                             }
                             break;
                         case sf::Keyboard::Z:
                             if (event.key.control) {
-                                Edit::undo(editor_state, notificationsQueue);
+                                if (editor_state) {
+                                    editor_state->undo(notificationsQueue);
+                                }
                             }
                             break;
                         default:
@@ -386,11 +398,14 @@ int main() {
         // Audio playback management
         if (editor_state) {
             if (editor_state->chart_state) {
-                editor_state->chart_state->update_visible_notes();
+                editor_state->chart_state->update_visible_notes(
+                    editor_state->playback_position,
+                    editor_state->applicable_timing
+                );
             }
             if (editor_state->playing) {
-                editor_state->previousPos = editor_state->playbackPosition;
-                editor_state->playbackPosition += delta * (editor_state->musicSpeed / 10.f);
+                editor_state->previous_playback_position = editor_state->playback_position;
+                editor_state->playback_position += delta * (editor_state->musicSpeed / 10.f);
                 if (editor_state->music) {
                     switch (editor_state->music->getStatus()) {
                         case sf::Music::Stopped:

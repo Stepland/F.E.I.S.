@@ -10,8 +10,10 @@ LNMarker::LNMarker(std::filesystem::path folder) :
     square_outline(load_tex_with_prefix<16, 100>(folder, "LN0001_M")),
     square_background(load_tex_with_prefix<16, 200>(folder, "LN0001_M")),
     tail_cycle(load_tex_with_prefix<16, 0>(folder, "LN0001_M"))
-{
-    setRepeated<16>(tail_cycle, true);
+{   
+    for (tex& : tail_cycle) {
+        tex.setRepeated(true);
+    }
 }
 
 opt_tex_ref LNMarker::triangle_at(int frame) {

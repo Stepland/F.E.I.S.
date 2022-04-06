@@ -7,54 +7,54 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
-#include "better_note.hpp"
-#include "better_timing.hpp"
-#include "ln_marker.hpp"
-#include "marker.hpp"
+// #include "better_note.hpp"
+// #include "better_timing.hpp"
+// #include "ln_marker.hpp"
+// #include "marker.hpp"
+
+struct LongNote {
+//    template<typename ...Ts>
+//    LongNote(Ts&&... Args) : marker(std::forward<Ts>(Args)...) {};
+
+    LNMarker marker;
+    sf::RenderTexture layer;
+    sf::Sprite backgroud;
+    sf::Sprite outline;
+    sf::Sprite highlight;
+    sf::Sprite tail;
+    sf::Sprite triangle;
+};
 
 class Playfield {
-public:
-    Playfield(std::filesystem::path assets_folder);
-    sf::Texture base_texture;
-    sf::Sprite button;
-    sf::Sprite button_pressed;
-    sf::Sprite note_selected;
-    sf::Sprite note_collision;
+// public:
+//     Playfield(std::filesystem::path assets_folder);
+//     sf::Texture base_texture;
+//     sf::Sprite button;
+//     sf::Sprite button_pressed;
+//     sf::Sprite note_selected;
+//     sf::Sprite note_collision;
 
-    sf::RenderTexture marker_layer;
-    sf::Sprite marker_sprite;
+//     sf::RenderTexture marker_layer;
+//     sf::Sprite marker_sprite;
 
-    struct LongNote {
-        template<class... Args>
-        LongNote(Args&& ...args) : marker(std::forward<Args>(args)...) {};
+//     LongNote long_note;
 
-        LNMarker marker;
-        sf::RenderTexture layer;
-        sf::Sprite backgroud;
-        sf::Sprite outline;
-        sf::Sprite highlight;
-        sf::Sprite tail;
-        sf::Sprite triangle;
-    };
+//     void resize(unsigned int width);
 
-    LongNote long_note;
+//     void draw_tail_and_receptor(
+//         const better::LongNote& note,
+//         const sf::Time& playbackPosition,
+//         const better::Timing& timing
+//     );
 
-    void resize(unsigned int width);
+//     void draw_long_note(
+//         const better::LongNote& note,
+//         const sf::Time& playbackPosition,
+//         const better::Timing& timing,
+//         Marker& marker,
+//         MarkerEndingState& markerEndingState
+//     );
 
-    void draw_tail_and_receptor(
-        const better::LongNote& note,
-        const sf::Time& playbackPosition,
-        const better::Timing& timing
-    );
-
-    void draw_long_note(
-        const better::LongNote& note,
-        const sf::Time& playbackPosition,
-        const better::Timing& timing,
-        Marker& marker,
-        MarkerEndingState& markerEndingState
-    );
-
-private:
-    const std::filesystem::path texture_path;
+// private:
+//     const std::filesystem::path texture_path;
 };

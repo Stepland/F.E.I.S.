@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <optional>
 
+
 #include "better_note.hpp"
 #include "better_song.hpp"
 #include "chart_state.hpp"
@@ -97,7 +98,9 @@ public:
         NoSavingNeeded,
     };
 
-    SaveOutcome save_if_needed();
+    SaveOutcome ask_to_save_if_needed();
+
+    void save_if_needed();
 
     bool needs_to_save() const;
 

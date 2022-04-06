@@ -1,12 +1,14 @@
 #pragma once
 
-#include <SFML/Graphics/RenderTexture.hpp>
-#include <SFML/Graphics/Sprite.hpp>
-#include <SFML/Graphics/Texture.hpp>
 #include <filesystem>
 #include <iomanip>
 #include <list>
 #include <map>
+
+#include <fmt/core.h>
+#include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/Texture.hpp>
 
 using opt_tex_ref = std::optional<std::reference_wrapper<sf::Texture>>;
 
@@ -37,37 +39,33 @@ private:
     std::array<sf::Texture, 16> square_background;
 
     std::array<sf::Texture, 16> tail_cycle;
+};
 
-    template<int number, int first = 0>
-    std::array<sf::Texture, number> load_tex_with_prefix(
-        const std::filesystem::path& folder,
-        const std::string& prefix,
-        int left_padding = 3,
-        const std::string& extension = ".png"
-    ) {
-        std::array<sf::Texture, number> res;
-        for (int frame = first; frame <= first + number - 1; frame++) {
-            std::stringstream filename;
-            filename << prefix << std::setfill('0') << std::setw(left_padding)
-                     << frame << extension;
-            std::filesystem::path texFile = folder / filename.str();
-            sf::Texture tex;
-            if (!tex.loadFromFile(texFile.string())) {
-                std::stringstream err;
-                err << "Unable to load texture folder " << folder
-                    << "\nfailed on texture " << filename.str();
-                throw std::runtime_error(err.str());
-            }
-            tex.setSmooth(true);
-            res.at(frame - first) = tex;
+template<std::size_t number, unsigned int first = 0>
+std::array<sf::Texture, number> load_tex_with_prefix(
+    const std::filesystem::path& folder,
+    const std::string& prefix,
+) {
+    std::array<sf::Texture, number> res;
+    for (unsigned int frame = first; frame <= first + number - 1; frame++) {
+        auto filename = fmt::format(
+            "{prefix}{frame:03}.png",
+            fmt::arg("prefix", prefix),
+            fmt::arg("frame", frame)
+        )
+        std::stringstream filename;
+        filename << prefix << std::setfill('0') << std::setw(3)
+                    << frame << ".png";
+        std::filesystem::path texFile = folder / filename.str();
+        sf::Texture tex;
+        if (!tex.loadFromFile(texFile.string())) {
+            std::stringstream err;
+            err << "Unable to load texture folder " << folder
+                << "\nfailed on texture " << filename.str();
+            throw std::runtime_error(err.str());
         }
-        return res;
+        tex.setSmooth(true);
+        res.at(frame - first) = tex;
     }
-
-    template<int number>
-    void setRepeated(std::array<sf::Texture, number> tex, bool repeat) {
-        for (int i = 0; i < number; ++i) {
-            tex.at(i).setRepeated(repeat);
-        }
-    }
+    return res;
 };
