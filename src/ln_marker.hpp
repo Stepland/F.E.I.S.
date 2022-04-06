@@ -44,7 +44,7 @@ private:
 template<std::size_t number, unsigned int first = 0>
 std::array<sf::Texture, number> load_tex_with_prefix(
     const std::filesystem::path& folder,
-    const std::string& prefix,
+    const std::string& prefix
 ) {
     std::array<sf::Texture, number> res;
     for (unsigned int frame = first; frame <= first + number - 1; frame++) {
@@ -52,17 +52,15 @@ std::array<sf::Texture, number> load_tex_with_prefix(
             "{prefix}{frame:03}.png",
             fmt::arg("prefix", prefix),
             fmt::arg("frame", frame)
-        )
-        std::stringstream filename;
-        filename << prefix << std::setfill('0') << std::setw(3)
-                    << frame << ".png";
-        std::filesystem::path texFile = folder / filename.str();
+        );
+        std::filesystem::path texFile = folder / filename;
         sf::Texture tex;
         if (!tex.loadFromFile(texFile.string())) {
-            std::stringstream err;
-            err << "Unable to load texture folder " << folder
-                << "\nfailed on texture " << filename.str();
-            throw std::runtime_error(err.str());
+            throw std::runtime_error(fmt::format(
+                "Unable to load texture folder {}, failed on texture {}",
+                folder.string(),
+                filename
+            ));
         }
         tex.setSmooth(true);
         res.at(frame - first) = tex;

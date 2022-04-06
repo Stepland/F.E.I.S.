@@ -16,7 +16,6 @@ sources += files(
     'ln_marker.cpp',
     'main.cpp',
     'marker.cpp',
-    'music_state.cpp',
     'note.cpp',
     'notes_clipboard.cpp',
     'notification.cpp',

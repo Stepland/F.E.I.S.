@@ -58,6 +58,44 @@ EditorState::EditorState(
     reload_jacket();
 };
 
+int EditorState::get_volume() const {
+    return volume;
+}
+
+void EditorState::set_volume(int newMusicVolume) {
+    volume = std::clamp(newMusicVolume, 0, 10);
+    if (music) {
+        music->setVolume(Toolbox::convertVolumeToNormalizedDB(volume)*100.f);
+    }
+}
+
+void EditorState::volume_up() {
+    set_volume(volume + 1);
+}
+
+void EditorState::volume_down() {
+    set_volume(volume - 1);
+}
+
+int EditorState::get_speed() const {
+    return speed;
+}
+
+void EditorState::set_speed(int newMusicSpeed) {
+    speed = std::clamp(newMusicSpeed, 1, 20);
+    if (music) {
+        music->setPitch(speed / 10.f);
+    }
+}
+
+void EditorState::speed_up() {
+    set_speed(speed + 1);
+}
+
+void EditorState::speed_down() {
+    set_speed(speed - 1);
+}
+
 
 const Interval<sf::Time>& EditorState::get_editable_range() {
     reload_editable_range();
@@ -68,14 +106,14 @@ void EditorState::set_playback_position(sf::Time newPosition) {
     newPosition = std::clamp(newPosition, editable_range.start, editable_range.end);
     previous_playback_position = newPosition - (sf::seconds(1) / 60.f);
     playback_position = newPosition;
-    if (music_state) {
+    if (music) {
         if (
             playback_position >= sf::Time::Zero
-            and playback_position < music_state->music.getDuration()
+            and playback_position < music->getDuration()
         ) {
-            music_state->music.setPlayingOffset(playback_position);
+            music->setPlayingOffset(playback_position);
         } else {
-            music_state->music.stop();
+            music->stop();
         }
     }
 };
@@ -187,7 +225,12 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
                     (ImVec4) ImColor::HSV(0, 0, 1.f, 0.5f));
                 if (ImGui::ImageButton(playfield.button, {squareSize, squareSize}, 0)) {
                     if (chart_state) {
-                        chart_state->toggle_note(playback_position, snap, {x, y});
+                        chart_state->toggle_note(
+                            playback_position,
+                            snap, 
+                            {x, y},
+                            applicable_timing
+                        );
                     }
                 }
                 if (ImGui::IsItemHovered() and chart_state and chart_state->creating_long_note) {
@@ -262,7 +305,7 @@ void EditorState::display_properties() {
         if (feis::InputTextColored(
             "Audio",
             &song.metadata.audio,
-            music_state.has_value(),
+            music.has_value(),
             "Invalid Audio Path"
         )) {
             reload_music();
@@ -295,9 +338,9 @@ void EditorState::display_properties() {
                     Decimal{0},
                     song.metadata.preview_loop.start
                 );
-                if (music_state.has_value()) {
+                if (music.has_value()) {
                     song.metadata.preview_loop.start = std::min(
-                        Decimal{music_state->music.getDuration().asMicroseconds()} / 1000000,
+                        Decimal{music->getDuration().asMicroseconds()} / 1000000,
                         song.metadata.preview_loop.start
                     );
                 }
@@ -307,12 +350,12 @@ void EditorState::display_properties() {
                     Decimal{0},
                     song.metadata.preview_loop.duration
                 );
-                if (music_state.has_value()) {
+                if (music.has_value()) {
                     song.metadata.preview_loop.start = std::min(
                         (
                             Decimal{
-                                music_state->music
-                                .getDuration()
+                                music
+                                ->getDuration()
                                 .asMicroseconds()
                             } / 1000000 
                             - song.metadata.preview_loop.start
@@ -335,7 +378,7 @@ status of the editor. Will appear in the "Editor Status" window
 void EditorState::display_status() {
     ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
     {
-        if (not music_state) {
+        if (not music) {
             if (not song.metadata.audio.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -396,12 +439,12 @@ void EditorState::display_playback_status() {
         ImGui::SameLine();
         ImGui::TextDisabled("Beats :");
         ImGui::SameLine();
-        ImGui::TextUnformatted(convert_to_decimal(this->current_exact_beats(), 3).format(".3f").c_str());
+        ImGui::TextUnformatted(fmt::format("{:.3f}", current_exact_beats().get_d()).c_str());
         ImGui::SameLine();
-        if (music_state) {
+        if (music) {
             ImGui::TextDisabled("Music File Offset :");
             ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(music_state->music.getPrecisePlayingOffset()).c_str());
+            ImGui::TextUnformatted(Toolbox::to_string(music->getPrecisePlayingOffset()).c_str());
             ImGui::SameLine();
         }
         ImGui::TextDisabled("Timeline Position :");
@@ -524,6 +567,7 @@ void EditorState::display_linear_view() {
         if (chart_state) {
             linear_view.update(
                 *chart_state,
+                applicable_timing,
                 playback_position,
                 ImGui::GetContentRegionMax()
             );
@@ -589,7 +633,7 @@ EditorState::SaveOutcome EditorState::ask_to_save_if_needed() {
             }
         case EditorState::UserWantsToSave::No:
             return EditorState::SaveOutcome::UserDeclindedSaving;
-        case EditorState::UserWantsToSave::Cancel:
+        default:
             return EditorState::SaveOutcome::UserCanceled;
     }
 };
@@ -662,12 +706,21 @@ void EditorState::open_chart(const std::string& name) {
     reload_applicable_timing();
 };
 
+void EditorState::update_visible_notes() {
+    if (chart_state) {
+        chart_state->update_visible_notes(
+            playback_position,
+            applicable_timing
+        );
+    }
+};
+
 
 void EditorState::reload_editable_range() {
     auto old_range = this->editable_range;
     Interval<sf::Time> new_range;
-    if (music_state) {
-        new_range += music_state->music.getDuration();
+    if (music) {
+        new_range += music->getDuration();
     }
     if (chart_state and not chart_state->chart.notes.empty()) {
         const auto beat_of_last_event = chart_state->chart.notes.crbegin()->second.get_end();
@@ -677,7 +730,7 @@ void EditorState::reload_editable_range() {
     new_range.end += sf::seconds(10);
 
     // If there is no music, make sure we can edit at least the first whole minute
-    if (not music_state) {
+    if (not music) {
         new_range += sf::seconds(60);
     }
 
@@ -715,15 +768,15 @@ void EditorState::reload_jacket() {
  */
 void EditorState::reload_music() {
     if (not song_path.has_value() or song.metadata.audio.empty()) {
-        music_state.reset();
+        music.reset();
         return;
     }
 
     const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
     try {
-        music_state.emplace(absolute_music_path);
+        music.emplace(absolute_music_path);
     } catch (const std::exception& e) {
-        music_state.reset();
+        music.reset();
     }
 
     reload_editable_range();
@@ -778,7 +831,7 @@ void EditorState::save(const std::filesystem::path& path) {
 
 void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
     if (ed and ed->ask_to_save_if_needed() == EditorState::SaveOutcome::UserCanceled) {
-        return
+        return;
     }
 
     const char* _filepath = tinyfd_openFileDialog(

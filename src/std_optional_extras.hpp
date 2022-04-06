@@ -1,11 +1,12 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <sstream>
 #include <string>
 
 template<class A, class B>
-B apply_or(std::optional<A> opt, B(*func)(A), B b) {
+B apply_or(std::optional<A> opt, std::function<B(A)> func, B b) {
     if (opt.has_value()) {
         return func(*opt);
     } else {
@@ -15,14 +16,13 @@ B apply_or(std::optional<A> opt, B(*func)(A), B b) {
 
 template<class A>
 std::string stringify_or(std::optional<A> opt, std::string fallback) {
-    auto cb = [](const A& a){
-        std::stringstream ss;
-        ss << a;
-        return ss.str();
-    };
     return apply_or(
         opt,
-        &cb,
+        [](const A& a) -> std::string {
+            std::stringstream ss;
+            ss << a;
+            return ss.str();
+        },
         fallback
     );
 }

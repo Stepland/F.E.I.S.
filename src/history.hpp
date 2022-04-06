@@ -91,12 +91,12 @@ public:
         if (next_actions.empty()) {
             last_saved_action = nullptr;
         } else {
-            last_saved_action = previous_actions.front(); 
+            last_saved_action = &previous_actions.front(); 
         }
     }
 
     bool current_state_is_saved() const {
-        return last_saved_action == previous_actions.front();
+        return last_saved_action == &previous_actions.front();
     };
 
 private:

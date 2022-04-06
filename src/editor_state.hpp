@@ -12,7 +12,6 @@
 #include "history.hpp"
 #include "history_actions.hpp"
 #include "marker.hpp"
-#include "music_state.hpp"
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
@@ -39,7 +38,18 @@ public:
 
     std::optional<ChartState> chart_state;
 
-    std::optional<MusicState> music_state;
+    std::optional<PreciseMusic> music;
+
+    int get_volume() const;
+    void set_volume(int newMusicVolume);
+    void volume_up();
+    void volume_down();
+
+    /* These speed dials also work when no music is loaded */
+    int get_speed() const;
+    void set_speed(int newMusicSpeed);
+    void speed_up();
+    void speed_down();
 
     std::optional<sf::Music> preview_audio;
 
@@ -100,7 +110,7 @@ public:
 
     SaveOutcome ask_to_save_if_needed();
 
-    void save_if_needed();
+    SaveOutcome save_if_needed();
 
     bool needs_to_save() const;
 
@@ -131,7 +141,12 @@ public:
 
     void open_chart(const std::string& name);
 
+    void update_visible_notes();
+
 private:
+
+    int volume = 10;  // 0 -> 10
+    int speed = 10;  // 1 -> 20
 
     /*
     sf::Time bounds (in the audio file "coordinates") which are accessible

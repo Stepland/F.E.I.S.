@@ -196,12 +196,12 @@ int main() {
                         // Arrow keys
                         case sf::Keyboard::Up:
                             if (event.key.shift) {
-                                if (editor_state and editor_state->music_state) {
-                                    editor_state->music_state->volume_up();
+                                if (editor_state) {
+                                    editor_state->volume_up();
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(fmt::format(
                                             "Music Volume : {}%",
-                                            editor_state->music_state->volume * 10
+                                            editor_state->get_volume() * 10
                                         ))
                                     );
                                 }
@@ -213,12 +213,12 @@ int main() {
                             break;
                         case sf::Keyboard::Down:
                             if (event.key.shift) {
-                                if (editor_state and editor_state->music_state) {
-                                    editor_state->music_state->volume_down();
+                                if (editor_state) {
+                                    editor_state->volume_down();
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(fmt::format(
                                             "Music Volume : {}%",
-                                            editor_state->music_state->volume * 10
+                                            editor_state->get_volume() * 10
                                         ))
                                     );
                                 }
@@ -230,11 +230,11 @@ int main() {
                             break;
                         case sf::Keyboard::Left:
                             if (event.key.shift) {
-                                if (editor_state and editor_state->music_state) {
-                                    editor_state->music_state->speed_down();
+                                if (editor_state) {
+                                    editor_state->speed_down();
                                     notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
                                         "Speed : {}%",
-                                        editor_state->music_state->speed * 10
+                                        editor_state->get_speed() * 10
                                     )));
                                 }
                             } else {
@@ -251,11 +251,11 @@ int main() {
                             break;
                         case sf::Keyboard::Right:
                             if (event.key.shift) {
-                                if (editor_state and editor_state->music_state) {
-                                    editor_state->music_state->speed_up();
+                                if (editor_state) {
+                                    editor_state->speed_up();
                                     notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
                                         "Speed : {}%",
-                                        editor_state->music_state->speed * 10
+                                        editor_state->get_speed() * 10
                                     )));
                                 }
                             } else {
@@ -397,28 +397,23 @@ int main() {
 
         // Audio playback management
         if (editor_state) {
-            if (editor_state->chart_state) {
-                editor_state->chart_state->update_visible_notes(
-                    editor_state->playback_position,
-                    editor_state->applicable_timing
-                );
-            }
+            editor_state->update_visible_notes();
             if (editor_state->playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
-                editor_state->playback_position += delta * (editor_state->musicSpeed / 10.f);
+                editor_state->playback_position += delta * (editor_state->get_speed() / 10.f);
                 if (editor_state->music) {
                     switch (editor_state->music->getStatus()) {
                         case sf::Music::Stopped:
                         case sf::Music::Paused:
-                            if (editor_state->playbackPosition.asSeconds() >= 0
-                                and editor_state->playbackPosition
+                            if (editor_state->playback_position.asSeconds() >= 0
+                                and editor_state->playback_position
                                     < editor_state->music->getDuration()) {
-                                editor_state->music->setPlayingOffset(editor_state->playbackPosition);
+                                editor_state->music->setPlayingOffset(editor_state->playback_position);
                                 editor_state->music->play();
                             }
                             break;
                         case sf::Music::Playing:
-                            editor_state->playbackPosition =
+                            editor_state->playback_position =
                                 editor_state->music->getPrecisePlayingOffset();
                             break;
                         default:
@@ -427,9 +422,9 @@ int main() {
                 }
                 if (beatTick.shouldPlay) {
                     auto previous_tick = static_cast<int>(editor_state->ticks_at(
-                        editor_state->previousPos.asSeconds()));
+                        editor_state->previous_playback_position.asSeconds()));
                     auto current_tick = static_cast<int>(editor_state->ticks_at(
-                        editor_state->playbackPosition.asSeconds()));
+                        editor_state->playback_position.asSeconds()));
                     if (previous_tick / editor_state->getResolution()
                         != current_tick / editor_state->getResolution()) {
                         beatTick.play();
@@ -439,8 +434,8 @@ int main() {
                     int note_count = 0;
                     for (auto note : editor_state->visibleNotes) {
                         float noteTiming = editor_state->getSecondsAt(note.getTiming());
-                        if (noteTiming >= editor_state->previousPos.asSeconds()
-                            and noteTiming <= editor_state->playbackPosition.asSeconds()) {
+                        if (noteTiming >= editor_state->previous_playback_position.asSeconds()
+                            and noteTiming <= editor_state->playback_position.asSeconds()) {
                             note_count++;
                         }
                     }
@@ -455,9 +450,9 @@ int main() {
                     }
                 }
 
-                if (editor_state->playbackPosition > editor_state->getPreviewEnd()) {
+                if (editor_state->playback_position > editor_state->getPreviewEnd()) {
                     editor_state->playing = false;
-                    editor_state->playbackPosition = editor_state->getPreviewEnd();
+                    editor_state->playback_position = editor_state->getPreviewEnd();
                 }
             } else {
                 if (editor_state->music) {

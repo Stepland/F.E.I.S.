@@ -75,7 +75,12 @@ namespace better {
                 "Attempted to create a LongNote with a zero-length tail"
             );
         }
-        if (tail_tip.get_x() != position.get_x() and tail_tip.get_y() != position.get_y()) {
+        if (
+            not (
+                (tail_tip.get_x() == position.get_x())
+                xor (tail_tip.get_y() == position.get_y())
+            )
+        ) {
             std::stringstream ss;
             ss << "Attempted to create a LongNote with and invalid tail : ";
             ss << "position: " << position << " , tail_tip: " << tail_tip;
@@ -174,6 +179,8 @@ namespace better {
                 return {pos.get_x(), pos.get_y() + length};
             case 3: // left
                 return {pos.get_x() - length, pos.get_y()};
+            default:
+                return pos;
         }
     }
 

@@ -15,7 +15,7 @@
 
 namespace better {
     struct SecondsAtBeat {
-        Fraction seconds;
+        Decimal seconds;
         Fraction beats;
     };
 
@@ -29,12 +29,16 @@ namespace better {
         Fraction beats;
     };
 
-    class BPMEvent : public BPMAtBeat {
+    class BPMEvent {
     public:
-        BPMEvent(Fraction beats, Fraction seconds, Decimal bpm);
+        BPMEvent(Fraction beats, double seconds, Decimal bpm);
+        Decimal get_bpm() const;
+        Fraction get_beats() const;
         Fraction get_seconds() const;
     private:
-        Fraction seconds;
+        Decimal bpm;
+        Fraction beats;
+        double seconds;
     };
 
     struct OrderByBeats {
@@ -54,24 +58,25 @@ namespace better {
     class Timing {
     public:
         Timing();
-        Timing(const std::vector<BPMAtBeat>& events, const SecondsAtBeat& offset);
+        Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
 
-        Fraction fractional_seconds_at(Fraction beats) const;
-        Fraction fractional_seconds_between(Fraction beat_a, Fraction beat_b) const;
+        double seconds_at(Fraction beats) const;
+        double seconds_between(Fraction beat_a, Fraction beat_b) const;
         sf::Time time_at(Fraction beats) const;
         sf::Time time_between(Fraction beat_a, Fraction beat_b) const;
 
         Fraction beats_at(sf::Time time) const;
+        Fraction beats_at(double seconds) const;
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
+
+        Decimal offset;
         
     private:
         std::set<BPMEvent, OrderByBeats> events_by_beats;
         std::set<BPMEvent, OrderBySeconds> events_by_seconds;
     };
-
-    sf::Time frac_to_time(const Fraction& f);
 }

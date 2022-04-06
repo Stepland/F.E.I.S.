@@ -11,7 +11,7 @@ LNMarker::LNMarker(std::filesystem::path folder) :
     square_background(load_tex_with_prefix<16, 200>(folder, "LN0001_M")),
     tail_cycle(load_tex_with_prefix<16, 0>(folder, "LN0001_M"))
 {   
-    for (tex& : tail_cycle) {
+    for (auto& tex : tail_cycle) {
         tex.setRepeated(true);
     }
 }

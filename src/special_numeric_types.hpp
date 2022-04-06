@@ -13,7 +13,6 @@ std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs);
 Fraction operator%(Fraction a, const Fraction& b);
 Fraction floor_fraction(const Fraction& f);
 Fraction round_fraction(const Fraction& f);
-Decimal convert_to_decimal(const Fraction& f, std::uint64_t precision);
 Fraction convert_to_fraction(const Decimal& d);
 
 // Rounds a given beat to the nearest given division (defaults to nearest 1/240th)
@@ -36,8 +35,3 @@ Number fast_pow(const Number base, const std::uint64_t exponent) {
     }
     return result;
 };
-
-mpz_class convert_to_mpz(std::uint64_t u);
-mpz_class convert_to_mpz(std::int64_t i);
-std::uint64_t convert_to_uint64(const mpz_class& m);
-std::int64_t convert_to_int64(const mpz_class& m);

@@ -54,7 +54,7 @@ void LinearView::resize(unsigned int width, unsigned int height) {
 
 void LinearView::update(
     const ChartState& chart_state,
-    const Timing& timing,
+    const better::Timing& timing,
     const sf::Time& playback_position,
     const ImVec2& size
 ) {
