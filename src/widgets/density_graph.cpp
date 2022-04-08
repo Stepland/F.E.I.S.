@@ -20,42 +20,54 @@ DensityGraph::DensityGraph(std::filesystem::path assets) :
     collision_square.setTextureRect({496, 270, 6, 6});
 }
 
-void DensityGraph::update(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to) {
-    this->compute_densities(height, chart, from, to);
+void DensityGraph::update(
+    unsigned int height,
+    const better::Chart& chart,
+    const better::Timing& timing,
+    const sf::Time& from,
+    const sf::Time& to
+) {
+    this->compute_densities(height, chart, timing, from, to);
     this->update_graph_texture();
 }
 
-void DensityGraph::compute_densities(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to) {
+void DensityGraph::compute_densities(
+    unsigned int height,
+    const better::Chart& chart,
+    const better::Timing& timing,
+    const sf::Time& from,
+    const sf::Time& to
+) {
     last_height = height;
 
     // minus the slider cursor thiccccnesss
-    int available_height = height - 10;
-    int sections = (available_height + 1) / 5;
+    const auto available_height = height - 10;
+    const auto sections = (available_height + 1) / 5;
     densities.clear();
 
     if (sections >= 1) {
-        densities.resize(static_cast<unsigned int>(sections), {0, false});
+        densities.resize(sections, {0, false});
 
         sf::Time section_duration = (to - from) / static_cast<sf::Int64>(sections);
         last_section_duration = section_duration;
 
-        for (auto const& note : chart.notes) {
-            auto note_time = note.getTiming();
-            auto note_seconds = chart.timing.time_at(ticksToSeconds(note_time));
-            auto float_section = note_seconds / section_duration;
-            auto int_section = static_cast<int>(float_section);
-            auto section = std::clamp(int_section, 0, sections - 1);
+        for (const auto& [_, note] : chart.notes) {
+            const auto note_time = note.get_time();
+            const auto note_seconds = timing.time_at(note_time);
+            const auto float_section = note_seconds / section_duration;
+            const auto int_section = static_cast<unsigned int>(float_section);
+            const auto section = std::clamp(int_section, 0U, sections - 1);
             densities.at(section).density += 1;
             if (not densities.at(section).has_collisions) {
                 densities.at(section).has_collisions =
-                    chart.is_colliding(note, ticks_threshold);
+                    chart.notes.is_colliding(note, timing);
             }
         }
     }
 }
 
 void DensityGraph::update_graph_texture() {
-    if (!graph.create(45, static_cast<unsigned int>(*last_height))) {
+    if (!graph.create(45, *last_height)) {
         std::cerr << "Unable to create DensityGraph's RenderTexture";
         throw std::runtime_error(
             "Unable to create DensityGraph's RenderTexture");

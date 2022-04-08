@@ -1,12 +1,13 @@
 #include "special_numeric_types.hpp"
 
 std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs) {
-    if (lhs < rhs) {
-        return std::strong_ordering::less;
-    } else if (lhs == rhs) {
+    const auto res = cmp(lhs, rhs);
+    if (res > 0) {
+        return std::strong_ordering::greater;
+    } else if (res == 0) {
         return std::strong_ordering::equal;
     } else {
-        return std::strong_ordering::greater;
+        return std::strong_ordering::less;
     }
 };
 

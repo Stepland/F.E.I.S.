@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "history_actions.hpp"
+#include "history_item.hpp"
 
 /*
  * The display function should call ImGui primitives to display arbitrary stuff
@@ -33,8 +33,8 @@ public:
  */
 class UndoNotification : public Notification {
 public:
-    explicit UndoNotification(const ActionWithMessage& awm) :
-        message(awm.getMessage()) {};
+    explicit UndoNotification(const HistoryItem& awm) :
+        message(awm.get_message()) {};
 
     void display() const override;
 
@@ -47,8 +47,8 @@ public:
  */
 class RedoNotification : public Notification {
 public:
-    explicit RedoNotification(const ActionWithMessage& awm) :
-        message(awm.getMessage()) {};
+    explicit RedoNotification(const HistoryItem& awm) :
+        message(awm.get_message()) {};
 
     void display() const override;
 

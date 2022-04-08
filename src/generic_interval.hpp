@@ -20,7 +20,7 @@ public:
         return start <= other.end and end >= other.start;
     }
 
-    auto width() const {
+    A width() const {
         return end - start;
     }
 

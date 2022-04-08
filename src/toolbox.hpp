@@ -69,14 +69,7 @@ public:
         return transform(std::clamp(val, low_input, high_input));
     };
     T backwards_transform(T val) const {
-        // if we're too close to zero
-        if (std::abs(a) < 10e-10) {
-            throw std::runtime_error(
-                "Can't apply backwards transformation, coefficient is too "
-                "close to zero");
-        } else {
-            return (val - b) / a;
-        }
+        return (val - b) / a;
     };
 
 private:

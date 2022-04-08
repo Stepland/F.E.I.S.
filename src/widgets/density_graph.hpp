@@ -28,11 +28,23 @@ public:
     std::optional<int> last_height;
     std::optional<sf::Time> last_section_duration;
 
-    void update(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to);
+    void update(
+        unsigned int height,
+        const better::Chart& chart,
+        const better::Timing& timing,
+        const sf::Time& from,
+        const sf::Time& to
+    );
 
 private:
     const std::filesystem::path texture_path;
 
-    void compute_densities(int height, const better::Chart& chart, const sf::Time& from, const sf::Time& to);
+    void compute_densities(
+        unsigned int height,
+        const better::Chart& chart,
+        const better::Timing& timing,
+        const sf::Time& from,
+        const sf::Time& to
+    );
     void update_graph_texture();
 };

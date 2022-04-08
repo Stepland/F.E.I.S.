@@ -38,11 +38,12 @@ Playfield::Playfield(std::filesystem::path assets_folder) :
     }
     long_note.layer.setSmooth(true);
 
-    long_note.backgroud.setTexture(*long_note.marker.background_at(0));
-    long_note.outline.setTexture(*long_note.marker.outline_at(0));
-    long_note.highlight.setTexture(*long_note.marker.highlight_at(0));
-    long_note.tail.setTexture(*long_note.marker.tail_at(0));
-    long_note.triangle.setTexture(*long_note.marker.triangle_at(0));
+    // why do we do this here ?
+    long_note.backgroud.setTexture(*long_note.marker.background_at(sf::Time::Zero));
+    long_note.outline.setTexture(*long_note.marker.outline_at(sf::Time::Zero));
+    long_note.highlight.setTexture(*long_note.marker.highlight_at(sf::Time::Zero));
+    long_note.tail.setTexture(*long_note.marker.tail_at(sf::Time::Zero));
+    long_note.triangle.setTexture(*long_note.marker.triangle_at(sf::Time::Zero));
 }
 
 void Playfield::resize(unsigned int width) {
@@ -71,48 +72,56 @@ void Playfield::resize(unsigned int width) {
 
 void Playfield::draw_tail_and_receptor(
     const better::LongNote& note,
-    const sf::Time& playbackPosition,
+    const sf::Time& playback_position,
     const better::Timing& timing
 ) {
-    const float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
+    const float square_size = static_cast<float>(long_note.layer.getSize().x) / 4;
     const auto note_time = timing.time_at(note.get_time());
-    const auto note_offset = playbackPosition - note_time;
-    const auto frame = static_cast<int>(std::floor(note_offset.asSeconds() * 30.f));
+    const auto note_offset = playback_position - note_time;
     const auto x = note.get_position().get_x();
     const auto y = note.get_position().get_y();
 
     const auto tail_end = timing.time_at(note.get_end());
 
-    if (playbackPosition < tail_end) {
+    if (playback_position < tail_end) {
         // Before or During the long note
-        if (auto tail_tex = long_note.marker.tail_at(frame)) {
+        if (auto tail_tex = long_note.marker.tail_at(note_offset)) {
             AffineTransform<float> OffsetToTriangleDistance(
                 0.f,
                 (tail_end - note_time).asSeconds(),
                 static_cast<float>(note.get_tail_length()),
                 0.f
             );
-
             
             long_note.tail.setTexture(*tail_tex, true);
-            if (auto tex = long_note.marker.triangle_at(frame)) {
+            if (auto tex = long_note.marker.triangle_at(note_offset)) {
                 long_note.triangle.setTexture(*tex, true);
             }
-            if (auto tex = long_note.marker.background_at(frame)) {
+            if (auto tex = long_note.marker.background_at(note_offset)) {
                 long_note.backgroud.setTexture(*tex, true);
             }
-            if (auto tex = long_note.marker.outline_at(frame)) {
+            if (auto tex = long_note.marker.outline_at(note_offset)) {
                 long_note.outline.setTexture(*tex, true);
             }
-            if (auto tex = long_note.marker.highlight_at(frame)) {
+            if (auto tex = long_note.marker.highlight_at(note_offset)) {
                 long_note.highlight.setTexture(*tex, true);
             }
+            
 
-            auto rect = long_note.tail.getTextureRect();
+            /*
+            The triangle textures used before the triangle animation cycle
+            kicks in already have the tail baked in so the protion of the tail
+            we draw ourself can stop at the exact border of the triangle
+            texture without leaving a visible edge.
+
+            On the other hand, the textures of the triangle animation cycle do
+            NOT have the tail backed in, so the portion of the tail we draw
+            ourselves has to extend further behind the triangle to hide its
+            edge
+            */
             float tail_length_factor;
-
-            if (frame < 8) {
-                // Before the note : tail goes from triangle tip to note edge
+            if (long_note.marker.triangle_cycle_displayed_at(note_offset)) {
+                // Before the cycle : tail goes from triangle tip to note edge
                 tail_length_factor = std::max(
                     0.f,
                     OffsetToTriangleDistance.clampedTransform(
@@ -120,7 +129,7 @@ void Playfield::draw_tail_and_receptor(
                     ) - 1.f
                 );
             } else {
-                // During the note : tail goes from half of the triangle base to
+                // During the cycle : tail goes from half of the triangle base to
                 // note edge
                 tail_length_factor = std::max(
                     0.f,
@@ -130,6 +139,7 @@ void Playfield::draw_tail_and_receptor(
                 );
             }
 
+            auto rect = long_note.tail.getTextureRect();
             rect.height = static_cast<int>(rect.height * tail_length_factor);
             long_note.tail.setTextureRect(rect);
             long_note.tail.setOrigin(rect.width / 2.f, -rect.width / 2.f);
@@ -158,18 +168,18 @@ void Playfield::draw_tail_and_receptor(
             rect = long_note.highlight.getTextureRect();
             long_note.highlight.setOrigin(rect.width / 2.f, rect.height / 2.f);
 
-            const float scale = squareSize / rect.width;
+            const float scale = square_size / rect.width;
             long_note.tail.setScale(scale, scale);
             long_note.triangle.setScale(scale, scale);
             long_note.backgroud.setScale(scale, scale);
             long_note.outline.setScale(scale, scale);
             long_note.highlight.setScale(scale, scale);
 
-            long_note.tail.setPosition((x + 0.5f) * squareSize, (y + 0.5f) * squareSize);
-            long_note.triangle.setPosition((x + 0.5f) * squareSize, (y + 0.5f) * squareSize);
-            long_note.backgroud.setPosition((x + 0.5f) * squareSize, (y + 0.5f) * squareSize);
-            long_note.outline.setPosition((x + 0.5f) * squareSize, (y + 0.5f) * squareSize);
-            long_note.highlight.setPosition((x + 0.5f) * squareSize, (y + 0.5f) * squareSize);
+            long_note.tail.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);
+            long_note.triangle.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);
+            long_note.backgroud.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);
+            long_note.outline.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);
+            long_note.highlight.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);
 
             long_note.layer.draw(long_note.tail);
             long_note.layer.draw(long_note.backgroud);
@@ -182,51 +192,45 @@ void Playfield::draw_tail_and_receptor(
 
 void Playfield::draw_long_note(
     const better::LongNote& note,
-    const sf::Time& playbackPosition,
+    const sf::Time& playback_position,
     const better::Timing& timing,
     Marker& marker,
-    MarkerEndingState& markerEndingState
+    Judgement& markerEndingState
 ) {
-    draw_tail_and_receptor(note, playbackPosition, timing);
+    draw_tail_and_receptor(note, playback_position, timing);
 
-    const float squareSize = static_cast<float>(long_note.layer.getSize().x) / 4;
+    const float square_size = static_cast<float>(long_note.layer.getSize().x) / 4;
     const auto note_time = timing.time_at(note.get_time());
-    const auto note_offset = playbackPosition - note_time;
-    const auto frame = static_cast<int>(std::floor(note_offset.asSeconds() * 30.f));
+    const auto note_offset = playback_position - note_time;
 
-    float tail_end_in_seconds =
-        SecondsToTicks.backwards_transform(note.getTiming() + note.getLength());
-    float tail_end_offset = playbackPosition.asSeconds() - tail_end_in_seconds;
-
-    if (playbackPosition.asSeconds() < tail_end_in_seconds) {
+    const auto tail_end = timing.time_at(note.get_end());
+    if (playback_position < tail_end) {
         // Before or During the long note
         // Display the beginning marker
-        auto t = marker.getSprite(markerEndingState, note_offset);
+        auto t = marker.at(markerEndingState, note_offset);
         if (t) {
-            const float scale = squareSize / t->get().getSize().x;
+            const float scale = square_size / t->get().getSize().x;
             marker_sprite.setTexture(*t, true);
             marker_sprite.setScale(scale, scale);
             marker_sprite.setPosition(
-                note.get_position().get_x() * squareSize,
-                note.get_position().get_y() * squareSize
+                note.get_position().get_x() * square_size,
+                note.get_position().get_y() * square_size
             );
-            marker_layer.draw(markerSprite);
+            marker_layer.draw(marker_sprite);
         }
 
     } else {
-        // After long note end : Display the ending marker
-        if (tail_end_offset >= 0.0f) {
-            auto t = marker.getSprite(markerEndingState, tail_end_offset);
-            if (t) {
-                const float scale = squareSize / t->get().getSize().x;
-                marker_sprite.setTexture(*t, true);
-                marker_sprite.setScale(scale, scale);
-                marker_sprite.setPosition(
-                    note.get_position().get_x() * squareSize,
-                    note.get_position().get_y() * squareSize
-                );
-                marker_layer.draw(markerSprite);
-            }
+        const auto tail_end_offset = playback_position - tail_end;
+        auto t = marker.at(markerEndingState, tail_end_offset);
+        if (t) {
+            const float scale = square_size / t->get().getSize().x;
+            marker_sprite.setTexture(*t, true);
+            marker_sprite.setScale(scale, scale);
+            marker_sprite.setPosition(
+                note.get_position().get_x() * square_size,
+                note.get_position().get_y() * square_size
+            );
+            marker_layer.draw(marker_sprite);
         }
     }
 }

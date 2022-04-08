@@ -1,19 +1,37 @@
 #include "file_dialogs.hpp"
 
+#include <cstring>
+
 namespace feis {
-    std::optional<std::filesystem::path> ask_for_save_path() {
+    std::optional<std::filesystem::path> save_file_dialog() {
         char const* options[1] = {"*.memon"};
-        const auto raw_path = tinyfd_saveFileDialog(
+        return convert_char_array(tinyfd_saveFileDialog(
             "Save File",
             nullptr,
             1,
             options,
             nullptr
-        );
-        if (raw_path == nullptr) {
+        ));
+    };
+
+    std::optional<std::filesystem::path> open_file_dialog() {
+        return convert_char_array(tinyfd_openFileDialog(
+            "Open File", 
+            nullptr, 
+            0,
+            nullptr, 
+            nullptr, 
+            false
+        ));
+
+    };
+
+    std::optional<std::filesystem::path> convert_char_array(const char* utf8_path) {
+        if (utf8_path == nullptr) {
             return {};
         } else {
-            return std::filesystem::path{raw_path};
+            const auto u8string_path = std::u8string{utf8_path, utf8_path+std::strlen(utf8_path)};
+            return std::filesystem::path{u8string_path};
         }
     }
 }

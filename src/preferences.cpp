@@ -1,19 +1,24 @@
 #include "preferences.hpp"
+#include <cstddef>
+#include <exception>
+#include "json.hpp"
+#include "src/marker.hpp"
 
 const std::string preference_file = "preferences.json";
 
 Preferences::Preferences(std::filesystem::path assets, std::filesystem::path settings) :
-    markerEndingState(MarkerEndingState_PERFECT),
+    marker_ending_state(Judgement::Perfect),
     file_path(settings / preference_file)
 {
     bool found_a_marker = false;
-    for (auto& folder :
-         std::filesystem::directory_iterator(assets / "textures" / "markers")) {
-        if (Marker::validMarkerFolder(folder.path())) {
-            assert(folder.is_directory());
-            marker = folder.path().string();
+    const auto markers_folder = assets / "textures" / "markers";
+    for (auto& folder : std::filesystem::directory_iterator(markers_folder)) {
+        try {
+            Marker m{folder.path()};
+            marker = folder.path();
             found_a_marker = true;
-            break;
+        } catch (const std::exception&) {
+            continue;
         }
     }
     if (not found_a_marker) {
@@ -38,15 +43,16 @@ void Preferences::load(nlohmann::json j) {
 }
 
 void Preferences::load_v0_1_0(nlohmann::json j) {
-    auto new_marker_path = j.at("marker").at("folder").get<std::string>();
-    if (Marker::validMarkerFolder(new_marker_path)) {
-        marker = new_marker_path;
-    }
+    auto new_marker_path = j.at("marker").at("folder").get<std::u8string>();
+    try {
+        Marker m{new_marker_path};
+        marker = std::filesystem::path(new_marker_path);
+    } catch (const std::exception&) {}
 
-    auto new_markerEndingState = j.at("marker").at("ending state").get<std::string>();
-    for (const auto& state : Markers::markerStatePreviews) {
-        if (new_markerEndingState == state.printName) {
-            markerEndingState = state.state;
+    auto new_marker_ending_state = j.at("marker").at("ending state").get<std::string>();
+    for (const auto& [judement, name] : marker_state_previews) {
+        if (new_marker_ending_state == name) {
+            marker_ending_state = judement;
         }
     }
 }
@@ -54,14 +60,14 @@ void Preferences::load_v0_1_0(nlohmann::json j) {
 void Preferences::save() {
     std::ofstream preferences_file(file_path);
 
-    nlohmann::json j = {{"version", "0.1.0"}, {"marker", nlohmann::json::object()}};
+    nlohmann::ordered_json j = {{"version", "0.1.0"}, {"marker", nlohmann::json::object()}};
 
-    j["marker"]["folder"] = marker;
+    j["marker"]["folder"] = marker.u8string();
 
     bool found = false;
-    for (const auto& state : Markers::markerStatePreviews) {
-        if (markerEndingState == state.state) {
-            j["marker"]["ending state"] = state.printName;
+    for (const auto& [judgement, name] : marker_state_previews) {
+        if (marker_ending_state == judgement) {
+            j["marker"]["ending state"] = name;
             found = true;
             break;
         }

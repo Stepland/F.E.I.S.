@@ -67,7 +67,7 @@ namespace better {
         if (duration < 0) {
             std::stringstream ss;
             ss << "Attempted to create a LongNote with negative duration : ";
-            ss << duration;
+            ss << duration.get_str();
             throw std::invalid_argument(ss.str());
         }
         if (tail_tip == position) {

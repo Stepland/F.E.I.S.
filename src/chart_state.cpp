@@ -7,7 +7,7 @@
 
 #include "better_note.hpp"
 #include "better_notes.hpp"
-#include "history_actions.hpp"
+#include "history_item.hpp"
 #include "special_numeric_types.hpp"
 
 ChartState::ChartState(better::Chart& c, const std::string& name, std::filesystem::path assets) :
@@ -165,10 +165,7 @@ better::LongNote make_long_note_dummy(
     };
 };
 
-better::LongNote make_long_note(
-    Fraction current_beat,
-    const TapNotePair& long_note_being_created
-) {
+better::LongNote make_long_note(const TapNotePair& long_note_being_created) {
     auto start_time = long_note_being_created.first.get_time();
     auto end_time = long_note_being_created.second.get_time();
     if (start_time > end_time) {

@@ -13,7 +13,9 @@
 
 #include "chart_state.hpp"
 #include "editor_state.hpp"
-#include "history_actions.hpp"
+#include "file_dialogs.hpp"
+#include "history_item.hpp"
+#include "marker.hpp"
 #include "notifications_queue.hpp"
 #include "preferences.hpp"
 #include "sound_effect.hpp"
@@ -75,7 +77,7 @@ int main() {
 
     Marker defaultMarker = Marker(preferences.marker);
     Marker& marker = defaultMarker;
-    MarkerEndingState markerEndingState = preferences.markerEndingState;
+    Judgement& markerEndingState = preferences.marker_ending_state;
 
     BlankScreen bg{assets_folder};
     std::optional<EditorState> editor_state;
@@ -93,7 +95,7 @@ int main() {
                 case sf::Event::Closed:
                     preferences.save();
                     if (editor_state) {
-                        if (editor_state->ask_to_save_if_needed() != EditorState::SaveOutcome::UserCanceled) {
+                        if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
                             window.close();
                         }
                     }
@@ -335,7 +337,7 @@ int main() {
                             break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
-                                feis::open(editor_state, assets_folder, settings_folder);
+                                feis::save_ask_open(editor_state, assets_folder, settings_folder);
                             }
                             break;
                         case sf::Keyboard::P:
@@ -345,11 +347,7 @@ int main() {
                             break;
                         case sf::Keyboard::S:
                             if (event.key.control) {
-                                if (editor_state) {
-                                    if (editor_state->save_if_needed() == EditorState::SaveOutcome::UserSaved) {
-                                        notificationsQueue.push(std::make_shared<TextNotification>("Saved file"));
-                                    }
-                                }
+                                feis::save(editor_state, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::V:
@@ -421,21 +419,17 @@ int main() {
                     }
                 }
                 if (beatTick.shouldPlay) {
-                    auto previous_tick = static_cast<int>(editor_state->ticks_at(
-                        editor_state->previous_playback_position.asSeconds()));
-                    auto current_tick = static_cast<int>(editor_state->ticks_at(
-                        editor_state->playback_position.asSeconds()));
-                    if (previous_tick / editor_state->getResolution()
-                        != current_tick / editor_state->getResolution()) {
+                    const auto previous_beat = editor_state->beats_at(editor_state->previous_playback_position);
+                    const auto current_beat = editor_state->current_exact_beats();
+                    if (previous_beat % 1 != current_beat % 1) {
                         beatTick.play();
                     }
                 }
-                if (noteTick.shouldPlay) {
+                if (noteTick.shouldPlay and editor_state->chart_state) {
                     int note_count = 0;
-                    for (auto note : editor_state->visibleNotes) {
-                        float noteTiming = editor_state->getSecondsAt(note.getTiming());
-                        if (noteTiming >= editor_state->previous_playback_position.asSeconds()
-                            and noteTiming <= editor_state->playback_position.asSeconds()) {
+                    for (const auto& note : editor_state->chart_state->visible_notes) {
+                        const auto note_time = editor_state->time_at(note.get_time());
+                        if (note_time >= editor_state->previous_playback_position and note_time <= editor_state->playback_position) {
                             note_count++;
                         }
                     }
@@ -450,9 +444,9 @@ int main() {
                     }
                 }
 
-                if (editor_state->playback_position > editor_state->getPreviewEnd()) {
+                if (editor_state->playback_position > editor_state->get_editable_range().end) {
                     editor_state->playing = false;
-                    editor_state->playback_position = editor_state->getPreviewEnd();
+                    editor_state->playback_position = editor_state->get_editable_range().end;
                 }
             } else {
                 if (editor_state->music) {
@@ -476,8 +470,8 @@ int main() {
             if (editor_state->showLinearView) {
                 editor_state->display_linear_view();
             }
-            if (editor_state->linearView.shouldDisplaySettings) {
-                editor_state->linearView.displaySettings();
+            if (editor_state->linear_view.shouldDisplaySettings) {
+                editor_state->linear_view.displaySettings();
             }
             if (editor_state->showProperties) {
                 editor_state->display_properties();
@@ -492,21 +486,22 @@ int main() {
                 editor_state->display_timeline();
             }
             if (editor_state->showChartList) {
-                editor_state->display_chart_list(assets_folder);
+                editor_state->display_chart_list();
             }
             if (editor_state->showNewChartDialog) {
-                std::optional<Chart> c = newChartDialog.display(*editor_state);
-                if (c) {
+                auto pair = newChartDialog.display(*editor_state);
+                if (pair) {
+                    auto& [dif_name, new_chart] = *pair;
                     editor_state->showNewChartDialog = false;
-                    if (editor_state->song.Charts.try_emplace(c->dif_name, *c).second) {
-                        editor_state->chart.emplace(editor_state->song.Charts.at(c->dif_name), assets_folder);
+                    if (editor_state->song.charts.try_emplace(dif_name, new_chart).second) {
+                        editor_state->open_chart(dif_name);
                     }
                 }
             } else {
                 newChartDialog.resetValues();
             }
             if (editor_state->showChartProperties) {
-                chartPropertiesDialog.display(*editor_state, assets_folder);
+                chartPropertiesDialog.display(*editor_state);
             } else {
                 chartPropertiesDialog.should_refresh_values = true;
             }
@@ -539,43 +534,24 @@ int main() {
         {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
-                    bool user_canceled = false;
-                    if (editor_state) {
-                        switch (editor_state->ask_if_user_wants_to_save()) {
-                            case UserWantsToSave::Yes:
-                                const auto path = editor_state->ask_for_save_path_if_needed();
-                                if (path) {
-                                    editor_state->save(*path);
-                                } else {
-                                    user_canceled = true;
-                                }
-                                break;
-                            case UserWantsToSave::No:
-                            case UserWantsToSave::DidNotDisplayDialog: // Already saved
-                                break;
-                            case UserWantsToSave::Cancel:
-                                user_canceled = true;
-                                break;
-                        }
-                    }
-                    if (not user_canceled) {
+                    if (not editor_state) {
                         editor_state.emplace(assets_folder);
+                    } else {
+                        if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
+                            editor_state.emplace(assets_folder);
+                        }
                     }
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Open", "Ctrl+O")) {
-                    if (feis::saveOrCancel(editor_state)) {
-                        feis::open(editor_state, assets_folder, settings_folder);
-                    }
+                    feis::save_ask_open(editor_state, assets_folder, settings_folder);
                 }
                 if (ImGui::BeginMenu("Recent Files")) {
                     int i = 0;
                     for (const auto& file : Toolbox::getRecentFiles(settings_folder)) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
-                            if (feis::saveOrCancel(editor_state)) {
-                                feis::openFromFile(editor_state, file, assets_folder, settings_folder);
-                            }
+                            feis::save_open(editor_state, file, assets_folder, settings_folder);
                         }
                         ImGui::PopID();
                         ++i;
@@ -583,24 +559,16 @@ int main() {
                     ImGui::EndMenu();
                 }
                 if (ImGui::MenuItem("Close", "", false, editor_state.has_value())) {
-                    if (feis::saveOrCancel(editor_state)) {
-                        editor_state.reset();
-                    }
+                    feis::save_close(editor_state);
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save", "Ctrl+S", false, editor_state.has_value())) {
-                    feis::save(*editor_state);
+                    feis::save(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Save As", "", false, editor_state.has_value())) {
-                    char const* options[1] = {"*.memon"};
-                    const char* _filepath(
-                        tinyfd_saveFileDialog("Save File", nullptr, 1, options, nullptr));
-                    if (_filepath != nullptr) {
-                        std::filesystem::path filepath(_filepath);
-                        try {
-                            editor_state->song.saveAsMemon(filepath);
-                        } catch (const std::exception& e) {
-                            tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
+                    if (editor_state) {
+                        if (const auto& path = feis::save_file_dialog()) {
+                            editor_state->save(*path);
                         }
                     }
                 }
@@ -612,23 +580,38 @@ int main() {
             }
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
-                    Edit::undo(editor_state, notificationsQueue);
+                    if (editor_state) {
+                        editor_state->undo(notificationsQueue);
+                    }
                 }
                 if (ImGui::MenuItem("Redo", "Ctrl+Y")) {
-                    Edit::redo(editor_state, notificationsQueue);
+                    if (editor_state) {
+                        editor_state->redo(notificationsQueue);
+                    }
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Cut", "Ctrl+X")) {
-                    Edit::cut(editor_state, notificationsQueue);
+                    if (editor_state and editor_state->chart_state) {
+                        editor_state->chart_state->cut(notificationsQueue);
+                    }
                 }
                 if (ImGui::MenuItem("Copy", "Ctrl+C")) {
-                    Edit::copy(editor_state, notificationsQueue);
+                    if (editor_state and editor_state->chart_state) {
+                        editor_state->chart_state->copy(notificationsQueue);
+                    }
                 }
                 if (ImGui::MenuItem("Paste", "Ctrl+V")) {
-                    Edit::paste(editor_state, notificationsQueue);
+                    if (editor_state and editor_state->chart_state) {
+                        editor_state->chart_state->paste(
+                            editor_state->current_snaped_beats(),
+                            notificationsQueue
+                        );
+                    }
                 }
                 if (ImGui::MenuItem("Delete", "Delete")) {
-                    Edit::delete_(editor_state, notificationsQueue);
+                    if (editor_state and editor_state->chart_state) {
+                        editor_state->chart_state->delete_(notificationsQueue);
+                    }
                 }
                 ImGui::EndMenu();
             }
@@ -640,7 +623,7 @@ int main() {
                         "Properties##Chart",
                         nullptr,
                         false,
-                        editor_state->chart.has_value())) {
+                        editor_state->chart_state.has_value())) {
                     editor_state->showChartProperties = true;
                 }
                 ImGui::Separator();
@@ -652,9 +635,9 @@ int main() {
                         "Delete Chart",
                         nullptr,
                         false,
-                        editor_state->chart.has_value())) {
-                    editor_state->song.Charts.erase(editor_state->chart->ref.dif_name);
-                    editor_state->chart.reset();
+                        editor_state->chart_state.has_value())) {
+                    editor_state->song.charts.erase(editor_state->chart_state->difficulty_name);
+                    editor_state->chart_state.reset();
                 }
                 ImGui::EndMenu();
             }
@@ -684,7 +667,7 @@ int main() {
                     editor_state->showSoundSettings = true;
                 }
                 if (ImGui::MenuItem("Linear View")) {
-                    editor_state->linearView.shouldDisplaySettings = true;
+                    editor_state->linear_view.shouldDisplaySettings = true;
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;
@@ -713,13 +696,12 @@ int main() {
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Marker Ending State")) {
-                    for (auto& m : Markers::markerStatePreviews) {
-                        if (ImGui::ImageButton(marker.getTextures().at(m.textureName), {100, 100})) {
-                            markerEndingState = m.state;
-                            preferences.markerEndingState = m.state;
+                    for (const auto& [judgement, name] : marker_state_previews) {
+                        if (ImGui::ImageButton(marker.preview(judgement), {100, 100})) {
+                            markerEndingState = judgement;
                         }
                         ImGui::SameLine();
-                        ImGui::TextUnformatted(m.printName.c_str());
+                        ImGui::TextUnformatted(name.c_str());
                     }
                     ImGui::EndMenu();
                 }

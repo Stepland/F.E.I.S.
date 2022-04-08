@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <interval_tree.hpp>
 #include <json.hpp>
 #include <type_traits>
@@ -30,9 +31,10 @@ namespace better {
         is colliding with ANOTHER note. This means notes exactly equal to the
         one passed as an argument are NOT taken into account.
         */
-        bool is_colliding(const better::Note& note, const better::Timing& timing);
+        bool is_colliding(const better::Note& note, const better::Timing& timing) const;
 
         Notes between(const Interval<Fraction>& bounds);
+        std::size_t count_between(const Interval<Fraction>& bounds);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
     };

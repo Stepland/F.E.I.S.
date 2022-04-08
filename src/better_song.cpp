@@ -13,12 +13,15 @@
 #include "src/better_metadata.hpp"
 #include "src/better_note.hpp"
 #include "src/special_numeric_types.hpp"
-#include "std_optional_extras.hpp"
 #include "variant_visitor.hpp"
 
 namespace better {
     std::string stringify_level(std::optional<Decimal> level) {
-        return stringify_or(level, "(no level defined)");
+        if (level) {
+            return level->format("f");
+        } else {
+            return "(no level defined)";
+        }
     };
 
     std::tuple<int, std::string> difficulty_name_comp_key(const std::string& s) {

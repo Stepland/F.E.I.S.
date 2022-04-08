@@ -9,28 +9,29 @@
 #include <map>
 #include <sstream>
 
-enum MarkerEndingState {
-    MarkerEndingState_MISS,
-    MarkerEndingState_EARLY,
-    MarkerEndingState_GOOD,
-    MarkerEndingState_GREAT,
-    MarkerEndingState_PERFECT
+enum class Judgement {
+    Perfect,
+    Great,
+    Good,
+    Early,
+    Miss
 };
 
 struct MarkerStatePreview {
-    MarkerEndingState state;
-    std::string textureName;
-    std::string printName;
+    Judgement state;
+    std::string name;
 };
 
-namespace Markers {
-    static std::vector<MarkerStatePreview> markerStatePreviews {
-        {MarkerEndingState_PERFECT, "h402", "PERFECT"},
-        {MarkerEndingState_GREAT, "h302", "GREAT"},
-        {MarkerEndingState_GOOD, "h202", "GOOD"},
-        {MarkerEndingState_EARLY, "h102", "EARLY / LATE"},
-        {MarkerEndingState_MISS, "ma17", "MISS"}};
-}
+const static std::vector<MarkerStatePreview> marker_state_previews {
+    {Judgement::Perfect, "PERFECT"},
+    {Judgement::Great, "GREAT"},
+    {Judgement::Good, "GOOD"},
+    {Judgement::Early, "EARLY / LATE"},
+    {Judgement::Miss, "MISS"}
+};
+
+using ref_tex = std::reference_wrapper<sf::Texture>;
+using opt_ref_tex = std::optional<ref_tex>;
 
 /*
  * Holds the textures associated with a given marker folder from the assets
@@ -38,16 +39,19 @@ namespace Markers {
  */
 class Marker {
 public:
-    explicit Marker(std::filesystem::path folder);
-    std::optional<std::reference_wrapper<sf::Texture>>
-    getSprite(MarkerEndingState state, float seconds);
-    const std::map<std::string, sf::Texture>& getTextures() const;
-    static bool validMarkerFolder(std::filesystem::path folder);
-
+    explicit Marker(const std::filesystem::path& folder);
+    opt_ref_tex at(Judgement state, sf::Time offset);
+    ref_tex preview(Judgement state);
 private:
-    std::map<std::string, sf::Texture> textures;
-    std::filesystem::path path;
-    void initFromFolder(std::filesystem::path folder);
+    unsigned int fps = 30;
+    std::vector<sf::Texture> approach;
+    std::vector<sf::Texture> perfect;
+    std::vector<sf::Texture> great;
+    std::vector<sf::Texture> good;
+    std::vector<sf::Texture> early;
+    std::vector<sf::Texture> miss;
+
+    std::vector<sf::Texture>& texture_vector_of(Judgement state);
 };
 
-Marker first_available_marker_from_folder(std::filesystem::path assets_folder);
+Marker first_available_marker_from_folder(const std::filesystem::path& assets_folder);

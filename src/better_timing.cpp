@@ -1,5 +1,7 @@
 #include "better_timing.hpp"
 
+#include <string>
+
 #include <fmt/core.h>
 #include <json.hpp>
 
@@ -7,7 +9,11 @@
 #include "src/better_beats.hpp"
 
 namespace better {
-    BPMAtBeat::BPMAtBeat(Decimal bpm, Fraction beats) : bpm(bpm), beats(beats) {
+    BPMAtBeat::BPMAtBeat(Decimal bpm_, Fraction beats_) :
+        bpm(bpm_),
+        bpm_as_double(std::stod(bpm_.format("f"))),
+        beats(beats_)
+    {
         if (bpm <= 0) {
             std::stringstream ss;
             ss << "Attempted to create a BPMAtBeat with negative BPM : ";
@@ -19,33 +25,42 @@ namespace better {
     Decimal BPMAtBeat::get_bpm() const {
         return bpm;
     }
+
+    double BPMAtBeat::get_bpm_as_double() const {
+        return bpm_as_double;
+    }
     
     Fraction BPMAtBeat::get_beats() const {
         return beats;
     }
 
-    BPMEvent::BPMEvent(Fraction beats, double seconds, Decimal bpm) :
-        bpm(bpm),
-        beats(beats),
-        seconds(seconds)
+    BPMEvent::BPMEvent(Fraction beats_, double seconds_, Decimal bpm_) :
+        bpm(bpm_),
+        bpm_as_double(std::stod(bpm_.format("f"))),
+        beats(beats_),
+        seconds(seconds_)
     {};
 
     Decimal BPMEvent::get_bpm() const {
         return bpm;
+    }
+
+    double BPMEvent::get_bpm_as_double() const {
+        return bpm_as_double;
     }
     
     Fraction BPMEvent::get_beats() const {
         return beats;
     }
 
-    Fraction BPMEvent::get_seconds() const {
+    double BPMEvent::get_seconds() const {
         return seconds;
     };
     
 
     // Default constructor, used when creating a new song from scratch
-    Timing::Timing()
-        Timing({120, 0}, 0)
+    Timing::Timing() :
+        Timing({{120, 0}}, 0)
     {};
     
     /*
@@ -53,8 +68,9 @@ namespace better {
     beats, the offset parameter is more flexible than a "regular" beat zero
     offset as it accepts non-zero beats
     */
-    Timing::Timing(const std::vector<BPMAtBeat>& events, const Decimal& new_offset) :
-        offset(new_offset)
+    Timing::Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset_) :
+        offset(offset_),
+        offset_as_double(std::stod(offset_.format("f")))
     {
         if (events.empty()) {
             throw std::invalid_argument(
@@ -70,11 +86,11 @@ namespace better {
             if (std::distance(begin, end) > 1) {
                 std::stringstream ss;
                 ss << "Attempted to create a Timing object with multiple ";
-                ss << "BPMs defined at beat " << bpm_at_beat.get_beats();
+                ss << "BPMs defined at beat " << bpm_at_beat.get_beats().get_str();
                 ss << " :";
                 std::for_each(begin, end, [&ss](auto b){
                     ss << " (bpm: " << b.get_bpm() << ", beat: ";
-                    ss << b.get_beats() << "),";
+                    ss << b.get_beats().get_str() << "),";
                 });
                 throw std::invalid_argument(ss.str());
             }
@@ -93,11 +109,8 @@ namespace better {
         auto previous = first_event;
         auto current = std::next(first_event);
         for (; current != sorted_events.end(); ++previous, ++current) {
-            Fraction beats_since_last_event =
-                current->get_beats() - previous->get_beats();
-            auto seconds_since_last_event = 
-                static_cast<double>(60 * beats_since_last_event)
-                / static_cast<double>(previous->get_bpm());
+            const Fraction beats_since_last_event = current->get_beats() - previous->get_beats();
+            double seconds_since_last_event = beats_since_last_event.get_d() * 60 / previous->get_bpm_as_double();
             current_second += seconds_since_last_event;
             bpm_changes.emplace_back(
                 current->get_beats(),
@@ -123,13 +136,10 @@ namespace better {
         if (bpm_change != this->events_by_beats.begin()) {
             bpm_change = std::prev(bpm_change);
         }
-        auto beats_since_previous_event = beats - bpm_change->get_beats();
-        auto seconds_since_previous_event = (
-            static_cast<double>(60 * beats_since_previous_event)
-            / static_cast<double>(bpm_change->get_bpm())
-        );
+        const Fraction beats_since_previous_event = beats - bpm_change->get_beats();
+        double seconds_since_previous_event = beats_since_previous_event.get_d() * 60 / bpm_change->get_bpm_as_double();
         return (
-            static_cast<double>(offset)
+            offset_as_double
             + bpm_change->get_seconds()
             + seconds_since_previous_event
         );
@@ -153,7 +163,7 @@ namespace better {
     };
 
     Fraction Timing::beats_at(double seconds) const {
-        seconds -= static_cast<double>(offset);
+        seconds -= offset_as_double;
         auto bpm_change = this->events_by_seconds.upper_bound(BPMEvent(0, seconds, 0));
         if (bpm_change != this->events_by_seconds.begin()) {
             bpm_change = std::prev(bpm_change);
@@ -182,7 +192,7 @@ namespace better {
     };
 
     Timing Timing::load_from_memon_1_0_0(const nlohmann::json& json) {
-        double offset = 0;
+        Decimal offset = 0;
         if (json.contains("offset")) {
             const auto string_offset = json["offset"].get<std::string>();
             offset = Decimal{string_offset};
@@ -219,6 +229,6 @@ namespace better {
     Timing Timing::load_from_memon_legacy(const nlohmann::json& metadata) {
         const auto bpm = Decimal{metadata["BPM"].get<std::string>()};
         const auto offset = Decimal{metadata["offset"].get<std::string>()};
-        return Timing{{bpm, 0}, -1 * offset};
+        return Timing{{{bpm, 0}}, -1 * offset};
     };
 }

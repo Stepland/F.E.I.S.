@@ -52,7 +52,7 @@ public:
         const sf::Time& playbackPosition,
         const better::Timing& timing,
         Marker& marker,
-        MarkerEndingState& markerEndingState
+        Judgement& markerEndingState
     );
 
 private:

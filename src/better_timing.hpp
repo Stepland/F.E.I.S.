@@ -23,9 +23,11 @@ namespace better {
     public:
         BPMAtBeat(Decimal bpm, Fraction beats);
         Decimal get_bpm() const;
+        double get_bpm_as_double() const;
         Fraction get_beats() const;
     private:
         Decimal bpm;
+        double bpm_as_double;
         Fraction beats;
     };
 
@@ -33,10 +35,12 @@ namespace better {
     public:
         BPMEvent(Fraction beats, double seconds, Decimal bpm);
         Decimal get_bpm() const;
+        double get_bpm_as_double() const;
         Fraction get_beats() const;
-        Fraction get_seconds() const;
+        double get_seconds() const;
     private:
         Decimal bpm;
+        double bpm_as_double;
         Fraction beats;
         double seconds;
     };
@@ -73,9 +77,9 @@ namespace better {
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
 
-        Decimal offset;
-        
     private:
+        Decimal offset;
+        double offset_as_double;
         std::set<BPMEvent, OrderByBeats> events_by_beats;
         std::set<BPMEvent, OrderBySeconds> events_by_seconds;
     };

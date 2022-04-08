@@ -10,7 +10,6 @@
 #include "chart_state.hpp"
 #include "generic_interval.hpp"
 #include "history.hpp"
-#include "history_actions.hpp"
 #include "marker.hpp"
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
@@ -76,7 +75,7 @@ public:
     Fraction get_snap_step() const;
 
     bool showPlayfield = true;
-    void display_playfield(Marker& marker, MarkerEndingState markerEndingState);
+    void display_playfield(Marker& marker, Judgement markerEndingState);
 
     bool showProperties;
     void display_properties();
@@ -108,7 +107,7 @@ public:
         NoSavingNeeded,
     };
 
-    SaveOutcome ask_to_save_if_needed();
+    SaveOutcome save_if_needed_and_user_wants_to();
 
     SaveOutcome save_if_needed();
 
@@ -166,13 +165,32 @@ private:
 };
 
 namespace feis {
-    void open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings);
+    void save(
+        std::optional<EditorState>& ed,
+        NotificationsQueue& nq
+    );
+
+    void save_ask_open(
+        std::optional<EditorState>& ed,
+        const std::filesystem::path& assets,
+        const std::filesystem::path& settings
+    );
+
+    void save_open(
+        std::optional<EditorState>& ed,
+        const std::filesystem::path& file,
+        const std::filesystem::path& assets,
+        const std::filesystem::path& settings
+    );
+
     void open_from_file(
         std::optional<EditorState>& ed,
-        std::filesystem::path file,
-        std::filesystem::path assets,
-        std::filesystem::path settings
+        const std::filesystem::path& file,
+        const std::filesystem::path& assets,
+        const std::filesystem::path& settings
     );
+
+    void save_close(std::optional<EditorState>& ed);
 
     class NewChartDialog {
     public:

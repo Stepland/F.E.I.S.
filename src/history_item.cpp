@@ -1,4 +1,4 @@
-#include "history_actions.hpp"
+#include "history_item.hpp"
 
 #include <functional>
 #include <sstream>
@@ -8,22 +8,28 @@
 
 #include "better_song.hpp"
 #include "editor_state.hpp"
-#include "std_optional_extras.hpp"
 
 
-const std::string& ActionWithMessage::getMessage() const {
+const std::string& HistoryItem::get_message() const {
     return message;
 }
 
 OpenChart::OpenChart(const better::Chart& c, const std::string& difficulty) : notes(c.notes) {
-    message = fmt::format(
-        "Opened Chart {} (level {})",
-        difficulty,
-        better::stringify_level(c.level)
-    );
+    if (c.level) {
+        message = fmt::format(
+            "Opened Chart {} (level {})",
+            difficulty,
+            c.level->format("f")
+        );
+    } else {
+        message = fmt::format(
+            "Opened Chart {} (no level defined)",
+            difficulty
+        );
+    }
 }
 
-void OpenChart::doAction(EditorState& ed) const {
+void OpenChart::do_action(EditorState& ed) const {
     if (ed.chart_state) {
         ed.chart_state->chart.notes = notes;
     }
@@ -43,7 +49,7 @@ AddNotes::AddNotes(const better::Notes& notes) : notes(notes) {
     );
 }
 
-void AddNotes::doAction(EditorState& ed) const {
+void AddNotes::do_action(EditorState& ed) const {
     ed.set_playback_position(ed.time_at(notes.begin()->second.get_time()));
     if (ed.chart_state) {
         for (const auto& [_, note] : notes) {
@@ -52,7 +58,7 @@ void AddNotes::doAction(EditorState& ed) const {
     }
 }
 
-void AddNotes::undoAction(EditorState& ed) const {
+void AddNotes::undo_action(EditorState& ed) const {
     ed.set_playback_position(ed.time_at(notes.begin()->second.get_time()));
     if (ed.chart_state) {
         for (const auto& [_, note] : notes) {
@@ -76,14 +82,14 @@ RemoveNotes::RemoveNotes(const better::Notes& notes) : AddNotes(notes) {
     );
 }
 
-void RemoveNotes::doAction(EditorState& ed) const {
-    AddNotes::undoAction(ed);
+void RemoveNotes::do_action(EditorState& ed) const {
+    AddNotes::undo_action(ed);
 }
 
-void RemoveNotes::undoAction(EditorState& ed) const {
-    AddNotes::doAction(ed);
+void RemoveNotes::undo_action(EditorState& ed) const {
+    AddNotes::do_action(ed);
 }
 
-std::string get_message(const std::shared_ptr<ActionWithMessage>& awm) {
-    return awm->getMessage();
+std::string get_message(const std::shared_ptr<HistoryItem>& awm) {
+    return awm->get_message();
 }

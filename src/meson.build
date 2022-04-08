@@ -1,16 +1,18 @@
 sources += files(
+    'better_beats.cpp',
     'better_chart.cpp',
+    'better_hakus.cpp',
     'better_metadata.cpp',
     'better_note.cpp',
     'better_notes.cpp',
     'better_song.cpp',
     'better_timing.cpp',
-    'chart_state.cpp',
     'chart.cpp',
+    'chart_state.cpp',
     'editor_state.cpp',
     'file_dialogs.cpp',
     'fumen.cpp',
-    'history_actions.cpp',
+    'history_item.cpp',
     'imgui_extras.cpp',
     'json_decimal_parser.cpp',
     'ln_marker.cpp',
@@ -24,6 +26,7 @@ sources += files(
     'precise_music.cpp',
     'preferences.cpp',
     'sound_effect.cpp',
+    'special_numeric_types.cpp',
     'toolbox.cpp',
 )
 

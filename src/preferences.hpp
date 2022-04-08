@@ -16,8 +16,8 @@ public:
 
     void save();
 
-    std::string marker;
-    MarkerEndingState markerEndingState;
+    std::filesystem::path marker;
+    Judgement marker_ending_state;
 
 private:
     std::filesystem::path file_path;

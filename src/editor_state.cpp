@@ -19,13 +19,13 @@
 #include "better_note.hpp"
 #include "chart_state.hpp"
 #include "file_dialogs.hpp"
-#include "history_actions.hpp"
+#include "history_item.hpp"
 #include "imgui_extras.hpp"
 #include "json_decimal_parser.hpp"
 #include "special_numeric_types.hpp"
 #include "src/better_song.hpp"
 #include "src/chart.hpp"
-#include "std_optional_extras.hpp"
+#include "src/notifications_queue.hpp"
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
@@ -139,7 +139,7 @@ Fraction EditorState::get_snap_step() const {
     return Fraction{1, snap};
 };
 
-void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndingState) {
+void EditorState::display_playfield(Marker& marker, Judgement markerEndingState) {
     ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),
@@ -178,7 +178,7 @@ void EditorState::display_playfield(Marker& marker, MarkerEndingState markerEndi
             auto display = VariantVisitor {
                 [&, this](const better::TapNote& tap_note){
                     auto note_offset = (playback_position - this->time_at(tap_note.get_time()));
-                    auto t = marker.getSprite(markerEndingState, note_offset.asSeconds());
+                    auto t = marker.at(markerEndingState, note_offset);
                     if (t) {
                         ImGui::SetCursorPos({
                             tap_note.get_position().get_x() * squareSize,
@@ -472,6 +472,7 @@ void EditorState::display_timeline() {
         chart_state->density_graph.update(
             height,
             chart_state->chart,
+            applicable_timing,
             editable_range.start,
             editable_range.end
         );
@@ -616,7 +617,7 @@ EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
     }
 };
 
-EditorState::SaveOutcome EditorState::ask_to_save_if_needed() {
+EditorState::SaveOutcome EditorState::save_if_needed_and_user_wants_to() {
     if (not needs_to_save()) {
         return EditorState::SaveOutcome::NoSavingNeeded;
     }
@@ -656,7 +657,7 @@ std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() 
     if (song_path) {
         return song_path;
     } else {
-        return feis::ask_for_save_path();
+        return feis::save_file_dialog();
     }
 };
 
@@ -682,7 +683,7 @@ void EditorState::undo(NotificationsQueue& nq) {
         auto previous = chart_state->history.pop_previous();
         if (previous) {
             nq.push(std::make_shared<UndoNotification>(**previous));
-            (*previous)->undoAction(*this);
+            (*previous)->undo_action(*this);
             chart_state->density_graph.should_recompute = true;
         }
     }
@@ -693,7 +694,7 @@ void EditorState::redo(NotificationsQueue& nq) {
         auto next = chart_state->history.pop_next();
         if (next) {
             nq.push(std::make_shared<RedoNotification>(**next));
-            (*next)->doAction(*this);
+            (*next)->do_action(*this);
             chart_state->density_graph.should_recompute = true;
         }
     }
@@ -824,35 +825,61 @@ void EditorState::save(const std::filesystem::path& path) {
             fmt::format("Error while closing file {}", path.string())
         );
     }
+    song_path = path;
     if (chart_state) {
         chart_state->history.mark_as_saved();
     }
 };
 
-void feis::open(std::optional<EditorState>& ed, std::filesystem::path assets, std::filesystem::path settings) {
-    if (ed and ed->ask_to_save_if_needed() == EditorState::SaveOutcome::UserCanceled) {
+void feis::save(
+    std::optional<EditorState>& ed,
+    NotificationsQueue& nq
+) {
+    if (ed) {
+        if (ed->save_if_needed() == EditorState::SaveOutcome::UserSaved) {
+            nq.push(std::make_shared<TextNotification>("Saved file"));
+        }
+    }
+}
+
+// SAVE if needed and the user asked to, then ASK for a file to opne, then OPEN than file
+void feis::save_ask_open(
+    std::optional<EditorState>& ed,
+    const std::filesystem::path& assets,
+    const std::filesystem::path& settings
+) {
+    if (ed and ed->save_if_needed_and_user_wants_to() == EditorState::SaveOutcome::UserCanceled) {
         return;
     }
 
-    const char* _filepath = tinyfd_openFileDialog(
-        "Open File", nullptr, 0, nullptr, nullptr, false
-    );
-    // convert to u8string so std::filesystem::path works correctly on windows
-    const auto filepath_u8string = std::u8string{_filepath, _filepath+std::strlen(_filepath)};
-    if (_filepath != nullptr) {
-        auto filepath = std::filesystem::path{filepath_u8string};
-        feis::open_from_file(ed, filepath, assets, settings);
+    if (const auto& filepath = feis::open_file_dialog()) {
+        feis::open_from_file(ed, *filepath, assets, settings);
     }
 };
 
+// SAVE if needed and the user asked to, then OPEN the file passed as argument
+void feis::save_open(
+    std::optional<EditorState>& ed,
+    const std::filesystem::path& song_path,
+    const std::filesystem::path& assets,
+    const std::filesystem::path& settings
+) {
+    if (ed and ed->save_if_needed_and_user_wants_to() == EditorState::SaveOutcome::UserCanceled) {
+        return;
+    }
+
+    feis::open_from_file(ed, song_path, assets, settings);
+};
+
+
 void feis::open_from_file(
     std::optional<EditorState>& ed,
-    std::filesystem::path song_path,
-    std::filesystem::path assets,
-    std::filesystem::path settings
+    const std::filesystem::path& song_path,
+    const std::filesystem::path& assets,
+    const std::filesystem::path& settings
 ) {
     try {
-        // force utf-8 on windows
+        // force utf-8 song path on windows 
         nowide::ifstream f{song_path.string()};
         if (not f) {
             tinyfd_messageBox(
@@ -872,6 +899,14 @@ void feis::open_from_file(
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }
 };
+
+void feis::save_close(std::optional<EditorState>& ed) {
+    if (ed and ed->save_if_needed_and_user_wants_to() == EditorState::SaveOutcome::UserCanceled) {
+        return;
+    }
+
+    ed.reset();
+}
 
 /*
  * Returns the newly created chart if there is one

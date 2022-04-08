@@ -9,24 +9,28 @@
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/System/Time.hpp>
 
-using opt_tex_ref = std::optional<std::reference_wrapper<sf::Texture>>;
+using opt_tex_ref = std::optional<std::reference_wrapper<const sf::Texture>>;
 
 /*
- * Stores every rotated variant of the long note marker
- * This approach is absolutely terrible, I should just dig a little bit into the
- * internals of Dear ImGui and pass in custom UVs when I want to rotate a
- * texture but I don't feel confident enough rn
- */
+Allows storing and querying the textures that make up the tail of a long note
+
+All the *_at() methods purposefully take in an sf::Time and not a frame number
+to make the code easier to adapt when I add support for markers that aren't
+30fps
+*/
 class LNMarker {
 public:
     explicit LNMarker(std::filesystem::path folder);
 
-    opt_tex_ref triangle_at(int frame);
-    opt_tex_ref highlight_at(int frame);
-    opt_tex_ref outline_at(int frame);
-    opt_tex_ref background_at(int frame);
-    opt_tex_ref tail_at(int frame);
+    opt_tex_ref triangle_at(const sf::Time& offset) const;
+    opt_tex_ref highlight_at(const sf::Time& offset) const;
+    opt_tex_ref outline_at(const sf::Time& offset) const;
+    opt_tex_ref background_at(const sf::Time& offset) const;
+    opt_tex_ref tail_at(const sf::Time& offset) const;
+
+    bool triangle_cycle_displayed_at(const sf::Time& offset) const;
 
 private:
     std::array<sf::Texture, 16> triangle_appearance;
@@ -40,6 +44,8 @@ private:
 
     std::array<sf::Texture, 16> tail_cycle;
 };
+
+int frame_from_offset(const sf::Time& offset);
 
 template<std::size_t number, unsigned int first = 0>
 std::array<sf::Texture, number> load_tex_with_prefix(

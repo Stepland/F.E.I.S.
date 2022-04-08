@@ -10,7 +10,6 @@
 #include "better_song.hpp"
 #include "generic_interval.hpp"
 #include "history.hpp"
-#include "history_actions.hpp"
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "widgets/density_graph.hpp"
@@ -59,7 +58,7 @@ struct ChartState {
 
     // Is the user currently holding right click ? (over the playfield or not)
     bool creating_long_note;
-    History<std::shared_ptr<ActionWithMessage>> history;
+    History history;
     DensityGraph density_graph;
 };
 

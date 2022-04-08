@@ -2,6 +2,8 @@
 
 #include <SFML/System/Time.hpp>
 #include <algorithm>
+#include <cstddef>
+#include <iostream>
 #include "json.hpp"
 
 namespace better {
@@ -65,7 +67,7 @@ namespace better {
     };
 
 
-    bool Notes::is_colliding(const better::Note& note, const better::Timing& timing) {
+    bool Notes::is_colliding(const better::Note& note, const better::Timing& timing) const {
         const auto [start_beat, end_beat] = note.get_time_bounds();
 
         /*
@@ -107,6 +109,15 @@ namespace better {
         Notes res;
         res.interval_tree::insert(*its.begin(), *its.end());
         return res;
+    }
+
+    std::size_t Notes::count_between(const Interval<Fraction>& bounds) {
+        std::size_t count = 0;
+        in(
+            {bounds.start, bounds.end},
+            [&](const Notes::const_iterator& it){count++;}
+        );
+        return count;
     }
 
     nlohmann::ordered_json Notes::dump_to_memon_1_0_0() const {

@@ -16,22 +16,26 @@ LNMarker::LNMarker(std::filesystem::path folder) :
     }
 }
 
-opt_tex_ref LNMarker::triangle_at(int frame) {
-    if (frame >= -16 and frame <= -1) {
-        // approach phase
-        return triangle_appearance.at(16 + frame);
-    } else if (frame >= 0) {
-        if (frame <= 7) {
-            return triangle_begin_cycle.at(frame);
-        } else {
-            return triangle_cycle.at((frame - 8) % 16);
-        }
-    } else {
+opt_tex_ref LNMarker::triangle_at(const sf::Time& offset) const {
+    const auto frame = frame_from_offset(offset);
+    if (frame < -16) {
         return {};
+    } else if (frame < 0) {
+        return triangle_appearance.at(16 + frame);
+    } else if (frame < 8) {
+        return triangle_begin_cycle.at(frame);
+    } else {
+        return triangle_cycle.at((frame - 8) % 16);
     }
 }
 
-opt_tex_ref LNMarker::tail_at(int frame) {
+bool LNMarker::triangle_cycle_displayed_at(const sf::Time& offset) const {
+    const auto frame = frame_from_offset(offset);
+    return frame >= 8;
+}
+
+opt_tex_ref LNMarker::tail_at(const sf::Time& offset) const {
+    const auto frame = frame_from_offset(offset);
     if (frame >= -16) {
         return tail_cycle.at((16 + (frame % 16)) % 16);
     } else {
@@ -39,7 +43,8 @@ opt_tex_ref LNMarker::tail_at(int frame) {
     }
 }
 
-opt_tex_ref LNMarker::highlight_at(int frame) {
+opt_tex_ref LNMarker::highlight_at(const sf::Time& offset) const {
+    const auto frame = frame_from_offset(offset);
     if (frame >= 0) {
         return square_highlight.at((16 + (frame % 16)) % 16);
     } else {
@@ -47,7 +52,8 @@ opt_tex_ref LNMarker::highlight_at(int frame) {
     }
 }
 
-opt_tex_ref LNMarker::outline_at(int frame) {
+opt_tex_ref LNMarker::outline_at(const sf::Time& offset) const {
+    const auto frame = frame_from_offset(offset);
     if (frame >= -16) {
         return square_outline.at((16 + (frame % 16)) % 16);
     } else {
@@ -55,10 +61,15 @@ opt_tex_ref LNMarker::outline_at(int frame) {
     }
 }
 
-opt_tex_ref LNMarker::background_at(int frame) {
+opt_tex_ref LNMarker::background_at(const sf::Time& offset) const {
+    const auto frame = frame_from_offset(offset);
     if (frame >= -16) {
         return square_background.at((16 + (frame % 16)) % 16);
     } else {
         return {};
     }
+}
+
+int frame_from_offset(const sf::Time& offset) {
+    return static_cast<int>(std::floor(offset.asSeconds() * 30.f));
 }
