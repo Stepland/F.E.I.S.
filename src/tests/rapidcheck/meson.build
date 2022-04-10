@@ -1,7 +1,8 @@
 rapidcheck_tests = executable(
     'rapidcheck_tests',
-    'rapidcheck_main.cpp',
-    'test_fractions.cpp',
+    'main.cpp',
+    '../../better_note.cpp',
+    '../../better_beats.cpp',
     '../../special_numeric_types.cpp',
     include_sources['fmt'],
     dependencies: [

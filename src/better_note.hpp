@@ -32,13 +32,12 @@ namespace better {
         std::uint64_t get_y() const;
 
         auto operator<=>(const Position&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const Position& pos);
 
     private:
         std::uint64_t x;
         std::uint64_t y;
     };
-
-    std::ostream& operator<<(std::ostream& out, const Position& pos);
 
     class TapNote {
     public:
@@ -96,9 +95,9 @@ namespace better {
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
-        static Note load_from_memon_0_1_0(
+        static Note load_from_memon_1_0_0(
             const nlohmann::json& json,
-            std::uint64_t resolution
+            std::uint64_t resolution = 240
         );
 
         static Note load_from_memon_legacy(

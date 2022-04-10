@@ -1,0 +1,20 @@
+option(
+    'rtti',
+    type: 'boolean',
+    value: true,
+    description: 'Build RapidCheck with Run-Time Type Inspection'
+)
+
+# option(
+#     'tests',
+#     type: 'boolean',
+#     value: false,
+#     description: 'Build RapidCheck tests'
+# )
+
+# option(
+#     'examples',
+#     type: 'boolean',
+#     value: true,
+#     description: 'Build RapidCheck examples'
+# )

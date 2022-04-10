@@ -32,4 +32,6 @@ sources += files(
 
 subdir('widgets')
 
-subdir('tests')
+if get_option('tests')
+    subdir('tests')
+endif

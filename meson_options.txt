@@ -1,0 +1,6 @@
+option(
+    'tests',
+    type: 'boolean',
+    value: false,
+    description: 'Build F.E.I.S\'s unit tests'
+)

@@ -2,6 +2,8 @@
 
 #include <variant>
 
+#include <fmt/core.h>
+
 #include "better_beats.hpp"
 
 namespace better {
@@ -14,10 +16,10 @@ namespace better {
     };
 
     Position::Position(std::uint64_t x, std::uint64_t y) : x(x), y(y) {
-        if (x > 3 or y > 3) {
+        if (x > 3 or y > 2) {
             std::stringstream ss;
             ss << "Attempted to create Position from invalid coordinates : ";
-            ss << this;
+            ss << *this;
             throw std::invalid_argument(ss.str()); 
         }
     };
@@ -35,7 +37,7 @@ namespace better {
     };
 
     std::ostream& operator<< (std::ostream& out, const Position& pos) {
-        out << "(x: " << pos.get_x() << ", y: " << pos.get_y() << ")";
+        out << fmt::format("(x: {}, y: {})", pos.x, pos.y);
         return out;
     };
 
@@ -67,7 +69,7 @@ namespace better {
         if (duration < 0) {
             std::stringstream ss;
             ss << "Attempted to create a LongNote with negative duration : ";
-            ss << duration.get_str();
+            ss << duration;
             throw std::invalid_argument(ss.str());
         }
         if (tail_tip == position) {
@@ -232,7 +234,7 @@ namespace better {
         return std::visit([](const auto& n){return n.dump_to_memon_1_0_0();}, this->note);
     }
 
-    Note Note::load_from_memon_0_1_0(const nlohmann::json& json, std::uint64_t resolution) {
+    Note Note::load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution) {
         const auto position = Position{json["n"].get<std::uint64_t>()};
         const auto time = load_memon_1_0_0_beat(json["t"], resolution);
         if (not json.contains("l")) {

@@ -15,7 +15,7 @@ bool is_expressible_as_240th(const Fraction& beat) {
 nlohmann::ordered_json beat_to_best_form(const Fraction& beat) {
     if (is_expressible_as_240th(beat)) {
         return nlohmann::ordered_json(
-            (240 * convert_to_u64(beat.numerator()) / convert_to_u64(beat.denominator())
+            (240 * convert_to_u64(beat.numerator())) / convert_to_u64(beat.denominator())
         );
     } else {
         return beat_to_fraction_tuple(beat);

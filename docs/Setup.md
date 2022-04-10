@@ -17,7 +17,8 @@ get a more up-to-date version than what your distro packages might have
 $ pip install meson
 ```
 
-Unfortunately this also means meson will not come with ninja so we need to install it ourselves :
+Unfortunately this also means meson will not come with ninja so we need to
+install it ourselves :
 
 ```console
 $ sudo apt install ninja-build
@@ -46,9 +47,9 @@ $ sudo apt install clang-format
 #### MSYS2
 
 MSYS2 is not the *usual* way to compile things for windows but it's the only
-thing I know for now. If you know better, you're very welcome to do better
-(and to also shower me with some of your knowledge, I absolutely *suck* at
-build systems and would be delighted to hear from you)
+thing I know for now. If you know better, by all means, do what you think is
+best (and also please share some of your knowledge with me, I absolutely *suck*
+at build systems and would be delighted to learn from an expert)
 
 Installing MSYS2 is pretty simple. [Follow their instructions](https://www.msys2.org/)
 
@@ -65,4 +66,4 @@ $ pacman -S \
 ```
 
 Once this is done, open a new `MSYS2 MinGW x64` terminal and follow the
-[instructions on how to compile](docs/Compiling.md)
+[compilation instructions](docs/Compiling.md)
