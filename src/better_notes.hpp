@@ -37,5 +37,8 @@ namespace better {
         std::size_t count_between(const Interval<Fraction>& bounds);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
+
+        static Notes load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution = 240);
+        static Notes load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution);
     };
 }

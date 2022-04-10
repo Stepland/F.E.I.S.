@@ -49,40 +49,24 @@ namespace better {
             */
             hakus = load_hakus(json["timing"]);
         }
-        Chart chart{
+        return Chart{
             .level = level,
             .timing = timing,
             .hakus = hakus,
-            .notes = {}
+            .notes = Notes::load_from_memon_1_0_0(json.at("notes"), chart_resolution)
         };
-        for (auto& json_note : json.at("notes")) {
-            try {
-                const auto note = Note::load_from_memon_0_1_0(json_note, chart_resolution);
-                chart.notes.insert(note);
-            } catch (const std::exception&) {
-                continue;
-            }
-        }
-        return chart;
     }
 
     Chart Chart::load_from_memon_legacy(const nlohmann::json& json) {
-        Chart chart {
+        return Chart{
             .level = Decimal{json["level"].get<int>()},
             .timing = {},
             .hakus = {},
-            .notes = {}
+            .notes = Notes::load_from_memon_legacy(
+                json.at("notes"),
+                json.at("resolution").get<std::uint64_t>()
+            )
         };
-        const auto resolution = json["resolution"].get<std::uint64_t>();
-        for (auto& json_note : json.at("notes")) {
-            try {
-                const auto note = Note::load_from_memon_legacy(json_note, resolution);
-                chart.notes.insert(note);
-            } catch (const std::exception&) {
-                continue;
-            }
-        }
-        return chart;
     }
 
     nlohmann::ordered_json remove_keys_already_in_fallback(

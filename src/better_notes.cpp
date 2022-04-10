@@ -109,7 +109,7 @@ namespace better {
         Notes res;
         res.interval_tree::insert(*its.begin(), *its.end());
         return res;
-    }
+    };
 
     std::size_t Notes::count_between(const Interval<Fraction>& bounds) {
         std::size_t count = 0;
@@ -118,7 +118,7 @@ namespace better {
             [&](const Notes::const_iterator& it){count++;}
         );
         return count;
-    }
+    };
 
     nlohmann::ordered_json Notes::dump_to_memon_1_0_0() const {
         auto json_notes = nlohmann::ordered_json::array();
@@ -126,5 +126,31 @@ namespace better {
             json_notes.push_back(note.dump_to_memon_1_0_0());
         }
         return json_notes;
-    }
+    };
+
+    Notes Notes::load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution) {
+        Notes notes;
+        for (auto& json_note : json) {
+            try {
+                const auto note = Note::load_from_memon_1_0_0(json_note, resolution);
+                notes.insert(note);
+            } catch (const std::exception&) {
+                continue;
+            }
+        }
+        return notes;
+    };
+
+    Notes Notes::load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution) {
+        Notes notes;
+        for (auto& json_note : json) {
+            try {
+                const auto note = Note::load_from_memon_legacy(json_note, resolution);
+                notes.insert(note);
+            } catch (const std::exception&) {
+                continue;
+            }
+        }
+        return notes;
+    };
 }
