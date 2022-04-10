@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/emil-e/rapidcheck
+# closest commit to v11.1.4 on the standalone branch
+revision = head 
+# Overlays subproject/packagefiles/nowide over the fresh git
+# clone of nowide
+patch_directory = rapidcheck

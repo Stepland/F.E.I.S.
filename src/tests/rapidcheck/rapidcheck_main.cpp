@@ -1,0 +1,6 @@
+#include <rapidcheck.h>
+
+int main() {
+    
+    return 0;
+}

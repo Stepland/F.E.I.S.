@@ -3,18 +3,19 @@
 #include <boost/multiprecision/gmp.hpp>
 #include <fmt/core.h>
 #include <json.hpp>
+#include <memory>
 #include <stdexcept>
 
 #include "special_numeric_types.hpp"
 
 bool is_expressible_as_240th(const Fraction& beat) {
-    return (240 * beat.get_num()) % beat.get_den() == 0;
+    return (240 * beat.numerator()) % beat.denominator() == 0;
 };
 
 nlohmann::ordered_json beat_to_best_form(const Fraction& beat) {
     if (is_expressible_as_240th(beat)) {
         return nlohmann::ordered_json(
-            (240 * beat.get_num().get_ui()) / beat.get_den().get_ui()
+            (240 * convert_to_u64(beat.numerator()) / convert_to_u64(beat.denominator())
         );
     } else {
         return beat_to_fraction_tuple(beat);
@@ -22,12 +23,12 @@ nlohmann::ordered_json beat_to_best_form(const Fraction& beat) {
 };
 
 nlohmann::ordered_json beat_to_fraction_tuple(const Fraction& beat) {
-    const auto integer_part = beat.get_num().get_ui() / beat.get_den().get_ui();
+    const auto integral_part = static_cast<std::uint64_t>(beat);
     const auto remainder = beat % 1;
     return {
-        integer_part,
-        remainder.get_num().get_ui(),
-        remainder.get_den().get_ui(),
+        integral_part,
+        convert_to_u64(remainder.numerator()),
+        convert_to_u64(remainder.denominator()),
     };
 };
 

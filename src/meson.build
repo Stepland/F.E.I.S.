@@ -31,3 +31,5 @@ sources += files(
 )
 
 subdir('widgets')
+
+subdir('tests')

@@ -1,0 +1,2 @@
+subdir('doctest')
+subdir('rapidcheck')

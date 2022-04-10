@@ -1,0 +1,19 @@
+rapidcheck_tests = executable(
+    'rapidcheck_tests',
+    'rapidcheck_main.cpp',
+    'test_fractions.cpp',
+    '../../special_numeric_types.cpp',
+    include_sources['fmt'],
+    dependencies: [
+        gmp_dep,
+        mpdecpp_dep,
+        dependency('rapidcheck')
+    ],
+    include_directories: inc,
+)
+
+test(
+    'rapidcheck',
+    rapidcheck_tests,
+    verbose: true,
+)

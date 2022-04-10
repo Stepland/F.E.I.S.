@@ -86,11 +86,11 @@ namespace better {
             if (std::distance(begin, end) > 1) {
                 std::stringstream ss;
                 ss << "Attempted to create a Timing object with multiple ";
-                ss << "BPMs defined at beat " << bpm_at_beat.get_beats().get_str();
+                ss << "BPMs defined at beat " << bpm_at_beat.get_beats();
                 ss << " :";
                 std::for_each(begin, end, [&ss](auto b){
                     ss << " (bpm: " << b.get_bpm() << ", beat: ";
-                    ss << b.get_beats().get_str() << "),";
+                    ss << b.get_beats() << "),";
                 });
                 throw std::invalid_argument(ss.str());
             }
