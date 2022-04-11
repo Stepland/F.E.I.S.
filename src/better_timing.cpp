@@ -6,7 +6,6 @@
 #include <json.hpp>
 
 #include "better_beats.hpp"
-#include "src/better_beats.hpp"
 
 namespace better {
     BPMAtBeat::BPMAtBeat(Decimal bpm_, Fraction beats_) :
@@ -110,7 +109,7 @@ namespace better {
         auto current = std::next(first_event);
         for (; current != sorted_events.end(); ++previous, ++current) {
             const Fraction beats_since_last_event = current->get_beats() - previous->get_beats();
-            double seconds_since_last_event = beats_since_last_event.get_d() * 60 / previous->get_bpm_as_double();
+            double seconds_since_last_event = static_cast<double>(beats_since_last_event) * 60 / previous->get_bpm_as_double();
             current_second += seconds_since_last_event;
             bpm_changes.emplace_back(
                 current->get_beats(),
@@ -137,7 +136,7 @@ namespace better {
             bpm_change = std::prev(bpm_change);
         }
         const Fraction beats_since_previous_event = beats - bpm_change->get_beats();
-        double seconds_since_previous_event = beats_since_previous_event.get_d() * 60 / bpm_change->get_bpm_as_double();
+        double seconds_since_previous_event = static_cast<double>(beats_since_previous_event) * 60 / bpm_change->get_bpm_as_double();
         return (
             offset_as_double
             + bpm_change->get_seconds()
