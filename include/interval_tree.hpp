@@ -1,6 +1,6 @@
 /*
-From my own for of : https://github.com/NicoG60/interval-tree
-(https://github.com/Stepland/interval-tree)
+From my own fork of https://github.com/NicoG60/interval-tree
+( https://github.com/Stepland/interval-tree )
 */
 
 #ifndef INTERVAL_TREE_H
@@ -430,7 +430,7 @@ public:
     template<class P, typename std::enable_if<std::is_convertible<value_type, P&&>::value, int>::type = 0>
     iterator insert(P&& value)
     {
-        return emplace(std::forward(value));
+        return emplace(std::forward<P>(value));
     }
 
     iterator insert(const_iterator hint, const value_type& value)
@@ -530,7 +530,7 @@ public:
         if(!root)
             return 0;
 
-        node* n = find(root, key);
+        node* n = _find<node*>(key);
 
         if(!n)
             return 0;
@@ -1211,7 +1211,7 @@ bool operator==(const interval_tree<K, T, C>& lhs,
     auto rit = rhs.cbegin();
     auto er  = rhs.cend();
 
-    while(lit != el && rit != er)
+    for(;lit != el && rit != er; ++lit, ++rit)
     {
         if(*lit != *rit)
             return false;
