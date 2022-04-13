@@ -192,29 +192,13 @@ Fraction floor_beats(Fraction beats, std::uint64_t denominator) {
 };
 
 Decimal convert_to_decimal(const Fraction& f, unsigned int decimal_places) {
-    const auto abs_f = f > 0 ? f : -1 * f;
-    std::int64_t precision = 0;
-    if (abs_f > 1) {
-        const std::int64_t numerator_digits = mpz_sizeinbase(f.numerator().get_mpz_t(), 10);
-        const std::int64_t denominator_digits = mpz_sizeinbase(f.denominator().get_mpz_t(), 10);
-        if (numerator_digits == denominator_digits) {
-            precision = decimal_places;
-        } else {
-            precision = numerator_digits - denominator_digits + decimal_places + 1;
-        }
-        
+    const auto numerator = Decimal{f.numerator().get_str()};
+    const auto denominator = Decimal{f.denominator().get_str()};
+    const auto divided = numerator / denominator;
+    if (decimal_places == 0) {
+        return divided.to_integral();
     } else {
-        const auto first_non_zero_place = -static_cast<std::int64_t>(std::log10(static_cast<double>(abs_f)));
-        if (decimal_places < first_non_zero_place) {
-            return Decimal{0};
-        } else {
-            precision = decimal_places - first_non_zero_place;
-        }
-    }
-    decimal::Context c{precision};
-    if (f < 0) {
-        return -1 * Decimal{convert_to_u64((-1 * f).numerator())}.div(convert_to_u64(f.denominator()), c);
-    } else {
-        return Decimal{convert_to_u64(f.numerator())}.div(convert_to_u64(f.denominator()), c);
+        const auto quantizer = Decimal{fmt::format("1.{:0{}}", 0, decimal_places)};
+        return divided.quantize(quantizer);
     }
 }
