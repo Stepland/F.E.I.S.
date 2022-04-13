@@ -439,7 +439,7 @@ void EditorState::display_playback_status() {
         ImGui::SameLine();
         ImGui::TextDisabled("Beats :");
         ImGui::SameLine();
-        ImGui::TextUnformatted(fmt::format("{:.3f}", current_exact_beats().get_d()).c_str());
+        ImGui::TextUnformatted(fmt::format("{:.3f}", static_cast<double>(current_exact_beats())).c_str());
         ImGui::SameLine();
         if (music) {
             ImGui::TextDisabled("Music File Offset :");

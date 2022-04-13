@@ -1,5 +1,6 @@
 rapidcheck_tests = executable(
     'rapidcheck_tests',
+    'generators.cpp',
     'main.cpp',
     '../../better_beats.cpp',
     '../../better_note.cpp',

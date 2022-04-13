@@ -8,7 +8,7 @@ void NotesClipboard::copy(const better::Notes& notes) {
     contents.clear();
     if (not notes.empty()) {
         const auto offset = notes.cbegin()->second.get_time();
-        const auto shift = shifter(-offset);
+        const auto shift = shifter(-1 * offset);
         for (const auto& [_, note] : notes) {
             contents.insert(note.visit(shift));
         }

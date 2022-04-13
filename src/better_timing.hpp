@@ -77,6 +77,8 @@ namespace better {
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
 
+        bool operator==(const Timing&) const = default;
+
     private:
         Decimal offset;
         double offset_as_double;

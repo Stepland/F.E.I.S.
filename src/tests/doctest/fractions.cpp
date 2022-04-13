@@ -19,6 +19,7 @@ TEST_CASE("Fractions") {
     SUBCASE("can be cast to") {
         SUBCASE("std::int64_t, returing the integral part") {
             CHECK(static_cast<std::int64_t>(Fraction{1,2}) == INT64_C(0));
+            CHECK(static_cast<std::int64_t>(Fraction{2,3}) == INT64_C(0));
             CHECK(static_cast<std::int64_t>(Fraction{-5,2}) == INT64_C(-2));
             CHECK(static_cast<std::int64_t>(Fraction{"-9223372036854775808/1"}) == INT64_MIN);
             CHECK(static_cast<std::int64_t>(Fraction{"9223372036854775807/1"}) == INT64_MAX);

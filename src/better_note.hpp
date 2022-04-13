@@ -6,6 +6,8 @@
 #include <utility>
 #include <variant>
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <json.hpp>
 
 #include "special_numeric_types.hpp"
@@ -46,6 +48,7 @@ namespace better {
         Position get_position() const;
 
         bool operator==(const TapNote&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const TapNote& pos);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
     private:
@@ -66,6 +69,7 @@ namespace better {
         std::uint64_t get_tail_angle() const;
 
         bool operator==(const LongNote&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const LongNote& pos);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
         int tail_as_6_notation() const;
@@ -92,6 +96,7 @@ namespace better {
         auto visit(T& visitor) const {return std::visit(visitor, this->note);};
 
         bool operator==(const Note&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const Note& pos);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
@@ -108,4 +113,58 @@ namespace better {
         std::variant<TapNote, LongNote> note;
     };
 }
+
+template <>
+struct fmt::formatter<better::Position>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Position& pos, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "(x: {}, y: {})",
+            pos.get_x(),
+            pos.get_y()
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<better::TapNote>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::TapNote& t, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "TapNote(time: {}, position: {})",
+            t.get_time(),
+            t.get_position()
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<better::LongNote>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::LongNote& l, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "LongNote(time: {}, position: {}, duration: {}, tail tip: {})",
+            l.get_time(),
+            l.get_position(),
+            l.get_duration(),
+            l.get_tail_tip()
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<better::Note>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Note& n, FormatContext& ctx) {
+        const auto visitor = [&](const auto& n){return format_to(ctx.out(), "{}", n);};
+        return n.visit(visitor);
+    }
+};
 

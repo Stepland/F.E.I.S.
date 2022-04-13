@@ -42,10 +42,21 @@ public:
     friend Fraction operator%(Fraction a, const Fraction& b);
     friend std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs);
     friend std::ostream& operator<<(std::ostream& os, const Fraction& obj);
+    friend struct fmt::formatter<Fraction>;
 
 private:
     mpq_class value;
 };
+
+template <>
+struct fmt::formatter<Fraction>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const Fraction& c, FormatContext& ctx) {
+        return formatter<string_view>::format(c.value.get_str(), ctx);
+    }
+};
+
 
 const auto mpz_uint64_max = mpz_class(fmt::format("{}", UINT64_MAX));
 const auto mpz_int64_min = mpz_class(fmt::format("{}", INT64_MIN));
@@ -61,6 +72,8 @@ Fraction convert_to_fraction(const Decimal& d);
 // Rounds a given beat to the nearest given division (defaults to nearest 1/240th)
 Fraction round_beats(Fraction beats, std::uint64_t denominator = 240);
 Fraction floor_beats(Fraction beats, std::uint64_t denominator = 240);
+
+Decimal convert_to_decimal(const Fraction& f, unsigned int decimal_places);
 
 // Stolen from :
 // https://github.com/progrock-libraries/kickstart/blob/master/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36

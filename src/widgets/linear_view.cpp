@@ -102,23 +102,23 @@ void LinearView::update(
     while (next_beat_line_y < y) {
         if (next_beat % 4 == 0) {
             beat_line.setFillColor(sf::Color::White);
-            beat_line.setPosition({timeline_x, static_cast<float>(next_beat_line_y.get_d())});
+            beat_line.setPosition({timeline_x, static_cast<float>(static_cast<double>(next_beat_line_y))});
             view.draw(beat_line);
 
             ss.str(std::string());
             const Fraction measure = next_beat / 4;
-            ss << static_cast<int>(measure.get_d());
+            ss << static_cast<int>(static_cast<double>(measure));
             beat_number.setString(ss.str());
             sf::FloatRect textRect = beat_number.getLocalBounds();
             beat_number.setOrigin(
                 textRect.left + textRect.width,
                 textRect.top + textRect.height / 2.f);
-            beat_number.setPosition({40.f, static_cast<float>(next_beat_line_y.get_d())});
+            beat_number.setPosition({40.f, static_cast<float>(static_cast<double>(next_beat_line_y))});
             view.draw(beat_number);
 
         } else {
             beat_line.setFillColor(sf::Color(255, 255, 255, 127));
-            beat_line.setPosition({timeline_x, static_cast<float>(next_beat_line_y.get_d())});
+            beat_line.setPosition({timeline_x, static_cast<float>(static_cast<double>(next_beat_line_y))});
             view.draw(beat_line);
         }
         next_beat += 1;
@@ -140,15 +140,15 @@ void LinearView::update(
     auto draw_note = VariantVisitor {
         [&, this](const better::TapNote& tap_note){
             float note_x = timeline_x + note_width * (tap_note.get_position().index() + 0.5f);
-            float note_y = static_cast<float>(beats_to_pixels_absolute.transform(tap_note.get_time()).get_d());
+            float note_y = static_cast<double>(beats_to_pixels_absolute.transform(tap_note.get_time()));
             const auto note_seconds = timing.time_at(tap_note.get_time());
             const auto first_colliding_beat = timing.beats_at(note_seconds - sf::milliseconds(500));
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
             const auto last_colliding_beat = timing.beats_at(note_seconds + sf::milliseconds(500));
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            note_collision_zone.setSize({collizion_zone_width, static_cast<float>(collision_zone_height.get_d())});
+            note_collision_zone.setSize({collizion_zone_width, static_cast<float>(static_cast<double>(collision_zone_height))});
             Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);
-            note_collision_zone.setPosition(note_x, static_cast<float>(collision_zone_y.get_d()));
+            note_collision_zone.setPosition(note_x, static_cast<float>(static_cast<double>(collision_zone_y)));
             this->view.draw(note_collision_zone);
             tap_note_rect.setPosition(note_x, note_y);
             this->view.draw(tap_note_rect);
@@ -159,19 +159,19 @@ void LinearView::update(
         },
         [&, this](const better::LongNote& long_note){
             float note_x = timeline_x + note_width * (long_note.get_position().index() + 0.5f);
-            float note_y = static_cast<float>(beats_to_pixels_absolute.transform(long_note.get_time()).get_d());
+            float note_y = static_cast<double>(beats_to_pixels_absolute.transform(long_note.get_time()));
             const auto note_start_seconds = timing.time_at(long_note.get_time());
             const auto first_colliding_beat = timing.beats_at(note_start_seconds - sf::milliseconds(500));
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
             const auto note_end_seconds = timing.time_at(long_note.get_end());
             const auto last_colliding_beat = timing.beats_at(note_end_seconds + sf::milliseconds(500));
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            note_collision_zone.setSize({collizion_zone_width, static_cast<float>(collision_zone_height.get_d())});
+            note_collision_zone.setSize({collizion_zone_width, static_cast<float>(static_cast<double>(collision_zone_height))});
             Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);
-            note_collision_zone.setPosition(note_x, static_cast<float>(collision_zone_y.get_d()));
+            note_collision_zone.setPosition(note_x, static_cast<float>(static_cast<double>(collision_zone_y)));
             this->view.draw(note_collision_zone);
             const auto long_note_rect_height = beats_to_pixels_proportional.transform(long_note.get_duration());
-            long_note_rect.setSize({long_note_rect_width, static_cast<float>(long_note_rect_height.get_d())});
+            long_note_rect.setSize({long_note_rect_width, static_cast<float>(static_cast<double>(long_note_rect_height))});
             Toolbox::set_local_origin_normalized(long_note_rect, 0.5f, 0.f);
             long_note_rect.setPosition(note_x, note_y);
             this->view.draw(long_note_rect);
@@ -212,9 +212,9 @@ void LinearView::update(
         if (pixel_interval.intersects({0, y})) {
             selection.setSize({
                 selection_width,
-                static_cast<float>(pixel_interval.width().get_d()),
+                static_cast<float>(static_cast<double>(pixel_interval.width())),
             });
-            selection.setPosition(timeline_x, static_cast<float>(pixel_interval.start.get_d()));
+            selection.setPosition(timeline_x, static_cast<double>(pixel_interval.start));
             view.draw(selection);
         }
     }

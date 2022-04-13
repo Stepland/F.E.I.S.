@@ -3,6 +3,7 @@
 #include <variant>
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "better_beats.hpp"
 
@@ -16,7 +17,7 @@ namespace better {
     };
 
     Position::Position(std::uint64_t x, std::uint64_t y) : x(x), y(y) {
-        if (x > 3 or y > 2) {
+        if (x > 3 or y > 3) {
             std::stringstream ss;
             ss << "Attempted to create Position from invalid coordinates : ";
             ss << *this;
@@ -37,7 +38,7 @@ namespace better {
     };
 
     std::ostream& operator<< (std::ostream& out, const Position& pos) {
-        out << fmt::format("(x: {}, y: {})", pos.x, pos.y);
+        out << fmt::to_string(pos);
         return out;
     };
 
@@ -50,6 +51,11 @@ namespace better {
 
     Position TapNote::get_position() const {
         return position;
+    };
+
+    std::ostream& operator<<(std::ostream& out, const TapNote& t) {
+        out << fmt::to_string(t);
+        return out;
     };
 
     nlohmann::ordered_json TapNote::dump_to_memon_1_0_0() const {
@@ -142,6 +148,11 @@ namespace better {
         }
     };
 
+    std::ostream& operator<<(std::ostream& out, const LongNote& l) {
+        out << fmt::to_string(l);
+        return out;
+    };
+
     nlohmann::ordered_json LongNote::dump_to_memon_1_0_0() const {
         return {
             {"n", position.index()},
@@ -230,6 +241,11 @@ namespace better {
         return this->get_time_bounds().second;
     }
 
+    std::ostream& operator<<(std::ostream& out, const Note& n) {
+        out << fmt::to_string(n);
+        return out;
+    };
+
     nlohmann::ordered_json Note::dump_to_memon_1_0_0() const {
         return std::visit([](const auto& n){return n.dump_to_memon_1_0_0();}, this->note);
     }
@@ -242,7 +258,7 @@ namespace better {
         }
         
         const auto duration = load_memon_1_0_0_beat(json["l"], resolution);
-        const auto tail_index = json["n"].get<std::uint64_t>();
+        const auto tail_index = json["p"].get<std::uint64_t>();
         return LongNote{
             time,
             position,
@@ -261,7 +277,7 @@ namespace better {
             json["l"].get<std::uint64_t>(),
             resolution,
         };
-        const auto tail_index = json["n"].get<std::uint64_t>();
+        const auto tail_index = json["p"].get<std::uint64_t>();
         if (duration > 0) {
             return LongNote{
                 time,

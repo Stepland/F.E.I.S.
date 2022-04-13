@@ -18,6 +18,8 @@ namespace better {
         std::optional<Hakus> hakus;
         Notes notes;
 
+        bool operator==(const Chart&) const = default;
+
         nlohmann::ordered_json dump_to_memon_1_0_0(
             const nlohmann::ordered_json& fallback_timing_object
         ) const;

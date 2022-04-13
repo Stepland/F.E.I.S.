@@ -2,6 +2,7 @@ doctest_tests = executable(
     'doctest_tests',
     'main.cpp',
     'fractions.cpp',
+    'decimals.cpp',
     '../../special_numeric_types.cpp',
     include_sources['fmt'],
     dependencies: [
