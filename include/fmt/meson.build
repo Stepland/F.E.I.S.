@@ -1,1 +1,1 @@
-include_sources += {'fmt': files('format.cc')}
+include_sources += {'fmt': files('format.cc', 'os.cc')}

@@ -201,7 +201,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                 },
             };
 
-            for (auto const& note : chart_state->visible_notes) {
+            for (auto const& [_, note] : chart_state->visible_notes) {
                 note.visit(display);
             }
 
@@ -252,7 +252,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
         if (chart_state) {
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
-            for (auto const& note : chart_state->visible_notes) {
+            for (auto const& [_, note] : chart_state->visible_notes) {
                 if (chart_state->chart.notes.is_colliding(note, applicable_timing)) {
                     collisions[note.get_position().index()] = true;
                 }
@@ -270,7 +270,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             }
 
             // Display selected notes
-            for (auto const& note : chart_state->visible_notes) {
+            for (auto const& [_, note] : chart_state->visible_notes) {
                 if (chart_state->selected_notes.contains(note)) {
                     ImGui::SetCursorPos({
                         note.get_position().get_x() * squareSize,

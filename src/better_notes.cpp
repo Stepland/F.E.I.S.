@@ -1,39 +1,38 @@
 #include "better_notes.hpp"
 
+#include <SFML/System/Time.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
-
-#include <SFML/System/Time.hpp>
-#include <json.hpp>
+#include "json.hpp"
 
 namespace better {
-    std::pair<Notes::container::iterator, bool> Notes::insert(const Note& note) {
-        auto conflicting_note = notes.end();
-        notes.in(
+    std::pair<Notes::iterator, bool> Notes::insert(const Note& note) {
+        auto conflicting_note = end();
+        in(
             note.get_time_bounds(),
-            [&](const Notes::container::iterator& it){
+            [&](const Notes::iterator& it){
                 if (
                     it->second.get_position() == note.get_position()
-                    and conflicting_note == notes.end()
+                    and conflicting_note == end()
                 ) {
                     conflicting_note = it;
                 }
             }
         );
-        if (conflicting_note != notes.end()) {
+        if (conflicting_note != end()) {
             return {conflicting_note, false};
         } else {
-            auto it = notes.insert({note.get_time_bounds(), note});
+            auto it = interval_tree::insert({note.get_time_bounds(), note});
             return {it, true};
         }
     };
 
     void Notes::overwriting_insert(const Note& note) {
         std::vector<better::Note> conflicting_notes = {};
-        notes.in(
+        in(
             note.get_time_bounds(),
-            [&](const Notes::container::const_iterator& it) {
+            [&](const Notes::const_iterator& it) {
                 if (it->second.get_position() == note.get_position()) {
                     conflicting_notes.push_back(it->second);
                 }
@@ -42,15 +41,15 @@ namespace better {
         for (const auto& conflict : conflicting_notes) {
             erase(conflict);
         }
-        notes.insert({note.get_time_bounds(), note});
+        interval_tree::insert({note.get_time_bounds(), note});
     };
 
-    Notes::container::const_iterator Notes::find(const Note& note) const {
-        auto conflicting_note = notes.end();
-        notes.in(
+    Notes::const_iterator Notes::find(const Note& note) const {
+        auto conflicting_note = interval_tree::end();
+        in(
             note.get_time_bounds(),
-            [&](Notes::container::const_iterator it){
-                if (it->second == note and conflicting_note == notes.end()) {
+            [&](Notes::const_iterator it){
+                if (it->second == note and conflicting_note == end()) {
                     conflicting_note = it;
                 }
             }
@@ -59,12 +58,12 @@ namespace better {
     };
 
     bool Notes::contains(const Note& note) const {
-        return find(note) != notes.cend();
+        return find(note) != cend();
     };
 
     void Notes::erase(const Note& note) {
         auto it = find(note);
-        notes.erase(it);
+        interval_tree::erase(it);
     };
 
 
@@ -92,9 +91,9 @@ namespace better {
         const auto collision_end = timing.beats_at(timing.time_at(end_beat) + sf::seconds(1));
 
         bool found_collision = false;
-        notes.in(
+        in(
             {collision_start, collision_end},
-            [&](const Notes::container::const_iterator& it){
+            [&](const Notes::const_iterator& it){
                 if (it->second.get_position() == note.get_position()) {
                     if (it->second != note) {
                         found_collision = true;
@@ -106,24 +105,24 @@ namespace better {
     };
 
     Notes Notes::between(const Interval<Fraction>& bounds) {
-        auto its = notes.in(bounds.start, bounds.end);
+        auto its = in(bounds.start, bounds.end);
         Notes res;
-        res.notes.insert(*its.begin(), *its.end());
+        res.interval_tree::insert(*its.begin(), *its.end());
         return res;
     };
 
     std::size_t Notes::count_between(const Interval<Fraction>& bounds) {
         std::size_t count = 0;
-        notes.in(
+        in(
             {bounds.start, bounds.end},
-            [&](const Notes::container::const_iterator& it){count++;}
+            [&](const Notes::const_iterator& it){count++;}
         );
         return count;
     };
 
     nlohmann::ordered_json Notes::dump_to_memon_1_0_0() const {
         auto json_notes = nlohmann::ordered_json::array();
-        for (const auto& [_, note] : notes) {
+        for (const auto& [_, note] : *this) {
             json_notes.push_back(note.dump_to_memon_1_0_0());
         }
         return json_notes;

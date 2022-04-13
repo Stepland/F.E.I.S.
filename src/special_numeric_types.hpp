@@ -6,7 +6,7 @@
 #include <ostream>
 #include <type_traits>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <gmpxx.h>
 #include <libmpdec++/decimal.hh>
 

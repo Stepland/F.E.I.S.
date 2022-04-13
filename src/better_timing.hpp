@@ -38,6 +38,8 @@ namespace better {
         double get_bpm_as_double() const;
         Fraction get_beats() const;
         double get_seconds() const;
+
+        bool operator==(const BPMEvent&) const = default;
     private:
         Decimal bpm;
         double bpm_as_double;

@@ -7,7 +7,6 @@
 #include <variant>
 
 #include <fmt/core.h>
-#include <fmt/format.h>
 #include <json.hpp>
 
 #include "special_numeric_types.hpp"

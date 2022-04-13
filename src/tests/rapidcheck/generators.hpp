@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <rapidcheck.h>
 #include <rapidcheck/gen/Arbitrary.h>
 #include <rapidcheck/gen/Numeric.h>
@@ -8,7 +9,10 @@
 #include "../../better_notes.hpp"
 #include "../../better_timing.hpp"
 #include "../../variant_visitor.hpp"
+#include "rapidcheck/gen/Build.h"
+#include "rapidcheck/gen/Container.h"
 #include "rapidcheck/gen/Exec.h"
+#include "rapidcheck/gen/Predicate.h"
 
 namespace rc {
     template<>
@@ -26,12 +30,15 @@ namespace rc {
             return gen::apply([](const Fraction& a, unsigned int b, unsigned int c) {
                     return a + Fraction{std::min(b, c), std::max(b, c)};
                 },
-                gen::construct<Fraction>(gen::inRange<unsigned int>(0,100)),
-                gen::inRange<unsigned int>(0,10),
-                gen::inRange<unsigned int>(1,10)
+                gen::construct<Fraction>(gen::inRange<int>(-100,100)),
+                gen::inRange<int>(0,10),
+                gen::inRange<int>(1,10)
             );
         }
     };
+
+    template <>
+    Gen<Fraction> gen::nonNegative();
 
     template <>
     Gen<Fraction> gen::positive();
@@ -40,7 +47,7 @@ namespace rc {
     struct Arbitrary<better::TapNote> {
         static Gen<better::TapNote> arbitrary() {
             return gen::construct<better::TapNote>(
-                gen::arbitrary<Fraction>(),
+                gen::nonNegative<Fraction>(),
                 gen::arbitrary<better::Position>()
             );
         }
@@ -66,7 +73,7 @@ namespace rc {
                         tail_tip,
                     };
                 },
-                gen::arbitrary<Fraction>(),
+                gen::nonNegative<Fraction>(),
                 gen::arbitrary<better::Position>(),
                 gen::positive<Fraction>(),
                 gen::inRange<unsigned int>(0, 6)
@@ -91,7 +98,7 @@ namespace rc {
                 const auto raw_notes = *gen::container<std::vector<std::tuple<better::Position, Fraction, Fraction>>>(gen::tuple(
                     gen::arbitrary<better::Position>(),
                     gen::positive<Fraction>(),
-                    gen::arbitrary<Fraction>()
+                    gen::nonNegative<Fraction>()
                 ));
                 std::array<Fraction, 16> last_note_end = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
                 better::Notes result;
@@ -118,9 +125,22 @@ namespace rc {
     template<>
     struct Arbitrary<Decimal> {
         static Gen<Decimal> arbitrary() {
-            return gen::apply([](unsigned int a)
-                gen::construct<better::Note>(gen::arbitrary<better::TapNote>()),
-                gen::construct<better::Note>(gen::arbitrary<better::LongNote>())
+            return gen::map(
+                gen::inRange<long>(-100000000L, 100000000L),
+                [](long f){return Decimal(f) / 100000;}
+            );
+        }
+    };
+
+    template <>
+    Gen<Decimal> gen::positive();
+
+    template<>
+    struct Arbitrary<better::BPMAtBeat> {
+        static Gen<better::BPMAtBeat> arbitrary() {
+            return gen::construct<better::BPMAtBeat>(
+                gen::positive<Decimal>(),
+                gen::nonNegative<Fraction>()
             );
         }
     };
@@ -128,9 +148,15 @@ namespace rc {
     template<>
     struct Arbitrary<better::Timing> {
         static Gen<better::Timing> arbitrary() {
-            return gen::oneOf(
-                gen::construct<better::Note>(gen::arbitrary<better::TapNote>()),
-                gen::construct<better::Note>(gen::arbitrary<better::LongNote>())
+            return gen::construct<better::Timing>(
+                gen::withSize([](std::size_t size) {
+                    return gen::uniqueBy<std::vector<better::BPMAtBeat>>(
+                        std::max(std::size_t(1), size),
+                        gen::arbitrary<better::BPMAtBeat>(),
+                        [](const better::BPMAtBeat& b){return b.get_beats();}
+                    );
+                }),
+                gen::arbitrary<Decimal>()
             );
         }
     };

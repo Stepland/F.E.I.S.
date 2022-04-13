@@ -3,7 +3,6 @@
 #include <variant>
 
 #include <fmt/core.h>
-#include <fmt/format.h>
 
 #include "better_beats.hpp"
 
@@ -38,7 +37,7 @@ namespace better {
     };
 
     std::ostream& operator<< (std::ostream& out, const Position& pos) {
-        out << fmt::to_string(pos);
+        out << fmt::format("{}", pos);
         return out;
     };
 
@@ -54,7 +53,7 @@ namespace better {
     };
 
     std::ostream& operator<<(std::ostream& out, const TapNote& t) {
-        out << fmt::to_string(t);
+        out << fmt::format("{}", t);
         return out;
     };
 
@@ -149,7 +148,7 @@ namespace better {
     };
 
     std::ostream& operator<<(std::ostream& out, const LongNote& l) {
-        out << fmt::to_string(l);
+        out << fmt::format("{}", l);
         return out;
     };
 
@@ -242,7 +241,7 @@ namespace better {
     }
 
     std::ostream& operator<<(std::ostream& out, const Note& n) {
-        out << fmt::to_string(n);
+        out << fmt::format("{}", n);
         return out;
     };
 

@@ -15,15 +15,14 @@
 #include "special_numeric_types.hpp"
 
 namespace better {
-    class Notes {
+    class Notes : public interval_tree<Fraction, Note> {
     public:
-        using container = interval_tree<Fraction, Note>;
         // try to insert a note, the boolean is true on success
-        std::pair<container::iterator, bool> insert(const Note& note);
+        std::pair<iterator, bool> insert(const Note& note);
         // insert a note, erasing any other note it collides with
         void overwriting_insert(const Note& note);
         // returns at iterator to a note exactly equal, if found
-        container::const_iterator find(const Note& note) const;
+        const_iterator find(const Note& note) const;
         bool contains(const Note& note) const;
         void erase(const Note& note);
 
@@ -41,10 +40,5 @@ namespace better {
 
         static Notes load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution = 240);
         static Notes load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution);
-
-        bool operator==(const Notes&) const = default;
-
-    private:
-        interval_tree<Fraction, Note> notes;
     };
 }

@@ -427,7 +427,7 @@ int main() {
                 }
                 if (noteTick.shouldPlay and editor_state->chart_state) {
                     int note_count = 0;
-                    for (const auto& note : editor_state->chart_state->visible_notes) {
+                    for (const auto& [_, note] : editor_state->chart_state->visible_notes) {
                         const auto note_time = editor_state->time_at(note.get_time());
                         if (note_time >= editor_state->previous_playback_position and note_time <= editor_state->playback_position) {
                             note_count++;
