@@ -8,6 +8,7 @@
 #include "../../better_note.hpp"
 #include "../../better_notes.hpp"
 #include "../../better_timing.hpp"
+#include "json.hpp"
 
 int main() {
 
@@ -38,6 +39,17 @@ int main() {
             const auto j = original.dump_to_memon_1_0_0();
             RC_LOG("json dump : "+j.dump());
             const auto recovered = better::Timing::load_from_memon_1_0_0(j);
+            RC_ASSERT(original == recovered);
+        }
+    );
+
+    rc::check(
+        "A Chart object survives being converted to json and back",
+        [](const better::Chart& original) {
+            const auto fallback_timing = nlohmann::ordered_json::object();
+            const auto j = original.dump_to_memon_1_0_0(fallback_timing);
+            RC_LOG("json dump : "+j.dump());
+            const auto recovered = better::Chart::load_from_memon_1_0_0(j, fallback_timing);
             RC_ASSERT(original == recovered);
         }
     );

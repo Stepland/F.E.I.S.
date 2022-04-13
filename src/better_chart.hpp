@@ -4,6 +4,7 @@
 #include <optional>
 #include <set>
 
+#include <fmt/core.h>
 #include <json.hpp>
 
 #include "better_hakus.hpp"
@@ -26,6 +27,8 @@ namespace better {
 
         static Chart load_from_memon_1_0_0(const nlohmann::json& json, const nlohmann::json& fallback_timing);
         static Chart load_from_memon_legacy(const nlohmann::json& json);
+
+        friend std::ostream& operator<<(std::ostream& out, const Chart& n);
     };
 
     /*
@@ -43,3 +46,32 @@ namespace better {
         const nlohmann::ordered_json& fallback_timing_object
     );
 }
+
+template <class T>
+struct fmt::formatter<std::optional<T>>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const std::optional<T>& opt, FormatContext& ctx) {
+        if (opt) {
+            return format_to(ctx.out(), "{}", *opt);
+        } else {
+            return format_to(ctx.out(), "∅");
+        }
+    }
+};
+
+template <>
+struct fmt::formatter<better::Chart>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Chart& c, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "LongNote(level: {}, timing: {}, hakus: {}, notes: {})",
+            c.level,
+            c.timing,
+            c.hakus,
+            c.notes
+        );
+    }
+};

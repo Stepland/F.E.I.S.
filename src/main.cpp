@@ -1,3 +1,4 @@
+#include <string>
 #define IMGUI_USER_CONFIG "imconfig-SFML.h"
 
 #include <filesystem>
@@ -26,7 +27,7 @@ int main() {
     // TODO : Make the linear preview display the end of the chart
     // TODO : Make the linear preview timebar height movable
 
-    auto executable_folder = std::filesystem::path{whereami::executable_dir()};
+    auto executable_folder = std::filesystem::u8path(whereami::executable_dir());
     auto assets_folder = executable_folder / "assets";
     auto settings_folder = executable_folder / "settings";
 
@@ -98,6 +99,8 @@ int main() {
                         if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
                             window.close();
                         }
+                    } else {
+                        window.close();
                     }
                     break;
                 case sf::Event::Resized:

@@ -3,10 +3,13 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <interval_tree.hpp>
-#include <json.hpp>
 #include <type_traits>
 #include <utility>
+
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+#include <interval_tree.hpp>
+#include <json.hpp>
 
 #include "better_note.hpp"
 #include "better_timing.hpp"
@@ -40,5 +43,25 @@ namespace better {
 
         static Notes load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution = 240);
         static Notes load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution);
+
+        friend std::ostream& operator<<(std::ostream& out, const Notes& n);
     };
 }
+
+template <>
+struct fmt::formatter<better::Notes>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Notes& n, FormatContext& ctx) {
+        std::vector<better::Note> notes;
+        std::transform(n.begin(), n.end(), notes.begin(), [](const auto& p){return p.second;});
+        return format_to(
+            ctx.out(),
+            "[{}]",
+            fmt::join(
+                notes,
+                ", "
+            )
+        );
+    }
+};

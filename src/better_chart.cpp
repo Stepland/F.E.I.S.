@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <json.hpp>
 #include <optional>
-#include "src/better_hakus.hpp"
 
 namespace better {
     nlohmann::ordered_json Chart::dump_to_memon_1_0_0(
@@ -68,6 +67,11 @@ namespace better {
             )
         };
     }
+
+    std::ostream& operator<<(std::ostream& out, const better::Chart& c) {
+        out << fmt::format("{}", c);
+        return out;
+    };
 
     nlohmann::ordered_json remove_keys_already_in_fallback(
         const nlohmann::ordered_json& object,

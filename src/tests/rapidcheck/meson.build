@@ -3,6 +3,8 @@ rapidcheck_tests = executable(
     'generators.cpp',
     'main.cpp',
     '../../better_beats.cpp',
+    '../../better_chart.cpp',
+    '../../better_hakus.cpp',
     '../../better_note.cpp',
     '../../better_notes.cpp',
     '../../better_timing.cpp',

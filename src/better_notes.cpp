@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
+#include "fmt/core.h"
 #include "json.hpp"
 
 namespace better {
@@ -152,5 +153,10 @@ namespace better {
             }
         }
         return notes;
+    };
+
+    std::ostream& operator<<(std::ostream& out, const Notes& n) {
+        out << fmt::format("{}", n);
+        return out;
     };
 }

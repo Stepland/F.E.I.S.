@@ -8,9 +8,9 @@
 #include <sstream>
 #include <vector>
 
+#include <json.hpp>
 #include <SFML/System/Time.hpp>
 
-#include "json.hpp"
 #include "special_numeric_types.hpp"
 
 namespace better {
@@ -88,3 +88,19 @@ namespace better {
         std::set<BPMEvent, OrderBySeconds> events_by_seconds;
     };
 }
+
+template <>
+struct fmt::formatter<better::Chart>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Chart& c, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "LongNote(level: {}, timing: {}, hakus: {}, notes: {})",
+            c.level,
+            c.timing,
+            c.hakus,
+            c.notes
+        );
+    }
+};

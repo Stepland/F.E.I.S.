@@ -1,18 +1,24 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
+
 #include <rapidcheck.h>
 #include <rapidcheck/gen/Arbitrary.h>
+#include <rapidcheck/gen/Build.h>
+#include <rapidcheck/gen/Container.h>
+#include <rapidcheck/gen/Exec.h>
 #include <rapidcheck/gen/Numeric.h>
+#include <rapidcheck/gen/Predicate.h>
+#include <rapidcheck/gen/Transform.h>
 
+#include "../../better_chart.hpp"
+#include "../../better_hakus.hpp"
 #include "../../better_note.hpp"
 #include "../../better_notes.hpp"
 #include "../../better_timing.hpp"
 #include "../../variant_visitor.hpp"
-#include "rapidcheck/gen/Build.h"
-#include "rapidcheck/gen/Container.h"
-#include "rapidcheck/gen/Exec.h"
-#include "rapidcheck/gen/Predicate.h"
+
 
 namespace rc {
     template<>
@@ -157,6 +163,41 @@ namespace rc {
                     );
                 }),
                 gen::arbitrary<Decimal>()
+            );
+        }
+    };
+
+    template<>
+    struct Arbitrary<Hakus> {
+        static Gen<Hakus> arbitrary() {
+            return gen::container<std::set<Fraction>>(gen::positive<Fraction>());
+        }
+    };
+
+    template<class T>
+    struct Arbitrary<std::optional<T>> {
+        static Gen<std::optional<T>> arbitrary() {
+            return gen::mapcat(
+                gen::arbitrary<bool>(),
+                 [](bool engaged) {
+                    if (not engaged) {
+                        return gen::construct<std::optional<T>>();
+                    } else {
+                        return gen::construct<std::optional<T>>(gen::arbitrary<T>());
+                    }
+                }
+            );
+        }
+    };
+
+    template<>
+    struct Arbitrary<better::Chart> {
+        static Gen<better::Chart> arbitrary() {
+            return gen::construct<better::Chart>(
+                gen::arbitrary<std::optional<Decimal>>(),
+                gen::arbitrary<std::optional<better::Timing>>(),
+                gen::arbitrary<std::optional<Hakus>>(),
+                gen::arbitrary<better::Notes>()
             );
         }
     };
