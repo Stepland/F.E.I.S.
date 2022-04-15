@@ -150,7 +150,7 @@ public:
             if(n)
                 n = tree->next(n);
             else
-                n = tree->leftest(n);
+                n = tree->root ? tree->leftest(tree->root) : nullptr;
 
             return *this;
         }
@@ -167,7 +167,7 @@ public:
             if(n)
                 n = tree->prev(n);
             else
-                n = tree->rightest(n);
+                n = tree->root ? tree->rightest(tree->root) : nullptr;
 
             return *this;
         }
@@ -224,7 +224,7 @@ public:
             if(n)
                 n = tree->next(n);
             else
-                n = tree->leftest(n);
+                n = tree->root ? tree->leftest(tree->root) : nullptr;
 
             return *this;
         }
@@ -241,7 +241,7 @@ public:
             if(n)
                 n = tree->prev(n);
             else
-                n = tree->rightest(n);
+                n = tree->root ? tree->rightest(tree->root) : nullptr;
 
             return *this;
         }
@@ -358,32 +358,32 @@ public:
 
     inline reverse_iterator rbegin() noexcept
     {
-        return reverse_iterator(begin());
+        return reverse_iterator(end());
     }
 
     inline reverse_const_iterator rbegin() const noexcept
     {
-        return reverse_const_iterator(begin());
+        return reverse_const_iterator(end());
     }
 
     inline reverse_const_iterator crbegin() const noexcept
     {
-        return reverse_const_iterator(cbegin());
+        return reverse_const_iterator(cend());
     }
 
     inline reverse_iterator rend() noexcept
     {
-        return reverse_iterator(end());
+        return reverse_iterator(begin());
     }
 
     inline reverse_const_iterator rend() const noexcept
     {
-        return reverse_const_iterator(end());
+        return reverse_const_iterator(begin());
     }
 
     inline reverse_const_iterator crend() const noexcept
     {
-        return reverse_const_iterator(cend());
+        return reverse_const_iterator(cbegin());
     }
 
 
