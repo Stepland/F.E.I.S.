@@ -1,3 +1,4 @@
+#include <SFML/System/Time.hpp>
 #include <string>
 #define IMGUI_USER_CONFIG "imconfig-SFML.h"
 
@@ -123,12 +124,13 @@ int main() {
                         case sf::Mouse::Button::Right:
                             if (editor_state and editor_state->chart_state) {
                                 if (editor_state->chart_state->long_note_being_created) {
-                                    auto new_note = make_long_note(
-                                        *editor_state->chart_state->long_note_being_created
+                                    auto new_note = make_linear_view_long_note_dummy(
+                                        *editor_state->chart_state->long_note_being_created,
+                                        editor_state->get_snap_step()
                                     );
                                     better::Notes new_notes;
                                     new_notes.insert(new_note);
-                                    editor_state->chart_state->chart.notes.insert(new_note);
+                                    editor_state->chart_state->chart.notes.overwriting_insert(new_note);
                                     editor_state->chart_state->long_note_being_created.reset();
                                     editor_state->chart_state->creating_long_note = false;
                                     editor_state->chart_state->history.push(
@@ -247,7 +249,7 @@ int main() {
                                     editor_state->snap = Toolbox::getPreviousDivisor(240, editor_state->snap);
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(fmt::format(
-                                            "Snap : {}%",
+                                            "Snap : {}",
                                             Toolbox::toOrdinal(4 * editor_state->snap)
                                         ))
                                     );
@@ -268,7 +270,7 @@ int main() {
                                     editor_state->snap = Toolbox::getNextDivisor(240, editor_state->snap);
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(fmt::format(
-                                            "Snap : {}%",
+                                            "Snap : {}",
                                             Toolbox::toOrdinal(4 * editor_state->snap)
                                         ))
                                     );
@@ -401,15 +403,15 @@ int main() {
             editor_state->update_visible_notes();
             if (editor_state->playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
-                editor_state->playback_position += delta * (editor_state->get_speed() / 10.f);
+                editor_state->playback_position = editor_state->current_time() + delta * (editor_state->get_speed() / 10.f);
                 if (editor_state->music) {
                     switch (editor_state->music->getStatus()) {
                         case sf::Music::Stopped:
                         case sf::Music::Paused:
-                            if (editor_state->playback_position.asSeconds() >= 0
-                                and editor_state->playback_position
+                            if (editor_state->current_time() >= sf::Time::Zero
+                                and editor_state->current_time()
                                     < editor_state->music->getDuration()) {
-                                editor_state->music->setPlayingOffset(editor_state->playback_position);
+                                editor_state->music->setPlayingOffset(editor_state->current_time());
                                 editor_state->music->play();
                             }
                             break;
@@ -422,7 +424,7 @@ int main() {
                     }
                 }
                 if (beatTick.shouldPlay) {
-                    const auto previous_beat = editor_state->beats_at(editor_state->previous_playback_position);
+                    const auto previous_beat = editor_state->previous_exact_beats();
                     const auto current_beat = editor_state->current_exact_beats();
                     if (previous_beat % 1 != current_beat % 1) {
                         beatTick.play();
@@ -431,8 +433,7 @@ int main() {
                 if (noteTick.shouldPlay and editor_state->chart_state) {
                     int note_count = 0;
                     for (const auto& note : editor_state->chart_state->visible_notes) {
-                        const auto note_time = editor_state->time_at(note.get_time());
-                        if (note_time >= editor_state->previous_playback_position and note_time <= editor_state->playback_position) {
+                        if (note.get_time() >= editor_state->previous_exact_beats() and note.get_time() <= editor_state->current_exact_beats()) {
                             note_count++;
                         }
                     }
@@ -447,7 +448,7 @@ int main() {
                     }
                 }
 
-                if (editor_state->playback_position > editor_state->get_editable_range().end) {
+                if (editor_state->current_time() > editor_state->get_editable_range().end) {
                     editor_state->playing = false;
                     editor_state->playback_position = editor_state->get_editable_range().end;
                 }

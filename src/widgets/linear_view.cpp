@@ -4,11 +4,13 @@
 #include <iostream>
 #include <variant>
 
+#include <fmt/core.h>
 #include <SFML/System/Time.hpp>
 
 #include "../special_numeric_types.hpp"
 #include "../toolbox.hpp"
 #include "../chart_state.hpp"
+#include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
 
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
@@ -55,7 +57,8 @@ void LinearView::resize(unsigned int width, unsigned int height) {
 void LinearView::update(
     const ChartState& chart_state,
     const better::Timing& timing,
-    const sf::Time& playback_position,
+    const Fraction& current_beat,
+    const Fraction& snap,
     const ImVec2& size
 ) {
     int x = std::max(140, static_cast<int>(size.x));
@@ -72,21 +75,9 @@ void LinearView::update(
     // cursor_y pixels and we use this fact to compute the rest
     const auto beats_before_cursor = beats_to_pixels_proportional.backwards_transform(cursor_y);
     const auto beats_after_cursor = beats_to_pixels_proportional.backwards_transform(static_cast<float>(y) - cursor_y);
-    const auto current_beat = timing.beats_at(playback_position);
-    Fraction first_visible_beat = current_beat - beats_before_cursor;
-    Fraction last_visible_beat = current_beat + beats_after_cursor;
+    const Fraction first_visible_beat = current_beat - beats_before_cursor;
+    const Fraction last_visible_beat = current_beat + beats_after_cursor;
     AffineTransform<Fraction> beats_to_pixels_absolute{first_visible_beat, last_visible_beat, 0, y};
-
-    // Draw the beat lines and numbers
-    auto next_beat = [](const auto& first_beat) -> Fraction {
-        if (first_beat % 1 == 0) {
-            return first_beat;
-        } else {
-            return floor_fraction(first_beat) + 1;
-        }
-    }(first_visible_beat);
-
-    Fraction next_beat_line_y = beats_to_pixels_absolute.backwards_transform(next_beat);
 
     float timeline_width = static_cast<float>(x) - 80.f;
     float timeline_x = 50.f;
@@ -97,18 +88,27 @@ void LinearView::update(
     beat_number.setFont(beat_number_font);
     beat_number.setCharacterSize(15);
     beat_number.setFillColor(sf::Color::White);
-    std::stringstream ss;
 
-    while (next_beat_line_y < y) {
+    // Draw the beat lines and numbers
+    auto next_beat = [](const auto& first_beat) -> Fraction {
+        if (first_beat % 1 == 0) {
+            return first_beat;
+        } else {
+            return floor_fraction(first_beat) + 1;
+        }
+    }(first_visible_beat);
+
+    for (
+        Fraction next_beat_line_y = beats_to_pixels_absolute.transform(next_beat);
+        next_beat_line_y < y;
+        next_beat_line_y = beats_to_pixels_absolute.transform(next_beat += 1)
+    ) {
         if (next_beat % 4 == 0) {
             beat_line.setFillColor(sf::Color::White);
             beat_line.setPosition({timeline_x, static_cast<float>(static_cast<double>(next_beat_line_y))});
             view.draw(beat_line);
-
-            ss.str(std::string());
             const Fraction measure = next_beat / 4;
-            ss << static_cast<int>(static_cast<double>(measure));
-            beat_number.setString(ss.str());
+            beat_number.setString(fmt::format("{}", static_cast<std::int64_t>(measure)));
             sf::FloatRect textRect = beat_number.getLocalBounds();
             beat_number.setOrigin(
                 textRect.left + textRect.width,
@@ -121,8 +121,6 @@ void LinearView::update(
             beat_line.setPosition({timeline_x, static_cast<float>(static_cast<double>(next_beat_line_y))});
             view.draw(beat_line);
         }
-        next_beat += 1;
-        next_beat_line_y = beats_to_pixels_absolute.backwards_transform(next_beat);
     }
 
     float note_width = timeline_width / 16.f;
@@ -184,16 +182,25 @@ void LinearView::update(
         },
     };
 
+    const auto first_visible_second = timing.time_at(first_visible_beat);
+    const auto first_visible_collision_zone = timing.beats_at(first_visible_second - sf::milliseconds(500));
+    const auto last_visible_second = timing.time_at(last_visible_beat);
+    const auto last_visible_collision_zone = timing.beats_at(last_visible_second + sf::milliseconds(500));
     chart_state.chart.notes.in(
-        first_visible_beat,
-        last_visible_beat,
+        first_visible_collision_zone,
+        last_visible_collision_zone,
         [&](const better::Notes::iterator& it){
             it->second.visit(draw_note);
         }
     );
 
     if (chart_state.long_note_being_created.has_value()) {
-        draw_note(make_long_note(*chart_state.long_note_being_created));
+        draw_note(
+            make_linear_view_long_note_dummy(
+                *chart_state.long_note_being_created,
+                snap
+            )
+        );
     }
 
     // Draw the cursor
@@ -238,7 +245,7 @@ void LinearView::displaySettings() {
 void LinearView::reload_transforms() {
     beats_to_pixels_proportional = {
         Fraction{0},
-        Fraction{1, timeFactor()},
+        Fraction{1} / Fraction{timeFactor()},
         Fraction{0},
         Fraction{100}
     };

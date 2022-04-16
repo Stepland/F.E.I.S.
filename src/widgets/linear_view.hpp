@@ -17,14 +17,15 @@ public:
     void update(
         const ChartState& chart_state,
         const better::Timing& timing,
-        const sf::Time& playback_position,
+        const Fraction& current_beat,
+        const Fraction& snap,
         const ImVec2& size
     );
 
     void setZoom(int zoom);
     void zoom_in() { setZoom(zoom + 1); };
     void zoom_out() { setZoom(zoom - 1); };
-    float timeFactor() { return std::pow(1.25f, static_cast<float>(zoom)); };
+    float timeFactor() { return std::pow(1.25, static_cast<double>(zoom)); };
 
     bool shouldDisplaySettings;
 

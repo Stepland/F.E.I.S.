@@ -10,7 +10,7 @@ TEST_CASE("make_long_note works with any input") {
             better::Position pos_b{index_b};
             better::TapNote a{0, pos_a};
             better::TapNote b{0, pos_b};
-            REQUIRE_NOTHROW(make_long_note({a, b}));
+            REQUIRE_NOTHROW(make_linear_view_long_note_dummy({a, b}, 1));
         }
     }
 }

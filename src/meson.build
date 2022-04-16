@@ -16,6 +16,7 @@ sources += files(
     'imgui_extras.cpp',
     'json_decimal_handling.cpp',
     'ln_marker.cpp',
+    'long_note_dummy.cpp',
     'main.cpp',
     'marker.cpp',
     'note.cpp',

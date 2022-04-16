@@ -120,7 +120,7 @@ void Playfield::draw_tail_and_receptor(
             edge
             */
             float tail_length_factor;
-            if (long_note.marker.triangle_cycle_displayed_at(note_offset)) {
+            if (not long_note.marker.triangle_cycle_displayed_at(note_offset)) {
                 // Before the cycle : tail goes from triangle tip to note edge
                 tail_length_factor = std::max(
                     0.f,

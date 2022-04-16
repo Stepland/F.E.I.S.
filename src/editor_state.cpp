@@ -15,17 +15,18 @@
 #include <stdexcept>
 #include <string>
 #include <tinyfiledialogs.h>
+#include <variant>
 
 #include "better_note.hpp"
+#include "better_song.hpp"
 #include "chart_state.hpp"
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
 #include "json_decimal_handling.hpp"
+#include "long_note_dummy.hpp"
+#include "notifications_queue.hpp"
 #include "special_numeric_types.hpp"
-#include "src/better_song.hpp"
-#include "src/chart.hpp"
-#include "src/notifications_queue.hpp"
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
@@ -102,16 +103,36 @@ const Interval<sf::Time>& EditorState::get_editable_range() {
     return editable_range;
 };
 
-void EditorState::set_playback_position(sf::Time newPosition) {
-    newPosition = std::clamp(newPosition, editable_range.start, editable_range.end);
-    previous_playback_position = newPosition - (sf::seconds(1) / 60.f);
+void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosition) {
+    const auto clamp_ = VariantVisitor {
+        [this](const sf::Time& seconds) {
+            return std::variant<sf::Time, Fraction>(
+                std::clamp(
+                    seconds,
+                    this->editable_range.start,
+                    this->editable_range.end
+                )
+            );
+        },
+        [this](const Fraction& beats) {
+            return std::variant<sf::Time, Fraction>(
+                std::clamp(
+                    beats,
+                    this->beats_at(this->editable_range.start),
+                    this->beats_at(this->editable_range.end)
+                )
+            );
+        },
+    };
+    newPosition = std::visit(clamp_, newPosition);
+    previous_playback_position = playback_position;
     playback_position = newPosition;
     if (music) {
         if (
-            playback_position >= sf::Time::Zero
-            and playback_position < music->getDuration()
+            current_time() >= sf::Time::Zero
+            and current_time() < music->getDuration()
         ) {
-            music->setPlayingOffset(playback_position);
+            music->setPlayingOffset(current_time());
         } else {
             music->stop();
         }
@@ -119,13 +140,41 @@ void EditorState::set_playback_position(sf::Time newPosition) {
 };
 
 Fraction EditorState::current_exact_beats() const {
-    return applicable_timing.beats_at(playback_position);
+    const auto current_exact_beats_ = VariantVisitor {
+        [this](const sf::Time& seconds) { return this->beats_at(seconds); },
+        [](const Fraction& beats) { return beats; },
+    };
+    return std::visit(current_exact_beats_, playback_position);
 };
 
 Fraction EditorState::current_snaped_beats() const {
     const auto exact = current_exact_beats();
     return round_beats(exact, snap);
 };
+
+Fraction EditorState::previous_exact_beats() const {
+    const auto current_exact_beats_ = VariantVisitor {
+        [this](const sf::Time& seconds) { return this->beats_at(seconds); },
+        [](const Fraction& beats) { return beats; },
+    };
+    return std::visit(current_exact_beats_, previous_playback_position);
+}
+
+sf::Time EditorState::current_time() const {
+    const auto current_time_ = VariantVisitor {
+        [](const sf::Time& seconds) { return seconds; },
+        [this](const Fraction& beats) { return this->time_at(beats); },
+    };
+    return std::visit(current_time_, playback_position);
+}
+
+sf::Time EditorState::previous_time() const {
+    const auto current_time_ = VariantVisitor {
+        [](const sf::Time& seconds) { return seconds; },
+        [this](const Fraction& beats) { return this->time_at(beats); },
+    };
+    return std::visit(current_time_, previous_playback_position);
+}
 
 Fraction EditorState::beats_at(sf::Time time) const {
     return applicable_timing.beats_at(time);
@@ -166,18 +215,19 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             playfield.resize(static_cast<unsigned int>(ImGui::GetWindowSize().x));
             if (chart_state->long_note_being_created) {
                 playfield.draw_tail_and_receptor(
-                    make_long_note_dummy(
+                    make_playfield_long_note_dummy(
                         current_exact_beats(),
-                        *chart_state->long_note_being_created
+                        *chart_state->long_note_being_created,
+                        get_snap_step()
                     ),
-                    playback_position,
+                    current_time(),
                     applicable_timing
                 );
             }
 
             auto display = VariantVisitor {
                 [&, this](const better::TapNote& tap_note){
-                    auto note_offset = (playback_position - this->time_at(tap_note.get_time()));
+                    auto note_offset = (this->current_time() - this->time_at(tap_note.get_time()));
                     auto t = marker.at(markerEndingState, note_offset);
                     if (t) {
                         ImGui::SetCursorPos({
@@ -193,7 +243,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                 [&, this](const better::LongNote& long_note){
                     this->playfield.draw_long_note(
                         long_note,
-                        playback_position,
+                        current_time(),
                         applicable_timing,
                         marker,
                         markerEndingState
@@ -226,7 +276,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                 if (ImGui::ImageButton(playfield.button, {squareSize, squareSize}, 0)) {
                     if (chart_state) {
                         chart_state->toggle_note(
-                            playback_position,
+                            current_time(),
                             snap, 
                             {x, y},
                             applicable_timing
@@ -449,7 +499,7 @@ void EditorState::display_playback_status() {
         }
         ImGui::TextDisabled("Timeline Position :");
         ImGui::SameLine();
-        ImGui::TextUnformatted(Toolbox::to_string(playback_position).c_str());
+        ImGui::TextUnformatted(Toolbox::to_string(current_time()).c_str());
     }
     ImGui::End();
     ImGui::PopStyleVar();
@@ -510,7 +560,7 @@ void EditorState::display_timeline() {
                 1.f,
                 0.f
             );
-            float slider_pos = scroll.transform(playback_position.asSeconds());
+            float slider_pos = scroll.transform(current_time().asSeconds());
             ImGui::SetCursorPos({0, 0});
             if (ImGui::VSliderFloat("TimelineSlider", ImGui::GetContentRegionMax(), &slider_pos, 0.f, 1.f, "")) {
                 set_playback_position(sf::seconds(scroll.backwards_transform(slider_pos)));
@@ -569,7 +619,8 @@ void EditorState::display_linear_view() {
             linear_view.update(
                 *chart_state,
                 applicable_timing,
-                playback_position,
+                current_exact_beats(),
+                get_snap_step(),
                 ImGui::GetContentRegionMax()
             );
             auto cursor_y = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
@@ -662,20 +713,19 @@ std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() 
 };
 
 void EditorState::move_backwards_in_time() {
-    auto beats = current_exact_beats();
-    if (beats % get_snap_step() == 0) {
+    auto beats = current_snaped_beats();
+    if (beats >= current_exact_beats()) {
         beats -= get_snap_step();
-    } else {
-        beats -= beats % get_snap_step();
     }
-    set_playback_position(applicable_timing.time_at(beats));
+    set_playback_position(beats);
 };
 
 void EditorState::move_forwards_in_time() {
-    auto beats = current_exact_beats();
-    beats -= beats % get_snap_step();
-    beats += get_snap_step();
-    set_playback_position(applicable_timing.time_at(beats));
+    auto beats = current_snaped_beats();
+    if (beats <= current_exact_beats()) {
+        beats += get_snap_step();
+    }
+    set_playback_position(beats);
 };
 
 void EditorState::undo(NotificationsQueue& nq) {
@@ -710,7 +760,7 @@ void EditorState::open_chart(const std::string& name) {
 void EditorState::update_visible_notes() {
     if (chart_state) {
         chart_state->update_visible_notes(
-            playback_position,
+            current_time(),
             applicable_timing
         );
     }
@@ -782,7 +832,7 @@ void EditorState::reload_music() {
 
     reload_editable_range();
     playback_position = std::clamp(
-        playback_position,
+        current_time(),
         editable_range.start,
         editable_range.end
     );

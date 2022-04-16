@@ -61,15 +61,18 @@ public:
 
     bool playing;
 
-    sf::Time playback_position;
-    sf::Time previous_playback_position;
+    std::variant<sf::Time, Fraction> playback_position;
+    std::variant<sf::Time, Fraction> previous_playback_position;
 
     const Interval<sf::Time>& get_editable_range();
 
-    void set_playback_position(sf::Time new_position);
+    void set_playback_position(std::variant<sf::Time, Fraction> newPosition);
 
     Fraction current_exact_beats() const;
     Fraction current_snaped_beats() const;
+    Fraction previous_exact_beats() const;
+    sf::Time current_time() const;
+    sf::Time previous_time() const;
     Fraction beats_at(sf::Time time) const;
     sf::Time time_at(Fraction beat) const;
     Fraction get_snap_step() const;

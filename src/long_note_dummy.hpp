@@ -14,13 +14,17 @@ created but its start time is set to exactly the (given) current beat so the
 long note drawing routine of the playfield can be repurposed as-is for the
 preview
 */
-better::LongNote make_long_note_dummy(
-    Fraction current_beat,
-    const TapNotePair& long_note_being_created
+better::LongNote make_playfield_long_note_dummy(
+    const Fraction& current_beat,
+    const TapNotePair& long_note_being_created,
+    const Fraction& snap
 );
 
 // Turn the tap pair into the real long note the user wants to create
-better::LongNote make_long_note(const TapNotePair& long_note_being_created);
+better::LongNote make_linear_view_long_note_dummy(
+    const TapNotePair& long_note_being_created,
+    const Fraction& snap
+);
 
 better::Position closest_tail_position(
     const better::Position& anchor,

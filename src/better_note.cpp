@@ -64,16 +64,15 @@ namespace better {
         };
     };
 
-    LongNote::LongNote(Fraction time, Position position, Fraction duration, Position tail_tip)
-    :
+    LongNote::LongNote(Fraction time, Position position, Fraction duration, Position tail_tip) :
         time(time),
         position(position),
         duration(duration),
         tail_tip(tail_tip)
     {
-        if (duration < 0) {
+        if (duration <= 0) {
             std::stringstream ss;
-            ss << "Attempted to create a LongNote with negative duration : ";
+            ss << "Attempted to create a LongNote with zero or negative duration : ";
             ss << duration;
             throw std::invalid_argument(ss.str());
         }
