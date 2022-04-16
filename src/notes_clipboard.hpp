@@ -4,8 +4,8 @@
 #include <utility>
 
 #include "better_note.hpp"
+#include "better_notes.hpp"
 #include "special_numeric_types.hpp"
-#include "src/better_notes.hpp"
 #include "variant_visitor.hpp"
 
 /*

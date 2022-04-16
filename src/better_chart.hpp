@@ -28,7 +28,7 @@ namespace better {
         static Chart load_from_memon_1_0_0(const nlohmann::json& json, const nlohmann::json& fallback_timing);
         static Chart load_from_memon_legacy(const nlohmann::json& json);
 
-        friend std::ostream& operator<<(std::ostream& out, const Chart& n);
+        friend std::ostream& operator<<(std::ostream& out, const Chart& c);
     };
 
     /*
@@ -41,7 +41,7 @@ namespace better {
     );
 
     nlohmann::ordered_json dump_memon_1_0_0_timing_object(
-        const Timing& timing,
+        const std::optional<better::Timing>& timing,
         const std::optional<Hakus>& hakus,
         const nlohmann::ordered_json& fallback_timing_object
     );
@@ -67,7 +67,7 @@ struct fmt::formatter<better::Chart>: formatter<string_view> {
     auto format(const better::Chart& c, FormatContext& ctx) {
         return format_to(
             ctx.out(),
-            "LongNote(level: {}, timing: {}, hakus: {}, notes: {})",
+            "Chart(level: {}, timing: {}, hakus: {}, notes: {})",
             c.level,
             c.timing,
             c.hakus,

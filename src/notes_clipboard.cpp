@@ -1,7 +1,7 @@
 #include "notes_clipboard.hpp"
 #include <utility>
 
-#include "src/better_note.hpp"
+#include "better_note.hpp"
 #include "variant_visitor.hpp"
 
 void NotesClipboard::copy(const better::Notes& notes) {

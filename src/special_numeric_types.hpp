@@ -41,7 +41,7 @@ public:
     friend Fraction operator/(Fraction a, const Fraction& b);
     friend Fraction operator%(Fraction a, const Fraction& b);
     friend std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs);
-    friend std::ostream& operator<<(std::ostream& os, const Fraction& obj);
+    friend std::ostream& operator<<(std::ostream& os, const Fraction& f);
     friend struct fmt::formatter<Fraction>;
 
 private:
@@ -74,6 +74,15 @@ Fraction round_beats(Fraction beats, std::uint64_t denominator = 240);
 Fraction floor_beats(Fraction beats, std::uint64_t denominator = 240);
 
 Decimal convert_to_decimal(const Fraction& f, unsigned int decimal_places);
+
+template <>
+struct fmt::formatter<Decimal>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const Decimal& d, FormatContext& ctx) {
+        return formatter<string_view>::format(d.format("f"), ctx);
+    }
+};
 
 // Stolen from :
 // https://github.com/progrock-libraries/kickstart/blob/master/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36

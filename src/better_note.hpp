@@ -47,7 +47,7 @@ namespace better {
         Position get_position() const;
 
         bool operator==(const TapNote&) const = default;
-        friend std::ostream& operator<<(std::ostream& out, const TapNote& pos);
+        friend std::ostream& operator<<(std::ostream& out, const TapNote& t);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
     private:
@@ -68,7 +68,7 @@ namespace better {
         std::uint64_t get_tail_angle() const;
 
         bool operator==(const LongNote&) const = default;
-        friend std::ostream& operator<<(std::ostream& out, const LongNote& pos);
+        friend std::ostream& operator<<(std::ostream& out, const LongNote& l);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
         int tail_as_6_notation() const;
@@ -85,7 +85,7 @@ namespace better {
     class Note {
     public:
         template<typename ...Ts>
-        Note(Ts&&... Args) : note(std::forward<Ts>(Args)...) {};
+        Note(Ts&&... Args) requires (std::constructible_from<std::variant<TapNote, LongNote>, Ts...>) : note(std::forward<Ts>(Args)...) {};
         Fraction get_time() const;
         std::pair<Fraction, Fraction> get_time_bounds() const;
         Position get_position() const;
@@ -95,7 +95,7 @@ namespace better {
         auto visit(T& visitor) const {return std::visit(visitor, this->note);};
 
         bool operator==(const Note&) const = default;
-        friend std::ostream& operator<<(std::ostream& out, const Note& pos);
+        friend std::ostream& operator<<(std::ostream& out, const Note& n);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 

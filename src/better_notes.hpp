@@ -44,7 +44,7 @@ namespace better {
         static Notes load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution = 240);
         static Notes load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution);
 
-        friend std::ostream& operator<<(std::ostream& out, const Notes& n);
+        friend std::ostream& operator<<(std::ostream& out, const Notes& ns);
     };
 }
 
@@ -54,7 +54,9 @@ struct fmt::formatter<better::Notes>: formatter<string_view> {
     template <typename FormatContext>
     auto format(const better::Notes& n, FormatContext& ctx) {
         std::vector<better::Note> notes;
-        std::transform(n.begin(), n.end(), notes.begin(), [](const auto& p){return p.second;});
+        for (const auto& [_, note] : n) {
+            notes.push_back(note);
+        }
         return format_to(
             ctx.out(),
             "[{}]",

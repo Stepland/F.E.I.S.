@@ -6,6 +6,7 @@
 #include <json.hpp>
 
 #include "better_beats.hpp"
+#include "json_decimal_handling.hpp"
 
 namespace better {
     BPMAtBeat::BPMAtBeat(Decimal bpm_, Fraction beats_) :
@@ -55,6 +56,11 @@ namespace better {
     double BPMEvent::get_seconds() const {
         return seconds;
     };
+
+    std::ostream& operator<<(std::ostream& out, const BPMEvent& b) {
+        out << fmt::format("{}", b);
+        return out;
+    }
     
 
     // Default constructor, used when creating a new song from scratch
@@ -193,8 +199,7 @@ namespace better {
     Timing Timing::load_from_memon_1_0_0(const nlohmann::json& json) {
         Decimal offset = 0;
         if (json.contains("offset")) {
-            const auto string_offset = json["offset"].get<std::string>();
-            offset = Decimal{string_offset};
+            offset = load_as_decimal(json["offset"]);
         }
         std::uint64_t resolution = 240;
         if (json.contains("resolution")) {
@@ -207,7 +212,7 @@ namespace better {
             for (const auto& bpm_json : json["bpms"]) {
                 try {
                     bpms.emplace_back(
-                        Decimal{bpm_json["bpm"].get<std::string>()},
+                        load_as_decimal(bpm_json["bpm"]),
                         load_memon_1_0_0_beat(bpm_json["beat"], resolution)
                     );
                 } catch (const std::exception&) {
@@ -226,8 +231,13 @@ namespace better {
     the first beat occurs in the music file
     */
     Timing Timing::load_from_memon_legacy(const nlohmann::json& metadata) {
-        const auto bpm = Decimal{metadata["BPM"].get<std::string>()};
-        const auto offset = Decimal{metadata["offset"].get<std::string>()};
+        const auto bpm = load_as_decimal(metadata["BPM"]);
+        const auto offset = load_as_decimal(metadata["offset"]);
         return Timing{{{bpm, 0}}, -1 * offset};
+    };
+
+    std::ostream& operator<<(std::ostream& out, const Timing& t) {
+        out << fmt::format("{}", t);
+        return out;
     };
 }

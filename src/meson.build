@@ -14,7 +14,7 @@ sources += files(
     'fumen.cpp',
     'history_item.cpp',
     'imgui_extras.cpp',
-    'json_decimal_parser.cpp',
+    'json_decimal_handling.cpp',
     'ln_marker.cpp',
     'main.cpp',
     'marker.cpp',

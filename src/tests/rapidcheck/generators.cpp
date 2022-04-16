@@ -31,5 +31,9 @@ namespace rc {
             gen::inRange<long>(1, 100000000L),
             [](long f){return Decimal(f) / 100000;}
         );
-    }
+    };
+
+    Gen<std::string> ascii_string() {
+        return gen::container<std::string>(gen::inRange<std::string::value_type>(32, 127));
+    };
 }

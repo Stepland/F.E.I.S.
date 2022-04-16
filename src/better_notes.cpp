@@ -106,9 +106,10 @@ namespace better {
     };
 
     Notes Notes::between(const Interval<Fraction>& bounds) {
-        auto its = in(bounds.start, bounds.end);
         Notes res;
-        res.interval_tree::insert(*its.begin(), *its.end());
+        in(bounds.start, bounds.end, [&](const Notes::const_iterator& it){
+            res.insert(it->second);
+        });
         return res;
     };
 
@@ -155,8 +156,8 @@ namespace better {
         return notes;
     };
 
-    std::ostream& operator<<(std::ostream& out, const Notes& n) {
-        out << fmt::format("{}", n);
+    std::ostream& operator<<(std::ostream& out, const Notes& ns) {
+        out << fmt::format("{}", ns);
         return out;
     };
 }

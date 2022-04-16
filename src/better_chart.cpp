@@ -4,6 +4,8 @@
 #include <json.hpp>
 #include <optional>
 
+#include "json_decimal_handling.hpp"
+
 namespace better {
     nlohmann::ordered_json Chart::dump_to_memon_1_0_0(
         const nlohmann::ordered_json& fallback_timing_object
@@ -12,11 +14,9 @@ namespace better {
         if (level) {
             json_chart["level"] = level->format("f");
         }
-        if (timing) {
-            auto chart_timing = dump_memon_1_0_0_timing_object(*timing, hakus, fallback_timing_object);
-            if (not chart_timing.empty()) {
-                json_chart["timing"] = chart_timing;
-            }
+        auto chart_timing = dump_memon_1_0_0_timing_object(timing, hakus, fallback_timing_object);
+        if (not chart_timing.empty()) {
+            json_chart["timing"] = chart_timing;
         }
         json_chart["notes"] = notes.dump_to_memon_1_0_0();
 
@@ -26,8 +26,7 @@ namespace better {
     Chart Chart::load_from_memon_1_0_0(const nlohmann::json& json, const nlohmann::json& fallback_timing) {
         std::optional<Decimal> level;
         if (json.contains("level")) {
-            const auto string_level = json["level"].get<std::string>();
-            level = Decimal{string_level};
+            level = load_as_decimal(json["level"]);
         }
         std::uint64_t chart_resolution = 240;
         if (json.contains("resolution")) {
@@ -91,13 +90,15 @@ namespace better {
     };
 
     nlohmann::ordered_json dump_memon_1_0_0_timing_object(
-        const better::Timing& timing,
+        const std::optional<better::Timing>& timing,
         const std::optional<Hakus>& hakus,
         const nlohmann::ordered_json& fallback_timing_object
     ) {
         auto complete_song_timing = nlohmann::ordered_json::object();
-        complete_song_timing.update(timing.dump_to_memon_1_0_0());
-        if (hakus) {
+        if (timing.has_value()) {
+            complete_song_timing.update(timing->dump_to_memon_1_0_0());
+        }
+        if (hakus.has_value()) {
             complete_song_timing["hakus"] = dump_hakus(*hakus);
         }
         return remove_keys_already_in_fallback(complete_song_timing, fallback_timing_object);

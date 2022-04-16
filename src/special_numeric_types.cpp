@@ -104,8 +104,8 @@ std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs) {
     }
 };
 
-std::ostream& operator<<(std::ostream& os, const Fraction& obj) {
-    os << obj.value.get_str();
+std::ostream& operator<<(std::ostream& os, const Fraction& f) {
+    os << f.value.get_str();
     return os;
 }
 

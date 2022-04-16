@@ -21,7 +21,7 @@
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
-#include "json_decimal_parser.hpp"
+#include "json_decimal_handling.hpp"
 #include "special_numeric_types.hpp"
 #include "src/better_song.hpp"
 #include "src/chart.hpp"
@@ -201,7 +201,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                 },
             };
 
-            for (auto const& [_, note] : chart_state->visible_notes) {
+            for (const auto& note : chart_state->visible_notes) {
                 note.visit(display);
             }
 
@@ -252,7 +252,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
         if (chart_state) {
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
-            for (auto const& [_, note] : chart_state->visible_notes) {
+            for (const auto& note : chart_state->visible_notes) {
                 if (chart_state->chart.notes.is_colliding(note, applicable_timing)) {
                     collisions[note.get_position().index()] = true;
                 }
@@ -270,7 +270,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             }
 
             // Display selected notes
-            for (auto const& [_, note] : chart_state->visible_notes) {
+            for (const auto& note : chart_state->visible_notes) {
                 if (chart_state->selected_notes.contains(note)) {
                     ImGui::SetCursorPos({
                         note.get_position().get_x() * squareSize,
@@ -891,7 +891,7 @@ void feis::open_from_file(
             );
             return;
         };
-        const auto json = parse_decimal_json(f);
+        const auto json = load_json_preserving_decimals(f);
         auto song = better::Song::load_from_memon(json);
         ed.emplace(song, assets, song_path);
         Toolbox::pushNewRecentFile(std::filesystem::canonical(song_path), settings);

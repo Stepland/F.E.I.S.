@@ -60,8 +60,9 @@ Marker::Marker(const std::filesystem::path& folder):
 opt_ref_tex Marker::at(Judgement state, sf::Time offset) {
     const auto frame = static_cast<int>(std::floor(offset.asSeconds() * fps));
     if (frame < 0) {
-        const auto index = static_cast<int>(approach.size()) - frame;
-        if (index >= 0 and index < approach.size()) {
+        const auto approach_frames = static_cast<int>(approach.size());
+        const auto index = approach_frames + frame;
+        if (index >= 0 and index < approach_frames) {
             return approach.at(index);
         } else {
             return {};
@@ -69,7 +70,7 @@ opt_ref_tex Marker::at(Judgement state, sf::Time offset) {
     }
 
     auto& vec = texture_vector_of(state);
-    if (frame < vec.size()) {
+    if (frame < static_cast<int>(vec.size())) {
         return vec.at(frame);
     } else {
         return {};
@@ -92,5 +93,7 @@ std::vector<sf::Texture>& Marker::texture_vector_of(Judgement state) {
             return early;
         case Judgement::Miss:
             return miss;
+        default:
+            throw std::invalid_argument("Unexpected judgement value");
     }
 }

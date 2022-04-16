@@ -40,6 +40,7 @@ namespace better {
         double get_seconds() const;
 
         bool operator==(const BPMEvent&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const BPMEvent& b);
     private:
         Decimal bpm;
         double bpm_as_double;
@@ -81,6 +82,8 @@ namespace better {
 
         bool operator==(const Timing&) const = default;
 
+        friend std::ostream& operator<<(std::ostream& out, const Timing& t);
+        friend fmt::formatter<better::Timing>;
     private:
         Decimal offset;
         double offset_as_double;
@@ -90,17 +93,29 @@ namespace better {
 }
 
 template <>
-struct fmt::formatter<better::Chart>: formatter<string_view> {
+struct fmt::formatter<better::BPMEvent>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
-    auto format(const better::Chart& c, FormatContext& ctx) {
+    auto format(const better::BPMEvent& b, FormatContext& ctx) {
         return format_to(
             ctx.out(),
-            "LongNote(level: {}, timing: {}, hakus: {}, notes: {})",
-            c.level,
-            c.timing,
-            c.hakus,
-            c.notes
+            "BPMEvent(beats: {}, bpm: {})",
+            b.get_beats(),
+            b.get_bpm()
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<better::Timing>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Timing& t, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "Timing(offset: {}, events: [{}])",
+            t.offset,
+            fmt::join(t.events_by_beats, ", ")
         );
     }
 };

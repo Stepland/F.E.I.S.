@@ -3,16 +3,16 @@
 #include <stdexcept>
 
 #include <fmt/core.h>
+#include <json.hpp>
 #include <SFML/System/Time.hpp>
 
+#include "better_chart.hpp"
+#include "better_hakus.hpp"
+#include "better_metadata.hpp"
+#include "better_note.hpp"
 #include "better_hakus.hpp"
 #include "better_timing.hpp"
-#include "json.hpp"
-#include "src/better_chart.hpp"
-#include "src/better_hakus.hpp"
-#include "src/better_metadata.hpp"
-#include "src/better_note.hpp"
-#include "src/special_numeric_types.hpp"
+#include "special_numeric_types.hpp"
 #include "variant_visitor.hpp"
 
 namespace better {
@@ -59,6 +59,7 @@ namespace better {
         for (const auto& [name, chart] : charts) {
             json_charts[name] = chart.dump_to_memon_1_0_0(fallback_timing_object);
         }
+        memon["data"] = json_charts;
         return memon;
     }
 
@@ -190,5 +191,10 @@ namespace better {
             song.charts[dif] = chart;
         }
         return song;
+    };
+
+    std::ostream& operator<<(std::ostream& out, const Song& s) {
+        out << fmt::format("{}", s);
+        return out;
     };
 }

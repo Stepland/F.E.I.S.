@@ -5,9 +5,12 @@ rapidcheck_tests = executable(
     '../../better_beats.cpp',
     '../../better_chart.cpp',
     '../../better_hakus.cpp',
+    '../../better_metadata.cpp',
     '../../better_note.cpp',
     '../../better_notes.cpp',
+    '../../better_song.cpp',
     '../../better_timing.cpp',
+    '../../json_decimal_handling.cpp',
     '../../special_numeric_types.cpp',
     include_sources['fmt'],
     dependencies: [

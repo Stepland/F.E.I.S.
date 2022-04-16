@@ -75,9 +75,28 @@ namespace better {
         - the album cover path field is named "jacket path"
         */
         static Song load_from_memon_legacy(const nlohmann::json& memon);
+
+        bool operator==(const Song&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const Song& s);
     };
 
     Note load_legacy_note(const nlohmann::json& legacy_note, std::uint64_t resolution);
 
     Position convert_legacy_memon_tail_index_to_position(const Position& pos, std::uint64_t tail_index);
 }
+
+template <>
+struct fmt::formatter<better::Song>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const better::Song& s, FormatContext& ctx) {
+        return format_to(
+            ctx.out(),
+            "Song(charts: {}, metadata: {}, timing: {}, hakus: {})",
+            s.charts,
+            s.metadata,
+            s.timing,
+            s.hakus
+        );
+    }
+};

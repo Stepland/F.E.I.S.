@@ -14,8 +14,10 @@
 
 #include "../../better_chart.hpp"
 #include "../../better_hakus.hpp"
+#include "../../better_metadata.hpp"
 #include "../../better_note.hpp"
 #include "../../better_notes.hpp"
+#include "../../better_song.hpp"
 #include "../../better_timing.hpp"
 #include "../../variant_visitor.hpp"
 
@@ -195,9 +197,65 @@ namespace rc {
         static Gen<better::Chart> arbitrary() {
             return gen::construct<better::Chart>(
                 gen::arbitrary<std::optional<Decimal>>(),
-                gen::arbitrary<std::optional<better::Timing>>(),
+                gen::construct<std::optional<better::Timing>>(gen::arbitrary<better::Timing>()),
                 gen::arbitrary<std::optional<Hakus>>(),
                 gen::arbitrary<better::Notes>()
+            );
+        }
+    };
+
+    template<>
+    struct Arbitrary<better::PreviewLoop> {
+        static Gen<better::PreviewLoop> arbitrary() {
+            return gen::construct<better::PreviewLoop>(
+                gen::positive<Decimal>(),
+                gen::positive<Decimal>()
+            );
+        }
+    };
+
+    Gen<std::string> ascii_string();
+
+    template<>
+    struct Arbitrary<better::Metadata> {
+        static Gen<better::Metadata> arbitrary() {
+            return gen::mapcat(
+                gen::arbitrary<bool>(),
+                 [](bool use_preview_file) {
+                    if (use_preview_file) {
+                        return gen::construct<better::Metadata>(
+                            ascii_string(),  // title
+                            ascii_string(),  // artist
+                            ascii_string(),  // audio
+                            ascii_string(),  // jacket
+                            gen::construct<better::PreviewLoop>(),
+                            gen::nonEmpty(ascii_string()),  // preview_file
+                            gen::just(use_preview_file)
+                        );
+                    } else {
+                        return gen::construct<better::Metadata>(
+                            gen::arbitrary<std::string>(),  // title
+                            gen::arbitrary<std::string>(),  // artist
+                            gen::arbitrary<std::string>(),  // audio
+                            gen::arbitrary<std::string>(),  // jacket
+                            gen::arbitrary<better::PreviewLoop>(),
+                            gen::just(""),  // preview_file
+                            gen::just(use_preview_file)
+                        );
+                    }
+                }
+            );
+        }
+    };
+
+    template<>
+    struct Arbitrary<better::Song> {
+        static Gen<better::Song> arbitrary() {
+            return gen::construct<better::Song>(
+                gen::arbitrary<std::map<std::string, better::Chart, better::OrderByDifficultyName>>(),
+                gen::arbitrary<better::Metadata>(),
+                gen::arbitrary<better::Timing>(),
+                gen::arbitrary<std::optional<Hakus>>()
             );
         }
     };

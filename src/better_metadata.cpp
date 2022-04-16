@@ -1,6 +1,13 @@
 #include "better_metadata.hpp"
 
+#include "json_decimal_handling.hpp"
+
 namespace better {
+    std::ostream& operator<<(std::ostream& out, const PreviewLoop& t) {
+        out << fmt::format("{}", t);
+        return out;
+    };
+
     nlohmann::ordered_json Metadata::dump_to_memon_1_0_0() const {
         nlohmann::ordered_json json_metadata;
         if (not title.empty()) {
@@ -42,8 +49,8 @@ namespace better {
                 json["preview"].get_to(metadata.preview_file);
             } else if (json["preview"].is_object()) {
                 metadata.use_preview_file = false;
-                metadata.preview_loop.start = Decimal{json["preview"]["start"].get<std::string>()};
-                metadata.preview_loop.duration = Decimal{json["preview"]["duration"].get<std::string>()};
+                metadata.preview_loop.start = load_as_decimal(json["preview"]["start"]);
+                metadata.preview_loop.duration = load_as_decimal(json["preview"]["duration"]);
             }
         }
         return metadata;
@@ -57,8 +64,8 @@ namespace better {
         metadata.jacket = json.value("album cover path", "");
         if (json.contains("preview")) {
             metadata.use_preview_file = false;
-            metadata.preview_loop.start = Decimal{json["preview"]["position"].get<std::string>()};
-            metadata.preview_loop.duration = Decimal{json["preview"]["length"].get<std::string>()};
+            metadata.preview_loop.start = load_as_decimal(json["preview"]["position"]);
+            metadata.preview_loop.duration = load_as_decimal(json["preview"]["length"]);
         }
         if (json.contains("preview path")) {
             metadata.use_preview_file = true;
@@ -75,8 +82,8 @@ namespace better {
         json["album cover path"].get_to(metadata.jacket);
         if (json.contains("preview")) {
             metadata.use_preview_file = false;
-            metadata.preview_loop.start = Decimal{json["preview"]["position"].get<std::string>()};
-            metadata.preview_loop.duration = Decimal{json["preview"]["length"].get<std::string>()};
+            metadata.preview_loop.start = load_as_decimal(json["preview"]["position"]);
+            metadata.preview_loop.duration = load_as_decimal(json["preview"]["length"]);
         }
         return metadata;
     };
@@ -98,4 +105,9 @@ namespace better {
         json["jacket path"].get_to(metadata.jacket);
         return metadata;
     }
+
+    std::ostream& operator<<(std::ostream& out, const Metadata& m) {
+        out << fmt::format("{}", m);
+        return out;
+    };
 }
