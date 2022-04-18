@@ -274,7 +274,7 @@ public:
     }
 
     interval_tree(const interval_tree<Key, T>& copy) { *this = copy; }
-    interval_tree(interval_tree<Key, T>&& move) { *this = move; }
+    interval_tree(interval_tree<Key, T>&& move) { *this = std::move(move); }
     interval_tree(std::initializer_list<value_type> ilist, const Compare& comp = Compare()) :
         comp(comp)
     {
@@ -311,6 +311,11 @@ public:
         root = std::move(move.root);
         node_count = std::move(move.node_count);
         comp = std::move(move.comp);
+
+        // Don't actually destroy move's content (since it's currently still
+        // refering to the same stuff as *this), just make sure the call to the
+        // destructor on move won't delete the contents of *this
+        move.root = nullptr;
 
         return *this;
     }
@@ -1177,6 +1182,13 @@ private:
     {
         return {_lower_bound<IT>(k), _upper_bound<IT>(k)};
     }
+
+#ifdef INTERVAL_TREE_UNIT_TESTING
+public:
+    node* __get_root() {
+        return root;
+    }
+#endif
 
 private:
     node*      root = nullptr;
