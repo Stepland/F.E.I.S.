@@ -29,21 +29,28 @@ namespace better {
         }
     };
 
-    void Notes::overwriting_insert(const Note& note) {
-        std::vector<better::Note> conflicting_notes = {};
+    Notes Notes::overwriting_insert(const Note& note) {
+        Notes erased;
         in(
             note.get_time_bounds(),
             [&](const Notes::const_iterator& it) {
                 if (it->second.get_position() == note.get_position()) {
-                    conflicting_notes.push_back(it->second);
+                    erased.insert(it->second);
                 }
             }
         );
-        for (const auto& conflict : conflicting_notes) {
+        for (const auto& [_, conflict] : erased) {
             erase(conflict);
         }
         interval_tree::insert({note.get_time_bounds(), note});
+        return erased;
     };
+
+    void Notes::merge(Notes&& other) {
+        for (auto&& [_, note]: other) {
+            insert(std::move(note));
+        }
+    }
 
     Notes::const_iterator Notes::find(const Note& note) const {
         auto conflicting_note = interval_tree::end();

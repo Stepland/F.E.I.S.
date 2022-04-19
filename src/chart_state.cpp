@@ -16,6 +16,7 @@ ChartState::ChartState(better::Chart& c, const std::string& name, std::filesyste
     density_graph(assets)
 {
     history.push(std::make_shared<OpenChart>(c, name));
+    history.mark_as_saved();
 }
 
 void ChartState::cut(NotificationsQueue& nq) {
@@ -57,10 +58,13 @@ void ChartState::paste(Fraction at_beat, NotificationsQueue& nq) {
             pasted_notes.size() > 1 ? "s" : ""
         );
         nq.push(std::make_shared<TextNotification>(message));
+        better::Notes overwritten;
         for (const auto& [_, note] : pasted_notes) {
-            chart.notes.overwriting_insert(note);
+            auto&& erased = chart.notes.overwriting_insert(note);
+            overwritten.merge(std::move(erased));
         }
         selected_notes = pasted_notes;
+        history.push(std::make_shared<RemoveNotes>(overwritten));
         history.push(std::make_shared<AddNotes>(selected_notes));
         density_graph.should_recompute = true;
     }

@@ -341,13 +341,20 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
 Display all metadata in an editable form
 */
 void EditorState::display_properties() {
-    if (ImGui::Begin("Properties", &showProperties)) {
-        if (ImGui::BeginChild("Album Cover", ImVec2(400, 0), true)) {
+    if (ImGui::Begin(
+        "Properties",
+        &showProperties,
+        ImGuiWindowFlags_NoResize
+        | ImGuiWindowFlags_AlwaysAutoResize
+    )) {
+        if (jacket) {
             if (jacket) {
-                ImGui::Image(*jacket);
+                ImGui::Image(*jacket, sf::Vector2f(300, 300));
             }
+        } else {
+            ImGui::BeginChild("Album Cover", ImVec2(300, 300), true, ImGuiWindowFlags_NoResize);
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
 
         ImGui::InputText("Title", &song.metadata.title);
         ImGui::InputText("Artist", &song.metadata.artist);
@@ -646,7 +653,7 @@ bool EditorState::needs_to_save() const {
 EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
     int response_code = tinyfd_messageBox(
         "Warning",
-        "Do you want to save changes ?",
+        "Chart has unsaved changes, do you want to save ?",
         "yesnocancel",
         "warning",
         1
@@ -814,6 +821,8 @@ void EditorState::reload_jacket() {
         or not jacket->loadFromFile(jacket_path.string())
     ) {
         jacket.reset();
+    } else {
+        jacket->setSmooth(true);
     }
 };
 
@@ -842,6 +851,7 @@ void EditorState::reload_music() {
         editable_range.end
     );
     previous_playback_position = playback_position;
+    set_speed(speed);
 };
 
 void EditorState::reload_preview_audio() {
@@ -1034,9 +1044,9 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
         this->level = editor_state.chart_state->chart.level.value_or(0);
         this->difficulty_name = editor_state.chart_state->difficulty_name;
         this->show_custom_dif_name = (
-            difficulty_name == "BSC"
-            or difficulty_name == "ADV"
-            or difficulty_name == "EXT"
+            difficulty_name != "BSC"
+            and difficulty_name != "ADV"
+            and difficulty_name != "EXT"
         );
 
         for (auto const& [name, _] : editor_state.song.charts) {

@@ -65,25 +65,34 @@ public:
 
     void display() {
         if (ImGui::Begin("History")) {
-            ImGui::Indent();
             for (auto it = next_actions.crbegin(); it != next_actions.crend(); ++it) {
                 ImGui::TextUnformatted((*it)->get_message().c_str());
+                if (*last_saved_action == *it) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+                }
             }
-            ImGui::Unindent();
             if (previous_actions.empty()) {
                 ImGui::Bullet();
                 ImGui::TextDisabled("(empty)");
             } else {
                 auto it = previous_actions.cbegin();
-                ImGui::Bullet();
                 ImGui::TextUnformatted((*it)->get_message().c_str());
-                ImGui::Indent();
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
+                if (*last_saved_action == *it) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+                }
                 ++it;
                 while (it != previous_actions.cend()) {
                     ImGui::TextUnformatted((*it)->get_message().c_str());
+                    if (*last_saved_action == *it) {
+                        ImGui::SameLine();
+                        ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+                    }
                     ++it;
                 }
-                ImGui::Unindent();
             }
         }
         ImGui::End();
@@ -92,11 +101,7 @@ public:
     bool empty() { return previous_actions.size() <= 1; }
 
     void mark_as_saved() {
-        if (next_actions.empty()) {
-            last_saved_action.reset();
-        } else {
-            last_saved_action = previous_actions.front(); 
-        }
+        last_saved_action = previous_actions.front();
     }
 
     bool current_state_is_saved() const {

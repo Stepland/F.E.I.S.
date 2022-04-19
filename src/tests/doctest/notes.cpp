@@ -75,4 +75,16 @@ TEST_CASE("better::Notes") {
         CHECK_FALSE(original.contains(b));
         CHECK_FALSE(original.contains(c));
     }
+
+    SUBCASE("can be merged with another better::Notes") {
+        better::Notes original;
+        original.insert(better::TapNote{0, {0,0}});
+
+        better::Notes merged;
+        original.insert(better::TapNote{1, {0,0}});
+        merged.merge(std::move(original));
+
+        CHECK(merged.size() == 2);
+        CHECK(merged.begin()->second == better::TapNote{0, {0,0}});
+    }
 }

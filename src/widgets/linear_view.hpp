@@ -23,14 +23,14 @@ public:
         const ImVec2& size
     );
 
-    void setZoom(int zoom);
-    void zoom_in() { setZoom(zoom + 1); };
-    void zoom_out() { setZoom(zoom - 1); };
-    float timeFactor() { return std::pow(1.25, static_cast<double>(zoom)); };
+    void set_zoom(int zoom);
+    void zoom_in() { set_zoom(zoom + 1); };
+    void zoom_out() { set_zoom(zoom - 1); };
+    float time_factor() { return std::pow(1.25, static_cast<double>(zoom)); };
 
     bool shouldDisplaySettings;
 
-    void displaySettings();
+    void display_settings();
 
 private:
     sf::Font beat_number_font;

@@ -9,6 +9,7 @@
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <SFML/Audio/SoundFileFactory.hpp>
 #include <SFML/Graphics.hpp>
 #include <tinyfiledialogs.h>
 #include <whereami++.hpp>
@@ -18,6 +19,7 @@
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "marker.hpp"
+#include "mp3_reader.hpp"
 #include "notifications_queue.hpp"
 #include "preferences.hpp"
 #include "sound_effect.hpp"
@@ -27,6 +29,9 @@ int main() {
     // TODO : Make the playfield not appear when there's no chart selected
     // TODO : Make the linear preview display the end of the chart
     // TODO : Make the linear preview timebar height movable
+
+    // extend SFML to be able to read mp3's
+    sf::SoundFileFactory::registerReader<sf::priv::SoundFileReaderMp3>();
 
     auto executable_folder = std::filesystem::u8path(whereami::executable_dir());
     auto assets_folder = executable_folder / "assets";
@@ -130,9 +135,18 @@ int main() {
                                     );
                                     better::Notes new_notes;
                                     new_notes.insert(new_note);
-                                    editor_state->chart_state->chart.notes.overwriting_insert(new_note);
+                                    const auto& overwritten = (
+                                        editor_state
+                                        ->chart_state
+                                        ->chart
+                                        .notes
+                                        .overwriting_insert(new_note)
+                                    );
                                     editor_state->chart_state->long_note_being_created.reset();
                                     editor_state->chart_state->creating_long_note = false;
+                                    editor_state->chart_state->history.push(
+                                        std::make_shared<RemoveNotes>(overwritten)
+                                    );
                                     editor_state->chart_state->history.push(
                                         std::make_shared<AddNotes>(new_notes)
                                     );
@@ -475,7 +489,7 @@ int main() {
                 editor_state->display_linear_view();
             }
             if (editor_state->linear_view.shouldDisplaySettings) {
-                editor_state->linear_view.displaySettings();
+                editor_state->linear_view.display_settings();
             }
             if (editor_state->showProperties) {
                 editor_state->display_properties();

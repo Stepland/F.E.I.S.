@@ -22,8 +22,13 @@ namespace better {
     public:
         // try to insert a note, the boolean is true on success
         std::pair<iterator, bool> insert(const Note& note);
-        // insert a note, erasing any other note it collides with
-        void overwriting_insert(const Note& note);
+        // insert a note, erasing any other note it collides with,
+        // returns the set of erased notes
+        Notes overwriting_insert(const Note& note);
+
+        // insert each note in other
+        void merge(Notes&& other);
+
         // returns at iterator to a note exactly equal, if found
         const_iterator find(const Note& note) const;
         bool contains(const Note& note) const;

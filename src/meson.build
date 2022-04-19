@@ -19,6 +19,7 @@ sources += files(
     'long_note_dummy.cpp',
     'main.cpp',
     'marker.cpp',
+    'mp3_reader.cpp',
     'note.cpp',
     'notes_clipboard.cpp',
     'notification.cpp',

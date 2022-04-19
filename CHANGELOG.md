@@ -1,4 +1,8 @@
 # v1.2.0
+## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
+- memon 1.0.0 support with BPM Changes !
+- memon 0.3.0 and 0.2.0 support !
+- MP3 support !
 ## 🗿 Bugfixes 🗿
 - When scrolling down, the Linear View would scroll in a jerky way (it would move up for one frame then down), not anymore !
 - Density Graph now :
@@ -16,6 +20,7 @@
 - Force using the asset folder next to the executable
 - Sound files in the assets have been renamed
 - The long note currently being created (by holding right click) is dropped when the mouse stops hovering over the playfield
+- The history window changed looks and now displays "current" and "saved" next to the correct history item
 
 # v1.1.0
 ## 🍓 New Stuff 🍓

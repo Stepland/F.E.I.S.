@@ -40,6 +40,8 @@ LinearView::LinearView(std::filesystem::path assets) :
     note_collision_zone.setFillColor(sf::Color(230, 179, 0, 127));
 
     long_note_rect.setFillColor(sf::Color(255, 90, 0, 223));
+    
+    view.setSmooth(true);
 }
 
 void LinearView::resize(unsigned int width, unsigned int height) {
@@ -229,12 +231,12 @@ void LinearView::update(
     }
 }
 
-void LinearView::setZoom(int newZoom) {
+void LinearView::set_zoom(int newZoom) {
     zoom = std::clamp(newZoom, -10, 10);
     reload_transforms();
 }
 
-void LinearView::displaySettings() {
+void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
         Toolbox::editFillColor("Cursor", cursor);
         Toolbox::editFillColor("Note", tap_note_rect);
@@ -247,7 +249,7 @@ void LinearView::displaySettings() {
 void LinearView::reload_transforms() {
     beats_to_pixels_proportional = {
         Fraction{0},
-        Fraction{1} / Fraction{timeFactor()},
+        Fraction{1} / Fraction{time_factor()},
         Fraction{0},
         Fraction{100}
     };
