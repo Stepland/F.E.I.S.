@@ -18,6 +18,7 @@ public:
         const ChartState& chart_state,
         const better::Timing& timing,
         const Fraction& current_beat,
+        const Fraction& last_editable_beat,
         const Fraction& snap,
         const ImVec2& size
     );

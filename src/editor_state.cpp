@@ -620,6 +620,7 @@ void EditorState::display_linear_view() {
                 *chart_state,
                 applicable_timing,
                 current_exact_beats(),
+                beats_at(editable_range.end),
                 get_snap_step(),
                 ImGui::GetContentRegionMax()
             );

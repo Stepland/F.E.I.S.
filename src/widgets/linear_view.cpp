@@ -58,6 +58,7 @@ void LinearView::update(
     const ChartState& chart_state,
     const better::Timing& timing,
     const Fraction& current_beat,
+    const Fraction& last_editable_beat,
     const Fraction& snap,
     const ImVec2& size
 ) {
@@ -75,9 +76,9 @@ void LinearView::update(
     // cursor_y pixels and we use this fact to compute the rest
     const auto beats_before_cursor = beats_to_pixels_proportional.backwards_transform(cursor_y);
     const auto beats_after_cursor = beats_to_pixels_proportional.backwards_transform(static_cast<float>(y) - cursor_y);
-    const Fraction first_visible_beat = current_beat - beats_before_cursor;
-    const Fraction last_visible_beat = current_beat + beats_after_cursor;
-    AffineTransform<Fraction> beats_to_pixels_absolute{first_visible_beat, last_visible_beat, 0, y};
+    const Fraction first_beat_in_frame = current_beat - beats_before_cursor;
+    const Fraction last_beat_in_frame = current_beat + beats_after_cursor;
+    AffineTransform<Fraction> beats_to_pixels_absolute{first_beat_in_frame, last_beat_in_frame, 0, y};
 
     float timeline_width = static_cast<float>(x) - 80.f;
     float timeline_x = 50.f;
@@ -89,7 +90,7 @@ void LinearView::update(
     beat_number.setCharacterSize(15);
     beat_number.setFillColor(sf::Color::White);
 
-    // Draw the beat lines and numbers
+    const Fraction first_visible_beat = std::max(Fraction{0}, first_beat_in_frame);
     auto next_beat = [](const auto& first_beat) -> Fraction {
         if (first_beat % 1 == 0) {
             return first_beat;
@@ -98,9 +99,10 @@ void LinearView::update(
         }
     }(first_visible_beat);
 
+    // Draw the beat lines and numbers
     for (
         Fraction next_beat_line_y = beats_to_pixels_absolute.transform(next_beat);
-        next_beat_line_y < y;
+        next_beat_line_y < y and next_beat < last_editable_beat;
         next_beat_line_y = beats_to_pixels_absolute.transform(next_beat += 1)
     ) {
         if (next_beat % 4 == 0) {
@@ -182,9 +184,9 @@ void LinearView::update(
         },
     };
 
-    const auto first_visible_second = timing.time_at(first_visible_beat);
+    const auto first_visible_second = timing.time_at(first_beat_in_frame);
     const auto first_visible_collision_zone = timing.beats_at(first_visible_second - sf::milliseconds(500));
-    const auto last_visible_second = timing.time_at(last_visible_beat);
+    const auto last_visible_second = timing.time_at(last_beat_in_frame);
     const auto last_visible_collision_zone = timing.beats_at(last_visible_second + sf::milliseconds(500));
     chart_state.chart.notes.in(
         first_visible_collision_zone,

@@ -20,7 +20,7 @@ TEST_CASE("Fractions") {
         SUBCASE("std::int64_t, returing the integral part") {
             CHECK(static_cast<std::int64_t>(Fraction{1,2}) == INT64_C(0));
             CHECK(static_cast<std::int64_t>(Fraction{2,3}) == INT64_C(0));
-            CHECK(static_cast<std::int64_t>(Fraction{-5,2}) == INT64_C(-2));
+            CHECK(static_cast<std::int64_t>(Fraction{-5,2}) == INT64_C(-3));
             CHECK(static_cast<std::int64_t>(Fraction{"-9223372036854775808/1"}) == INT64_MIN);
             CHECK(static_cast<std::int64_t>(Fraction{"9223372036854775807/1"}) == INT64_MAX);
             CHECK(static_cast<std::int64_t>(Fraction{"-9000000000000000000/1"}) == INT64_C(-9000000000000000000));
@@ -71,6 +71,23 @@ TEST_CASE("Fractions") {
         CHECK(Fraction{1,2} / Fraction{1,7} == Fraction{7,2});
         CHECK(Fraction{-1,2} / Fraction{1,2} == Fraction{-1,1});
     }
+    SUBCASE("are modulo'ed correctly") {
+        CHECK(Fraction{3,2} % Fraction{1} == Fraction{1,2});
+        CHECK(Fraction{23,14} % Fraction{2,5} == Fraction{3,70});
+        CHECK(Fraction{-7,4} % Fraction{1} == Fraction{1,4});
+    }
+    SUBCASE("are floor'ed correctly") {
+        CHECK(floor_fraction(Fraction{1,2}) == Fraction{0});
+        CHECK(floor_fraction(Fraction{23,14}) == Fraction{1});
+        CHECK(floor_fraction(Fraction{-7,4}) == Fraction{-2});
+    }
+    SUBCASE("are rounded correctly") {
+        CHECK(round_fraction(Fraction{10,20}) == Fraction{0});
+        CHECK(round_fraction(Fraction{11,20}) == Fraction{1});
+        CHECK(round_fraction(Fraction{-10,20}) == Fraction{0});
+        CHECK(round_fraction(Fraction{-11,20}) == Fraction{-1});
+    }
+
     SUBCASE("support binary operand with") {
         SUBCASE("integer literals") {
             CHECK(Fraction{1,2} + 1 == Fraction{3,2});

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <gmpxx.h>
 #include <stdexcept>
 
 Fraction::Fraction(const Decimal& d) {
@@ -90,7 +91,11 @@ Fraction operator%(Fraction lhs, const Fraction& rhs) {
     const auto db = rhs.value.get_den();
     const auto na = lhs.value.get_num();
     const auto nb = rhs.value.get_num();
-    return Fraction{(na * db) % (nb * da), da * db};
+    const mpz_class dividend = na * db;
+    const mpz_class divisor = nb * da;
+    mpz_class remainder;
+    mpz_mod(remainder.get_mpz_t(), dividend.get_mpz_t(), divisor.get_mpz_t());
+    return Fraction{remainder, da * db};
 };
 
 std::strong_ordering operator<=>(const Fraction& lhs, const Fraction& rhs) {
@@ -160,11 +165,30 @@ std::uint64_t convert_to_u64(const mpz_class& z) {
 }
 
 Fraction floor_fraction(const Fraction& f) {
-    return f - (f % Fraction{1});
+    mpz_class result;
+    mpz_fdiv_q(result.get_mpz_t(), f.numerator().get_mpz_t(), f.denominator().get_mpz_t());
+    return Fraction{result};
 };
 
+// Thanks python again !
+// https://github.com/python/cpython/blob/f163ad22d3321cb9bb4e6cbaac5a723444641565/Lib/fractions.py#L612
 Fraction round_fraction(const Fraction& f) {
-    return floor_fraction(f + Fraction{1, 2});
+    mpz_class floor, remainder;
+    mpz_fdiv_qr(
+        floor.get_mpz_t(),
+        remainder.get_mpz_t(),
+        f.numerator().get_mpz_t(),
+        f.denominator().get_mpz_t()
+    );
+    if (remainder * 2 < f.denominator()) {
+        return Fraction{floor};
+    } else if (remainder * 2 > f.denominator()) {
+        return Fraction{floor + 1};
+    } else if (floor % 2 == 0) {  // Deal with the half case
+        return Fraction{floor};
+    } else {
+        return floor + 1;
+    }
 };
 
 Fraction convert_to_fraction(const Decimal& d) {
