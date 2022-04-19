@@ -187,7 +187,7 @@ int main() {
                         case sf::Keyboard::Tab:
                             if (editor_state and editor_state->chart_state) {
                                 editor_state->chart_state->handle_time_selection_tab(
-                                    editor_state->current_snaped_beats()
+                                    editor_state->current_exact_beats()
                                 );
                             }
                             break;
@@ -432,7 +432,7 @@ int main() {
                 }
                 if (noteTick.shouldPlay and editor_state->chart_state) {
                     int note_count = 0;
-                    for (const auto& note : editor_state->chart_state->visible_notes) {
+                    for (const auto& [_, note] : editor_state->chart_state->visible_notes) {
                         if (note.get_time() >= editor_state->previous_exact_beats() and note.get_time() <= editor_state->current_exact_beats()) {
                             note_count++;
                         }

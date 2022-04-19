@@ -251,7 +251,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                 },
             };
 
-            for (const auto& note : chart_state->visible_notes) {
+            for (const auto& [_, note] : chart_state->visible_notes) {
                 note.visit(display);
             }
 
@@ -302,7 +302,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
         if (chart_state) {
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
-            for (const auto& note : chart_state->visible_notes) {
+            for (const auto& [_, note] : chart_state->visible_notes) {
                 if (chart_state->chart.notes.is_colliding(note, applicable_timing)) {
                     collisions[note.get_position().index()] = true;
                 }
@@ -320,7 +320,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             }
 
             // Display selected notes
-            for (const auto& note : chart_state->visible_notes) {
+            for (const auto& [_, note] : chart_state->visible_notes) {
                 if (chart_state->selected_notes.contains(note)) {
                     ImGui::SetCursorPos({
                         note.get_position().get_x() * squareSize,
@@ -768,28 +768,32 @@ void EditorState::update_visible_notes() {
 
 
 void EditorState::reload_editable_range() {
-    auto old_range = this->editable_range;
-    Interval<sf::Time> new_range;
-    if (music) {
-        new_range += music->getDuration();
-    }
-    if (chart_state and not chart_state->chart.notes.empty()) {
-        const auto beat_of_last_event = chart_state->chart.notes.crbegin()->second.get_end();
-        new_range += applicable_timing.time_at(beat_of_last_event);
-    }
-
-    new_range.end += sf::seconds(10);
-
-    // If there is no music, make sure we can edit at least the first whole minute
-    if (not music) {
-        new_range += sf::seconds(60);
-    }
-
-    this->editable_range = new_range;
-    if (old_range != new_range and this->chart_state.has_value()) {
+    const auto old_range = this->editable_range;
+    this->editable_range = choose_editable_range();
+    if (old_range != this->editable_range and this->chart_state.has_value()) {
         chart_state->density_graph.should_recompute = true;
     }
 };
+
+Interval<sf::Time> EditorState::choose_editable_range() {
+    Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
+    if (music) {
+        // If there is music, allow editing up to the end, but no further
+        // You've put notes *after* the end of the music ? fuck 'em.
+        new_range += music->getDuration();
+        return new_range;
+    } else {
+        // If there is no music :
+        // make sure we can edit 10 seconds after the end of the current chart
+        if (chart_state and not chart_state->chart.notes.empty()) {
+            const auto beat_of_last_event = chart_state->chart.notes.crbegin()->second.get_end();
+            new_range += time_at(beat_of_last_event) + sf::seconds(10);
+        }
+        // and at at least the first whole minute in any case
+        new_range += sf::seconds(60);
+        return new_range;
+    }
+}
 
 /*
  * Reloads the album cover from what's indicated in the "album cover path" field

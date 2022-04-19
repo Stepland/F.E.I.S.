@@ -95,11 +95,8 @@ Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position, 
 }
 
 void ChartState::update_visible_notes(const sf::Time& playback_position, const better::Timing& timing) {
-    this->visible_notes.clear();
     const auto bounds = visible_beats(playback_position, timing);
-    chart.notes.in(bounds.start, bounds.end, [this](const better::Notes::const_iterator& it){
-        this->visible_notes.push_back(it->second);
-    });
+    visible_notes = chart.notes.between(bounds);
 };
 
 void ChartState::toggle_note(

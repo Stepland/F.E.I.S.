@@ -157,6 +157,7 @@ private:
     */
     Interval<sf::Time> editable_range;
     void reload_editable_range();
+    Interval<sf::Time> choose_editable_range();
     void reload_jacket();
     void reload_music();
     void reload_preview_audio();

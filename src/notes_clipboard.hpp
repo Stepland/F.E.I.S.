@@ -9,7 +9,7 @@
 #include "variant_visitor.hpp"
 
 /*
-Stores a vector of notes with times relative to the first note in the vector,
+Stores a collection of notes with times relative to the first note in the vector,
 to allow pasting notes at another time in the chart by simply shifting
 all the note starting times.
 */
