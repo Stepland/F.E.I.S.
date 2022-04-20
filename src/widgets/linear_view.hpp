@@ -41,7 +41,8 @@ private:
     sf::RectangleShape note_selected;
     sf::RectangleShape note_collision_zone;
 
-    float cursor_y = 75.f;
+    int timeline_margin = 100;
+    int cursor_height = 75;
     AffineTransform<Fraction> beats_to_pixels_proportional;
 
     void resize(unsigned int width, unsigned int height);

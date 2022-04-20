@@ -1,18 +1,13 @@
-# v1.2.0
+# v2.0.0
+*(+ 2.0.0-rc.1)*
 ## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
-- memon 1.0.0 support with BPM Changes !
-- memon 0.3.0 and 0.2.0 support !
-- MP3 support !
-## 🗿 Bugfixes 🗿
-- When scrolling down, the Linear View would scroll in a jerky way (it would move up for one frame then down), not anymore !
-- Density Graph now :
-    - updates when :
-        - copy/pasting notes
-        - the audio file changes or is unloaded (because of an invalid path for example) (or more generally when the end point of the chart changes without the notes changing)
-    - correctly shows up for charts without music !
-- Fixed the bug that made a long note dummy appear when right clicking outside the playfield *then* hovering over a button, Fixes #10
+- BPM Changes
+- memon 1.0 + 0.3 and 0.2 support
+- MP3 support
 
 ## 🍒 Small improvements 🍒
+- Linear View
+    - The cursor height can now be changed in the settings
 - Frendlier error message when the UI font is not found in the assets folder
 - Playback position is kept instead of being reset to zero when you change charts or reload the audio file
 
@@ -22,9 +17,20 @@
 - The long note currently being created (by holding right click) is dropped when the mouse stops hovering over the playfield
 - The history window changed looks and now displays "current" and "saved" next to the correct history item
 
+## 🗿 Bugfixes 🗿
+- Playfield
+    - Fixed the unwanted long note dummy appearing when right clicking outside the playfield *then* hovering over a button, (Fixes #10)
+- Linear View
+    - Fixed jerky motion when scrolling down
+- Density Graph
+    - Shows up for charts without music !
+    - updates when :
+        - copy/pasting notes
+        - the audio file changes or is unloaded (because of an invalid path for example) (or more generally when the end point of the chart changes without the notes changing)
+
 # v1.1.0
 ## 🍓 New Stuff 🍓
-- Use the mouse wheel to move back and forth in time
+- Use the mouse w)heel to move back and forth in time
 - The Edit menu now has actual items inside, like Cut / Copy / Paste etc ...
 
 ## 🗿 Bugfixes 🗿
@@ -38,7 +44,8 @@
 - The Playfield now cannot be scrolled, it used to be possible but I did not notice until now
 - F.E.I.S would not let you put notes after what it decided was the end of the chart, now it always gives you one extra editable measure after the last note
 
-# v1.0.1 (+ v1.0.0)
+# v1.0.1
+*(+ v1.0.0)*
 ## 🍏🍓🍉🍎🥝 New Stuff 🥝🍎🍉🍓🍏
 - More Edition Controls
     - Stepmania-like `Tab` selection

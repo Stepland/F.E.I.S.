@@ -236,6 +236,10 @@ namespace better {
         return Timing{{{bpm, 0}}, -1 * offset};
     };
 
+    const std::set<BPMEvent, OrderByBeats>& Timing::get_events_by_beats() const {
+        return events_by_beats;
+    }
+
     std::ostream& operator<<(std::ostream& out, const Timing& t) {
         out << fmt::format("{}", t);
         return out;

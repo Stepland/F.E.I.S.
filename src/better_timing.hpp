@@ -80,6 +80,8 @@ namespace better {
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
 
+        const std::set<BPMEvent, OrderByBeats>& get_events_by_beats() const;
+
         bool operator==(const Timing&) const = default;
 
         friend std::ostream& operator<<(std::ostream& out, const Timing& t);
