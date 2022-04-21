@@ -1,5 +1,3 @@
-#define IMGUI_USER_CONFIG "imconfig-SFML.h"
-
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics.hpp>

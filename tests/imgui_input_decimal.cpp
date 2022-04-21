@@ -1,5 +1,3 @@
-#define IMGUI_USER_CONFIG "imconfig-SFML.h"
-
 #include <cmath>
 #include <stdexcept>
 #include <sstream>

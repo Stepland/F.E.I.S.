@@ -1,7 +1,4 @@
-#include <SFML/System/Time.hpp>
 #include <string>
-#define IMGUI_USER_CONFIG "imconfig-SFML.h"
-
 #include <filesystem>
 #include <variant>
 
@@ -11,6 +8,7 @@
 #include <imgui_stdlib.h>
 #include <SFML/Audio/SoundFileFactory.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/System/Time.hpp>
 #include <tinyfiledialogs.h>
 #include <whereami++.hpp>
 
@@ -144,9 +142,11 @@ int main() {
                                     );
                                     editor_state->chart_state->long_note_being_created.reset();
                                     editor_state->chart_state->creating_long_note = false;
-                                    editor_state->chart_state->history.push(
-                                        std::make_shared<RemoveNotes>(overwritten)
-                                    );
+                                    if (not overwritten.empty()) {
+                                        editor_state->chart_state->history.push(
+                                            std::make_shared<RemoveNotes>(overwritten)
+                                        );
+                                    }
                                     editor_state->chart_state->history.push(
                                         std::make_shared<AddNotes>(new_notes)
                                     );

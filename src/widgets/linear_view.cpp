@@ -1,5 +1,7 @@
 #include "linear_view.hpp"
 
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <functional>
 #include <iostream>
 #include <variant>
@@ -13,62 +15,26 @@
 #include "../chart_state.hpp"
 #include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
+#include "imgui_internal.h"
 
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
 
 LinearView::LinearView(std::filesystem::path assets) :
-    beats_to_pixels_proportional(0, 1, 0, 100),
-    font_path(assets / font_file)
-{
-    if (!beat_number_font.loadFromFile(font_path)) {
-        std::cerr << "Unable to load " << font_path;
-        throw std::runtime_error("Unable to load " + font_path.string());
-    }
+    beats_to_pixels_proportional(0, 1, 0, 100)
+{}
 
-    cursor.setFillColor(sf::Color(66, 150, 250, 200));
-    cursor.setOrigin(0.f, 2.f);
-    cursor.setPosition({48.f, static_cast<float>(cursor_height)});
-
-    selection.setFillColor(sf::Color(153, 255, 153, 92));
-    selection.setOutlineColor(sf::Color(153, 255, 153, 189));
-    selection.setOutlineThickness(1.f);
-
-    tap_note_rect.setFillColor(sf::Color(255, 213, 0, 255));
-
-    note_selected.setFillColor(sf::Color(255, 255, 255, 200));
-    note_selected.setOutlineThickness(1.f);
-
-    note_collision_zone.setFillColor(sf::Color(230, 179, 0, 127));
-
-    long_note_rect.setFillColor(sf::Color(255, 90, 0, 223));
-    
-    view.setSmooth(true);
-}
-
-void LinearView::resize(unsigned int width, unsigned int height) {
-    if (view.getSize() != sf::Vector2u(width, height)) {
-        if (!view.create(width, height)) {
-            std::cerr << "Unable to resize Playfield's longNoteLayer";
-            throw std::runtime_error(
-                "Unable to resize Playfield's longNoteLayer");
-        }
-        view.setSmooth(true);
-    }
-    view.clear(sf::Color::Transparent);
-}
-
-void LinearView::update(
+void LinearView::draw(
+    ImDrawList* draw_list,
     const ChartState& chart_state,
     const better::Timing& timing,
     const Fraction& current_beat,
     const Fraction& last_editable_beat,
     const Fraction& snap,
-    const ImVec2& size
+    const sf::Vector2f& size,
+    const sf::Vector2f& origin
 ) {
-    int x = std::max(170, static_cast<int>(size.x));
-    int y = std::max(170, static_cast<int>(size.y));
-
-    resize(static_cast<unsigned int>(x), static_cast<unsigned int>(y));
+    int x = std::max(300, static_cast<int>(size.x));
+    int y = std::max(300, static_cast<int>(size.y));
 
     const float timeline_width = static_cast<float>(x) - static_cast<float>(timeline_margin);
     const float timeline_left = static_cast<float>(timeline_margin) / 2;
@@ -86,13 +52,6 @@ void LinearView::update(
     const Fraction last_beat_in_frame = current_beat + beats_after_cursor;
     AffineTransform<Fraction> beats_to_pixels_absolute{first_beat_in_frame, last_beat_in_frame, 0, y};
 
-    sf::RectangleShape beat_line(sf::Vector2f(timeline_width, 1.f));
-
-    sf::Text beat_number;
-    beat_number.setFont(beat_number_font);
-    beat_number.setCharacterSize(15);
-    beat_number.setFillColor(sf::Color::White);
-
     const Fraction first_visible_beat = std::max(Fraction{0}, first_beat_in_frame);
     auto next_beat = [](const auto& first_beat) -> Fraction {
         if (first_beat % 1 == 0) {
@@ -108,28 +67,26 @@ void LinearView::update(
         next_beat_line_y < y and next_beat < last_editable_beat;
         next_beat_line_y = beats_to_pixels_absolute.transform(next_beat += 1)
     ) {
+        const sf::Vector2f beat_line_start = {timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))};
+        const sf::Vector2f beat_line_end = beat_line_start + sf::Vector2f{timeline_width, 0};
         if (next_beat % 4 == 0) {
-            beat_line.setFillColor(sf::Color::White);
-            beat_line.setPosition({timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))});
-            view.draw(beat_line);
+            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, IM_COL32_WHITE);
             const Fraction measure = next_beat / 4;
-            beat_number.setString(fmt::format("{}", static_cast<std::int64_t>(measure)));
-            Toolbox::set_local_origin_normalized(beat_number, 1, 0.5);
-            beat_number.setPosition({timeline_left - 10, static_cast<float>(static_cast<double>(next_beat_line_y))});
-            view.draw(beat_number);
-
+            const auto measure_string = fmt::format("{}", static_cast<std::int64_t>(measure));
+            const sf::Vector2f text_size = ImGui::CalcTextSize(measure_string.c_str(), measure_string.c_str()+measure_string.size());
+            const sf::Vector2f measure_text_pos = {timeline_left - 10, static_cast<float>(static_cast<double>(next_beat_line_y))};
+            draw_list->AddText(
+                origin + measure_text_pos - sf::Vector2f{text_size.x, text_size.y * 0.5f},
+                IM_COL32_WHITE,
+                measure_string.c_str(),
+                measure_string.c_str() + measure_string.size()
+            );
         } else {
-            beat_line.setFillColor(sf::Color(255, 255, 255, 127));
-            beat_line.setPosition({timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))});
-            view.draw(beat_line);
+            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, IM_COL32(255, 255, 255, 127));
         }
     }
 
     // Draw the bpm changes
-    sf::Text bpm_text;
-    bpm_text.setFont(beat_number_font);
-    bpm_text.setCharacterSize(15);
-    bpm_text.setFillColor(sf::Color::Red);
     const auto first_visible_bpm_change = timing.get_events_by_beats().lower_bound(
         {first_beat_in_frame, 0, 1}
     );
@@ -141,11 +98,23 @@ void LinearView::update(
         it != one_past_last_visible_bpm_change;
         ++it
     ) {
-        bpm_text.setString(it->get_bpm().format("f"));
         const auto bpm_change_y = beats_to_pixels_absolute.transform(it->get_beats());
-        Toolbox::set_local_origin_normalized(bpm_text, 0, 0.5);
-        bpm_text.setPosition({timeline_right + 10, static_cast<float>(static_cast<double>(bpm_change_y))});
-        view.draw(bpm_text);
+        if (bpm_change_y >= 0 and bpm_change_y <= y) {
+            const auto bpm_text = it->get_bpm().format(".3f");
+            const sf::Vector2f text_size = ImGui::CalcTextSize(bpm_text.c_str(), bpm_text.c_str()+bpm_text.size());
+            const sf::Vector2f bpm_text_raw_pos = {timeline_right + 10, static_cast<float>(static_cast<double>(bpm_change_y))};
+            const auto bpm_text_pos = Toolbox::position_with_normalized_origin(
+                bpm_text_raw_pos,
+                text_size,
+                {0.f, 0.5f}
+            );
+            draw_list->AddText(
+                origin + bpm_text_pos,
+                ImColor(bpm_text_color),
+                bpm_text.c_str(),
+                bpm_text.c_str() + bpm_text.size()
+            );
+        }
     }
 
     float note_width = timeline_width / 16.f;
@@ -153,11 +122,9 @@ void LinearView::update(
     float long_note_rect_width = note_width * 0.75f;
 
     // Pre-size & center the shapes that can be
-    tap_note_rect.setSize({note_width, 6.f});
-    Toolbox::center(tap_note_rect);
+    const sf::Vector2f note_size = {note_width, 6.f};
 
-    note_selected.setSize({note_width + 2.f, 8.f});
-    Toolbox::center(note_selected);
+    const sf::Vector2f selected_note_size = {note_width + 2.f, 8.f};
 
     // Draw the notes
     auto draw_note = VariantVisitor {
@@ -169,15 +136,38 @@ void LinearView::update(
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
             const auto last_colliding_beat = timing.beats_at(note_seconds + sf::milliseconds(500));
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            note_collision_zone.setSize({collizion_zone_width, static_cast<float>(static_cast<double>(collision_zone_height))});
-            Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);
-            note_collision_zone.setPosition(note_x, static_cast<float>(static_cast<double>(collision_zone_y)));
-            this->view.draw(note_collision_zone);
-            tap_note_rect.setPosition(note_x, note_y);
-            this->view.draw(tap_note_rect);
+            const sf::Vector2f collision_zone_pos = {
+                note_x,
+                static_cast<float>(static_cast<double>(collision_zone_y))
+            };
+            const sf::Vector2f collizion_zone_size = {
+                collizion_zone_width,
+                static_cast<float>(static_cast<double>(collision_zone_height))
+            };
+            draw_rectangle(
+                draw_list,
+                origin + collision_zone_pos,
+                collizion_zone_size,
+                {0.5f, 0.f},
+                note_collision_zone_color
+            );
+            const sf::Vector2f note_pos = {note_x, note_y};
+            draw_rectangle(
+                draw_list,
+                origin + note_pos,
+                note_size,
+                {0.5f, 0.5f},
+                tap_note_color
+            );
             if (chart_state.selected_notes.contains(tap_note)) {
-                note_selected.setPosition(note_x, note_y);
-                view.draw(note_selected);
+                draw_rectangle(
+                    draw_list,
+                    origin + note_pos,
+                    selected_note_size,
+                    {0.5f, 0.5f},
+                    selected_note_fill,
+                    selected_note_outline
+                );
             }
         },
         [&, this](const better::LongNote& long_note){
@@ -189,20 +179,50 @@ void LinearView::update(
             const auto note_end_seconds = timing.time_at(long_note.get_end());
             const auto last_colliding_beat = timing.beats_at(note_end_seconds + sf::milliseconds(500));
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            note_collision_zone.setSize({collizion_zone_width, static_cast<float>(static_cast<double>(collision_zone_height))});
-            Toolbox::set_local_origin_normalized(note_collision_zone, 0.5f, 0.f);
-            note_collision_zone.setPosition(note_x, static_cast<float>(static_cast<double>(collision_zone_y)));
-            this->view.draw(note_collision_zone);
+            const sf::Vector2f collision_zone_pos = {
+                note_x,
+                static_cast<float>(static_cast<double>(collision_zone_y))
+            };
+            const sf::Vector2f collision_zone_size = {
+                collizion_zone_width,
+                static_cast<float>(static_cast<double>(collision_zone_height))
+            };
+            draw_rectangle(
+                draw_list,
+                origin + collision_zone_pos,
+                collision_zone_size,
+                {0.5f, 0.f},
+                note_collision_zone_color
+            );
             const auto long_note_rect_height = beats_to_pixels_proportional.transform(long_note.get_duration());
-            long_note_rect.setSize({long_note_rect_width, static_cast<float>(static_cast<double>(long_note_rect_height))});
-            Toolbox::set_local_origin_normalized(long_note_rect, 0.5f, 0.f);
-            long_note_rect.setPosition(note_x, note_y);
-            this->view.draw(long_note_rect);
-            tap_note_rect.setPosition(note_x, note_y);
-            this->view.draw(tap_note_rect);
+            const sf::Vector2f long_note_size = {
+                long_note_rect_width,
+                static_cast<float>(static_cast<double>(long_note_rect_height))
+            };
+            const sf::Vector2f note_pos = {note_x, note_y};
+            draw_rectangle(
+                draw_list,
+                origin + note_pos,
+                long_note_size,
+                {0.5f, 0.f},
+                long_note_color
+            );
+            draw_rectangle(
+                draw_list,
+                origin + note_pos,
+                note_size,
+                {0.5f, 0.5f},
+                tap_note_color
+            );
             if (chart_state.selected_notes.contains(long_note)) {
-                note_selected.setPosition(note_x, note_y);
-                this->view.draw(note_selected);
+                draw_rectangle(
+                    draw_list,
+                    origin + note_pos,
+                    selected_note_size,
+                    {0.5f, 0.5f},
+                    selected_note_fill,
+                    selected_note_outline
+                );
             }
         },
     };
@@ -231,25 +251,40 @@ void LinearView::update(
     // Draw the cursor
     const float cursor_width = timeline_width + 4.f;
     const float cursor_left = timeline_left - 2;
-    cursor.setSize({cursor_width, 4.f});
-    cursor.setPosition({cursor_left, cursor_y});
-    view.draw(cursor);
+    const sf::Vector2f cursor_size = {cursor_width, 4.f};
+    const sf::Vector2f cursor_pos = {cursor_left, cursor_y};
+    draw_rectangle(
+        draw_list,
+        origin + cursor_pos,
+        cursor_size,
+        {0, 0.5},
+        cursor_color
+    );
 
     // Draw the time selection
-    float selection_width = timeline_width;
-    selection.setSize({selection_width, 0.f});
+    const float selection_width = timeline_width;
     if (chart_state.time_selection.has_value()) {
         const auto pixel_interval = Interval{
             beats_to_pixels_absolute.transform(chart_state.time_selection->start),
             beats_to_pixels_absolute.transform(chart_state.time_selection->end)
         };
         if (pixel_interval.intersects({0, y})) {
-            selection.setSize({
+            const sf::Vector2f selection_size = {
                 selection_width,
-                static_cast<float>(static_cast<double>(pixel_interval.width())),
-            });
-            selection.setPosition(timeline_left, static_cast<double>(pixel_interval.start));
-            view.draw(selection);
+                static_cast<float>(static_cast<double>(pixel_interval.width()))
+            };
+            const sf::Vector2f selection_pos = {
+                timeline_left,
+                static_cast<float>(static_cast<double>(pixel_interval.start))
+            };
+            draw_rectangle(
+                draw_list,
+                origin + selection_pos,
+                selection_size,
+                {0, 0},
+                tab_selection_fill,
+                tab_selection_outline
+            );
         }
     }
 }
@@ -261,10 +296,11 @@ void LinearView::set_zoom(int newZoom) {
 
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
-        Toolbox::editFillColor("Cursor", cursor);
-        Toolbox::editFillColor("Note", tap_note_rect);
-        Toolbox::editFillColor("Note Collision Zone", note_collision_zone);
-        Toolbox::editFillColor("Long Note Tail", long_note_rect);
+        feis::ColorEdit4("Cursor", cursor_color);
+        feis::ColorEdit4("Note", tap_note_color);
+        feis::ColorEdit4("Note Collision Zone", note_collision_zone_color);
+        feis::ColorEdit4("Long Note Tail", long_note_color);
+        feis::ColorEdit4("BPM Text", bpm_text_color);
 
         ImGui::DragInt("Cursor Height", &cursor_height);
         ImGui::DragInt("Timeline Margin", &timeline_margin);
@@ -279,4 +315,33 @@ void LinearView::reload_transforms() {
         Fraction{0},
         Fraction{100}
     };
+}
+
+void draw_rectangle(
+    ImDrawList* draw_list,
+    const sf::Vector2f& pos,
+    const sf::Vector2f& size,
+    const sf::Vector2f& normalized_anchor,
+    const sf::Color& fill,
+    const std::optional<sf::Color>& outline
+) {
+    const auto real_pos = Toolbox::position_with_normalized_origin(
+        pos,
+        size,
+        normalized_anchor
+    );
+    // Fill
+    draw_list->AddRectFilled(
+        real_pos,
+        real_pos + size,
+        ImColor(ImVec4(fill))
+    );
+    // Outline
+    if (outline) {
+        draw_list->AddRect(
+            real_pos,
+            real_pos + size,
+            ImColor(ImVec4(*outline))
+        );
+    }
 }

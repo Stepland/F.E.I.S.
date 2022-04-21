@@ -1,5 +1,6 @@
 #include "editor_state.hpp"
 
+#include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -617,23 +618,24 @@ void EditorState::display_chart_list() {
 };
 
 void EditorState::display_linear_view() {
-    ImGui::SetNextWindowSize(ImVec2(204, 400), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(204, 204), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowSize(ImVec2(304, 500), ImGuiCond_Once);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(304, 304), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
     if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (chart_state) {
-            linear_view.update(
+            auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            ImGui::SetCursorPos({0, header_height});
+            linear_view.draw(
+                ImGui::GetWindowDrawList(),
                 *chart_state,
                 applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
                 get_snap_step(),
-                ImGui::GetContentRegionMax()
+                ImGui::GetContentRegionMax(),
+                ImGui::GetCursorScreenPos()
             );
-            auto cursor_y = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
-            ImGui::SetCursorPos({0, cursor_y});
-            ImGui::Image(linear_view.view);
         } else {
             ImGui::TextDisabled("- no chart selected -");
         }

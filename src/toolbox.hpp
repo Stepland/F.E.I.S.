@@ -1,13 +1,15 @@
 #pragma once
 
-#define IM_MAX(_A, _B) (((_A) >= (_B)) ? (_A) : (_B))
+#include <SFML/System/Vector2.hpp>
+#include <filesystem>
+#include <functional>
 
+#include <imgui.h>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Shape.hpp>
 #include <SFML/System/Time.hpp>
-#include <filesystem>
-#include <functional>
-#include <imgui.h>
+
+#include "imgui_extras.hpp"
 
 /*
  * I just dump things here when I'm unsure whether they deserve a special file
@@ -23,7 +25,7 @@ namespace Toolbox {
                 ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             float y = data->DesiredSize.y - TitlebarHeight;
             float x = data->DesiredSize.x;
-            data->DesiredSize = ImVec2(IM_MAX(x, y), IM_MAX(x, y) + TitlebarHeight);
+            data->DesiredSize = ImVec2(std::max(x, y), std::max(x, y) + TitlebarHeight);
         }
     };
 
@@ -32,8 +34,16 @@ namespace Toolbox {
     int getNextDivisor(int number, int starting_point);
     int getPreviousDivisor(int number, int starting_point);
     std::string toOrdinal(int number);
-    void center(sf::Shape& s);
-    bool editFillColor(const char* label, sf::Shape& s);
+
+    template<class T>
+    bool edit_fill_color(const char* label, T& thing) {
+        sf::Color col = thing.getFillColor();
+        if (feis::ColorEdit4(label, col)) {
+            thing.setFillColor(col);
+            return true;
+        }
+        return false;
+    }
 
     template<class T>
     void set_origin_normalized(T& s, float x, float y) {
@@ -45,6 +55,21 @@ namespace Toolbox {
     void set_local_origin_normalized(T& s, float x, float y) {
         auto bounds = s.getLocalBounds();
         s.setOrigin(bounds.left+x*bounds.width, bounds.top+y*bounds.height);
+    }
+
+    template<class T>
+    void center(T& thing) {
+        set_local_origin_normalized(thing, 0.5, 0.5);
+    }
+
+    template<class T>
+    sf::Vector2<T> position_with_normalized_origin(
+        const sf::Vector2<T>& pos,
+        const sf::Vector2<T> size,
+        const sf::Vector2f origin
+    ) {
+        const sf::Vector2<T> offset = {size.x * origin.x, size.y * origin.y};
+        return pos - offset;
     }
 }
 

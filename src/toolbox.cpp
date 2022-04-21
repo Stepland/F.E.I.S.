@@ -133,17 +133,3 @@ std::string Toolbox::toOrdinal(int number) {
     }
     return s.str();
 }
-
-void Toolbox::center(sf::Shape& s) {
-    sf::FloatRect bounds = s.getLocalBounds();
-    s.setOrigin(bounds.left + bounds.width / 2.f, bounds.top + bounds.height / 2.f);
-}
-
-bool Toolbox::editFillColor(const char* label, sf::Shape& s) {
-    sf::Color col = s.getFillColor();
-    if (feis::ColorEdit4(label, col)) {
-        s.setFillColor(col);
-        return true;
-    }
-    return false;
-}
