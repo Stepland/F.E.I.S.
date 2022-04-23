@@ -440,7 +440,7 @@ int main() {
                 if (beatTick.shouldPlay) {
                     const auto previous_beat = editor_state->previous_exact_beats();
                     const auto current_beat = editor_state->current_exact_beats();
-                    if (previous_beat % 1 != current_beat % 1) {
+                    if (floor_fraction(previous_beat) != floor_fraction(current_beat)) {
                         beatTick.play();
                     }
                 }
