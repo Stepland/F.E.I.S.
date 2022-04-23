@@ -16,6 +16,7 @@
 #include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
 #include "imgui_internal.h"
+#include "src/imgui_extras.hpp"
 
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
 
@@ -70,19 +71,19 @@ void LinearView::draw(
         const sf::Vector2f beat_line_start = {timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))};
         const sf::Vector2f beat_line_end = beat_line_start + sf::Vector2f{timeline_width, 0};
         if (next_beat % 4 == 0) {
-            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, IM_COL32_WHITE);
+            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(measure_lines_color));
             const Fraction measure = next_beat / 4;
             const auto measure_string = fmt::format("{}", static_cast<std::int64_t>(measure));
             const sf::Vector2f text_size = ImGui::CalcTextSize(measure_string.c_str(), measure_string.c_str()+measure_string.size());
             const sf::Vector2f measure_text_pos = {timeline_left - 10, static_cast<float>(static_cast<double>(next_beat_line_y))};
             draw_list->AddText(
                 origin + measure_text_pos - sf::Vector2f{text_size.x, text_size.y * 0.5f},
-                IM_COL32_WHITE,
+                ImColor(measure_numbers_color),
                 measure_string.c_str(),
                 measure_string.c_str() + measure_string.size()
             );
         } else {
-            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, IM_COL32(255, 255, 255, 127));
+            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(beat_lines_color));
         }
     }
 
@@ -296,11 +297,18 @@ void LinearView::set_zoom(int newZoom) {
 
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
+        feis::ColorEdit4("BPM Text", bpm_text_color);
         feis::ColorEdit4("Cursor", cursor_color);
+        feis::ColorEdit4("Tab Selection Fill", tab_selection_fill);
+        feis::ColorEdit4("Tab Selection Outline", tab_selection_outline);
         feis::ColorEdit4("Note", tap_note_color);
         feis::ColorEdit4("Note Collision Zone", note_collision_zone_color);
         feis::ColorEdit4("Long Note Tail", long_note_color);
-        feis::ColorEdit4("BPM Text", bpm_text_color);
+        feis::ColorEdit4("Selected Note Fill", selected_note_fill);
+        feis::ColorEdit4("Selected Note Outline", selected_note_outline);
+        feis::ColorEdit4("Measure Lines", measure_lines_color);
+        feis::ColorEdit4("Measure Numbers", measure_numbers_color);
+        feis::ColorEdit4("Beat Lines", beat_lines_color);
 
         ImGui::DragInt("Cursor Height", &cursor_height);
         ImGui::DragInt("Timeline Margin", &timeline_margin);
@@ -339,8 +347,8 @@ void draw_rectangle(
     // Outline
     if (outline) {
         draw_list->AddRect(
-            real_pos,
-            real_pos + size,
+            real_pos - sf::Vector2f{1, 1},
+            real_pos + size + sf::Vector2f{1, 1},
             ImColor(ImVec4(*outline))
         );
     }

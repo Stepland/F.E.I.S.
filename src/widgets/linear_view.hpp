@@ -41,10 +41,13 @@ private:
     sf::Color tab_selection_fill = {153, 255, 153, 92};
     sf::Color tab_selection_outline = {153, 255, 153, 189};
     sf::Color tap_note_color = {255, 213, 0};
-    sf::Color long_note_color = {255, 90, 0, 223};
-    sf::Color selected_note_fill = {255, 255, 255, 200};
-    sf::Color selected_note_outline = sf::Color::White;
     sf::Color note_collision_zone_color = {230, 179, 0, 80};
+    sf::Color long_note_color = {255, 90, 0, 223};
+    sf::Color selected_note_fill = {255, 255, 255, 127};
+    sf::Color selected_note_outline = sf::Color::White;
+    sf::Color measure_lines_color = sf::Color::White;
+    sf::Color measure_numbers_color = sf::Color::White;
+    sf::Color beat_lines_color = {255, 255, 255, 127};
 
     int timeline_margin = 130;
     int cursor_height = 100;
