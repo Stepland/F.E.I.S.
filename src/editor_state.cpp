@@ -1,5 +1,7 @@
 #include "editor_state.hpp"
 
+#include <SFML/Audio/SoundSource.hpp>
+#include <SFML/Audio/SoundStream.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cmath>
@@ -28,9 +30,11 @@
 #include "long_note_dummy.hpp"
 #include "notifications_queue.hpp"
 #include "special_numeric_types.hpp"
+#include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
+    note_claps(assets_),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -47,6 +51,7 @@ EditorState::EditorState(
 ) : 
     song(song_),
     song_path(song_path),
+    note_claps(assets_),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -66,9 +71,7 @@ int EditorState::get_volume() const {
 
 void EditorState::set_volume(int newMusicVolume) {
     volume = std::clamp(newMusicVolume, 0, 10);
-    if (music) {
-        music->setVolume(Toolbox::convertVolumeToNormalizedDB(volume)*100.f);
-    }
+    audio.setMusicVolume(Toolbox::convertVolumeToNormalizedDB(volume)*100.f);
 }
 
 void EditorState::volume_up() {
@@ -85,9 +88,7 @@ int EditorState::get_speed() const {
 
 void EditorState::set_speed(int newMusicSpeed) {
     speed = std::clamp(newMusicSpeed, 1, 20);
-    if (music) {
-        music->setPitch(speed / 10.f);
-    }
+    set_pitch(speed / 10.f);
 }
 
 void EditorState::speed_up() {
@@ -103,6 +104,26 @@ const Interval<sf::Time>& EditorState::get_editable_range() {
     reload_editable_range();
     return editable_range;
 };
+
+void EditorState::play() {
+    audio.play();
+}
+
+void EditorState::pause() {
+    audio.pause();
+}
+
+void EditorState::stop() {
+    audio.stop();
+}
+
+SyncedSoundStreams::Status EditorState::get_status() {
+    return audio.getStatus();
+}
+
+void EditorState::set_pitch(float pitch) {
+    audio.setPitch(pitch);
+}
 
 void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosition) {
     const auto clamp_ = VariantVisitor {
@@ -128,17 +149,17 @@ void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosi
     newPosition = std::visit(clamp_, newPosition);
     previous_playback_position = playback_position;
     playback_position = newPosition;
-    if (music) {
-        if (
-            current_time() >= sf::Time::Zero
-            and current_time() < music->getDuration()
-        ) {
-            music->setPlayingOffset(current_time());
-        } else {
-            music->stop();
-        }
+    const auto now = current_time();
+    if (now >= sf::Time::Zero and now < editable_range.end) {
+        audio.setPlayingOffset(now);
+    } else {
+        stop();
     }
 };
+
+sf::Time EditorState::get_playback_position() {
+    return audio.getPrecisePlayingOffset();
+}
 
 Fraction EditorState::current_exact_beats() const {
     const auto current_exact_beats_ = VariantVisitor {
@@ -363,7 +384,7 @@ void EditorState::display_properties() {
         if (feis::InputTextColored(
             "Audio",
             &song.metadata.audio,
-            music.has_value(),
+            audio.music_is_loaded(),
             "Invalid Audio Path"
         )) {
             reload_music();
@@ -396,9 +417,9 @@ void EditorState::display_properties() {
                     Decimal{0},
                     song.metadata.preview_loop.start
                 );
-                if (music.has_value()) {
+                if (audio.music_is_loaded()) {
                     song.metadata.preview_loop.start = std::min(
-                        Decimal{music->getDuration().asMicroseconds()} / 1000000,
+                        Decimal{audio.getMusicDuration().asMicroseconds()} / 1000000,
                         song.metadata.preview_loop.start
                     );
                 }
@@ -408,12 +429,12 @@ void EditorState::display_properties() {
                     Decimal{0},
                     song.metadata.preview_loop.duration
                 );
-                if (music.has_value()) {
+                if (audio.music_is_loaded()) {
                     song.metadata.preview_loop.start = std::min(
                         (
                             Decimal{
-                                music
-                                ->getDuration()
+                                audio
+                                .getMusicDuration()
                                 .asMicroseconds()
                             } / 1000000 
                             - song.metadata.preview_loop.start
@@ -436,7 +457,7 @@ status of the editor. Will appear in the "Editor Status" window
 void EditorState::display_status() {
     ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
     {
-        if (not music) {
+        if (not audio.music_is_loaded()) {
             if (not song.metadata.audio.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -499,10 +520,10 @@ void EditorState::display_playback_status() {
         ImGui::SameLine();
         ImGui::TextUnformatted(fmt::format("{:.3f}", static_cast<double>(current_exact_beats())).c_str());
         ImGui::SameLine();
-        if (music) {
+        if (audio.music_is_loaded()) {
             ImGui::TextDisabled("Music File Offset :");
             ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(music->getPrecisePlayingOffset()).c_str());
+            ImGui::TextUnformatted(Toolbox::to_string(audio.getPrecisePlayingOffset()).c_str());
             ImGui::SameLine();
         }
         ImGui::TextDisabled("Timeline Position :");
@@ -765,6 +786,7 @@ void EditorState::open_chart(const std::string& name) {
     chart_state.emplace(chart, name_ref, assets);
     reload_editable_range();
     reload_applicable_timing();
+    note_claps.set_notes_and_timing(&chart.notes, &applicable_timing);
 };
 
 void EditorState::update_visible_notes() {
@@ -787,10 +809,10 @@ void EditorState::reload_editable_range() {
 
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
-    if (music) {
+    if (audio.music_is_loaded()) {
         // If there is music, allow editing up to the end, but no further
         // You've put notes *after* the end of the music ? fuck 'em.
-        new_range += music->getDuration();
+        new_range += audio.getMusicDuration();
         return new_range;
     } else {
         // If there is no music :
@@ -835,16 +857,14 @@ void EditorState::reload_jacket() {
  */
 void EditorState::reload_music() {
     if (not song_path.has_value() or song.metadata.audio.empty()) {
-        music.reset();
+        audio.clear_music();
         return;
     }
 
     const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
-    try {
-        music.emplace(absolute_music_path);
-    } catch (const std::exception& e) {
-        music.reset();
-    }
+    if (not audio.openFromFile(absolute_music_path)) {
+        audio.clear_music();
+    };
 
     reload_editable_range();
     playback_position = std::clamp(

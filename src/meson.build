@@ -21,17 +21,20 @@ sources += files(
     'marker.cpp',
     'mp3_reader.cpp',
     'note.cpp',
+    'note_claps.cpp',
     'notes_clipboard.cpp',
     'notification.cpp',
     'notifications_queue.cpp',
     'playfield.cpp',
     'precise_music.cpp',
+    'precise_sound_stream.cpp',
     'preferences.cpp',
     'sound_effect.cpp',
     'special_numeric_types.cpp',
     'toolbox.cpp',
 )
 
+subdir('custom_sfml_audio')
 subdir('widgets')
 
 if get_option('tests')

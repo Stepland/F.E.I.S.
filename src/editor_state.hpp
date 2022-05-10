@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/Audio.hpp>
+#include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Graphics.hpp>
 #include <optional>
 
@@ -11,10 +12,12 @@
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "marker.hpp"
+#include "note_claps.hpp"
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
-#include "precise_music.hpp"
+#include "custom_sfml_audio/synced_sound_streams.hpp"
+#include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/linear_view.hpp"
 
 
@@ -37,7 +40,8 @@ public:
 
     std::optional<ChartState> chart_state;
 
-    std::optional<PreciseMusic> music;
+    SyncedSoundStreams audio;
+    NoteClaps note_claps;
 
     int get_volume() const;
     void set_volume(int newMusicVolume);
@@ -66,7 +70,13 @@ public:
 
     const Interval<sf::Time>& get_editable_range();
 
+    void play();
+    void pause();
+    void stop();
+    SyncedSoundStreams::Status get_status();
+    void set_pitch(float pitch);
     void set_playback_position(std::variant<sf::Time, Fraction> newPosition);
+    sf::Time get_playback_position();
 
     Fraction current_exact_beats() const;
     Fraction current_snaped_beats() const;

@@ -21,6 +21,7 @@
 #include "notifications_queue.hpp"
 #include "preferences.hpp"
 #include "sound_effect.hpp"
+#include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/blank_screen.hpp"
 
 int main() {
@@ -417,25 +418,17 @@ int main() {
             editor_state->update_visible_notes();
             if (editor_state->playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
-                editor_state->playback_position = editor_state->current_time() + delta * (editor_state->get_speed() / 10.f);
-                if (editor_state->music) {
-                    switch (editor_state->music->getStatus()) {
-                        case sf::Music::Stopped:
-                        case sf::Music::Paused:
-                            if (editor_state->current_time() >= sf::Time::Zero
-                                and editor_state->current_time()
-                                    < editor_state->music->getDuration()) {
-                                editor_state->music->setPlayingOffset(editor_state->current_time());
-                                editor_state->music->play();
-                            }
-                            break;
-                        case sf::Music::Playing:
-                            editor_state->playback_position =
-                                editor_state->music->getPrecisePlayingOffset();
-                            break;
-                        default:
-                            break;
-                    }
+                switch (editor_state->get_status()) {
+                    case sf::Music::Stopped:
+                    case sf::Music::Paused:
+                        editor_state->set_playback_position(editor_state->current_time());
+                        editor_state->play();
+                        break;
+                    case sf::Music::Playing:
+                        editor_state->playback_position = editor_state->get_playback_position();
+                        break;
+                    default:
+                        break;
                 }
                 if (beatTick.shouldPlay) {
                     const auto previous_beat = editor_state->previous_exact_beats();
@@ -444,34 +437,12 @@ int main() {
                         beatTick.play();
                     }
                 }
-                if (noteTick.shouldPlay and editor_state->chart_state) {
-                    int note_count = 0;
-                    for (const auto& [_, note] : editor_state->chart_state->visible_notes) {
-                        if (note.get_time() >= editor_state->previous_exact_beats() and note.get_time() <= editor_state->current_exact_beats()) {
-                            note_count++;
-                        }
-                    }
-                    if (chordTick.shouldPlay) {
-                        if (note_count > 1) {
-                            chordTick.play();
-                        } else if (note_count == 1) {
-                            noteTick.play();
-                        }
-                    } else if (note_count >= 1) {
-                        noteTick.play();
-                    }
-                }
-
                 if (editor_state->current_time() > editor_state->get_editable_range().end) {
                     editor_state->playing = false;
                     editor_state->playback_position = editor_state->get_editable_range().end;
                 }
-            } else {
-                if (editor_state->music) {
-                    if (editor_state->music->getStatus() == sf::Music::Playing) {
-                        editor_state->music->pause();
-                    }
-                }
+            } else if (editor_state->get_status() == SyncedSoundStreams::Playing) {
+                editor_state->pause();
             }
         }
 
