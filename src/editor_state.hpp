@@ -12,12 +12,11 @@
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "marker.hpp"
-#include "note_claps.hpp"
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
-#include "src/custom_sfml_audio/synced_sound_streams.hpp"
+#include "custom_sfml_audio/clap_player.hpp"
 #include "widgets/linear_view.hpp"
 
 
@@ -41,7 +40,7 @@ public:
     std::optional<ChartState> chart_state;
 
     SyncedSoundStreams audio;
-    NoteClaps note_claps;
+    ClapPlayer clap_player;
 
     int get_volume() const;
     void set_volume(int newMusicVolume);
@@ -73,7 +72,7 @@ public:
     void play();
     void pause();
     void stop();
-    SyncedSoundStreams::Status get_status();
+    sf::SoundSource::Status get_status();
     void set_pitch(float pitch);
     void set_playback_position(std::variant<sf::Time, Fraction> newPosition);
     sf::Time get_playback_position();

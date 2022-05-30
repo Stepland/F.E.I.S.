@@ -3,12 +3,12 @@
 #include <array>
 #include <filesystem>
 
-#include <SFML/Audio/SoundStream.hpp>
-
 #include "AL/al.h"
 #include "AL/alext.h"
 
-class PreciseSoundStream : public sf::SoundStream {
+#include "open_sound_stream.hpp"
+
+class PreciseSoundStream : public OpenSoundStream {
 public:
     sf::Time getPrecisePlayingOffset() const;
     void play();
