@@ -12,6 +12,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <memory>
 #include <nowide/fstream.hpp>
 #include <sstream>
 #include <SFML/System/Time.hpp>
@@ -34,7 +35,7 @@
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
-    note_claps(assets_),
+    clap_player(std::make_shared<ClapPlayer>(nullptr, nullptr, assets_)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -42,6 +43,7 @@ EditorState::EditorState(const std::filesystem::path& assets_) :
 {
     reload_music();
     reload_jacket();
+    audio.add_stream(note_clap_stream, clap_player);
 };
 
 EditorState::EditorState(
@@ -51,7 +53,7 @@ EditorState::EditorState(
 ) : 
     song(song_),
     song_path(song_path),
-    note_claps(assets_),
+    clap_player(std::make_shared<ClapPlayer>(nullptr, nullptr, assets_)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -63,6 +65,7 @@ EditorState::EditorState(
     }
     reload_music();
     reload_jacket();
+    audio.add_stream(note_clap_stream, clap_player);
 };
 
 int EditorState::get_volume() const {
@@ -71,7 +74,9 @@ int EditorState::get_volume() const {
 
 void EditorState::set_volume(int newMusicVolume) {
     volume = std::clamp(newMusicVolume, 0, 10);
-    audio.setMusicVolume(Toolbox::convertVolumeToNormalizedDB(volume)*100.f);
+    if (music.has_value()) {
+        (**music).setVolume(Toolbox::convertVolumeToNormalizedDB(volume)*100.f);
+    }
 }
 
 void EditorState::volume_up() {
@@ -117,7 +122,7 @@ void EditorState::stop() {
     audio.stop();
 }
 
-SyncedSoundStreams::Status EditorState::get_status() {
+sf::SoundSource::Status EditorState::get_status() {
     return audio.getStatus();
 }
 
@@ -158,7 +163,11 @@ void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosi
 };
 
 sf::Time EditorState::get_playback_position() {
-    return audio.getPrecisePlayingOffset();
+    if (music.has_value()) {
+        return audio.getPlayingOffset();
+    } else {
+        return current_time();
+    }
 }
 
 Fraction EditorState::current_exact_beats() const {
@@ -384,7 +393,7 @@ void EditorState::display_properties() {
         if (feis::InputTextColored(
             "Audio",
             &song.metadata.audio,
-            audio.music_is_loaded(),
+            music.has_value(),
             "Invalid Audio Path"
         )) {
             reload_music();
@@ -417,9 +426,9 @@ void EditorState::display_properties() {
                     Decimal{0},
                     song.metadata.preview_loop.start
                 );
-                if (audio.music_is_loaded()) {
+                if (music.has_value()) {
                     song.metadata.preview_loop.start = std::min(
-                        Decimal{audio.getMusicDuration().asMicroseconds()} / 1000000,
+                        Decimal{(**music).getDuration().asMicroseconds()} / 1000000,
                         song.metadata.preview_loop.start
                     );
                 }
@@ -429,12 +438,12 @@ void EditorState::display_properties() {
                     Decimal{0},
                     song.metadata.preview_loop.duration
                 );
-                if (audio.music_is_loaded()) {
+                if (music.has_value()) {
                     song.metadata.preview_loop.start = std::min(
                         (
                             Decimal{
-                                audio
-                                .getMusicDuration()
+                                (**music)
+                                .getDuration()
                                 .asMicroseconds()
                             } / 1000000 
                             - song.metadata.preview_loop.start
@@ -457,7 +466,7 @@ status of the editor. Will appear in the "Editor Status" window
 void EditorState::display_status() {
     ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
     {
-        if (not audio.music_is_loaded()) {
+        if (not music.has_value()) {
             if (not song.metadata.audio.empty()) {
                 ImGui::TextColored(
                     ImVec4(1, 0.42, 0.41, 1),
@@ -520,10 +529,10 @@ void EditorState::display_playback_status() {
         ImGui::SameLine();
         ImGui::TextUnformatted(fmt::format("{:.3f}", static_cast<double>(current_exact_beats())).c_str());
         ImGui::SameLine();
-        if (audio.music_is_loaded()) {
+        if (music.has_value()) {
             ImGui::TextDisabled("Music File Offset :");
             ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(audio.getPrecisePlayingOffset()).c_str());
+            ImGui::TextUnformatted(Toolbox::to_string(audio.getPlayingOffset()).c_str());
             ImGui::SameLine();
         }
         ImGui::TextDisabled("Timeline Position :");
@@ -786,7 +795,7 @@ void EditorState::open_chart(const std::string& name) {
     chart_state.emplace(chart, name_ref, assets);
     reload_editable_range();
     reload_applicable_timing();
-    note_claps.set_notes_and_timing(&chart.notes, &applicable_timing);
+    clap_player->set_notes_and_timing(&chart.notes, &applicable_timing);
 };
 
 void EditorState::update_visible_notes() {
@@ -809,10 +818,10 @@ void EditorState::reload_editable_range() {
 
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
-    if (audio.music_is_loaded()) {
+    if (music.has_value()) {
         // If there is music, allow editing up to the end, but no further
         // You've put notes *after* the end of the music ? fuck 'em.
-        new_range += audio.getMusicDuration();
+        new_range += (**music).getDuration();
         return new_range;
     } else {
         // If there is no music :
@@ -857,14 +866,16 @@ void EditorState::reload_jacket() {
  */
 void EditorState::reload_music() {
     if (not song_path.has_value() or song.metadata.audio.empty()) {
-        audio.clear_music();
+        music.reset();
         return;
     }
 
     const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
-    if (not audio.openFromFile(absolute_music_path)) {
-        audio.clear_music();
-    };
+    try {
+        music.emplace(std::make_shared<OpenMusic>(absolute_music_path));
+    } catch (const std::exception& e) {
+        music.reset();
+    }
 
     reload_editable_range();
     playback_position = std::clamp(
@@ -874,6 +885,11 @@ void EditorState::reload_music() {
     );
     previous_playback_position = playback_position;
     set_speed(speed);
+    if (music.has_value()) {
+        audio.add_stream(music_stream, *music);
+    } else {
+        audio.remove_stream(music_stream);
+    }
 };
 
 void EditorState::reload_preview_audio() {

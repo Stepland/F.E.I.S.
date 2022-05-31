@@ -12,7 +12,8 @@
 #include <SFML/Audio/SoundSource.hpp>
 #include <SFML/System/Time.hpp>
 
-#include "open_sound_stream.hpp"
+#include "al_resource.hpp"
+#include "precise_sound_stream.hpp"
 
 
 // Number of audio buffers used by the streaming loop
@@ -38,17 +39,18 @@ struct Buffers {
 };
 
 struct InternalStream {
-    std::shared_ptr<OpenSoundStream> stream;
+    std::shared_ptr<PreciseSoundStream> stream;
     Buffers buffers;
 
     void clear_queue();
 };
 
-class SyncedSoundStreams {
+class SyncedSoundStreams : public AlResource {
 public:
+    SyncedSoundStreams();
     ~SyncedSoundStreams();
 
-    void add_stream(const std::string& name, std::shared_ptr<OpenSoundStream> s);
+    void add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s);
     void remove_stream(const std::string& name);
 
     void play();
@@ -60,11 +62,12 @@ public:
     void setPlayingOffset(sf::Time timeOffset);
     sf::Time getPlayingOffset() const;
 
+    void setPitch(float pitch);
+
     void setLoop(bool loop);
     bool getLoop() const;
 
 protected:
-    SyncedSoundStreams();
     void setProcessingInterval(sf::Time interval);
 
 private:

@@ -15,11 +15,9 @@
 class OpenMusic : public PreciseSoundStream {
 public:
     using TimeSpan = sf::Music::Span<sf::Time>;
-    OpenMusic();
+    OpenMusic(const std::filesystem::path& filename);
     ~OpenMusic() override;
     [[nodiscard]] bool openFromFile(const std::filesystem::path& filename);
-    [[nodiscard]] bool openFromMemory(const void* data, std::size_t sizeInBytes);
-    [[nodiscard]] bool openFromStream(sf::InputStream& stream);
     sf::Time getDuration() const;
     TimeSpan getLoopPoints() const;
     void setLoopPoints(TimeSpan timePoints);

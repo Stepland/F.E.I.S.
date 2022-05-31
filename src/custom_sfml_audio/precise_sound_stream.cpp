@@ -1,11 +1,14 @@
 #include <SFML/Audio/SoundStream.hpp>
 #include "precise_sound_stream.hpp"
 
+PreciseSoundStream::PreciseSoundStream() {
+    initialize_open_al_extension();
+}
+
 void PreciseSoundStream::initialize_open_al_extension() {
     if (not alIsExtensionPresent("AL_SOFT_source_latency")) {
         throw std::runtime_error("Error: AL_SOFT_source_latency not supported");
     }
-
     alGetSourcedvSOFT = reinterpret_cast<LPALGETSOURCEDVSOFT>(alGetProcAddress("alGetSourcedvSOFT"));
 }
 
@@ -22,10 +25,10 @@ void PreciseSoundStream::play() {
 
 sf::Time PreciseSoundStream::getPrecisePlayingOffset() const {
     if (getStatus() != sf::SoundStream::Playing) {
-        return sf::SoundStream::getPlayingOffset();
+        return getPlayingOffset();
     } else {
         return (
-            sf::SoundStream::getPlayingOffset()
+            getPlayingOffset()
             - (alSecOffsetLatencySoft()[1] * getPitch())
             + (lag * getPitch())
         );

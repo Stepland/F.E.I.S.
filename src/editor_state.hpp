@@ -1,11 +1,17 @@
 #pragma once
 
+#include <memory>
+#include <optional>
+
 #include <SFML/Audio.hpp>
 #include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Graphics.hpp>
-#include <optional>
 
 
+#include "custom_sfml_audio/clap_player.hpp"
+#include "custom_sfml_audio/open_music.hpp"
+#include "custom_sfml_audio/synced_sound_streams.hpp"
+#include "widgets/linear_view.hpp"
 #include "better_note.hpp"
 #include "better_song.hpp"
 #include "chart_state.hpp"
@@ -15,10 +21,10 @@
 #include "notes_clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
-#include "custom_sfml_audio/synced_sound_streams.hpp"
-#include "custom_sfml_audio/clap_player.hpp"
-#include "widgets/linear_view.hpp"
 
+
+const std::string music_stream = "music";
+const std::string note_clap_stream = "note_clap";
 
 /*
  * The god class, holds everything there is to know about the currently open
@@ -40,7 +46,8 @@ public:
     std::optional<ChartState> chart_state;
 
     SyncedSoundStreams audio;
-    ClapPlayer clap_player;
+    std::shared_ptr<ClapPlayer> clap_player;
+    std::optional<std::shared_ptr<OpenMusic>> music = {};
 
     int get_volume() const;
     void set_volume(int newMusicVolume);

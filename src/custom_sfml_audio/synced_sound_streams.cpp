@@ -1,5 +1,6 @@
 #include "synced_sound_streams.hpp"
 
+#include <boost/math/constants/constants.hpp>
 #include <cassert>
 #include <iostream>
 #include <mutex>
@@ -12,6 +13,7 @@
 
 #include "al_check.hpp"
 #include "audio_device.hpp"
+#include "src/custom_sfml_audio/precise_sound_stream.hpp"
 
 #ifdef _MSC_VER
     #pragma warning(disable: 4355) // 'this' used in base member initializer list
@@ -56,7 +58,7 @@ SyncedSoundStreams::~SyncedSoundStreams() {
 }
 
 
-void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<OpenSoundStream> s) {
+void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s) {
     InternalStream internal_stream{s, {}};
     internal_stream.buffers.m_channelCount = s->getChannelCount();
     internal_stream.buffers.m_sampleRate = s->getSampleRate();
@@ -201,12 +203,23 @@ sf::Time SyncedSoundStreams::getPlayingOffset() const {
 
     ALfloat secs = 0.f;
     alCheck(alGetSourcef(s.stream->get_source(), AL_SEC_OFFSET, &secs));
-    return sf::seconds(
+    auto base = sf::seconds(
         secs
         + static_cast<float>(s.buffers.m_samplesProcessed)
         / static_cast<float>(s.buffers.m_sampleRate)
         / static_cast<float>(s.buffers.m_channelCount)
     );
+    auto correction = (
+        (s.stream->alSecOffsetLatencySoft()[1] * s.stream->getPitch())
+        - (s.stream->lag * s.stream->getPitch())
+    );
+    return base - correction;
+}
+
+void SyncedSoundStreams::setPitch(float pitch) {
+    for (auto& [_, s] : streams) {
+        s.stream->setPitch(pitch);
+    }
 }
 
 

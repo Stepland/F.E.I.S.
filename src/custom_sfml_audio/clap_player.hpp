@@ -8,15 +8,14 @@
 
 #include "../better_notes.hpp"
 #include "../better_timing.hpp"
-#include "open_sound_stream.hpp"
+#include "precise_sound_stream.hpp"
 
-class ClapPlayer: public OpenSoundStream {
+class ClapPlayer: public PreciseSoundStream {
 public:
     ClapPlayer(
         const better::Notes* notes_,
         const better::Timing* timing_,
-        const sf::SoundBuffer& note_clap_,
-        const sf::SoundBuffer& chord_clap_
+        const std::filesystem::path& assets
     );
 
     void set_notes_and_timing(const better::Notes* notes, const better::Timing* timing);
@@ -35,6 +34,6 @@ private:
 
     const better::Notes* notes;
     const better::Timing* timing;
-    const sf::SoundBuffer& note_clap;
-    const sf::SoundBuffer& chord_clap;
+    sf::SoundBuffer note_clap;
+    sf::SoundBuffer chord_clap;
 };

@@ -418,6 +418,7 @@ int main() {
             editor_state->update_visible_notes();
             if (editor_state->playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
+                editor_state->playback_position = editor_state->current_time() + delta * (editor_state->get_speed() / 10.f);
                 switch (editor_state->get_status()) {
                     case sf::Music::Stopped:
                     case sf::Music::Paused:
@@ -441,7 +442,7 @@ int main() {
                     editor_state->playing = false;
                     editor_state->playback_position = editor_state->get_editable_range().end;
                 }
-            } else if (editor_state->get_status() == SyncedSoundStreams::Playing) {
+            } else if (editor_state->get_status() == sf::SoundSource::Playing) {
                 editor_state->pause();
             }
         }

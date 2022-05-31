@@ -1,20 +1,26 @@
 #include "clap_player.hpp"
 
 #include <memory>
+#include <stdexcept>
 
 #include "../better_note.hpp"
 
 ClapPlayer::ClapPlayer(
     const better::Notes* notes_,
     const better::Timing* timing_,
-    const sf::SoundBuffer& note_clap_,
-    const sf::SoundBuffer& chord_clap_
+    const std::filesystem::path& assets
 ) :
     notes(notes_),
     timing(timing_),
-    note_clap(note_clap_),
-    chord_clap(chord_clap_)
+    note_clap(),
+    chord_clap()
 {
+    if (not note_clap.loadFromFile(assets / "sounds" / "note.wav")) {
+        throw std::runtime_error("Could not load note clap audio file");
+    }
+    if (not chord_clap.loadFromFile(assets / "sounds" / "chord.wav")) {
+        throw std::runtime_error("Could not load chord clap audio file");
+    }
     sf::SoundStream::initialize(note_clap.getChannelCount(), note_clap.getSampleRate());
     samples.resize(note_clap.getChannelCount() * note_clap.getSampleRate(), 0);
 }

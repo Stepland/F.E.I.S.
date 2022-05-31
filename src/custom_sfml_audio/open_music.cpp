@@ -8,6 +8,7 @@
 #include <SFML/Audio/Music.hpp>
 #include <SFML/System/Err.hpp>
 #include <SFML/System/Time.hpp>
+#include <stdexcept>
 
 #include "al_check.hpp"
 
@@ -19,10 +20,13 @@
     #endif
 #endif
 
-OpenMusic::OpenMusic() :
+OpenMusic::OpenMusic(const std::filesystem::path& filename) :
     m_file(),
-    m_loopSpan(0, 0) {
-
+    m_loopSpan(0, 0)
+{
+    if (not openFromFile(filename)) {
+        throw std::runtime_error("Could not open "+filename.string());
+    }
 }
 
 
@@ -43,36 +47,6 @@ bool OpenMusic::openFromFile(const std::filesystem::path& filename) {
 
     // Perform common initializations
     initialize();
-    return true;
-}
-
-
-bool OpenMusic::openFromMemory(const void* data, std::size_t sizeInBytes) {
-    // First stop the music if it was already running
-    stop();
-
-    // Open the underlying sound file
-    if (!m_file.openFromMemory(data, sizeInBytes)) {
-        return false;
-    }
-
-    // Perform common initializations
-    initialize();
-    return true;
-}
-
-
-bool OpenMusic::openFromStream(sf::InputStream& stream) {
-    // First stop the music if it was already running
-    stop();
-
-    // Open the underlying sound file
-    if (!m_file.openFromStream(stream))
-        return false;
-
-    // Perform common initializations
-    initialize();
-
     return true;
 }
 
