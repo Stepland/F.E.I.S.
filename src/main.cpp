@@ -426,7 +426,7 @@ int main() {
                         editor_state->play();
                         break;
                     case sf::Music::Playing:
-                        editor_state->playback_position = editor_state->get_playback_position();
+                        editor_state->playback_position = editor_state->get_precise_playback_position();
                         break;
                     default:
                         break;

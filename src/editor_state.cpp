@@ -162,9 +162,9 @@ void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosi
     }
 };
 
-sf::Time EditorState::get_playback_position() {
+sf::Time EditorState::get_precise_playback_position() {
     if (music.has_value()) {
-        return audio.getPlayingOffset();
+        return audio.getPrecisePlayingOffset();
     } else {
         return current_time();
     }
@@ -866,7 +866,7 @@ void EditorState::reload_jacket() {
  */
 void EditorState::reload_music() {
     if (not song_path.has_value() or song.metadata.audio.empty()) {
-        music.reset();
+        clear_music();
         return;
     }
 
@@ -874,15 +874,16 @@ void EditorState::reload_music() {
     try {
         music.emplace(std::make_shared<OpenMusic>(absolute_music_path));
     } catch (const std::exception& e) {
-        music.reset();
+        clear_music();
     }
 
     reload_editable_range();
-    playback_position = std::clamp(
+    const auto clamped_position = std::clamp(
         current_time(),
         editable_range.start,
         editable_range.end
     );
+    playback_position = clamped_position;
     previous_playback_position = playback_position;
     set_speed(speed);
     if (music.has_value()) {
@@ -890,7 +891,13 @@ void EditorState::reload_music() {
     } else {
         audio.remove_stream(music_stream);
     }
+    audio.setPlayingOffset(clamped_position);
 };
+
+void EditorState::clear_music() {
+    audio.remove_stream(music_stream);
+    music.reset();
+}
 
 void EditorState::reload_preview_audio() {
     if (not song_path.has_value() or song.metadata.preview_file.empty()) {

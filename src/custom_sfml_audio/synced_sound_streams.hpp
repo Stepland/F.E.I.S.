@@ -14,6 +14,8 @@
 
 #include "al_resource.hpp"
 #include "precise_sound_stream.hpp"
+#include "readerwriterqueue.h"
+#include "src/history_item.hpp"
 
 
 // Number of audio buffers used by the streaming loop
@@ -45,6 +47,17 @@ struct InternalStream {
     void clear_queue();
 };
 
+struct AddStream {
+    std::string name;
+    std::shared_ptr<PreciseSoundStream> s;
+};
+
+struct RemoveStream {
+    std::string name;
+};
+
+using ChangeStreamsCommand = std::variant<AddStream, RemoveStream>;
+
 class SyncedSoundStreams : public AlResource {
 public:
     SyncedSoundStreams();
@@ -61,6 +74,7 @@ public:
 
     void setPlayingOffset(sf::Time timeOffset);
     sf::Time getPlayingOffset() const;
+    sf::Time getPrecisePlayingOffset() const;
 
     void setPitch(float pitch);
 
@@ -78,6 +92,8 @@ private:
     void launchStreamingThread(sf::SoundSource::Status threadStartState);
     void awaitStreamingThread();
 
+    moodycamel::ReaderWriterQueue<ChangeStreamsCommand> stream_change_requests{10};
+    void unsafe_update_streams();
     void reload_sources();
 
     std::thread m_thread; // Thread running the background tasks

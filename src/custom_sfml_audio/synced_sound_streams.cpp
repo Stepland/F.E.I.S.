@@ -10,10 +10,12 @@
 #include <SFML/Audio/SoundStream.hpp>
 #include <SFML/System/Sleep.hpp>
 #include <SFML/System/Time.hpp>
+#include <variant>
 
+#include "../variant_visitor.hpp"
 #include "al_check.hpp"
 #include "audio_device.hpp"
-#include "src/custom_sfml_audio/precise_sound_stream.hpp"
+#include "precise_sound_stream.hpp"
 
 #ifdef _MSC_VER
     #pragma warning(disable: 4355) // 'this' used in base member initializer list
@@ -59,23 +61,49 @@ SyncedSoundStreams::~SyncedSoundStreams() {
 
 
 void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s) {
-    InternalStream internal_stream{s, {}};
-    internal_stream.buffers.m_channelCount = s->getChannelCount();
-    internal_stream.buffers.m_sampleRate = s->getSampleRate();
-    internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s->getChannelCount());
-    streams.emplace(name, internal_stream);
-    reload_sources();
+    stream_change_requests.try_enqueue(AddStream{name, s});
+    if (not m_isStreaming) {
+        // if we are not currently playing audio there should be no problem
+        // changing the streams right now
+        unsafe_update_streams();
+    }
 }
-
 
 void SyncedSoundStreams::remove_stream(const std::string& name) {
-    if (streams.contains(name)) {
-        streams.at(name).clear_queue();
+    stream_change_requests.try_enqueue(RemoveStream{name});
+    if (not m_isStreaming) {
+        // if we are not currently playing audio there should be no problem
+        // changing the streams right now
+        unsafe_update_streams();
     }
-    streams.erase(name);
-    reload_sources();
 }
 
+void SyncedSoundStreams::unsafe_update_streams() {
+    ChangeStreamsCommand c;
+    bool modified_stuff = false;
+    auto _do_request = VariantVisitor {
+        [this](const AddStream& a) {
+            InternalStream internal_stream{a.s, {}};
+            internal_stream.buffers.m_channelCount = a.s->getChannelCount();
+            internal_stream.buffers.m_sampleRate = a.s->getSampleRate();
+            internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(a.s->getChannelCount());
+            streams.emplace(a.name, internal_stream);
+        },
+        [this](const RemoveStream& r) {
+            if (streams.contains(r.name)) {
+                streams.at(r.name).clear_queue();
+            }
+            streams.erase(r.name);
+        },
+    };
+    while (stream_change_requests.try_dequeue(c)) {
+        std::visit(_do_request, c);
+        modified_stuff = true;
+    }
+    if (modified_stuff) {
+        reload_sources();
+    }
+}
 
 void SyncedSoundStreams::play() {
     // Check if the sound parameters have been set
@@ -203,12 +231,23 @@ sf::Time SyncedSoundStreams::getPlayingOffset() const {
 
     ALfloat secs = 0.f;
     alCheck(alGetSourcef(s.stream->get_source(), AL_SEC_OFFSET, &secs));
-    auto base = sf::seconds(
+    return sf::seconds(
         secs
         + static_cast<float>(s.buffers.m_samplesProcessed)
         / static_cast<float>(s.buffers.m_sampleRate)
         / static_cast<float>(s.buffers.m_channelCount)
     );
+}
+
+sf::Time SyncedSoundStreams::getPrecisePlayingOffset() const {
+    const auto base = getPlayingOffset();
+    if (streams.empty()) {
+        return base;
+    }
+    const auto& s = streams.begin()->second;
+    if (not (s.buffers.m_sampleRate && s.buffers.m_channelCount)) {
+        return base;
+    }
     auto correction = (
         (s.stream->alSecOffsetLatencySoft()[1] * s.stream->getPitch())
         - (s.stream->lag * s.stream->getPitch())
@@ -349,19 +388,24 @@ void SyncedSoundStreams::streamData() {
                     }
                 }
             }
+        }
 
-            // Check if any error has occurred
-            if (alGetLastError() != AL_NO_ERROR) {
-                // Abort streaming (exit main loop)
-                std::scoped_lock lock(m_threadMutex);
-                m_isStreaming = false;
-                break;
-            }
+        // Check if any error has occurred
+        if (alGetLastError() != AL_NO_ERROR) {
+            // Abort streaming (exit main loop)
+            std::scoped_lock lock(m_threadMutex);
+            m_isStreaming = false;
+            break;
+        }
 
-            // Leave some time for the other threads if the stream is still playing
-            if (s.stream->getStatus() != sf::SoundSource::Stopped) {
-                sleep(m_processingInterval);
-            }
+        // Process stream change requests
+        unsafe_update_streams();
+
+        // Leave some time for the other threads if the stream is still playing
+        if (std::any_of(streams.begin(), streams.end(), [](auto& s){
+            return s.second.stream->getStatus() == sf::SoundSource::Stopped;
+        })) {
+            sleep(m_processingInterval);
         }
     }
 

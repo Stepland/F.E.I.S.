@@ -82,7 +82,7 @@ public:
     sf::SoundSource::Status get_status();
     void set_pitch(float pitch);
     void set_playback_position(std::variant<sf::Time, Fraction> newPosition);
-    sf::Time get_playback_position();
+    sf::Time get_precise_playback_position();
 
     Fraction current_exact_beats() const;
     Fraction current_snaped_beats() const;
@@ -176,6 +176,7 @@ private:
     Interval<sf::Time> choose_editable_range();
     void reload_jacket();
     void reload_music();
+    void clear_music();
     void reload_preview_audio();
 
     better::Timing& applicable_timing;
