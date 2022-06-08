@@ -1,3 +1,4 @@
+#include <SFML/Audio/SoundSource.hpp>
 #include <string>
 #include <filesystem>
 #include <variant>
@@ -63,9 +64,9 @@ int main() {
         16.f);
     ImGui::SFML::UpdateFontTexture();
 
-    SoundEffect beatTick {assets_folder / "sounds" / "beat.wav"};
-    SoundEffect noteTick {assets_folder / "sounds" / "note.wav"};
-    SoundEffect chordTick {assets_folder / "sounds" / "chord.wav"};
+    // SoundEffect beatTick {assets_folder / "sounds" / "beat.wav"};
+    // SoundEffect noteTick {assets_folder / "sounds" / "note.wav"};
+    // SoundEffect chordTick {assets_folder / "sounds" / "chord.wav"};
 
     // Loading markers preview
     std::map<std::filesystem::path, sf::Texture> markerPreviews;
@@ -297,6 +298,7 @@ int main() {
                          * F keys
                          */
                         case sf::Keyboard::F3:
+                            /*
                             if (beatTick.toggle()) {
                                 notificationsQueue.push(std::make_shared<TextNotification>(
                                     "Beat tick : on"));
@@ -304,8 +306,10 @@ int main() {
                                 notificationsQueue.push(std::make_shared<TextNotification>(
                                     "Beat tick : off"));
                             }
+                            */
                             break;
                         case sf::Keyboard::F4:
+                            /*
                             if (event.key.shift) {
                                 if (chordTick.toggle()) {
                                     noteTick.shouldPlay = true;
@@ -325,11 +329,12 @@ int main() {
                                         "Note tick : off"));
                                 }
                             }
+                            */
                             break;
                         case sf::Keyboard::Space:
                             if (not ImGui::GetIO().WantTextInput) {
                                 if (editor_state) {
-                                    editor_state->playing = not editor_state->playing;
+                                    editor_state->toggle_playback();
                                 }
                             }
                             break;
@@ -416,34 +421,13 @@ int main() {
         // Audio playback management
         if (editor_state) {
             editor_state->update_visible_notes();
-            if (editor_state->playing) {
+            if (editor_state->get_status() == sf::SoundSource::Playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
-                editor_state->playback_position = editor_state->current_time() + delta * (editor_state->get_speed() / 10.f);
-                switch (editor_state->get_status()) {
-                    case sf::Music::Stopped:
-                    case sf::Music::Paused:
-                        editor_state->set_playback_position(editor_state->current_time());
-                        editor_state->play();
-                        break;
-                    case sf::Music::Playing:
-                        editor_state->playback_position = editor_state->get_precise_playback_position();
-                        break;
-                    default:
-                        break;
-                }
-                if (beatTick.shouldPlay) {
-                    const auto previous_beat = editor_state->previous_exact_beats();
-                    const auto current_beat = editor_state->current_exact_beats();
-                    if (floor_fraction(previous_beat) != floor_fraction(current_beat)) {
-                        beatTick.play();
-                    }
-                }
+                editor_state->playback_position = editor_state->get_precise_playback_position();
+                // editor_state->playback_position = editor_state->current_time() + delta * (editor_state->get_speed() / 10.f);
                 if (editor_state->current_time() > editor_state->get_editable_range().end) {
-                    editor_state->playing = false;
-                    editor_state->playback_position = editor_state->get_editable_range().end;
+                    editor_state->pause();
                 }
-            } else if (editor_state->get_status() == sf::SoundSource::Playing) {
-                editor_state->pause();
             }
         }
 
@@ -495,24 +479,18 @@ int main() {
             } else {
                 chartPropertiesDialog.should_refresh_values = true;
             }
-
             if (editor_state->showSoundSettings) {
-                ImGui::Begin("Sound Settings", &editor_state->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize);
-                {
-                    if (ImGui::TreeNode("Beat Tick")) {
-                        beatTick.displayControls();
-                        ImGui::TreePop();
-                    }
-
-                    if (ImGui::TreeNode("Note Tick")) {
-                        noteTick.displayControls();
-                        ImGui::Checkbox("Chord sound", &chordTick.shouldPlay);
+                ImGui::Begin("Sound Settings", &editor_state->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize); {
+                    if (ImGui::TreeNode("Note Clap")) {
+                        static auto play_chords = editor_state->note_claps->play_chords.load();
+                        if (ImGui::Checkbox("Play on chords", &play_chords)) {
+                            editor_state->note_claps->play_chords.store(play_chords);
+                        }
                         ImGui::TreePop();
                     }
                 }
                 ImGui::End();
             }
-
         } else {
             bg.render(window);
         }

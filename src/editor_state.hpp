@@ -8,7 +8,7 @@
 #include <SFML/Graphics.hpp>
 
 
-#include "custom_sfml_audio/clap_player.hpp"
+#include "custom_sfml_audio/note_claps.hpp"
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/linear_view.hpp"
@@ -46,7 +46,7 @@ public:
     std::optional<ChartState> chart_state;
 
     SyncedSoundStreams audio;
-    std::shared_ptr<ClapPlayer> clap_player;
+    std::shared_ptr<NoteClaps> note_claps;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
 
     int get_volume() const;
@@ -76,6 +76,7 @@ public:
 
     const Interval<sf::Time>& get_editable_range();
 
+    void toggle_playback();
     void play();
     void pause();
     void stop();

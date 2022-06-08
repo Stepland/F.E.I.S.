@@ -49,7 +49,7 @@ struct InternalStream {
 
 struct AddStream {
     std::string name;
-    std::shared_ptr<PreciseSoundStream> s;
+    std::shared_ptr<PreciseSoundStream> stream;
 };
 
 struct RemoveStream {

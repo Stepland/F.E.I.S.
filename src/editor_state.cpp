@@ -35,7 +35,7 @@
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
-    clap_player(std::make_shared<ClapPlayer>(nullptr, nullptr, assets_)),
+    note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -43,7 +43,7 @@ EditorState::EditorState(const std::filesystem::path& assets_) :
 {
     reload_music();
     reload_jacket();
-    audio.add_stream(note_clap_stream, clap_player);
+    audio.add_stream(note_clap_stream, note_claps);
 };
 
 EditorState::EditorState(
@@ -53,7 +53,7 @@ EditorState::EditorState(
 ) : 
     song(song_),
     song_path(song_path),
-    clap_player(std::make_shared<ClapPlayer>(nullptr, nullptr, assets_)),
+    note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -65,7 +65,7 @@ EditorState::EditorState(
     }
     reload_music();
     reload_jacket();
-    audio.add_stream(note_clap_stream, clap_player);
+    audio.add_stream(note_clap_stream, note_claps);
 };
 
 int EditorState::get_volume() const {
@@ -109,6 +109,14 @@ const Interval<sf::Time>& EditorState::get_editable_range() {
     reload_editable_range();
     return editable_range;
 };
+
+void EditorState::toggle_playback() {
+    if (get_status() != sf::SoundSource::Playing) {
+        play();
+    } else {
+        pause();
+    }
+}
 
 void EditorState::play() {
     audio.play();
@@ -795,7 +803,7 @@ void EditorState::open_chart(const std::string& name) {
     chart_state.emplace(chart, name_ref, assets);
     reload_editable_range();
     reload_applicable_timing();
-    clap_player->set_notes_and_timing(&chart.notes, &applicable_timing);
+    note_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
 };
 
 void EditorState::update_visible_notes() {

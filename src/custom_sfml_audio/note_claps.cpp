@@ -1,36 +1,32 @@
-#include "clap_player.hpp"
+#include "note_claps.hpp"
 
 #include <memory>
 #include <stdexcept>
 
 #include "../better_note.hpp"
 
-ClapPlayer::ClapPlayer(
+NoteClaps::NoteClaps(
     const better::Notes* notes_,
     const better::Timing* timing_,
     const std::filesystem::path& assets
 ) :
     notes(notes_),
     timing(timing_),
-    note_clap(),
-    chord_clap()
+    note_clap()
 {
     if (not note_clap.loadFromFile(assets / "sounds" / "note.wav")) {
         throw std::runtime_error("Could not load note clap audio file");
-    }
-    if (not chord_clap.loadFromFile(assets / "sounds" / "chord.wav")) {
-        throw std::runtime_error("Could not load chord clap audio file");
     }
     sf::SoundStream::initialize(note_clap.getChannelCount(), note_clap.getSampleRate());
     samples.resize(note_clap.getChannelCount() * note_clap.getSampleRate(), 0);
 }
 
-void ClapPlayer::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
+void NoteClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
     notes = notes_;
     timing = timing_;
 }
 
-bool ClapPlayer::onGetData(sf::SoundStream::Chunk& data) {
+bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
     samples.assign(samples.size(), 0);
     if (timing != nullptr and notes != nullptr) {
         const auto start_sample = current_sample;
@@ -51,7 +47,7 @@ bool ClapPlayer::onGetData(sf::SoundStream::Chunk& data) {
             // Should we still be playing the clap ?
             const auto next = std::next(it);
             const auto last_audible_start = start_sample - static_cast<std::int64_t>(note_clap.getSampleCount());
-            if (it->first <= last_audible_start) {
+            if (it->first <= last_audible_start or ((not play_chords) and it->second > 1)) {
                 it = notes_at_sample.erase(it);
             } else {
                 const auto full_clap_start_in_buffer = static_cast<std::int64_t>(it->first) - static_cast<std::int64_t>(start_sample);
@@ -92,12 +88,12 @@ bool ClapPlayer::onGetData(sf::SoundStream::Chunk& data) {
     return true;
 };
 
-void ClapPlayer::onSeek(sf::Time timeOffset) {
+void NoteClaps::onSeek(sf::Time timeOffset) {
     current_sample = timeToSamples(timeOffset);
     notes_at_sample.clear();
 };
 
-std::int64_t ClapPlayer::timeToSamples(sf::Time position) const {
+std::int64_t NoteClaps::timeToSamples(sf::Time position) const {
     // Always ROUND, no unchecked truncation, hence the addition in the numerator.
     // This avoids most precision errors arising from "samples => Time => samples" conversions
     // Original rounding calculation is ((Micros * Freq * Channels) / 1000000) + 0.5
@@ -105,7 +101,7 @@ std::int64_t ClapPlayer::timeToSamples(sf::Time position) const {
     return ((static_cast<std::int64_t>(position.asMicroseconds()) * note_clap.getSampleRate() * note_clap.getChannelCount()) + 500000) / 1000000;
 }
 
-sf::Time ClapPlayer::samplesToTime(std::int64_t samples) const {
+sf::Time NoteClaps::samplesToTime(std::int64_t samples) const {
     sf::Time position = sf::Time::Zero;
 
     // Make sure we don't divide by 0

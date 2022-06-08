@@ -83,10 +83,10 @@ void SyncedSoundStreams::unsafe_update_streams() {
     bool modified_stuff = false;
     auto _do_request = VariantVisitor {
         [this](const AddStream& a) {
-            InternalStream internal_stream{a.s, {}};
-            internal_stream.buffers.m_channelCount = a.s->getChannelCount();
-            internal_stream.buffers.m_sampleRate = a.s->getSampleRate();
-            internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(a.s->getChannelCount());
+            InternalStream internal_stream{a.stream, {}};
+            internal_stream.buffers.m_channelCount = a.stream->getChannelCount();
+            internal_stream.buffers.m_sampleRate = a.stream->getSampleRate();
+            internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(a.stream->getChannelCount());
             streams.emplace(a.name, internal_stream);
         },
         [this](const RemoveStream& r) {
