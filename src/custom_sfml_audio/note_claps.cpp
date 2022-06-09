@@ -1,5 +1,6 @@
 #include "note_claps.hpp"
 
+#include <SFML/System/Time.hpp>
 #include <memory>
 #include <stdexcept>
 
@@ -18,7 +19,7 @@ NoteClaps::NoteClaps(
         throw std::runtime_error("Could not load note clap audio file");
     }
     sf::SoundStream::initialize(note_clap.getChannelCount(), note_clap.getSampleRate());
-    samples.resize(note_clap.getChannelCount() * note_clap.getSampleRate(), 0);
+    samples.resize(timeToSamples(sf::milliseconds(200)), 0);
 }
 
 void NoteClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
@@ -69,9 +70,12 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
                     slice_end_in_buffer - slice_start_in_buffer,
                     static_cast<std::int64_t>(note_clap.getSampleCount()) - slice_start_in_clap
                 );
-                for (std::int64_t i = 0; i < slice_size; i++) {
-                    samples[slice_start_in_buffer + i] = note_clap.getSamples()[slice_start_in_clap + i];
-                }
+                const auto clap_pointer = note_clap.getSamples() + slice_start_in_clap;
+                std::copy(
+                    clap_pointer,
+                    clap_pointer + slice_size,
+                    samples.begin() + slice_start_in_buffer
+                );
                 if (clap_finished_playing_in_current_buffer) {
                     it = notes_at_sample.erase(it);
                 } else {

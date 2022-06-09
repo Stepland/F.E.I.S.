@@ -403,7 +403,7 @@ void SyncedSoundStreams::streamData() {
 
         // Leave some time for the other threads if the stream is still playing
         if (std::any_of(streams.begin(), streams.end(), [](auto& s){
-            return s.second.stream->getStatus() == sf::SoundSource::Stopped;
+            return s.second.stream->getStatus() != sf::SoundSource::Stopped;
         })) {
             sleep(m_processingInterval);
         }
