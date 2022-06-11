@@ -181,11 +181,7 @@ void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosi
 };
 
 sf::Time EditorState::get_precise_playback_position() {
-    if (music.has_value()) {
-        return audio.getPrecisePlayingOffset();
-    } else {
-        return current_time();
-    }
+    return audio.getPrecisePlayingOffset();
 }
 
 Fraction EditorState::current_exact_beats() const {
