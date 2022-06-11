@@ -61,48 +61,46 @@ SyncedSoundStreams::~SyncedSoundStreams() {
 
 
 void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s) {
-    stream_change_requests.try_enqueue(AddStream{name, s});
-    if (not m_isStreaming) {
-        // if we are not currently playing audio there should be no problem
-        // changing the streams right now
-        unsafe_update_streams();
+    const auto oldStatus = getStatus();
+    const auto position = getPrecisePlayingOffset();
+    stop();
+    {
+        InternalStream internal_stream{s, {}};
+        internal_stream.buffers.m_channelCount = s->getChannelCount();
+        internal_stream.buffers.m_sampleRate = s->getSampleRate();
+        internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s->getChannelCount());
+        streams.emplace(name, internal_stream);
+    }
+    reload_sources();
+    if (oldStatus != sf::SoundSource::Stopped) {
+        setPlayingOffset(position);
+    }
+    if (oldStatus == sf::SoundSource::Playing) {
+        play();
     }
 }
 
 void SyncedSoundStreams::remove_stream(const std::string& name) {
-    stream_change_requests.try_enqueue(RemoveStream{name});
-    if (not m_isStreaming) {
-        // if we are not currently playing audio there should be no problem
-        // changing the streams right now
-        unsafe_update_streams();
+    const auto oldStatus = getStatus();
+    const auto position = getPrecisePlayingOffset();
+    stop();
+    {
+            if (streams.contains(name)) {
+                streams.at(name).clear_queue();
+            }
+            streams.erase(name);
+    }
+    reload_sources();
+    if (oldStatus != sf::SoundSource::Stopped) {
+        setPlayingOffset(position);
+    }
+    if (oldStatus == sf::SoundSource::Playing) {
+        play();
     }
 }
 
-void SyncedSoundStreams::unsafe_update_streams() {
-    ChangeStreamsCommand c;
-    bool modified_stuff = false;
-    auto _do_request = VariantVisitor {
-        [this](const AddStream& a) {
-            InternalStream internal_stream{a.stream, {}};
-            internal_stream.buffers.m_channelCount = a.stream->getChannelCount();
-            internal_stream.buffers.m_sampleRate = a.stream->getSampleRate();
-            internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(a.stream->getChannelCount());
-            streams.emplace(a.name, internal_stream);
-        },
-        [this](const RemoveStream& r) {
-            if (streams.contains(r.name)) {
-                streams.at(r.name).clear_queue();
-            }
-            streams.erase(r.name);
-        },
-    };
-    while (stream_change_requests.try_dequeue(c)) {
-        std::visit(_do_request, c);
-        modified_stuff = true;
-    }
-    if (modified_stuff) {
-        reload_sources();
-    }
+bool SyncedSoundStreams::contains_stream(const std::string& name) {
+    return streams.contains(name);
 }
 
 void SyncedSoundStreams::play() {
@@ -397,9 +395,6 @@ void SyncedSoundStreams::streamData() {
             m_isStreaming = false;
             break;
         }
-
-        // Process stream change requests
-        unsafe_update_streams();
 
         // Leave some time for the other threads if the stream is still playing
         if (std::any_of(streams.begin(), streams.end(), [](auto& s){

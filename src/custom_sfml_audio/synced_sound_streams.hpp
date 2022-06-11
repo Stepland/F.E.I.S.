@@ -14,7 +14,6 @@
 
 #include "al_resource.hpp"
 #include "precise_sound_stream.hpp"
-#include "readerwriterqueue.h"
 #include "src/history_item.hpp"
 
 
@@ -65,6 +64,7 @@ public:
 
     void add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s);
     void remove_stream(const std::string& name);
+    bool contains_stream(const std::string& name);
 
     void play();
     void pause();
@@ -92,7 +92,6 @@ private:
     void launchStreamingThread(sf::SoundSource::Status threadStartState);
     void awaitStreamingThread();
 
-    moodycamel::ReaderWriterQueue<ChangeStreamsCommand> stream_change_requests{10};
     void unsafe_update_streams();
     void reload_sources();
 

@@ -36,6 +36,7 @@
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
     note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_)),
+    beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -54,6 +55,7 @@ EditorState::EditorState(
     song(song_),
     song_path(song_path),
     note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_)),
+    beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -115,6 +117,14 @@ void EditorState::toggle_playback() {
         play();
     } else {
         pause();
+    }
+}
+
+void EditorState::toggle_beat_ticks() {
+    if (audio.contains_stream(beat_tick_stream)) {
+        audio.remove_stream(beat_tick_stream);
+    } else {
+        audio.add_stream(beat_tick_stream, beat_ticks);
     }
 }
 
@@ -804,6 +814,7 @@ void EditorState::open_chart(const std::string& name) {
     reload_editable_range();
     reload_applicable_timing();
     note_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
+    beat_ticks->set_timing(&applicable_timing);
 };
 
 void EditorState::update_visible_notes() {

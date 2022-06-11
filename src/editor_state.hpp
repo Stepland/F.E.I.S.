@@ -8,6 +8,7 @@
 #include <SFML/Graphics.hpp>
 
 
+#include "custom_sfml_audio/beat_ticks.hpp"
 #include "custom_sfml_audio/note_claps.hpp"
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
@@ -25,6 +26,7 @@
 
 const std::string music_stream = "music";
 const std::string note_clap_stream = "note_clap";
+const std::string beat_tick_stream = "beat_tick";
 
 /*
  * The god class, holds everything there is to know about the currently open
@@ -47,6 +49,7 @@ public:
 
     SyncedSoundStreams audio;
     std::shared_ptr<NoteClaps> note_claps;
+    std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
 
     int get_volume() const;
@@ -77,6 +80,7 @@ public:
     const Interval<sf::Time>& get_editable_range();
 
     void toggle_playback();
+    void toggle_beat_ticks();
     void play();
     void pause();
     void stop();
