@@ -17,3 +17,8 @@ struct PreciseSoundStream : public OpenSoundStream {
     std::array<sf::Time, 2> alSecOffsetLatencySoft() const;
     sf::Time lag = sf::Time::Zero;
 };
+
+template<class T>
+sf::Uint64 timeToSamples(sf::Time position, T sample_rate, T channel_count) {
+    return ((static_cast<sf::Uint64>(position.asMicroseconds()) * sample_rate * channel_count) + 500000) / 1000000;
+};

@@ -481,11 +481,6 @@ int main() {
             }
             if (editor_state->showSoundSettings) {
                 ImGui::Begin("Sound Settings", &editor_state->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize); {
-                    ImGui::Text("Note Clap");
-                    static auto play_chords = editor_state->note_claps->play_chords.load();
-                    if (ImGui::Checkbox("Play on chords", &play_chords)) {
-                        editor_state->note_claps->play_chords.store(play_chords);
-                    }
                     ImGui::Text("Beat Tick");
                     if (ImGui::Button("Toggle")) {
                         editor_state->toggle_beat_ticks();

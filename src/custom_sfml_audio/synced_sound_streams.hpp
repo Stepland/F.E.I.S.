@@ -42,20 +42,10 @@ struct Buffers {
 struct InternalStream {
     std::shared_ptr<PreciseSoundStream> stream;
     Buffers buffers;
+    bool reconstruct_on_pitch_change;
 
     void clear_queue();
 };
-
-struct AddStream {
-    std::string name;
-    std::shared_ptr<PreciseSoundStream> stream;
-};
-
-struct RemoveStream {
-    std::string name;
-};
-
-using ChangeStreamsCommand = std::variant<AddStream, RemoveStream>;
 
 class SyncedSoundStreams : public AlResource {
 public:
@@ -85,6 +75,7 @@ protected:
     void setProcessingInterval(sf::Time interval);
 
 private:
+    void change_streams(std::function<void()> callback);
     void streamData();
     [[nodiscard]] bool fillAndPushBuffer(InternalStream& stream, unsigned int bufferNum, bool immediateLoop = false);
     [[nodiscard]] bool fillQueues();

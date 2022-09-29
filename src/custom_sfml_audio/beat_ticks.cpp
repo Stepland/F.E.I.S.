@@ -17,7 +17,7 @@ BeatTicks::BeatTicks(
         throw std::runtime_error("Could not load beat tick audio file");
     }
     sf::SoundStream::initialize(beat_tick.getChannelCount(), beat_tick.getSampleRate());
-    samples.resize(timeToSamples(sf::milliseconds(200)), 0);
+    samples.resize(timeToSamples(sf::seconds(1)), 0);
 }
 
 void BeatTicks::set_timing(const better::Timing* timing_) {

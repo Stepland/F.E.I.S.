@@ -59,44 +59,38 @@ SyncedSoundStreams::~SyncedSoundStreams() {
     awaitStreamingThread();
 }
 
-
-void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s) {
+void SyncedSoundStreams::change_streams(std::function<void()> callback) {
     const auto oldStatus = getStatus();
-    const auto position = getPrecisePlayingOffset();
+    const auto position = getPlayingOffset();
     stop();
-    {
-        InternalStream internal_stream{s, {}};
-        internal_stream.buffers.m_channelCount = s->getChannelCount();
-        internal_stream.buffers.m_sampleRate = s->getSampleRate();
-        internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s->getChannelCount());
-        streams.emplace(name, internal_stream);
-    }
+
+    callback();
+
     reload_sources();
-    if (oldStatus != sf::SoundSource::Stopped) {
-        setPlayingOffset(position);
-    }
+    setPlayingOffset(position);
     if (oldStatus == sf::SoundSource::Playing) {
         play();
     }
 }
 
+
+void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s) {
+    change_streams([&](){
+        InternalStream internal_stream{s, {}};
+        internal_stream.buffers.m_channelCount = s->getChannelCount();
+        internal_stream.buffers.m_sampleRate = s->getSampleRate();
+        internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s->getChannelCount());
+        streams.emplace(name, internal_stream);
+    });
+}
+
 void SyncedSoundStreams::remove_stream(const std::string& name) {
-    const auto oldStatus = getStatus();
-    const auto position = getPrecisePlayingOffset();
-    stop();
-    {
-            if (streams.contains(name)) {
-                streams.at(name).clear_queue();
-            }
-            streams.erase(name);
-    }
-    reload_sources();
-    if (oldStatus != sf::SoundSource::Stopped) {
-        setPlayingOffset(position);
-    }
-    if (oldStatus == sf::SoundSource::Playing) {
-        play();
-    }
+    change_streams([&](){
+        if (streams.contains(name)) {
+            streams.at(name).clear_queue();
+        }
+        streams.erase(name);
+    });
 }
 
 bool SyncedSoundStreams::contains_stream(const std::string& name) {
@@ -204,10 +198,7 @@ void SyncedSoundStreams::setPlayingOffset(sf::Time timeOffset) {
     for (auto& [_, s]: streams) {
         s.stream->public_seek_callback(timeOffset);
         // Restart streaming
-        s.buffers.m_samplesProcessed = static_cast<sf::Uint64>(
-            timeOffset.asSeconds()
-            * static_cast<float>(s.buffers.m_sampleRate)
-        ) * s.buffers.m_channelCount;
+        s.buffers.m_samplesProcessed = timeToSamples(timeOffset, s.buffers.m_sampleRate, s.buffers.m_channelCount);
     }
 
     if (oldStatus == sf::SoundSource::Stopped) {
@@ -380,7 +371,7 @@ void SyncedSoundStreams::streamData() {
                 }
 
                 // Fill it and push it back into the playing queue
-                if (!requestStop) {
+                if (not requestStop) {
                     if (fillAndPushBuffer(s, bufferNum)) {
                         requestStop = true;
                     }
@@ -459,10 +450,15 @@ bool SyncedSoundStreams::fillAndPushBuffer(InternalStream& stream, unsigned int 
     }
 
     // Fill the buffer if some data was returned
-    if (data.samples && data.sampleCount) {
+    if (data.samples != nullptr && data.sampleCount != 0) {
         unsigned int buffer = stream.buffers.m_buffers[bufferNum];
 
         // Fill the buffer
+        // Stepland : I don't know why, sometimes data.sampleCount is not a
+        // multiple of the number of channels which makes OpenAL error out on
+        // the alBufferData call, as a safety measure I trunc it down to the
+        // nearest multiple
+        data.sampleCount -= data.sampleCount % stream.buffers.m_channelCount;
         auto size = static_cast<ALsizei>(data.sampleCount * sizeof(sf::Int16));
         alCheck(alBufferData(buffer, stream.buffers.m_format, data.samples, size, static_cast<ALsizei>(stream.buffers.m_sampleRate)));
 

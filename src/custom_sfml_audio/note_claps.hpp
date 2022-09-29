@@ -18,8 +18,13 @@ public:
         const std::filesystem::path& assets
     );
 
+    NoteClaps(
+        const better::Notes* notes_,
+        const better::Timing* timing_,
+        std::shared_ptr<sf::SoundBuffer> note_clap_
+    );
+
     void set_notes_and_timing(const better::Notes* notes, const better::Timing* timing);
-    std::atomic<bool> play_chords = true;
 
 protected:
     bool onGetData(Chunk& data) override;
@@ -35,5 +40,5 @@ private:
 
     const better::Notes* notes;
     const better::Timing* timing;
-    sf::SoundBuffer note_clap;
+    std::shared_ptr<sf::SoundBuffer> note_clap;
 };
