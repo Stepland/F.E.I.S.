@@ -39,6 +39,11 @@ struct Buffers {
     std::array<sf::Int64, BufferCount> m_bufferSeeks = {0, 0, 0};
 };
 
+struct NewStream {
+    std::shared_ptr<PreciseSoundStream> stream;
+    bool reconstruct_on_pitch_change;
+};
+
 struct InternalStream {
     std::shared_ptr<PreciseSoundStream> stream;
     Buffers buffers;
@@ -52,7 +57,8 @@ public:
     SyncedSoundStreams();
     ~SyncedSoundStreams();
 
-    void add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s);
+    void update_streams(std::map<std::string, NewStream> new_streams);
+    void add_stream(const std::string& name, NewStream s);
     void remove_stream(const std::string& name);
     bool contains_stream(const std::string& name);
 
@@ -76,6 +82,8 @@ protected:
 
 private:
     void change_streams(std::function<void()> callback);
+    void add_stream_internal(const std::string& name, NewStream s);
+    void remove_stream_internal(const std::string& name);
     void streamData();
     [[nodiscard]] bool fillAndPushBuffer(InternalStream& stream, unsigned int bufferNum, bool immediateLoop = false);
     [[nodiscard]] bool fillQueues();
@@ -86,6 +94,7 @@ private:
     void unsafe_update_streams();
     void reload_sources();
 
+    float pitch = 1.f;
     std::thread m_thread; // Thread running the background tasks
     mutable std::recursive_mutex m_threadMutex; // Thread mutex
     sf::SoundSource::Status m_threadStartState; // State the thread starts in (Playing, Paused, Stopped)

@@ -35,8 +35,8 @@
 #include "variant_visitor.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
-    note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_)),
-    beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_)),
+    note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_, 1.f)),
+    beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -44,7 +44,7 @@ EditorState::EditorState(const std::filesystem::path& assets_) :
 {
     reload_music();
     reload_jacket();
-    audio.add_stream(note_clap_stream, note_claps);
+    audio.add_stream(note_clap_stream, {note_claps, true});
 };
 
 EditorState::EditorState(
@@ -54,8 +54,8 @@ EditorState::EditorState(
 ) : 
     song(song_),
     song_path(song_path),
-    note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_)),
-    beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_)),
+    note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_, 1.f)),
+    beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
     linear_view(assets_),
     applicable_timing(song.timing),
@@ -67,7 +67,7 @@ EditorState::EditorState(
     }
     reload_music();
     reload_jacket();
-    audio.add_stream(note_clap_stream, note_claps);
+    audio.add_stream(note_clap_stream, {note_claps, true});
 };
 
 int EditorState::get_volume() const {
@@ -124,7 +124,7 @@ void EditorState::toggle_beat_ticks() {
     if (audio.contains_stream(beat_tick_stream)) {
         audio.remove_stream(beat_tick_stream);
     } else {
-        audio.add_stream(beat_tick_stream, beat_ticks);
+        audio.add_stream(beat_tick_stream, {beat_ticks, true});
     }
 }
 
@@ -145,6 +145,16 @@ sf::SoundSource::Status EditorState::get_status() {
 }
 
 void EditorState::set_pitch(float pitch) {
+    std::map<std::string, NewStream> update;
+    if (audio.contains_stream(note_clap_stream)) {
+        note_claps = note_claps->with_pitch(pitch);
+        update[note_clap_stream] = {note_claps, true};
+    }
+    if (audio.contains_stream(beat_tick_stream)) {
+        beat_ticks = beat_ticks->with_pitch(pitch);
+        update[beat_tick_stream] = {beat_ticks, true};
+    }
+    audio.update_streams(update);
     audio.setPitch(pitch);
 }
 
@@ -902,7 +912,7 @@ void EditorState::reload_music() {
     previous_playback_position = playback_position;
     set_speed(speed);
     if (music.has_value()) {
-        audio.add_stream(music_stream, *music);
+        audio.add_stream(music_stream, {*music, false});
     } else {
         audio.remove_stream(music_stream);
     }

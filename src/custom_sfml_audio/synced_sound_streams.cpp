@@ -3,6 +3,7 @@
 #include <boost/math/constants/constants.hpp>
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <ostream>
 
@@ -68,29 +69,49 @@ void SyncedSoundStreams::change_streams(std::function<void()> callback) {
 
     reload_sources();
     setPlayingOffset(position);
+    setPitch(pitch);
     if (oldStatus == sf::SoundSource::Playing) {
         play();
     }
 }
 
-
-void SyncedSoundStreams::add_stream(const std::string& name, std::shared_ptr<PreciseSoundStream> s) {
+void SyncedSoundStreams::update_streams(std::map<std::string, NewStream> new_streams) {
     change_streams([&](){
-        InternalStream internal_stream{s, {}};
-        internal_stream.buffers.m_channelCount = s->getChannelCount();
-        internal_stream.buffers.m_sampleRate = s->getSampleRate();
-        internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s->getChannelCount());
-        streams.emplace(name, internal_stream);
+        for (const auto& [name, new_stream] : new_streams) {
+            if (contains_stream(name)) {
+                remove_stream_internal(name);
+            }
+            add_stream_internal(name, new_stream);
+        }
     });
+}
+
+
+void SyncedSoundStreams::add_stream(const std::string& name, NewStream s) {
+    change_streams([&](){
+        add_stream_internal(name, s);
+    });
+}
+
+void SyncedSoundStreams::add_stream_internal(const std::string& name, NewStream s) {
+    InternalStream internal_stream{s.stream, {}, s.reconstruct_on_pitch_change};
+    internal_stream.buffers.m_channelCount = s.stream->getChannelCount();
+    internal_stream.buffers.m_sampleRate = s.stream->getSampleRate();
+    internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s.stream->getChannelCount());
+    streams.emplace(name, internal_stream);
 }
 
 void SyncedSoundStreams::remove_stream(const std::string& name) {
     change_streams([&](){
-        if (streams.contains(name)) {
-            streams.at(name).clear_queue();
-        }
-        streams.erase(name);
+        remove_stream_internal(name);
     });
+}
+
+void SyncedSoundStreams::remove_stream_internal(const std::string& name) {
+    if (streams.contains(name)) {
+        streams.at(name).clear_queue();
+    }
+    streams.erase(name);
 }
 
 bool SyncedSoundStreams::contains_stream(const std::string& name) {
@@ -196,7 +217,11 @@ void SyncedSoundStreams::setPlayingOffset(sf::Time timeOffset) {
 
     // Let the derived class update the current position
     for (auto& [_, s]: streams) {
-        s.stream->public_seek_callback(timeOffset);
+        auto stream_pitch = 1.f;
+        if (s.reconstruct_on_pitch_change) {
+            stream_pitch = pitch;
+        }
+        s.stream->public_seek_callback(timeOffset * stream_pitch);
         // Restart streaming
         s.buffers.m_samplesProcessed = timeToSamples(timeOffset, s.buffers.m_sampleRate, s.buffers.m_channelCount);
     }
@@ -220,12 +245,17 @@ sf::Time SyncedSoundStreams::getPlayingOffset() const {
 
     ALfloat secs = 0.f;
     alCheck(alGetSourcef(s.stream->get_source(), AL_SEC_OFFSET, &secs));
-    return sf::seconds(
+    const auto unpitched_seconds = sf::seconds(
         secs
         + static_cast<float>(s.buffers.m_samplesProcessed)
         / static_cast<float>(s.buffers.m_sampleRate)
         / static_cast<float>(s.buffers.m_channelCount)
     );
+    if (s.reconstruct_on_pitch_change) {
+        return unpitched_seconds * pitch;
+    } else {
+        return unpitched_seconds;
+    }
 }
 
 sf::Time SyncedSoundStreams::getPrecisePlayingOffset() const {
@@ -237,16 +267,23 @@ sf::Time SyncedSoundStreams::getPrecisePlayingOffset() const {
     if (not (s.buffers.m_sampleRate && s.buffers.m_channelCount)) {
         return base;
     }
-    auto correction = (
-        (s.stream->alSecOffsetLatencySoft()[1] * s.stream->getPitch())
-        - (s.stream->lag * s.stream->getPitch())
+    auto stream_pitch = s.stream->getPitch();
+    if (s.reconstruct_on_pitch_change) {
+        stream_pitch = 1.f;
+    }
+    const auto correction = (
+        (s.stream->alSecOffsetLatencySoft()[1] * stream_pitch)
+        - (s.stream->lag * stream_pitch)
     );
     return base - correction;
 }
 
-void SyncedSoundStreams::setPitch(float pitch) {
+void SyncedSoundStreams::setPitch(float new_pitch) {
+    pitch = new_pitch;
     for (auto& [_, s] : streams) {
-        s.stream->setPitch(pitch);
+        if (not s.reconstruct_on_pitch_change) {
+            s.stream->setPitch(new_pitch);
+        }
     }
 }
 

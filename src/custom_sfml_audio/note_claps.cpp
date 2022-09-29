@@ -10,8 +10,10 @@
 NoteClaps::NoteClaps(
     const better::Notes* notes_,
     const better::Timing* timing_,
-    const std::filesystem::path& assets
+    const std::filesystem::path& assets,
+    float pitch_
 ) :
+    pitch(pitch_),
     notes(notes_),
     timing(timing_),
     note_clap(std::make_shared<sf::SoundBuffer>())
@@ -26,8 +28,10 @@ NoteClaps::NoteClaps(
 NoteClaps::NoteClaps(
     const better::Notes* notes_,
     const better::Timing* timing_,
-    std::shared_ptr<sf::SoundBuffer> note_clap_
+    std::shared_ptr<sf::SoundBuffer> note_clap_,
+    float pitch_
 ) :
+    pitch(pitch_),
     notes(notes_),
     timing(timing_),
     note_clap(note_clap_)
@@ -39,6 +43,15 @@ NoteClaps::NoteClaps(
 void NoteClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
     notes = notes_;
     timing = timing_;
+}
+
+std::shared_ptr<NoteClaps> NoteClaps::with_pitch(float pitch) {
+    return std::make_shared<NoteClaps>(
+        notes,
+        timing,
+        note_clap,
+        pitch
+    );
 }
 
 bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
@@ -116,7 +129,7 @@ std::int64_t NoteClaps::timeToSamples(sf::Time position) const {
     // This avoids most precision errors arising from "samples => Time => samples" conversions
     // Original rounding calculation is ((Micros * Freq * Channels) / 1000000) + 0.5
     // We refactor it to keep Int64 as the data type throughout the whole operation.
-    return ((static_cast<std::int64_t>(position.asMicroseconds()) * note_clap->getSampleRate() * note_clap->getChannelCount()) + 500000) / 1000000;
+    return ((static_cast<std::int64_t>((position / pitch).asMicroseconds()) * note_clap->getSampleRate() * note_clap->getChannelCount()) + 500000) / 1000000;
 }
 
 sf::Time NoteClaps::samplesToTime(std::int64_t samples) const {
@@ -126,5 +139,5 @@ sf::Time NoteClaps::samplesToTime(std::int64_t samples) const {
     if (note_clap->getSampleRate() != 0 && note_clap->getChannelCount() != 0)
         position = sf::microseconds((samples * 1000000) / (note_clap->getChannelCount() * note_clap->getSampleRate()));
 
-    return position;
+    return position * pitch;
 }
