@@ -38,8 +38,10 @@ private:
     float pitch = 1.f;
     std::vector<sf::Int16> samples;
     std::int64_t current_sample = 0;
-    std::int64_t timeToSamples(sf::Time position) const;
-    sf::Time samplesToTime(std::int64_t samples) const;
+    std::int64_t openAL_time_to_samples(sf::Time position) const;
+    sf::Time samples_to_openAL_time(std::int64_t samples) const;
+    std::int64_t music_time_to_samples(sf::Time position) const;
+    sf::Time samples_to_music_time(std::int64_t samples) const;
 
     std::map<std::int64_t, unsigned int> notes_at_sample;
 

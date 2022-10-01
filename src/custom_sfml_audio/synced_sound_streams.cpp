@@ -217,11 +217,7 @@ void SyncedSoundStreams::setPlayingOffset(sf::Time timeOffset) {
 
     // Let the derived class update the current position
     for (auto& [_, s]: streams) {
-        auto stream_pitch = 1.f;
-        if (s.reconstruct_on_pitch_change) {
-            stream_pitch = pitch;
-        }
-        s.stream->public_seek_callback(timeOffset * stream_pitch);
+        s.stream->public_seek_callback(timeOffset);
         // Restart streaming
         s.buffers.m_samplesProcessed = timeToSamples(timeOffset, s.buffers.m_sampleRate, s.buffers.m_channelCount);
     }
@@ -245,16 +241,16 @@ sf::Time SyncedSoundStreams::getPlayingOffset() const {
 
     ALfloat secs = 0.f;
     alCheck(alGetSourcef(s.stream->get_source(), AL_SEC_OFFSET, &secs));
-    const auto unpitched_seconds = sf::seconds(
+    const auto openal_seconds = sf::seconds(
         secs
         + static_cast<float>(s.buffers.m_samplesProcessed)
         / static_cast<float>(s.buffers.m_sampleRate)
         / static_cast<float>(s.buffers.m_channelCount)
     );
     if (s.reconstruct_on_pitch_change) {
-        return unpitched_seconds * pitch;
+        return openal_seconds * pitch;
     } else {
-        return unpitched_seconds;
+        return openal_seconds;
     }
 }
 
@@ -267,15 +263,15 @@ sf::Time SyncedSoundStreams::getPrecisePlayingOffset() const {
     if (not (s.buffers.m_sampleRate && s.buffers.m_channelCount)) {
         return base;
     }
-    auto stream_pitch = s.stream->getPitch();
-    if (s.reconstruct_on_pitch_change) {
-        stream_pitch = 1.f;
-    }
     const auto correction = (
-        (s.stream->alSecOffsetLatencySoft()[1] * stream_pitch)
-        - (s.stream->lag * stream_pitch)
+        s.stream->alSecOffsetLatencySoft()[1] - s.stream->lag
     );
-    return base - correction;
+    if (s.reconstruct_on_pitch_change) {
+        return base - (correction * pitch);
+    } else {
+        return base - correction;
+    }
+    
 }
 
 void SyncedSoundStreams::setPitch(float new_pitch) {
