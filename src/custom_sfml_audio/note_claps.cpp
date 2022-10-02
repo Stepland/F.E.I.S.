@@ -67,21 +67,29 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
 
         notes->in(start_beat, end_beat, [&](const better::Notes::const_iterator& it){
             const auto beat = it->second.get_time();
+            // ignore long notes that started before the current buffer
+            if (beat < start_beat) {
+                return;
+            }
             const auto time = timing->time_at(beat);
             const auto sample = static_cast<std::int64_t>(music_time_to_samples(time));
-            notes_at_sample[sample] += 1;
+            // interval_tree::in is inclusive of the upper bound but here we
+            // don't want claps that *start* at the end sample since
+            // it's an *exculsive* end
+            if (sample < absolute_buffer_end) {
+                notes_at_sample[sample] += 1;
+            }
         });
 
         for (auto it = notes_at_sample.begin(); it != notes_at_sample.end();) {
-            const std::int64_t absolute_clap_start = it->first;
-            const std::int64_t absolute_clap_end = absolute_clap_start + static_cast<std::int64_t>(note_clap->getSampleCount());
-            const std::int64_t absolute_clap_slice_start = std::max(
+            const auto absolute_clap_start = it->first;
+            const auto absolute_clap_end = absolute_clap_start + static_cast<std::int64_t>(note_clap->getSampleCount());
+            const auto absolute_clap_slice_start = std::max(
                 absolute_clap_start,
                 absolute_buffer_start
             );
-            const std::int64_t absolute_clap_slice_end = std::min({
+            const auto absolute_clap_deoverlapped_end = std::min(
                 absolute_clap_end,
-                absolute_buffer_end,
                 [&](const auto& it){
                     const auto next = std::next(it);
                     if (next != notes_at_sample.end()) {
@@ -90,27 +98,28 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
                         return std::numeric_limits<std::int64_t>::max();
                     }
                 }(it)
-            });
-            const std::int64_t slice_size = absolute_clap_slice_end - absolute_clap_slice_start;
-            const std::int64_t slice_start_relative_to_clap_start = absolute_clap_slice_start - absolute_clap_start;
-            const std::int64_t slice_start_relative_to_buffer_start = absolute_clap_slice_start - absolute_buffer_start;
+            );
+            if (absolute_clap_deoverlapped_end <= absolute_buffer_start) {
+                it = notes_at_sample.erase(it);
+                continue;
+            }
+            const auto absolute_clap_slice_end = std::min(
+                absolute_clap_deoverlapped_end,
+                absolute_buffer_end
+            );
+            const auto slice_size = absolute_clap_slice_end - absolute_clap_slice_start;
+            const auto slice_start_relative_to_clap_start = absolute_clap_slice_start - absolute_clap_start;
+            const auto slice_start_relative_to_buffer_start = absolute_clap_slice_start - absolute_buffer_start;
             const auto input_start = note_clap->getSamples() + slice_start_relative_to_clap_start;
             const auto input_end = input_start + slice_size;
             const auto output_start = samples.begin() + slice_start_relative_to_buffer_start;
-            // this code is SURPRISINGLY hard to get right for how little it
-            // seems to be doing.
-            // the slice size SHOULD always be positive but if for whatever
-            // reason the code is still wrong and the computation returns
-            // a bogus value we just give up playing the samples instead of
-            // risking a segfault
-            if (slice_size > 0) {
-                std::copy(
-                    input_start,
-                    input_end,
-                    output_start
-                );
-            }
-            if (absolute_clap_end <= absolute_buffer_end) {
+            std::copy(
+                input_start,
+                input_end,
+                output_start
+            );
+            // has this clap been fully played in this buffer ?
+            if (absolute_clap_deoverlapped_end <= absolute_buffer_end) {
                 it = notes_at_sample.erase(it);
             } else {
                 ++it;
