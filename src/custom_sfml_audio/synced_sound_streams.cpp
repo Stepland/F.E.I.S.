@@ -513,13 +513,15 @@ bool SyncedSoundStreams::fillQueues() {
     // Fill and enqueue all the available buffers
     bool requestStop = false;
     for (auto& [_, s] : streams) {
-        for (unsigned int i = 0; (i < BufferCount) && !requestStop; ++i) {
+        bool stream_requested_stop = false;
+        for (unsigned int i = 0; (i < BufferCount) && !stream_requested_stop; ++i) {
             // Since no sound has been loaded yet, we can't schedule loop seeks preemptively,
             // So if we start on EOF or Loop End, we let fillAndPushBuffer() adjust the sample count
             if (fillAndPushBuffer(s, i, (i == 0))) {
-                requestStop = true;
+                stream_requested_stop = true;
             }
         }
+        requestStop = requestStop or stream_requested_stop;
     }
 
     return requestStop;
