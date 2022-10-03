@@ -266,12 +266,7 @@ sf::Time SyncedSoundStreams::getPrecisePlayingOffset() const {
     const auto correction = (
         s.stream->alSecOffsetLatencySoft()[1] - s.stream->lag
     );
-    if (s.reconstruct_on_pitch_change) {
-        return base - (correction * pitch);
-    } else {
-        return base - correction;
-    }
-    
+    return base - (correction * pitch);
 }
 
 void SyncedSoundStreams::setPitch(float new_pitch) {
