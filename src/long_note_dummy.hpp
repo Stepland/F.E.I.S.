@@ -8,11 +8,11 @@
 using TapNotePair = std::pair<better::TapNote, better::TapNote>;
 
 /*
-Construct a note to be displayed on the playfield as a preview of the long note
+Construct a special note that will only be used to repurpose the long note
+drawing routine so that it also displays the *preview* of the long note
 currently being created. It's basically the same at the real long note being
-created but its start time is set to exactly the (given) current beat so the
-long note drawing routine of the playfield can be repurposed as-is for the
-preview
+created but its start time is set to the exactly current beat (passed as a
+parameter).
 */
 better::LongNote make_playfield_long_note_dummy(
     const Fraction& current_beat,

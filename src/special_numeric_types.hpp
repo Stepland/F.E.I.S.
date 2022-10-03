@@ -84,10 +84,16 @@ struct fmt::formatter<Decimal>: formatter<string_view> {
     }
 };
 
-// Stolen from :
-// https://github.com/progrock-libraries/kickstart/blob/master/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36
-// Essentially this is Horner's rule adapted to calculating a power, so that the
-// number of floating point multiplications is at worst O(log₂n).
+/*
+Stolen from :
+https://github.com/progrock-libraries/kickstart/blob/master/source/library/kickstart/main_library/core/ns%E2%96%B8language/operations/intpow.hpp#L36
+
+The original comment reads : 
+
+    Essentially this is Horner's rule adapted to calculating a power, so that
+    the number of floating point multiplications is at worst O(log₂n).
+
+*/
 template<class Number>
 Number fast_pow(const Number base, const std::uint64_t exponent) {
     Number result = 1;

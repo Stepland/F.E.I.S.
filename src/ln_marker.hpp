@@ -18,7 +18,9 @@ Allows storing and querying the textures that make up the tail of a long note
 
 All the *_at() methods purposefully take in an sf::Time and not a frame number
 to make the code easier to adapt when I add support for markers that aren't
-30fps
+30 fps
+
+(lol as if that will ever happen, YAGNI)
 */
 class LNMarker {
 public:

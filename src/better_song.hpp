@@ -69,9 +69,9 @@ namespace better {
         Read the json file as a "legacy" (pre-versionning) memon file.
 
         Notable quirks of this archaïc schema :
-        - "data" is an array of charts
+        - "data" is an *array* of charts
         - the difficulty name of a chart is stored as "dif_name" in the chart
-            object
+          object
         - the album cover path field is named "jacket path"
         */
         static Song load_from_memon_legacy(const nlohmann::json& memon);
