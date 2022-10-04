@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Time.hpp>
 #include <array>
 #include <filesystem>
 
@@ -19,6 +20,16 @@ struct PreciseSoundStream : public OpenSoundStream {
 };
 
 template<class T>
-sf::Uint64 timeToSamples(sf::Time position, T sample_rate, T channel_count) {
+sf::Uint64 time_to_samples(sf::Time position, T sample_rate, T channel_count) {
     return ((static_cast<sf::Uint64>(position.asMicroseconds()) * sample_rate * channel_count) + 500000) / 1000000;
+};
+
+template<class T>
+sf::Time samples_to_time(std::int64_t samples, T sample_rate, T channel_count) {
+    // Make sure we don't divide by 0
+    if (sample_rate != 0 && channel_count != 0) {
+        return sf::microseconds((samples * 1000000) / (channel_count * sample_rate));
+    } else {
+        return sf::Time::Zero;
+    }
 };

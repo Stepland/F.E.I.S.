@@ -14,8 +14,10 @@
 #include <variant>
 
 #include "../variant_visitor.hpp"
+#include "../toolbox.hpp"
 #include "al_check.hpp"
 #include "audio_device.hpp"
+#include "imgui.h"
 #include "precise_sound_stream.hpp"
 
 #ifdef _MSC_VER
@@ -155,6 +157,11 @@ void SyncedSoundStreams::play() {
 
     // Start updating the stream in a separate thread to avoid blocking the application
     launchStreamingThread(sf::SoundSource::Playing);
+
+    // Set lag values
+    for (const auto& [_, s]: streams) {
+        s.stream->lag = s.stream->alSecOffsetLatencySoft()[1];
+    }
 }
 
 
@@ -219,7 +226,11 @@ void SyncedSoundStreams::setPlayingOffset(sf::Time timeOffset) {
     for (auto& [_, s]: streams) {
         s.stream->public_seek_callback(timeOffset);
         // Restart streaming
-        s.buffers.m_samplesProcessed = timeToSamples(timeOffset, s.buffers.m_sampleRate, s.buffers.m_channelCount);
+        if (s.reconstruct_on_pitch_change) {
+            timeOffset /= pitch;
+        }
+        
+        s.buffers.m_samplesProcessed = time_to_samples(timeOffset, s.buffers.m_sampleRate, s.buffers.m_channelCount);
     }
 
     if (oldStatus == sf::SoundSource::Stopped) {
@@ -234,18 +245,19 @@ sf::Time SyncedSoundStreams::getPlayingOffset() const {
     if (streams.empty()) {
         return sf::Time::Zero;
     }
-    const auto& s = streams.begin()->second;
+    return getPlayingOffset(streams.begin()->second);
+}
+
+sf::Time SyncedSoundStreams::getPlayingOffset(const InternalStream& s) const {
     if (not (s.buffers.m_sampleRate && s.buffers.m_channelCount)) {
         return sf::Time::Zero;
     }
-
     ALfloat secs = 0.f;
     alCheck(alGetSourcef(s.stream->get_source(), AL_SEC_OFFSET, &secs));
-    const auto openal_seconds = sf::seconds(
-        secs
-        + static_cast<float>(s.buffers.m_samplesProcessed)
-        / static_cast<float>(s.buffers.m_sampleRate)
-        / static_cast<float>(s.buffers.m_channelCount)
+    const auto openal_seconds = sf::seconds(secs) + samples_to_time(
+        s.buffers.m_samplesProcessed,
+        s.buffers.m_sampleRate,
+        s.buffers.m_channelCount
     );
     if (s.reconstruct_on_pitch_change) {
         return openal_seconds * pitch;
@@ -255,14 +267,14 @@ sf::Time SyncedSoundStreams::getPlayingOffset() const {
 }
 
 sf::Time SyncedSoundStreams::getPrecisePlayingOffset() const {
-    const auto base = getPlayingOffset();
     if (streams.empty()) {
-        return base;
+        return sf::Time::Zero;
     }
-    const auto& s = streams.begin()->second;
-    if (not (s.buffers.m_sampleRate && s.buffers.m_channelCount)) {
-        return base;
-    }
+    return getPrecisePlayingOffset(streams.begin()->second);
+}
+
+sf::Time SyncedSoundStreams::getPrecisePlayingOffset(const InternalStream& s) const {
+    const auto base = getPlayingOffset(s);
     const auto correction = (
         s.stream->alSecOffsetLatencySoft()[1] - s.stream->lag
     );
@@ -286,6 +298,94 @@ void SyncedSoundStreams::setLoop(bool loop) {
 
 bool SyncedSoundStreams::getLoop() const {
     return m_loop;
+}
+
+void SyncedSoundStreams::display_debug() const {
+    if (ImGui::BeginTable("SSS debug props", streams.size() + 1, ImGuiTableFlags_Borders)) {
+        ImGui::TableSetupColumn("");
+        for (const auto& [name, _] : streams) {
+            ImGui::TableSetupColumn(name.c_str());
+        }
+        ImGui::TableHeadersRow();
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("reconstruct on pitch change");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(fmt::format("{}", s.reconstruct_on_pitch_change).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("SyncedSoundStreams offset");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(Toolbox::to_string(getPlayingOffset(s)).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("internal stream offset");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(Toolbox::to_string(s.stream->getPlayingOffset()).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("SyncedSoundStreams offset (precise)");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(Toolbox::to_string(getPrecisePlayingOffset(s)).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("internal stream offset (precise)");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(Toolbox::to_string(s.stream->getPrecisePlayingOffset()).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("stream info in .buffers");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(fmt::format("{}Hz * {}ch", s.buffers.m_sampleRate, s.buffers.m_channelCount).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("stream info in .stream");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(fmt::format("{}Hz * {}ch", s.stream->getSampleRate(), s.stream->getChannelCount()).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("internal stream pitch");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(fmt::format("x{}", s.stream->getPitch()).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("AL_SEC_OFFSET");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            ALfloat secs = 0.f;
+            alCheck(alGetSourcef(s.stream->get_source(), AL_SEC_OFFSET, &secs));
+            ImGui::TextUnformatted(Toolbox::to_string(sf::seconds(secs)).c_str());
+        }
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("samples_to_time()");
+        for (const auto& [_, s] : streams) {
+            ImGui::TableNextColumn();
+            const auto time = samples_to_time(
+                s.buffers.m_samplesProcessed,
+                s.buffers.m_sampleRate,
+                s.buffers.m_channelCount
+            );
+            ImGui::TextUnformatted(Toolbox::to_string(time).c_str());
+        }
+        ImGui::EndTable();
+    }
 }
 
 

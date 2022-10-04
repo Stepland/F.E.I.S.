@@ -10,18 +10,18 @@
 BeatTicks::BeatTicks(
     const better::Timing* timing_,
     const std::filesystem::path& assets,
-    float pitch
+    float pitch_
 ) :
-    FakePitchedSoundStream(assets / "sounds" / "beat.wav", pitch),
+    FakePitchedSoundStream(assets / "sounds" / "beat.wav", pitch_),
     timing(timing_)
 {}
 
 BeatTicks::BeatTicks(
     const better::Timing* timing_,
     std::shared_ptr<sf::SoundBuffer> beat_tick,
-    float pitch
+    float pitch_
 ) :
-    FakePitchedSoundStream(beat_tick, pitch),
+    FakePitchedSoundStream(beat_tick, pitch_),
     timing(timing_)
 {}
 
@@ -29,11 +29,11 @@ void BeatTicks::set_timing(const better::Timing* timing_) {
     timing = timing_;
 }
 
-std::shared_ptr<BeatTicks> BeatTicks::with_pitch(float pitch) {
+std::shared_ptr<BeatTicks> BeatTicks::with_pitch(float new_pitch) {
     return std::make_shared<BeatTicks>(
         timing,
         sample,
-        pitch
+        new_pitch
     );
 }
 

@@ -77,6 +77,8 @@ public:
     void setLoop(bool loop);
     bool getLoop() const;
 
+    void display_debug() const;
+
 protected:
     void setProcessingInterval(sf::Time interval);
 
@@ -93,6 +95,9 @@ private:
 
     void unsafe_update_streams();
     void reload_sources();
+
+    sf::Time getPlayingOffset(const InternalStream& s) const;
+    sf::Time getPrecisePlayingOffset(const InternalStream& s) const;
 
     float pitch = 1.f;
     std::thread m_thread; // Thread running the background tasks

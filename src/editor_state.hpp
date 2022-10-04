@@ -25,7 +25,7 @@
 
 
 const std::string music_stream = "music";
-const std::string note_clap_stream = "note_clap";
+const std::string note_clap_stream = "aaa_note_clap";
 const std::string beat_tick_stream = "beat_tick";
 
 /*
@@ -86,6 +86,7 @@ public:
     void stop();
     sf::SoundSource::Status get_status();
     void set_pitch(float pitch);
+    float get_pitch() const;
     void set_playback_position(std::variant<sf::Time, Fraction> newPosition);
     sf::Time get_precise_playback_position();
 

@@ -124,6 +124,7 @@ void EditorState::toggle_beat_ticks() {
     if (audio.contains_stream(beat_tick_stream)) {
         audio.remove_stream(beat_tick_stream);
     } else {
+        beat_ticks = beat_ticks->with_pitch(get_pitch());
         audio.add_stream(beat_tick_stream, {beat_ticks, true});
     }
 }
@@ -156,6 +157,10 @@ void EditorState::set_pitch(float pitch) {
     }
     audio.update_streams(update);
     audio.setPitch(pitch);
+}
+
+float EditorState::get_pitch() const {
+    return speed / 10.f;
 }
 
 void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosition) {
@@ -515,6 +520,8 @@ void EditorState::display_status() {
                     "No jacket loaded");
             }
         }
+
+        audio.display_debug();
     }
     ImGui::End();
 };
