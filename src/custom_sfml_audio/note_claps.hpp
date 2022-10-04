@@ -8,9 +8,10 @@
 
 #include "../better_notes.hpp"
 #include "../better_timing.hpp"
+#include "fake_pitched_sound_stream.hpp"
 #include "precise_sound_stream.hpp"
 
-class NoteClaps: public PreciseSoundStream {
+class NoteClaps: public FakePitchedSoundStream {
 public:
     NoteClaps(
         const better::Notes* notes_,
@@ -35,17 +36,8 @@ protected:
     void onSeek(sf::Time timeOffset) override;
 
 private:
-    float pitch = 1.f;
-    std::vector<sf::Int16> samples;
-    std::int64_t current_sample = 0;
-    std::int64_t openAL_time_to_samples(sf::Time position) const;
-    sf::Time samples_to_openAL_time(std::int64_t samples) const;
-    std::int64_t music_time_to_samples(sf::Time position) const;
-    sf::Time samples_to_music_time(std::int64_t samples) const;
-
-    std::map<std::int64_t, unsigned int> notes_at_sample;
+    std::set<std::int64_t> notes_at_sample;
 
     const better::Notes* notes;
     const better::Timing* timing;
-    std::shared_ptr<sf::SoundBuffer> note_clap;
 };

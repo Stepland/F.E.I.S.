@@ -6,9 +6,9 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 
 #include "../better_timing.hpp"
-#include "precise_sound_stream.hpp"
+#include "fake_pitched_sound_stream.hpp"
 
-class BeatTicks: public PreciseSoundStream {
+class BeatTicks: public FakePitchedSoundStream {
 public:
     BeatTicks(
         const better::Timing* timing_,
@@ -31,14 +31,7 @@ protected:
     void onSeek(sf::Time timeOffset) override;
 
 private:
-    float pitch = 1.f;
-    std::vector<sf::Int16> samples;
-    std::int64_t current_sample = 0;
-    std::int64_t timeToSamples(sf::Time position) const;
-    sf::Time samplesToTime(std::int64_t samples) const;
-
     std::set<std::int64_t> beat_at_sample;
 
     const better::Timing* timing;
-    std::shared_ptr<sf::SoundBuffer> beat_tick;
 };
