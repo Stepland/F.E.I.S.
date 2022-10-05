@@ -70,8 +70,8 @@ void SyncedSoundStreams::change_streams(std::function<void()> callback) {
     callback();
 
     reload_sources();
-    setPlayingOffset(position);
     setPitch(pitch);
+    setPlayingOffset(position);
     if (oldStatus == sf::SoundSource::Playing) {
         play();
     }
@@ -215,22 +215,31 @@ sf::SoundSource::Status SyncedSoundStreams::getStatus() const
 }
 
 
-void SyncedSoundStreams::setPlayingOffset(sf::Time timeOffset) {
+void SyncedSoundStreams::setPlayingOffset(const sf::Time timeOffset) {
     // Get old playing status
     auto oldStatus = getStatus();
 
     // Stop the stream
     stop();
 
+    const auto pre_pitched_time_offset = timeOffset / pitch;
     // Let the derived class update the current position
     for (auto& [_, s]: streams) {
         s.stream->public_seek_callback(timeOffset);
         // Restart streaming
-        if (s.reconstruct_on_pitch_change) {
-            timeOffset /= pitch;
+        if (s.bypasses_openal_pitch) {
+            s.buffers.m_samplesProcessed = time_to_samples(
+                pre_pitched_time_offset,
+                s.buffers.m_sampleRate, 
+                s.buffers.m_channelCount
+            );
+        } else {
+            s.buffers.m_samplesProcessed = time_to_samples(
+                timeOffset,
+                s.buffers.m_sampleRate, 
+                s.buffers.m_channelCount
+            );
         }
-        
-        s.buffers.m_samplesProcessed = time_to_samples(timeOffset, s.buffers.m_sampleRate, s.buffers.m_channelCount);
     }
 
     if (oldStatus == sf::SoundSource::Stopped) {
@@ -259,7 +268,7 @@ sf::Time SyncedSoundStreams::getPlayingOffset(const InternalStream& s) const {
         s.buffers.m_sampleRate,
         s.buffers.m_channelCount
     );
-    if (s.reconstruct_on_pitch_change) {
+    if (s.bypasses_openal_pitch) {
         return openal_seconds * pitch;
     } else {
         return openal_seconds;
@@ -284,7 +293,7 @@ sf::Time SyncedSoundStreams::getPrecisePlayingOffset(const InternalStream& s) co
 void SyncedSoundStreams::setPitch(float new_pitch) {
     pitch = new_pitch;
     for (auto& [_, s] : streams) {
-        if (not s.reconstruct_on_pitch_change) {
+        if (not s.bypasses_openal_pitch) {
             s.stream->setPitch(new_pitch);
         }
     }
@@ -309,10 +318,10 @@ void SyncedSoundStreams::display_debug() const {
         ImGui::TableHeadersRow();
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted("reconstruct on pitch change");
+        ImGui::TextUnformatted("bypasses OpenAL Pitch");
         for (const auto& [_, s] : streams) {
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(fmt::format("{}", s.reconstruct_on_pitch_change).c_str());
+            ImGui::TextUnformatted(fmt::format("{}", s.bypasses_openal_pitch).c_str());
         }
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
@@ -358,10 +367,12 @@ void SyncedSoundStreams::display_debug() const {
         }
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted("internal stream pitch");
+        ImGui::TextUnformatted("AL_PITCH");
         for (const auto& [_, s] : streams) {
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(fmt::format("x{}", s.stream->getPitch()).c_str());
+            ALfloat pitch;
+            alCheck(alGetSourcef(s.stream->get_source(), AL_PITCH, &pitch));
+            ImGui::TextUnformatted(fmt::format("x{}", pitch).c_str());
         }
         ImGui::TableNextRow();
         ImGui::TableNextColumn();

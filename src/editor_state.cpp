@@ -155,8 +155,10 @@ void EditorState::set_pitch(float pitch) {
         beat_ticks = beat_ticks->with_pitch(pitch);
         update[beat_tick_stream] = {beat_ticks, true};
     }
-    audio.update_streams(update);
+    // setPitch has to be called before update_streams to avoid problems in
+    // the internal call to setPlaybackPosition
     audio.setPitch(pitch);
+    audio.update_streams(update);
 }
 
 float EditorState::get_pitch() const {

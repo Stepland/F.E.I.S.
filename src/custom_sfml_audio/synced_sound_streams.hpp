@@ -47,7 +47,7 @@ struct NewStream {
 struct InternalStream {
     std::shared_ptr<PreciseSoundStream> stream;
     Buffers buffers;
-    bool reconstruct_on_pitch_change;
+    bool bypasses_openal_pitch;
 
     void clear_queue();
 };
@@ -68,7 +68,7 @@ public:
 
     sf::SoundSource::Status getStatus() const;
 
-    void setPlayingOffset(sf::Time timeOffset);
+    void setPlayingOffset(const sf::Time timeOffset);
     sf::Time getPlayingOffset() const;
     sf::Time getPrecisePlayingOffset() const;
 
