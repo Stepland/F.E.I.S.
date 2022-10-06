@@ -9,6 +9,7 @@
 
 
 #include "custom_sfml_audio/beat_ticks.hpp"
+#include "custom_sfml_audio/chord_claps.hpp"
 #include "custom_sfml_audio/note_claps.hpp"
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
@@ -25,7 +26,8 @@
 
 
 const std::string music_stream = "music";
-const std::string note_clap_stream = "aaa_note_clap";
+const std::string note_clap_stream = "note_clap";
+const std::string chord_clap_stream = "chord_clap";
 const std::string beat_tick_stream = "beat_tick";
 
 /*
@@ -49,6 +51,7 @@ public:
 
     SyncedSoundStreams audio;
     std::shared_ptr<NoteClaps> note_claps;
+    std::shared_ptr<ChordClaps> chord_claps;
     std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
 
@@ -80,7 +83,14 @@ public:
     const Interval<sf::Time>& get_editable_range();
 
     void toggle_playback();
+    void toggle_note_claps();
+    bool note_claps_are_on() const {return audio.contains_stream(note_clap_stream);};
+    void toggle_clap_on_long_note_ends();
+    bool get_clap_on_long_note_ends() const {return clap_on_long_note_ends;};
+    void toggle_distinct_chord_claps();
+    bool get_distinct_chord_claps() const {return distinct_chord_clap;};
     void toggle_beat_ticks();
+    bool beat_ticks_are_on() const {return audio.contains_stream(beat_tick_stream);};
     void play();
     void pause();
     void stop();
@@ -171,6 +181,9 @@ private:
 
     int volume = 10;  // 0 -> 10
     int speed = 10;  // 1 -> 20
+
+    bool clap_on_long_note_ends = false;
+    bool distinct_chord_clap = false;
 
     /*
     sf::Time bounds (in the audio file "coordinates") which are accessible

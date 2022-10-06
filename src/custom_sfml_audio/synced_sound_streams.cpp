@@ -2,6 +2,7 @@
 
 #include <boost/math/constants/constants.hpp>
 #include <cassert>
+#include <initializer_list>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -64,25 +65,30 @@ SyncedSoundStreams::~SyncedSoundStreams() {
 
 void SyncedSoundStreams::change_streams(std::function<void()> callback) {
     const auto oldStatus = getStatus();
+    pause();
+    setPitch(pitch);
     const auto position = getPlayingOffset();
     stop();
 
     callback();
 
     reload_sources();
-    setPitch(pitch);
     setPlayingOffset(position);
     if (oldStatus == sf::SoundSource::Playing) {
         play();
     }
 }
 
-void SyncedSoundStreams::update_streams(std::map<std::string, NewStream> new_streams) {
+void SyncedSoundStreams::update_streams(
+    const std::map<std::string, NewStream>& to_add,
+    const std::initializer_list<std::string>& to_remove
+) {
     change_streams([&](){
-        for (const auto& [name, new_stream] : new_streams) {
-            if (contains_stream(name)) {
-                remove_stream_internal(name);
-            }
+        for (const auto& name : to_remove) {
+            remove_stream_internal(name);
+        }
+        for (const auto& [name, new_stream] : to_add) {
+            remove_stream_internal(name);
             add_stream_internal(name, new_stream);
         }
     });
@@ -96,7 +102,7 @@ void SyncedSoundStreams::add_stream(const std::string& name, NewStream s) {
 }
 
 void SyncedSoundStreams::add_stream_internal(const std::string& name, NewStream s) {
-    InternalStream internal_stream{s.stream, {}, s.reconstruct_on_pitch_change};
+    InternalStream internal_stream{s.stream, {}, s.bypasses_openal_pitch};
     internal_stream.buffers.m_channelCount = s.stream->getChannelCount();
     internal_stream.buffers.m_sampleRate = s.stream->getSampleRate();
     internal_stream.buffers.m_format = AudioDevice::getFormatFromChannelCount(s.stream->getChannelCount());
@@ -116,7 +122,7 @@ void SyncedSoundStreams::remove_stream_internal(const std::string& name) {
     streams.erase(name);
 }
 
-bool SyncedSoundStreams::contains_stream(const std::string& name) {
+bool SyncedSoundStreams::contains_stream(const std::string& name) const {
     return streams.contains(name);
 }
 

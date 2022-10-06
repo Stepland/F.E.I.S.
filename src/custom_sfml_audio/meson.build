@@ -3,6 +3,7 @@ sources += files([
     'al_resource.cpp',
     'audio_device.cpp',
     'beat_ticks.cpp',
+    'chord_claps.cpp',
     'fake_pitched_sound_stream.cpp',
     'note_claps.cpp',
     'open_music.cpp',

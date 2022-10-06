@@ -481,10 +481,27 @@ int main() {
             }
             if (editor_state->showSoundSettings) {
                 ImGui::Begin("Sound Settings", &editor_state->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize); {
-                    ImGui::Text("Beat Tick");
-                    if (ImGui::Button("Toggle")) {
+                    bool beat_tick = editor_state->beat_ticks_are_on();
+                    if (ImGui::Checkbox("beat tick", &beat_tick)) {
                         editor_state->toggle_beat_ticks();
                     }
+                    bool note_clap = editor_state->note_claps_are_on();
+                    if (ImGui::Checkbox("note clap", &note_clap)) {
+                        editor_state->toggle_note_claps();
+                    }
+                    ImGui::BeginDisabled(not note_clap); {
+                        ImGui::Indent();
+                        bool long_end = editor_state->get_clap_on_long_note_ends();
+                        if (ImGui::Checkbox("clap on long note ends", &long_end)) {
+                            editor_state->toggle_clap_on_long_note_ends();
+                        }
+                        bool chord_clap = editor_state->get_distinct_chord_claps();
+                        if (ImGui::Checkbox("distinct chord clap", &chord_clap)) {
+                            editor_state->toggle_distinct_chord_claps();
+                        }
+                        ImGui::Unindent();
+                        
+                    } ImGui::EndDisabled();
                 }
                 ImGui::End();
             }

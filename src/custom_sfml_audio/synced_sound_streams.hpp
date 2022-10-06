@@ -41,7 +41,7 @@ struct Buffers {
 
 struct NewStream {
     std::shared_ptr<PreciseSoundStream> stream;
-    bool reconstruct_on_pitch_change;
+    bool bypasses_openal_pitch;
 };
 
 struct InternalStream {
@@ -57,10 +57,13 @@ public:
     SyncedSoundStreams();
     ~SyncedSoundStreams();
 
-    void update_streams(std::map<std::string, NewStream> new_streams);
+    void update_streams(
+        const std::map<std::string, NewStream>& to_add,
+        const std::initializer_list<std::string>& to_remove = {}
+    );
     void add_stream(const std::string& name, NewStream s);
     void remove_stream(const std::string& name);
-    bool contains_stream(const std::string& name);
+    bool contains_stream(const std::string& name) const;
 
     void play();
     void pause();

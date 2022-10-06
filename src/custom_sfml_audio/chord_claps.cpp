@@ -1,4 +1,4 @@
-#include "note_claps.hpp"
+#include "chord_claps.hpp"
 
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/System/Time.hpp>
@@ -11,90 +11,43 @@
 #include "src/custom_sfml_audio/sampler_callback.hpp"
 #include "src/special_numeric_types.hpp"
 
-NoteClaps::NoteClaps(
+ChordClaps::ChordClaps(
     const better::Notes* notes_,
     const better::Timing* timing_,
     const std::filesystem::path& assets,
-    float pitch_,
-    bool play_chords_,
-    bool play_long_note_ends_
+    float pitch_
 ) :
-    FakePitchedSoundStream(assets / "sounds" / "note.wav", pitch_),
-    play_chords(play_chords_),
-    play_long_note_ends(play_long_note_ends_),
+    FakePitchedSoundStream(assets / "sounds" / "chord.wav", pitch_),
     notes(notes_),
     timing(timing_)
 {}
 
-NoteClaps::NoteClaps(
+ChordClaps::ChordClaps(
     const better::Notes* notes_,
     const better::Timing* timing_,
     std::shared_ptr<sf::SoundBuffer> note_clap,
-    float pitch,
-    bool play_chords_,
-    bool play_long_note_ends_
+    float pitch
 ) :
     FakePitchedSoundStream(note_clap, pitch),
-    play_chords(play_chords_),
-    play_long_note_ends(play_long_note_ends_),
     notes(notes_),
     timing(timing_)
 {}
 
-void NoteClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
+void ChordClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
     notes = notes_;
     timing = timing_;
 }
 
-std::shared_ptr<NoteClaps> NoteClaps::with_pitch(float new_pitch) {
-    return std::make_shared<NoteClaps>(
+std::shared_ptr<ChordClaps> ChordClaps::with_pitch(float new_pitch) {
+    return std::make_shared<ChordClaps>(
         notes,
         timing,
         sample,
-        new_pitch,
-        play_chords,
-        play_long_note_ends
+        new_pitch
     );
 }
 
-std::shared_ptr<NoteClaps> NoteClaps::with_chords(bool new_play_chords) {
-    return std::make_shared<NoteClaps>(
-        notes,
-        timing,
-        sample,
-        pitch,
-        new_play_chords,
-        play_long_note_ends
-    );
-}
-
-std::shared_ptr<NoteClaps> NoteClaps::with_long_note_ends(bool new_play_long_note_ends) {
-    return std::make_shared<NoteClaps>(
-        notes,
-        timing,
-        sample,
-        pitch,
-        play_chords,
-        new_play_long_note_ends
-    );
-}
-
-std::shared_ptr<NoteClaps> NoteClaps::with(
-    float pitch_,
-    bool play_chords_,
-    bool play_long_note_ends_
-) {
-    return std::make_shared<NoteClaps>(
-        notes,
-        timing,
-        sample,
-        pitch_,
-        play_chords_,
-        play_long_note_ends_
-    );
-}
-
-bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
+bool ChordClaps::onGetData(sf::SoundStream::Chunk& data) {
     if (timing != nullptr and notes != nullptr) {
         const auto absolute_buffer_start = first_sample_of_next_buffer;
         const std::int64_t absolute_buffer_end = first_sample_of_next_buffer + static_cast<std::int64_t>(output_buffer.size());
@@ -112,24 +65,10 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
             }
         };
 
-        const auto add_claps_of_note = VariantVisitor {
-            [&](const better::TapNote& t) {
-                count_clap_at(t.get_time());
-            },
-            [&](const better::LongNote& l) {
-                count_clap_at(l.get_time());
-                if (play_long_note_ends) {
-                    count_clap_at(l.get_end());
-                }
-            },
-        };
-
         notes->in(start_beat, end_beat, [&](const better::Notes::const_iterator& it){
-            it->second.visit(add_claps_of_note);
+            count_clap_at(it->second.get_time());
         });
-        if (not play_chords) {
-            std::erase_if(notes_at_sample, [](const auto& it){return it.second > 1;});
-        }
+        std::erase_if(notes_at_sample, [](const auto& it){return it.second <= 1;});
         copy_sample_at_points(
             sample,
             output_buffer,
@@ -145,7 +84,7 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
     return true;
 };
 
-void NoteClaps::onSeek(sf::Time timeOffset) {
+void ChordClaps::onSeek(sf::Time timeOffset) {
     first_sample_of_next_buffer = music_time_to_samples(timeOffset);
     notes_at_sample.clear();
 };

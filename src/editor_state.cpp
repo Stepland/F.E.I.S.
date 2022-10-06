@@ -12,6 +12,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <initializer_list>
 #include <memory>
 #include <nowide/fstream.hpp>
 #include <sstream>
@@ -36,6 +37,7 @@
 
 EditorState::EditorState(const std::filesystem::path& assets_) : 
     note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_, 1.f)),
+    chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
     linear_view(assets_),
@@ -55,6 +57,7 @@ EditorState::EditorState(
     song(song_),
     song_path(song_path),
     note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_, 1.f)),
+    chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
     linear_view(assets_),
@@ -120,6 +123,60 @@ void EditorState::toggle_playback() {
     }
 }
 
+void EditorState::toggle_note_claps() {
+    if (
+        audio.contains_stream(note_clap_stream)
+        or audio.contains_stream(chord_clap_stream)
+    ) {
+        audio.update_streams({}, {note_clap_stream, chord_clap_stream});
+    } else {
+        note_claps = note_claps->with(
+            get_pitch(),
+            not distinct_chord_clap,
+            clap_on_long_note_ends
+        );
+        std::map<std::string, NewStream> streams = {{note_clap_stream, {note_claps, true}}};
+        if (distinct_chord_clap) {
+            chord_claps = chord_claps->with_pitch(get_pitch());
+            streams[chord_clap_stream] = {chord_claps, true};
+        }
+        audio.update_streams(streams);
+    }
+}
+
+void EditorState::toggle_clap_on_long_note_ends() {
+    clap_on_long_note_ends = not clap_on_long_note_ends;
+    note_claps = note_claps->with(
+        get_pitch(),
+        not distinct_chord_clap,
+        clap_on_long_note_ends
+    );
+    audio.update_streams({{note_clap_stream, {note_claps, true}}});
+}
+
+void EditorState::toggle_distinct_chord_claps() {
+    distinct_chord_clap = not distinct_chord_clap;
+    note_claps = note_claps->with(
+        get_pitch(),
+        not distinct_chord_clap,
+        clap_on_long_note_ends
+    );
+    if (distinct_chord_clap) {
+        chord_claps = chord_claps->with_pitch(get_pitch());
+        audio.update_streams(
+            {
+                {note_clap_stream, {note_claps, true}},
+                {chord_clap_stream, {chord_claps, true}}
+            }
+        );
+    } else {
+        audio.update_streams(
+            {{note_clap_stream, {note_claps, true}}},
+            {chord_clap_stream}
+        );
+    }
+}
+
 void EditorState::toggle_beat_ticks() {
     if (audio.contains_stream(beat_tick_stream)) {
         audio.remove_stream(beat_tick_stream);
@@ -154,6 +211,10 @@ void EditorState::set_pitch(float pitch) {
     if (audio.contains_stream(beat_tick_stream)) {
         beat_ticks = beat_ticks->with_pitch(pitch);
         update[beat_tick_stream] = {beat_ticks, true};
+    }
+    if (audio.contains_stream(chord_clap_stream)) {
+        chord_claps = chord_claps->with_pitch(pitch);
+        update[chord_clap_stream] = {chord_claps, true};
     }
     // setPitch has to be called before update_streams to avoid problems in
     // the internal call to setPlaybackPosition
@@ -829,6 +890,7 @@ void EditorState::open_chart(const std::string& name) {
     reload_editable_range();
     reload_applicable_timing();
     note_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
+    chord_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
     beat_ticks->set_timing(&applicable_timing);
 };
 
