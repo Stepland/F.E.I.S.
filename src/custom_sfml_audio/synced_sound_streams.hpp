@@ -59,7 +59,8 @@ public:
 
     void update_streams(
         const std::map<std::string, NewStream>& to_add,
-        const std::initializer_list<std::string>& to_remove = {}
+        const std::initializer_list<std::string>& to_remove = {},
+        std::optional<float> new_pitch = {}
     );
     void add_stream(const std::string& name, NewStream s);
     void remove_stream(const std::string& name);
@@ -86,7 +87,10 @@ protected:
     void setProcessingInterval(sf::Time interval);
 
 private:
-    void change_streams(std::function<void()> callback);
+    void change_streams(
+        std::function<void()> callback,
+        std::optional<float> new_pitch = {}
+    );
     void add_stream_internal(const std::string& name, NewStream s);
     void remove_stream_internal(const std::string& name);
     void streamData();

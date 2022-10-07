@@ -52,6 +52,7 @@ protected:
 
 private:
     std::map<std::int64_t, unsigned int> notes_at_sample;
+    std::set<std::int64_t> long_note_ends;
     bool play_chords = true;
     bool play_long_note_ends = false;
 

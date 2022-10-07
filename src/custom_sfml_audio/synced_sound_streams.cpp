@@ -63,16 +63,20 @@ SyncedSoundStreams::~SyncedSoundStreams() {
     awaitStreamingThread();
 }
 
-void SyncedSoundStreams::change_streams(std::function<void()> callback) {
+void SyncedSoundStreams::change_streams(
+    std::function<void()> callback,
+    std::optional<float> new_pitch
+) {
     const auto oldStatus = getStatus();
-    pause();
-    setPitch(pitch);
     const auto position = getPlayingOffset();
     stop();
 
     callback();
 
     reload_sources();
+    if (new_pitch) {
+        setPitch(*new_pitch);
+    }
     setPlayingOffset(position);
     if (oldStatus == sf::SoundSource::Playing) {
         play();
@@ -81,17 +85,21 @@ void SyncedSoundStreams::change_streams(std::function<void()> callback) {
 
 void SyncedSoundStreams::update_streams(
     const std::map<std::string, NewStream>& to_add,
-    const std::initializer_list<std::string>& to_remove
+    const std::initializer_list<std::string>& to_remove,
+    std::optional<float> new_pitch
 ) {
-    change_streams([&](){
-        for (const auto& name : to_remove) {
-            remove_stream_internal(name);
-        }
-        for (const auto& [name, new_stream] : to_add) {
-            remove_stream_internal(name);
-            add_stream_internal(name, new_stream);
-        }
-    });
+    change_streams(
+        [&](){
+            for (const auto& name : to_remove) {
+                remove_stream_internal(name);
+            }
+            for (const auto& [name, new_stream] : to_add) {
+                remove_stream_internal(name);
+                add_stream_internal(name, new_stream);
+            }
+        },
+        new_pitch
+    );
 }
 
 

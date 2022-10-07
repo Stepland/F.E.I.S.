@@ -2,6 +2,7 @@
 
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/System/Time.hpp>
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -96,6 +97,7 @@ std::shared_ptr<NoteClaps> NoteClaps::with(
 
 bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
     if (timing != nullptr and notes != nullptr) {
+        long_note_ends.clear();
         const auto absolute_buffer_start = first_sample_of_next_buffer;
         const std::int64_t absolute_buffer_end = first_sample_of_next_buffer + static_cast<std::int64_t>(output_buffer.size());
         const auto start_time = samples_to_music_time(absolute_buffer_start);
@@ -112,6 +114,16 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
             }
         };
 
+        const auto add_long_note_end = [&](const Fraction beat){
+            const auto time = timing->time_at(beat); 
+            const auto sample = static_cast<std::int64_t>(music_time_to_samples(time));
+            // we don't want claps that *start* at the end sample since
+            // absolute_buffer_end is an *exculsive* end
+            if (sample < absolute_buffer_end) {
+                long_note_ends.insert(sample);
+            }
+        };
+
         const auto add_claps_of_note = VariantVisitor {
             [&](const better::TapNote& t) {
                 count_clap_at(t.get_time());
@@ -119,7 +131,7 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
             [&](const better::LongNote& l) {
                 count_clap_at(l.get_time());
                 if (play_long_note_ends) {
-                    count_clap_at(l.get_end());
+                    add_long_note_end(l.get_end());
                 }
             },
         };
@@ -129,6 +141,11 @@ bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
         });
         if (not play_chords) {
             std::erase_if(notes_at_sample, [](const auto& it){return it.second > 1;});
+        }
+        if (play_long_note_ends) {
+            for (const auto& it : long_note_ends) {
+                notes_at_sample[it] = 1;
+            }
         }
         copy_sample_at_points(
             sample,

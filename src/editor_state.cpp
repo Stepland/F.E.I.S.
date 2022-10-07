@@ -216,10 +216,7 @@ void EditorState::set_pitch(float pitch) {
         chord_claps = chord_claps->with_pitch(pitch);
         update[chord_clap_stream] = {chord_claps, true};
     }
-    // setPitch has to be called before update_streams to avoid problems in
-    // the internal call to setPlaybackPosition
-    audio.setPitch(pitch);
-    audio.update_streams(update);
+    audio.update_streams(update, {}, pitch);
 }
 
 float EditorState::get_pitch() const {
