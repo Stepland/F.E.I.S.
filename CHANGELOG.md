@@ -2,7 +2,7 @@
 *(+ 2.0.0-rc.1)*
 ## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
 - BPM Changes
-- memon 1.0 + 0.3 and 0.2 support
+- memon 1.0 + 0.3 + 0.2 support
 - MP3 support
 
 ## 🍒 Small improvements 🍒
@@ -21,7 +21,7 @@
 - Playfield
     - Fixed the unwanted long note dummy appearing when right clicking outside the playfield *then* hovering over a button, (Fixes #10)
 - Linear View
-    - Fixed jerky motion when scrolling down
+    - Fixed jerky motion when scrolling down (that one was *hard* to track down)
 - Density Graph
     - Shows up for charts without music !
     - updates when :
@@ -30,7 +30,7 @@
 
 # v1.1.0
 ## 🍓 New Stuff 🍓
-- Use the mouse w)heel to move back and forth in time
+- Use the mouse wheel to move back and forth in time
 - The Edit menu now has actual items inside, like Cut / Copy / Paste etc ...
 
 ## 🗿 Bugfixes 🗿
