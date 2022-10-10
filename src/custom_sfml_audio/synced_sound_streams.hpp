@@ -65,6 +65,7 @@ public:
     void add_stream(const std::string& name, NewStream s);
     void remove_stream(const std::string& name);
     bool contains_stream(const std::string& name) const;
+    bool empty() const;
 
     void play();
     void pause();

@@ -97,7 +97,6 @@ int main() {
         sf::Event event;
         while (window.pollEvent(event)) {
             ImGui::SFML::ProcessEvent(event);
-
             switch (event.type) {
                 case sf::Event::Closed:
                     preferences.save();
@@ -423,8 +422,11 @@ int main() {
             editor_state->update_visible_notes();
             if (editor_state->get_status() == sf::SoundSource::Playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
-                editor_state->playback_position = editor_state->get_precise_playback_position();
-                // editor_state->playback_position = editor_state->current_time() + delta * (editor_state->get_speed() / 10.f);
+                if (editor_state->has_any_audio()) {
+                    editor_state->playback_position = editor_state->get_precise_playback_position();
+                } else {
+                    editor_state->playback_position = editor_state->current_time() + delta * editor_state->get_pitch();
+                }
                 if (editor_state->current_time() > editor_state->get_editable_range().end) {
                     editor_state->pause();
                 }
@@ -480,30 +482,7 @@ int main() {
                 chartPropertiesDialog.should_refresh_values = true;
             }
             if (editor_state->showSoundSettings) {
-                ImGui::Begin("Sound Settings", &editor_state->showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize); {
-                    bool beat_tick = editor_state->beat_ticks_are_on();
-                    if (ImGui::Checkbox("beat tick", &beat_tick)) {
-                        editor_state->toggle_beat_ticks();
-                    }
-                    bool note_clap = editor_state->note_claps_are_on();
-                    if (ImGui::Checkbox("note clap", &note_clap)) {
-                        editor_state->toggle_note_claps();
-                    }
-                    ImGui::BeginDisabled(not note_clap); {
-                        ImGui::Indent();
-                        bool long_end = editor_state->get_clap_on_long_note_ends();
-                        if (ImGui::Checkbox("clap on long note ends", &long_end)) {
-                            editor_state->toggle_clap_on_long_note_ends();
-                        }
-                        bool chord_clap = editor_state->get_distinct_chord_claps();
-                        if (ImGui::Checkbox("distinct chord clap", &chord_clap)) {
-                            editor_state->toggle_distinct_chord_claps();
-                        }
-                        ImGui::Unindent();
-                        
-                    } ImGui::EndDisabled();
-                }
-                ImGui::End();
+                editor_state->display_sound_settings();
             }
         } else {
             bg.render(window);

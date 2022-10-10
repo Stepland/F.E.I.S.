@@ -77,10 +77,10 @@ int EditorState::get_volume() const {
     return volume;
 }
 
-void EditorState::set_volume(int newMusicVolume) {
-    volume = std::clamp(newMusicVolume, 0, 10);
+void EditorState::set_volume(int volume_) {
     if (music.has_value()) {
-        (**music).setVolume(Toolbox::convertVolumeToNormalizedDB(volume)*100.f);
+        (**music).set_volume(volume_);
+        volume = (**music).get_volume();
     }
 }
 
@@ -114,6 +114,10 @@ const Interval<sf::Time>& EditorState::get_editable_range() {
     reload_editable_range();
     return editable_range;
 };
+
+bool EditorState::has_any_audio() const {
+    return not audio.empty();
+}
 
 void EditorState::toggle_playback() {
     if (get_status() != sf::SoundSource::Playing) {
@@ -187,19 +191,26 @@ void EditorState::toggle_beat_ticks() {
 }
 
 void EditorState::play() {
+    status = sf::SoundSource::Playing;
     audio.play();
 }
 
 void EditorState::pause() {
+    status = sf::SoundSource::Paused;
     audio.pause();
 }
 
 void EditorState::stop() {
+    status = sf::SoundSource::Stopped;
     audio.stop();
 }
 
 sf::SoundSource::Status EditorState::get_status() {
-    return audio.getStatus();
+    if (has_any_audio()) {
+        return audio.getStatus();
+    } else {
+        return status;
+    }
 }
 
 void EditorState::set_pitch(float pitch) {
@@ -765,6 +776,65 @@ void EditorState::display_linear_view() {
     ImGui::PopStyleVar(2);
 };
 
+void EditorState::display_sound_settings() {
+    if (ImGui::Begin("Sound Settings", &showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::TreeNodeEx("Music", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::BeginDisabled(not music.has_value());
+            {
+                auto volume = get_volume();
+                if (ImGui::SliderInt("Volume##Music", &volume, 0, 10)) {
+                    set_volume(volume);
+                }
+            }
+            ImGui::EndDisabled();
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Beat Tick", ImGuiTreeNodeFlags_DefaultOpen)) {
+            bool beat_tick = beat_ticks_are_on();
+            if (ImGui::Checkbox("On/Off##Beat Tick", &beat_tick)) {
+                toggle_beat_ticks();
+            }
+            ImGui::BeginDisabled(not beat_tick);
+            {
+                auto volume = beat_ticks->get_volume();
+                if (ImGui::SliderInt("Volume##Beat Tick", &volume, 0, 10)) {
+                    beat_ticks->set_volume(volume);
+                }
+            }
+            ImGui::EndDisabled();
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Note Clap", ImGuiTreeNodeFlags_DefaultOpen)) {
+            bool note_clap = note_claps_are_on();
+            if (ImGui::Checkbox("On/Off##Note Clap", &note_clap)) {
+                toggle_note_claps();
+            }
+            ImGui::BeginDisabled(not note_clap);
+            {
+                auto volume = note_claps->get_volume();
+                if (ImGui::SliderInt("Volume##Note Clap", &volume, 0, 10)) {
+                    note_claps->set_volume(volume);
+                    chord_claps->set_volume(volume);
+                }
+                if (ImGui::TreeNode("Advanced##Note Clap")) {
+                    bool long_end = get_clap_on_long_note_ends();
+                    if (ImGui::Checkbox("Clap on long note ends", &long_end)) {
+                        toggle_clap_on_long_note_ends();
+                    }
+                    bool chord_clap = get_distinct_chord_claps();
+                    if (ImGui::Checkbox("Distinct chord clap", &chord_clap)) {
+                        toggle_distinct_chord_claps();
+                    }
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::EndDisabled();
+            ImGui::TreePop();
+        }
+    }
+    ImGui::End();
+}
+
 bool EditorState::needs_to_save() const {
     if (chart_state) {
         return not chart_state->history.current_state_is_saved();
@@ -958,6 +1028,7 @@ void EditorState::reload_jacket() {
  * Updates playbackPosition and preview_end as well
  */
 void EditorState::reload_music() {
+    const auto status_before = get_status();
     if (not song_path.has_value() or song.metadata.audio.empty()) {
         clear_music();
         return;
@@ -971,20 +1042,25 @@ void EditorState::reload_music() {
     }
 
     reload_editable_range();
-    const auto clamped_position = std::clamp(
-        current_time(),
-        editable_range.start,
-        editable_range.end
-    );
-    playback_position = clamped_position;
-    previous_playback_position = playback_position;
     set_speed(speed);
     if (music.has_value()) {
         audio.add_stream(music_stream, {*music, false});
     } else {
         audio.remove_stream(music_stream);
     }
-    audio.setPlayingOffset(clamped_position);
+    pause();
+    set_playback_position(current_time());
+    switch (status_before) {
+        case sf::SoundSource::Playing:
+            play();
+            break;
+        case sf::SoundSource::Paused:
+            pause();
+            break;
+        case sf::SoundSource::Stopped:
+            stop();
+            break;
+    }
 };
 
 void EditorState::clear_music() {

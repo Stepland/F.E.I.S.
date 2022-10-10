@@ -76,6 +76,8 @@ void SyncedSoundStreams::change_streams(
     reload_sources();
     if (new_pitch) {
         setPitch(*new_pitch);
+    } else {
+        setPitch(pitch);
     }
     setPlayingOffset(position);
     if (oldStatus == sf::SoundSource::Playing) {
@@ -132,6 +134,10 @@ void SyncedSoundStreams::remove_stream_internal(const std::string& name) {
 
 bool SyncedSoundStreams::contains_stream(const std::string& name) const {
     return streams.contains(name);
+}
+
+bool SyncedSoundStreams::empty() const {
+    return streams.empty();
 }
 
 void SyncedSoundStreams::play() {

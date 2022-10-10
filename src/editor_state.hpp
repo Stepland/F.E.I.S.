@@ -82,6 +82,7 @@ public:
 
     const Interval<sf::Time>& get_editable_range();
 
+    bool has_any_audio() const;
     void toggle_playback();
     void toggle_note_claps();
     bool note_claps_are_on() const {return audio.contains_stream(note_clap_stream);};
@@ -130,10 +131,12 @@ public:
     bool showLinearView;
     void display_linear_view();
 
+    bool showSoundSettings;
+    void display_sound_settings();
+
     bool showNewChartDialog;
     bool showChartProperties;
     bool showHistory;
-    bool showSoundSettings;
 
     enum class SaveOutcome {
         UserSaved,
@@ -184,6 +187,9 @@ private:
 
     bool clap_on_long_note_ends = false;
     bool distinct_chord_clap = false;
+
+    // Playback status used when there is no actual audio being played
+    sf::SoundSource::Status status = sf::SoundSource::Stopped;
 
     /*
     sf::Time bounds (in the audio file "coordinates") which are accessible
