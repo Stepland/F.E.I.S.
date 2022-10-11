@@ -63,8 +63,8 @@ public:
         }
     }
 
-    void display() {
-        if (ImGui::Begin("History")) {
+    void display(bool& show) {
+        if (ImGui::Begin("History", &show)) {
             for (auto it = next_actions.crbegin(); it != next_actions.crend(); ++it) {
                 ImGui::TextUnformatted((*it)->get_message().c_str());
                 if (*last_saved_action == *it) {

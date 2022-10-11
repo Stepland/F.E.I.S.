@@ -438,7 +438,7 @@ int main() {
             window.clear(sf::Color(0, 0, 0));
 
             if (editor_state->showHistory) {
-                editor_state->chart_state->history.display();
+                editor_state->chart_state->history.display(editor_state->showHistory);
             }
             if (editor_state->showPlayfield) {
                 editor_state->display_playfield(marker, markerEndingState);
