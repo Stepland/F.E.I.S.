@@ -46,7 +46,6 @@ EditorState::EditorState(const std::filesystem::path& assets_) :
 {
     reload_music();
     reload_jacket();
-    audio.add_stream(note_clap_stream, {note_claps, true});
 };
 
 EditorState::EditorState(
@@ -70,7 +69,6 @@ EditorState::EditorState(
     }
     reload_music();
     reload_jacket();
-    audio.add_stream(note_clap_stream, {note_claps, true});
 };
 
 int EditorState::get_volume() const {
