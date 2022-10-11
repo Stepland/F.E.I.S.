@@ -40,9 +40,12 @@ private:
     sf::Color cursor_color = {66, 150, 250, 170};
     sf::Color tab_selection_fill = {153, 255, 153, 92};
     sf::Color tab_selection_outline = {153, 255, 153, 189};
-    sf::Color tap_note_color = {255, 213, 0};
-    sf::Color note_collision_zone_color = {230, 179, 0, 80};
-    sf::Color long_note_color = {255, 90, 0, 223};
+    sf::Color normal_tap_note_color = {255, 213, 0};
+    sf::Color conflicting_tap_note_color = {255, 167, 0};
+    sf::Color normal_collision_zone_color = {230, 179, 0, 80};
+    sf::Color conflicting_collision_zone_color = {255, 0, 0, 145};
+    sf::Color normal_long_note_color = {255, 90, 0, 223};
+    sf::Color conflicting_long_note_color = {255, 26, 0};
     sf::Color selected_note_fill = {255, 255, 255, 127};
     sf::Color selected_note_outline = sf::Color::White;
     sf::Color measure_lines_color = sf::Color::White;

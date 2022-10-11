@@ -129,7 +129,7 @@ void LinearView::draw(
 
     // Draw the notes
     auto draw_note = VariantVisitor {
-        [&, this](const better::TapNote& tap_note){
+        [&](const better::TapNote& tap_note){
             float note_x = timeline_left + note_width * (tap_note.get_position().index() + 0.5f);
             float note_y = static_cast<double>(beats_to_pixels_absolute.transform(tap_note.get_time()));
             const auto note_seconds = timing.time_at(tap_note.get_time());
@@ -145,12 +145,18 @@ void LinearView::draw(
                 collizion_zone_width,
                 static_cast<float>(static_cast<double>(collision_zone_height))
             };
+            auto collision_zone_color = normal_collision_zone_color;
+            auto tap_note_color = normal_tap_note_color;
+            if (chart_state.chart.notes.is_colliding(tap_note, timing)) {
+                collision_zone_color = conflicting_collision_zone_color;
+                tap_note_color = conflicting_tap_note_color;
+            }
             draw_rectangle(
                 draw_list,
                 origin + collision_zone_pos,
                 collizion_zone_size,
                 {0.5f, 0.f},
-                note_collision_zone_color
+                collision_zone_color
             );
             const sf::Vector2f note_pos = {note_x, note_y};
             draw_rectangle(
@@ -171,7 +177,7 @@ void LinearView::draw(
                 );
             }
         },
-        [&, this](const better::LongNote& long_note){
+        [&](const better::LongNote& long_note){
             float note_x = timeline_left + note_width * (long_note.get_position().index() + 0.5f);
             float note_y = static_cast<double>(beats_to_pixels_absolute.transform(long_note.get_time()));
             const auto note_start_seconds = timing.time_at(long_note.get_time());
@@ -188,12 +194,20 @@ void LinearView::draw(
                 collizion_zone_width,
                 static_cast<float>(static_cast<double>(collision_zone_height))
             };
+            auto collision_zone_color = normal_collision_zone_color;
+            auto tap_note_color = normal_tap_note_color;
+            auto long_note_color = normal_long_note_color;
+            if (chart_state.chart.notes.is_colliding(long_note, timing)) {
+                collision_zone_color = conflicting_collision_zone_color;
+                tap_note_color = conflicting_tap_note_color;
+                long_note_color = conflicting_long_note_color;
+            }
             draw_rectangle(
                 draw_list,
                 origin + collision_zone_pos,
                 collision_zone_size,
                 {0.5f, 0.f},
-                note_collision_zone_color
+                collision_zone_color
             );
             const auto long_note_rect_height = beats_to_pixels_proportional.transform(long_note.get_duration());
             const sf::Vector2f long_note_size = {
@@ -296,22 +310,30 @@ void LinearView::set_zoom(int newZoom) {
 }
 
 void LinearView::display_settings() {
-    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
-        feis::ColorEdit4("BPM Text", bpm_text_color);
-        feis::ColorEdit4("Cursor", cursor_color);
-        feis::ColorEdit4("Tab Selection Fill", tab_selection_fill);
-        feis::ColorEdit4("Tab Selection Outline", tab_selection_outline);
-        feis::ColorEdit4("Note", tap_note_color);
-        feis::ColorEdit4("Note Collision Zone", note_collision_zone_color);
-        feis::ColorEdit4("Long Note Tail", long_note_color);
-        feis::ColorEdit4("Selected Note Fill", selected_note_fill);
-        feis::ColorEdit4("Selected Note Outline", selected_note_outline);
-        feis::ColorEdit4("Measure Lines", measure_lines_color);
-        feis::ColorEdit4("Measure Numbers", measure_numbers_color);
-        feis::ColorEdit4("Beat Lines", beat_lines_color);
-
-        ImGui::DragInt("Cursor Height", &cursor_height);
-        ImGui::DragInt("Timeline Margin", &timeline_margin);
+    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::TreeNodeEx("Palette##Linear View Settings",ImGuiTreeNodeFlags_DefaultOpen)) {
+            feis::ColorEdit4("BPM Text", bpm_text_color);
+            feis::ColorEdit4("Cursor", cursor_color);
+            feis::ColorEdit4("Tab Selection Fill", tab_selection_fill);
+            feis::ColorEdit4("Tab Selection Outline", tab_selection_outline);
+            feis::ColorEdit4("Note (normal)", normal_tap_note_color);
+            feis::ColorEdit4("Note (conflicting)", conflicting_tap_note_color);
+            feis::ColorEdit4("Note Collision Zone (normal)", normal_collision_zone_color);
+            feis::ColorEdit4("Note Collision Zone (conflicting)", conflicting_collision_zone_color);
+            feis::ColorEdit4("Long Note Tail (normal)", normal_long_note_color);
+            feis::ColorEdit4("Long Note Tail (conflicting)", conflicting_long_note_color);
+            feis::ColorEdit4("Selected Note Fill", selected_note_fill);
+            feis::ColorEdit4("Selected Note Outline", selected_note_outline);
+            feis::ColorEdit4("Measure Lines", measure_lines_color);
+            feis::ColorEdit4("Measure Numbers", measure_numbers_color);
+            feis::ColorEdit4("Beat Lines", beat_lines_color);
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Metrics##Linear View Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::DragInt("Cursor Height", &cursor_height);
+            ImGui::DragInt("Timeline Margin", &timeline_margin);
+            ImGui::TreePop();
+        }
     }
     ImGui::End();
 }
