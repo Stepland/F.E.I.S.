@@ -1,4 +1,4 @@
-# Setting up the tools you need to work on F.E.I.S.
+# Setting up the tools you need to work with F.E.I.S.'s code
 
 ## Debian-ish Linux
 
@@ -9,6 +9,9 @@ Install the big general "I'm a real C/C++ dev !" package.
 ```console
 $ sudo apt install build-essential
 ```
+
+If this only gave you gcc version 9 or older, you need to install 10 : follow
+[these instructions](https://web.archive.org/web/20220317024657/https://ahelpme.com/linux/ubuntu/install-and-make-gnu-gcc-10-default-in-ubuntu-20-04-focal/).
 
 Install meson (the build system). I recommend doing so via python's `pip` to
 get a more up-to-date version than what your distro packages might have
@@ -30,7 +33,7 @@ Install SFML
 sudo apt install libsfml-dev
 ```
 
-Then checkout [this page](docs/Compiling.md) for instructions on how to compile
+Then checkout [this page](Compiling.md) for instructions on how to compile
 
 ### I also want to contribute some code
 
