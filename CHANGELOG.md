@@ -10,6 +10,7 @@
     - The cursor height can now be changed in the settings
 - Frendlier error message when the UI font is not found in the assets folder
 - Playback position is kept instead of being reset to zero when you change charts or reload the audio file
+- New menu `Settings > Editor` allows setting a custom snap value
 
 ## 🚧 Small Changes 🚧
 - Force using the asset folder next to the executable

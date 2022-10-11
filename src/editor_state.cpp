@@ -325,7 +325,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
         Toolbox::CustomConstraints::ContentSquare
     );
 
-    if (ImGui::Begin("Playfield", &showPlayfield, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    if (ImGui::Begin("Playfield", &show_playfield, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (
             not ImGui::IsWindowHovered()
             and chart_state
@@ -469,10 +469,10 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
 /*
 Display all metadata in an editable form
 */
-void EditorState::display_properties() {
+void EditorState::display_file_properties() {
     if (ImGui::Begin(
-        "Properties",
-        &showProperties,
+        "File Properties",
+        &show_file_properties,
         ImGuiWindowFlags_NoResize
         | ImGuiWindowFlags_AlwaysAutoResize
     )) {
@@ -562,7 +562,7 @@ Display any information that would be useful for the user to troubleshoot the
 status of the editor. Will appear in the "Editor Status" window
 */
 void EditorState::display_status() {
-    ImGui::Begin("Status", &showStatus, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin("Status", &show_status, ImGuiWindowFlags_AlwaysAutoResize);
     {
         if (not music.has_value()) {
             if (not song.metadata.audio.empty()) {
@@ -604,7 +604,7 @@ void EditorState::display_playback_status() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::Begin(
         "Playback Status",
-        &showPlaybackStatus,
+        &show_playback_status,
         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs
             | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize);
     {
@@ -682,7 +682,7 @@ void EditorState::display_timeline() {
     ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.240f, 0.520f, 0.880f, 0.700f));
     ImGui::Begin(
         "Timeline",
-        &showTimeline,
+        &show_timeline,
         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration
             | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
     {
@@ -711,7 +711,7 @@ void EditorState::display_timeline() {
 };
 
 void EditorState::display_chart_list() {
-    if (ImGui::Begin("Chart List", &showChartList, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::Begin("Chart List", &show_chart_list, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (this->song.charts.empty()) {
             ImGui::Dummy({100, 0});
             ImGui::SameLine();
@@ -752,7 +752,7 @@ void EditorState::display_linear_view() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(304, 304), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
-    if (ImGui::Begin("Linear View", &showLinearView, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    if (ImGui::Begin("Linear View", &show_linear_view, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         if (chart_state) {
             auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, header_height});
@@ -775,7 +775,7 @@ void EditorState::display_linear_view() {
 };
 
 void EditorState::display_sound_settings() {
-    if (ImGui::Begin("Sound Settings", &showSoundSettings, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::Begin("Sound Settings", &show_sound_settings)) {
         if (ImGui::TreeNodeEx("Music", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::BeginDisabled(not music.has_value());
             {
@@ -829,6 +829,23 @@ void EditorState::display_sound_settings() {
             ImGui::EndDisabled();
             ImGui::TreePop();
         }
+    }
+    ImGui::End();
+}
+
+void EditorState::display_editor_settings() {
+    if (ImGui::Begin("Editor Settings", &show_editor_settings)) {
+        static const std::uint64_t step = 1;
+        if (ImGui::InputScalar("Snap", ImGuiDataType_U64, &snap, &step, nullptr, "%d")) {
+            snap = std::clamp(snap, 1UL, 1000UL);
+        };
+        ImGui::SameLine();
+        feis::HelpMarker(
+            "Change the underlying snap value, this allows setting snap "
+            "values that aren't a divisor of 240. "
+            "This changes the underlying value that's multiplied "
+            "by 4 before being shown in the status bar"
+        );
     }
     ImGui::End();
 }
@@ -1191,7 +1208,7 @@ void feis::save_close(std::optional<EditorState>& ed) {
 std::optional<std::pair<std::string, better::Chart>> feis::NewChartDialog::display(EditorState& editorState) {
     if (ImGui::Begin(
             "New Chart",
-            &editorState.showNewChartDialog,
+            &editorState.show_new_chart_dialog,
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
         if (show_custom_dif_name) {
             combo_preview = "Custom";
@@ -1270,7 +1287,7 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
 
     if (ImGui::Begin(
             "Chart Properties",
-            &editor_state.showChartProperties,
+            &editor_state.show_chart_properties,
             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
         if (show_custom_dif_name) {
             combo_preview = "Custom";

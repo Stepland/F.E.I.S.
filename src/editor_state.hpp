@@ -110,33 +110,36 @@ public:
     sf::Time time_at(Fraction beat) const;
     Fraction get_snap_step() const;
 
-    bool showPlayfield = true;
+    bool show_playfield = true;
     void display_playfield(Marker& marker, Judgement markerEndingState);
 
-    bool showProperties;
-    void display_properties();
+    bool show_file_properties = false;
+    void display_file_properties();
 
-    bool showStatus;
+    bool show_status = false;
     void display_status();
 
-    bool showPlaybackStatus = true;
+    bool show_playback_status = true;
     void display_playback_status();
 
-    bool showTimeline = true;
+    bool show_timeline = true;
     void display_timeline();
 
-    bool showChartList;
+    bool show_chart_list = false;
     void display_chart_list();
 
-    bool showLinearView;
+    bool show_linear_view = false;
     void display_linear_view();
 
-    bool showSoundSettings;
+    bool show_sound_settings = false;
     void display_sound_settings();
 
-    bool showNewChartDialog;
-    bool showChartProperties;
-    bool showHistory;
+    bool show_editor_settings = false;
+    void display_editor_settings();
+
+    bool show_new_chart_dialog = false;
+    bool show_chart_properties = false;
+    bool show_history = false;
 
     enum class SaveOutcome {
         UserSaved,

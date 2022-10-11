@@ -80,10 +80,7 @@ float Toolbox::convertVolumeToNormalizedDB(int input) {
 }
 
 int Toolbox::getNextDivisor(int number, int starting_point) {
-    assert(number > 0);
-    assert(starting_point > 0 and starting_point <= number);
-
-    if (starting_point == number) {
+    if (number <= 0 or starting_point <= 0 or starting_point >= number) {
         return 1;
     } else {
         do {
@@ -95,10 +92,7 @@ int Toolbox::getNextDivisor(int number, int starting_point) {
 }
 
 int Toolbox::getPreviousDivisor(int number, int starting_point) {
-    assert(number > 0);
-    assert(starting_point > 0 and starting_point <= number);
-
-    if (starting_point == 1) {
+    if (number <= 0 or starting_point <= 1 or starting_point > number) {
         return number;
     } else {
         do {

@@ -366,7 +366,7 @@ int main() {
                             break;
                         case sf::Keyboard::P:
                             if (event.key.shift) {
-                                editor_state->showProperties = true;
+                                editor_state->show_file_properties = true;
                             }
                             break;
                         case sf::Keyboard::S:
@@ -437,38 +437,38 @@ int main() {
         if (editor_state) {
             window.clear(sf::Color(0, 0, 0));
 
-            if (editor_state->showHistory) {
-                editor_state->chart_state->history.display(editor_state->showHistory);
+            if (editor_state->show_history) {
+                editor_state->chart_state->history.display(editor_state->show_history);
             }
-            if (editor_state->showPlayfield) {
+            if (editor_state->show_playfield) {
                 editor_state->display_playfield(marker, markerEndingState);
             }
-            if (editor_state->showLinearView) {
+            if (editor_state->show_linear_view) {
                 editor_state->display_linear_view();
             }
             if (editor_state->linear_view.shouldDisplaySettings) {
                 editor_state->linear_view.display_settings();
             }
-            if (editor_state->showProperties) {
-                editor_state->display_properties();
+            if (editor_state->show_file_properties) {
+                editor_state->display_file_properties();
             }
-            if (editor_state->showStatus) {
+            if (editor_state->show_status) {
                 editor_state->display_status();
             }
-            if (editor_state->showPlaybackStatus) {
+            if (editor_state->show_playback_status) {
                 editor_state->display_playback_status();
             }
-            if (editor_state->showTimeline) {
+            if (editor_state->show_timeline) {
                 editor_state->display_timeline();
             }
-            if (editor_state->showChartList) {
+            if (editor_state->show_chart_list) {
                 editor_state->display_chart_list();
             }
-            if (editor_state->showNewChartDialog) {
+            if (editor_state->show_new_chart_dialog) {
                 auto pair = newChartDialog.display(*editor_state);
                 if (pair) {
                     auto& [dif_name, new_chart] = *pair;
-                    editor_state->showNewChartDialog = false;
+                    editor_state->show_new_chart_dialog = false;
                     if (editor_state->song.charts.try_emplace(dif_name, new_chart).second) {
                         editor_state->open_chart(dif_name);
                     }
@@ -476,13 +476,16 @@ int main() {
             } else {
                 newChartDialog.resetValues();
             }
-            if (editor_state->showChartProperties) {
+            if (editor_state->show_chart_properties) {
                 chartPropertiesDialog.display(*editor_state);
             } else {
                 chartPropertiesDialog.should_refresh_values = true;
             }
-            if (editor_state->showSoundSettings) {
+            if (editor_state->show_sound_settings) {
                 editor_state->display_sound_settings();
+            }
+            if (editor_state->show_editor_settings) {
+                editor_state->display_editor_settings();
             }
         } else {
             bg.render(window);
@@ -535,7 +538,7 @@ int main() {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Properties", "Shift+P", false, editor_state.has_value())) {
-                    editor_state->showProperties = true;
+                    editor_state->show_file_properties = true;
                 }
                 ImGui::EndMenu();
             }
@@ -578,18 +581,18 @@ int main() {
             }
             if (ImGui::BeginMenu("Chart", editor_state.has_value())) {
                 if (ImGui::MenuItem("Chart List")) {
-                    editor_state->showChartList = true;
+                    editor_state->show_chart_list = true;
                 }
                 if (ImGui::MenuItem(
                         "Properties##Chart",
                         nullptr,
                         false,
                         editor_state->chart_state.has_value())) {
-                    editor_state->showChartProperties = true;
+                    editor_state->show_chart_properties = true;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("New Chart")) {
-                    editor_state->showNewChartDialog = true;
+                    editor_state->show_new_chart_dialog = true;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem(
@@ -603,32 +606,35 @@ int main() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("View", editor_state.has_value())) {
-                if (ImGui::MenuItem("Playfield", nullptr, editor_state->showPlayfield)) {
-                    editor_state->showPlayfield = not editor_state->showPlayfield;
+                if (ImGui::MenuItem("Playfield", nullptr, editor_state->show_playfield)) {
+                    editor_state->show_playfield = not editor_state->show_playfield;
                 }
-                if (ImGui::MenuItem("Linear View", nullptr, editor_state->showLinearView)) {
-                    editor_state->showLinearView = not editor_state->showLinearView;
+                if (ImGui::MenuItem("Linear View", nullptr, editor_state->show_linear_view)) {
+                    editor_state->show_linear_view = not editor_state->show_linear_view;
                 }
-                if (ImGui::MenuItem("Playback Status", nullptr, editor_state->showPlaybackStatus)) {
-                    editor_state->showPlaybackStatus = not editor_state->showPlaybackStatus;
+                if (ImGui::MenuItem("Playback Status", nullptr, editor_state->show_playback_status)) {
+                    editor_state->show_playback_status = not editor_state->show_playback_status;
                 }
-                if (ImGui::MenuItem("Timeline", nullptr, editor_state->showTimeline)) {
-                    editor_state->showTimeline = not editor_state->showTimeline;
+                if (ImGui::MenuItem("Timeline", nullptr, editor_state->show_timeline)) {
+                    editor_state->show_timeline = not editor_state->show_timeline;
                 }
-                if (ImGui::MenuItem("Editor Status", nullptr, editor_state->showStatus)) {
-                    editor_state->showStatus = not editor_state->showStatus;
+                if (ImGui::MenuItem("Editor Status", nullptr, editor_state->show_status)) {
+                    editor_state->show_status = not editor_state->show_status;
                 }
-                if (ImGui::MenuItem("History", nullptr, editor_state->showHistory)) {
-                    editor_state->showHistory = not editor_state->showHistory;
+                if (ImGui::MenuItem("History", nullptr, editor_state->show_history)) {
+                    editor_state->show_history = not editor_state->show_history;
                 }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Settings", editor_state.has_value())) {
                 if (ImGui::MenuItem("Sound")) {
-                    editor_state->showSoundSettings = true;
+                    editor_state->show_sound_settings = true;
                 }
                 if (ImGui::MenuItem("Linear View")) {
                     editor_state->linear_view.shouldDisplaySettings = true;
+                }
+                if (ImGui::MenuItem("Editor")) {
+                    editor_state->show_editor_settings = true;
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;

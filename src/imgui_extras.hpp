@@ -12,6 +12,7 @@ namespace feis {
     bool ColorEdit4(const char* label, sf::Color& col, ImGuiColorEditFlags flags = 0);
     bool InputDecimal(const char *label, Decimal* value);
     bool InputTextColored(const char* label, std::string* str, bool isValid, const std::string& hoverHelpText);
+    void HelpMarker(const char* desc);
 }
 
 namespace colors {
