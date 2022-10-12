@@ -1,4 +1,4 @@
-#include <SFML/Audio/SoundSource.hpp>
+
 #include <string>
 #include <filesystem>
 #include <variant>
@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <SFML/Audio/SoundFileFactory.hpp>
+#include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Time.hpp>
 #include <tinyfiledialogs.h>
@@ -145,11 +146,17 @@ int main() {
                                     editor_state->chart_state->creating_long_note = false;
                                     if (not overwritten.empty()) {
                                         editor_state->chart_state->history.push(
-                                            std::make_shared<RemoveNotes>(overwritten)
+                                            std::make_shared<RemoveNotes>(
+                                                editor_state->chart_state->difficulty_name,
+                                                overwritten
+                                            )
                                         );
                                     }
                                     editor_state->chart_state->history.push(
-                                        std::make_shared<AddNotes>(new_notes)
+                                        std::make_shared<AddNotes>(
+                                            editor_state->chart_state->difficulty_name,
+                                            new_notes
+                                        )
                                     );
                                 }
                             }
@@ -438,7 +445,7 @@ int main() {
             window.clear(sf::Color(0, 0, 0));
 
             if (editor_state->show_history) {
-                editor_state->chart_state->history.display(editor_state->show_history);
+                editor_state->display_history();
             }
             if (editor_state->show_playfield) {
                 editor_state->display_playfield(marker, markerEndingState);

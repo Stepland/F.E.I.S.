@@ -850,12 +850,12 @@ void EditorState::display_editor_settings() {
     ImGui::End();
 }
 
+void EditorState::display_history() {
+    history.display(show_history);
+}
+
 bool EditorState::needs_to_save() const {
-    if (chart_state) {
-        return not chart_state->history.current_state_is_saved();
-    } else {
-        return false;
-    }
+    return not history.current_state_is_saved();
 };
 
 EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
@@ -945,30 +945,26 @@ void EditorState::move_forwards_in_time() {
 };
 
 void EditorState::undo(NotificationsQueue& nq) {
-    if (chart_state) {
-        auto previous = chart_state->history.pop_previous();
-        if (previous) {
-            nq.push(std::make_shared<UndoNotification>(**previous));
-            (*previous)->undo_action(*this);
-            chart_state->density_graph.should_recompute = true;
-        }
+    auto previous = history.pop_previous();
+    if (previous) {
+        nq.push(std::make_shared<UndoNotification>(**previous));
+        (*previous)->undo_action(*this);
+        chart_state->density_graph.should_recompute = true;
     }
 };
 
 void EditorState::redo(NotificationsQueue& nq) {
-    if (chart_state) {
-        auto next = chart_state->history.pop_next();
-        if (next) {
-            nq.push(std::make_shared<RedoNotification>(**next));
-            (*next)->do_action(*this);
-            chart_state->density_graph.should_recompute = true;
-        }
+    auto next = history.pop_next();
+    if (next) {
+        nq.push(std::make_shared<RedoNotification>(**next));
+        (*next)->do_action(*this);
+        chart_state->density_graph.should_recompute = true;
     }
 };
 
 void EditorState::open_chart(const std::string& name) {
     auto& [name_ref, chart] = *song.charts.find(name);
-    chart_state.emplace(chart, name_ref, assets);
+    chart_state.emplace(chart, name_ref, history, assets);
     reload_editable_range();
     reload_applicable_timing();
     note_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
@@ -1120,9 +1116,7 @@ void EditorState::save(const std::filesystem::path& path) {
         );
     }
     song_path = path;
-    if (chart_state) {
-        chart_state->history.mark_as_saved();
-    }
+    history.mark_as_saved();
 };
 
 void feis::save(
@@ -1334,6 +1328,8 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
             ImGui::PopStyleVar();
         } else {
             if (ImGui::Button("Apply##New Chart")) {
+                const auto old_dif_name = editor_state.chart_state->difficulty_name;
+                const auto old_level = editor_state.chart_state->chart.level;
                 try {
                     auto modified_chart = editor_state.song.charts.extract(editor_state.chart_state->difficulty_name);
                     modified_chart.key() = this->difficulty_name;
@@ -1343,6 +1339,23 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
                         throw std::runtime_error("Could not insert modified chart in song");
                     } else {
                         editor_state.open_chart(this->difficulty_name);
+                        if (old_dif_name != this->difficulty_name) {
+                            editor_state.history.push(
+                                std::make_shared<RenameChart>(
+                                    old_dif_name,
+                                    this->difficulty_name
+                                )
+                            );
+                        }
+                        if (old_level != this->level) {
+                            editor_state.history.push(
+                                std::make_shared<RerateChart>(
+                                    this->difficulty_name,
+                                    old_level,
+                                    this->level
+                                )
+                            );
+                        }
                         should_refresh_values = true;
                     }
                 } catch (const std::exception& e) {

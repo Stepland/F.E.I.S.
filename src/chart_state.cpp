@@ -10,14 +10,17 @@
 #include "history_item.hpp"
 #include "special_numeric_types.hpp"
 
-ChartState::ChartState(better::Chart& c, const std::string& name, std::filesystem::path assets) :
+ChartState::ChartState(
+    better::Chart& c,
+    const std::string& name,
+    History& history,
+    std::filesystem::path assets
+) :
     chart(c),
     difficulty_name(name),
+    history(history),
     density_graph(assets)
-{
-    history.push(std::make_shared<OpenChart>(c, name));
-    history.mark_as_saved();
-}
+{}
 
 void ChartState::cut(NotificationsQueue& nq) {
     if (not selected_notes.empty()) {
@@ -32,7 +35,7 @@ void ChartState::cut(NotificationsQueue& nq) {
         for (const auto& [_, note] : selected_notes) {
             chart.notes.erase(note);
         }
-        history.push(std::make_shared<RemoveNotes>(selected_notes));
+        history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_notes));
         selected_notes.clear();
     }
 };
@@ -63,16 +66,18 @@ void ChartState::paste(Fraction at_beat, NotificationsQueue& nq) {
             auto&& erased = chart.notes.overwriting_insert(note);
             overwritten.merge(std::move(erased));
         }
+        if (not overwritten.empty()) {
+            history.push(std::make_shared<RemoveNotes>(difficulty_name, overwritten));
+        }
         selected_notes = pasted_notes;
-        history.push(std::make_shared<RemoveNotes>(overwritten));
-        history.push(std::make_shared<AddNotes>(selected_notes));
+        history.push(std::make_shared<AddNotes>(difficulty_name, selected_notes));
         density_graph.should_recompute = true;
     }
 };
 
 void ChartState::delete_(NotificationsQueue& nq) {
-    if (selected_notes.empty()) {
-        history.push(std::make_shared<RemoveNotes>(selected_notes));
+    if (not selected_notes.empty()) {
+        history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_notes));
         nq.push(
             std::make_shared<TextNotification>("Deleted selected notes")
         );
@@ -123,7 +128,7 @@ void ChartState::toggle_note(
         for (const auto& [_, note] : toggled_notes) {
             chart.notes.erase(note);
         }
-        history.push(std::make_shared<RemoveNotes>(toggled_notes));
+        history.push(std::make_shared<RemoveNotes>(difficulty_name, toggled_notes));
     } else {
         const auto rounded_beats = round_beats(
             timing.beats_at(playback_position),
@@ -132,7 +137,7 @@ void ChartState::toggle_note(
         const auto new_note = better::TapNote{rounded_beats, button};
         toggled_notes.insert(new_note);
         chart.notes.insert(new_note);
-        history.push(std::make_shared<AddNotes>(toggled_notes));
+        history.push(std::make_shared<AddNotes>(difficulty_name, toggled_notes));
     }
     density_graph.should_recompute = true;
 }

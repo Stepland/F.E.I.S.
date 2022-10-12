@@ -42,7 +42,9 @@ public:
         const std::filesystem::path& assets,
         const std::filesystem::path& save_path
     );
-        
+    
+    History history;
+
     better::Song song;
 
     std::optional<std::filesystem::path> song_path;
@@ -137,9 +139,12 @@ public:
     bool show_editor_settings = false;
     void display_editor_settings();
 
+    bool show_history = false;
+    void display_history();
+
     bool show_new_chart_dialog = false;
     bool show_chart_properties = false;
-    bool show_history = false;
+    
 
     enum class SaveOutcome {
         UserSaved,

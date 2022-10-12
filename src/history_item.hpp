@@ -26,39 +26,64 @@ protected:
     std::string message;
 };
 
-/*
- * A history action replacing every note, typically the first state in history
- */
-class OpenChart : public HistoryItem {
-public:
-    explicit OpenChart(const better::Chart& c, const std::string& difficulty);
 
-    void do_action(EditorState& ed) const override;
-
-protected:
-    better::Notes notes;
-};
-
-/*
- * Some notes have been toggled, either on or off depending on have_been_added
- */
 class AddNotes : public HistoryItem {
 public:
-    AddNotes(const better::Notes& notes);
+    AddNotes(
+        const std::string& difficulty_name,
+        const better::Notes& notes
+    );
 
     void do_action(EditorState& ed) const override;
     void undo_action(EditorState& ed) const override;
 
 protected:
+    std::string difficulty_name;
     better::Notes notes;
 };
+
 
 class RemoveNotes : public AddNotes {
 public:
-    RemoveNotes(const better::Notes& notes);
+    RemoveNotes(
+        const std::string& difficulty_name,
+        const better::Notes& notes
+    );
 
     void do_action(EditorState& ed) const override;
     void undo_action(EditorState& ed) const override;
 };
 
-std::string get_message(const std::shared_ptr<HistoryItem>& awm);
+
+class RerateChart : public HistoryItem {
+public:
+    RerateChart(
+        const std::string& chart,
+        const std::optional<Decimal>& old_level,
+        const std::optional<Decimal>& new_level
+    );
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+
+protected:
+    std::string chart;
+    std::optional<Decimal> old_level;
+    std::optional<Decimal> new_level;
+};
+
+
+class RenameChart : public HistoryItem {
+public:
+    RenameChart(
+        const std::string& old_name,
+        const std::string& new_name
+    );
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+
+protected:
+    std::string old_name;
+    std::string new_name;
+};

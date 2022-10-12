@@ -1,13 +1,14 @@
 #ifndef FEIS_HISTORY_H
 #define FEIS_HISTORY_H
 
-#include <imgui/imgui.h>
-
 #include <deque>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stack>
+
+#include <imgui/imgui.h>
 
 #include "history_item.hpp"
 
@@ -35,7 +36,7 @@ public:
      * opening a chart
      */
     std::optional<item> pop_previous() {
-        if (previous_actions.size() == 1) {
+        if (previous_actions.empty()) {
             return {};
         } else {
             auto elt = previous_actions.front();
@@ -65,43 +66,41 @@ public:
 
     void display(bool& show) {
         if (ImGui::Begin("History", &show)) {
-            for (auto it = next_actions.crbegin(); it != next_actions.crend(); ++it) {
-                ImGui::TextUnformatted((*it)->get_message().c_str());
-                if (*last_saved_action == *it) {
-                    ImGui::SameLine();
-                    ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
-                }
-            }
-            if (previous_actions.empty()) {
-                ImGui::Bullet();
-                ImGui::TextDisabled("(empty)");
-            } else {
-                auto it = previous_actions.cbegin();
-                ImGui::TextUnformatted((*it)->get_message().c_str());
-                ImGui::SameLine();
-                ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
-                if (*last_saved_action == *it) {
-                    ImGui::SameLine();
-                    ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
-                }
-                ++it;
-                while (it != previous_actions.cend()) {
-                    ImGui::TextUnformatted((*it)->get_message().c_str());
-                    if (*last_saved_action == *it) {
+            for (const auto& it : next_actions | std::views::reverse) {
+                ImGui::TextUnformatted(it->get_message().c_str());
+                if (last_saved_action) {
+                    if (*last_saved_action == it) {
                         ImGui::SameLine();
                         ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
                     }
-                    ++it;
                 }
+            }
+            for (const auto& it : previous_actions) {
+                ImGui::TextUnformatted(it->get_message().c_str());
+                if (it == *previous_actions.cbegin()) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
+                }
+                if (last_saved_action) {
+                    if (*last_saved_action == it) {
+                        ImGui::SameLine();
+                        ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+                    }
+                }
+            }
+            ImGui::TextUnformatted("(initial state)");
+            if (previous_actions.empty()) {
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
             }
         }
         ImGui::End();
     }
 
-    bool empty() { return previous_actions.size() <= 1; }
-
     void mark_as_saved() {
-        last_saved_action = previous_actions.front();
+        if (not previous_actions.empty()) {
+            last_saved_action = previous_actions.front();
+        }
     }
 
     bool current_state_is_saved() const {

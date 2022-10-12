@@ -11,6 +11,9 @@
 - Frendlier error message when the UI font is not found in the assets folder
 - Playback position is kept instead of being reset to zero when you change charts or reload the audio file
 - New menu `Settings > Editor` allows setting a custom snap value
+- History now takes into account when you :
+    - Rename a chart (you change its difficulty)
+    - Re-rate a chart
 
 ## 🚧 Small Changes 🚧
 - Force using the asset folder next to the executable

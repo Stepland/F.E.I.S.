@@ -16,7 +16,12 @@
 #include "widgets/density_graph.hpp"
 
 struct ChartState {
-    ChartState(better::Chart& c, const std::string& name, std::filesystem::path assets);
+    ChartState(
+        better::Chart& c,
+        const std::string& name,
+        History& history,
+        std::filesystem::path assets
+    );
     better::Chart& chart;
     const std::string& difficulty_name;
 
@@ -52,6 +57,6 @@ struct ChartState {
 
     // Is the user currently holding right click ? (over the playfield or not)
     bool creating_long_note;
-    History history;
+    History& history;
     DensityGraph density_graph;
 };
