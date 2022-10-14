@@ -5,9 +5,11 @@
 #include <tuple>
 
 #include <fmt/core.h>
+#include <variant>
 
 #include "better_song.hpp"
 #include "editor_state.hpp"
+#include "src/better_metadata.hpp"
 
 
 const std::string& HistoryItem::get_message() const {
@@ -159,4 +161,103 @@ void RenameChart::undo_action(EditorState& ed) const {
             "inserting the modified chart in the song object failed"
         );
     }
+}
+
+ChangeTitle::ChangeTitle(
+    const std::string& old_value,
+    const std::string& new_value
+) :
+    ChangeMetadataValue(old_value, new_value)
+{
+    message = fmt::format(
+        "Change song title : \"{}\" -> \"{}\"",
+        old_value,
+        new_value
+    );
+}
+
+void ChangeTitle::set_value(EditorState& ed, const std::string& value) const {
+    ed.song.metadata.title = value;
+}
+
+ChangeArtist::ChangeArtist(
+    const std::string& old_value,
+    const std::string& new_value
+) :
+    ChangeMetadataValue(old_value, new_value)
+{
+    message = fmt::format(
+        "Change song artist : \"{}\" -> \"{}\"",
+        old_value,
+        new_value
+    );
+}
+
+void ChangeArtist::set_value(EditorState& ed, const std::string& value) const {
+    ed.song.metadata.artist = value;
+}
+
+ChangeAudio::ChangeAudio(
+    const std::string& old_value,
+    const std::string& new_value
+) :
+    ChangeMetadataValue(old_value, new_value)
+{
+    message = fmt::format(
+        "Change audio : \"{}\" -> \"{}\"",
+        old_value,
+        new_value
+    );
+}
+
+void ChangeAudio::set_value(EditorState& ed, const std::string& value) const {
+    ed.song.metadata.audio = value;
+    ed.reload_music();
+}
+
+ChangeJacket::ChangeJacket(
+    const std::string& old_value,
+    const std::string& new_value
+) :
+    ChangeMetadataValue(old_value, new_value)
+{
+    message = fmt::format(
+        "Change jacket : \"{}\" -> \"{}\"",
+        old_value,
+        new_value
+    );
+}
+
+void ChangeJacket::set_value(EditorState& ed, const std::string& value) const {
+    ed.song.metadata.jacket = value;
+    ed.reload_jacket();
+}
+
+ChangePreview::ChangePreview(
+    const PreviewState& old_value,
+    const PreviewState& new_value
+) :
+    ChangeMetadataValue(old_value, new_value)
+{
+    message = fmt::format(
+        "Change preview : {} -> {}",
+        old_value,
+        new_value
+    );
+}
+
+void ChangePreview::set_value(EditorState& ed, const PreviewState& value) const {
+    const auto set_value_ = VariantVisitor {
+        [&](const better::PreviewLoop& loop) {
+            ed.song.metadata.use_preview_file = false;
+            ed.song.metadata.preview_loop.start = loop.start;
+            ed.song.metadata.preview_loop.duration = loop.duration;
+        },
+        [&](const std::string& file) {
+            ed.song.metadata.use_preview_file = true;
+            ed.song.metadata.preview_file = file;
+            ed.reload_preview_audio();
+        },
+    };
+    std::visit(set_value_, value);
 }

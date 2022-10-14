@@ -258,44 +258,48 @@ int main() {
                             }
                             break;
                         case sf::Keyboard::Left:
-                            if (event.key.shift) {
-                                if (editor_state) {
-                                    editor_state->speed_down();
-                                    notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
-                                        "Speed : {}%",
-                                        editor_state->get_speed() * 10
-                                    )));
-                                }
-                            } else {
-                                if (editor_state and editor_state->chart_state) {
-                                    editor_state->snap = Toolbox::getPreviousDivisor(240, editor_state->snap);
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(fmt::format(
-                                            "Snap : {}",
-                                            Toolbox::toOrdinal(4 * editor_state->snap)
-                                        ))
-                                    );
+                            if (not ImGui::GetIO().WantTextInput) {
+                                if (event.key.shift) {
+                                    if (editor_state) {
+                                        editor_state->speed_down();
+                                        notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
+                                            "Speed : {}%",
+                                            editor_state->get_speed() * 10
+                                        )));
+                                    }
+                                } else {
+                                    if (editor_state and editor_state->chart_state) {
+                                        editor_state->snap = Toolbox::getPreviousDivisor(240, editor_state->snap);
+                                        notificationsQueue.push(
+                                            std::make_shared<TextNotification>(fmt::format(
+                                                "Snap : {}",
+                                                Toolbox::toOrdinal(4 * editor_state->snap)
+                                            ))
+                                        );
+                                    }
                                 }
                             }
                             break;
                         case sf::Keyboard::Right:
-                            if (event.key.shift) {
-                                if (editor_state) {
-                                    editor_state->speed_up();
-                                    notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
-                                        "Speed : {}%",
-                                        editor_state->get_speed() * 10
-                                    )));
-                                }
-                            } else {
-                                if (editor_state and editor_state->chart_state) {
-                                    editor_state->snap = Toolbox::getNextDivisor(240, editor_state->snap);
-                                    notificationsQueue.push(
-                                        std::make_shared<TextNotification>(fmt::format(
-                                            "Snap : {}",
-                                            Toolbox::toOrdinal(4 * editor_state->snap)
-                                        ))
-                                    );
+                            if (not ImGui::GetIO().WantTextInput) {
+                                if (event.key.shift) {
+                                    if (editor_state) {
+                                        editor_state->speed_up();
+                                        notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
+                                            "Speed : {}%",
+                                            editor_state->get_speed() * 10
+                                        )));
+                                    }
+                                } else {
+                                    if (editor_state and editor_state->chart_state) {
+                                        editor_state->snap = Toolbox::getNextDivisor(240, editor_state->snap);
+                                        notificationsQueue.push(
+                                            std::make_shared<TextNotification>(fmt::format(
+                                                "Snap : {}",
+                                                Toolbox::toOrdinal(4 * editor_state->snap)
+                                            ))
+                                        );
+                                    }
                                 }
                             }
                             break;

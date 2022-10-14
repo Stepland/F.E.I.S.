@@ -1,6 +1,7 @@
 #include "imgui_extras.hpp"
 
 #include <imgui_stdlib.h>
+#include "imgui.h"
 
 bool feis::ColorEdit4(const char* label, sf::Color& col, ImGuiColorEditFlags flags) {
     float array_col[4] = {
@@ -20,9 +21,13 @@ bool feis::ColorEdit4(const char* label, sf::Color& col, ImGuiColorEditFlags fla
     return false;
 }
 
-bool feis::InputDecimal(const char *label, Decimal* value) {
+bool feis::InputDecimal(
+    const char *label,
+    Decimal* value,
+    const ImGuiInputTextFlags flags
+) {
     auto s = value->format("f");
-    if (ImGui::InputText(label, &s, ImGuiInputTextFlags_CharsDecimal)) {
+    if (ImGui::InputText(label, &s, flags | ImGuiInputTextFlags_CharsDecimal)) {
         Decimal new_value;
         try {
             new_value = Decimal{s};
@@ -44,11 +49,12 @@ bool feis::InputTextColored(
     const char* label,
     std::string* str,
     bool isValid,
-    const std::string& hoverHelpText
+    const std::string& hoverHelpText,
+    const ImGuiInputTextFlags flags
 ) {
     bool return_value;
     if (str->empty()) {
-        return ImGui::InputText(label, str);
+        return ImGui::InputText(label, str, flags);
     } else {
         if (not isValid) {
             ImGui::PushStyleColor(ImGuiCol_FrameBg, colors::red.Value);

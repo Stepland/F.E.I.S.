@@ -6,6 +6,7 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Graphics.hpp>
+#include <type_traits>
 
 
 #include "custom_sfml_audio/beat_ticks.hpp"
@@ -13,6 +14,7 @@
 #include "custom_sfml_audio/note_claps.hpp"
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
+#include "src/history_item.hpp"
 #include "widgets/linear_view.hpp"
 #include "better_note.hpp"
 #include "better_song.hpp"
@@ -188,6 +190,10 @@ public:
 
     void update_visible_notes();
 
+    void reload_jacket();
+    void reload_music();
+    void reload_preview_audio();
+
 private:
 
     int volume = 10;  // 0 -> 10
@@ -207,10 +213,7 @@ private:
     Interval<sf::Time> editable_range;
     void reload_editable_range();
     Interval<sf::Time> choose_editable_range();
-    void reload_jacket();
-    void reload_music();
     void clear_music();
-    void reload_preview_audio();
 
     better::Timing& applicable_timing;
     void reload_applicable_timing();

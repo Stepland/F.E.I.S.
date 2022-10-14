@@ -32,6 +32,7 @@
 #include "long_note_dummy.hpp"
 #include "notifications_queue.hpp"
 #include "special_numeric_types.hpp"
+#include "src/better_metadata.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 
@@ -485,59 +486,102 @@ void EditorState::display_file_properties() {
             ImGui::EndChild();
         }
 
-        ImGui::InputText("Title", &song.metadata.title);
-        ImGui::InputText("Artist", &song.metadata.artist);
+        auto edited_title = song.metadata.title;
+        ImGui::InputText("Title", &edited_title);
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            history.push(std::make_shared<ChangeTitle>(song.metadata.title, edited_title));
+            song.metadata.title = edited_title;
+        }
+        auto edited_artist = song.metadata.artist;
+        ImGui::InputText("Artist", &edited_artist);
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            history.push(std::make_shared<ChangeArtist>(song.metadata.artist, edited_artist));
+            song.metadata.artist = edited_artist;
+        }
 
-        if (feis::InputTextColored(
+        auto edited_audio = song.metadata.audio;
+        feis::InputTextColored(
             "Audio",
-            &song.metadata.audio,
+            &edited_audio,
             music.has_value(),
             "Invalid Audio Path"
-        )) {
+        );
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            history.push(std::make_shared<ChangeAudio>(song.metadata.audio, edited_audio));
+            song.metadata.audio = edited_audio;
             reload_music();
         }
-        if (feis::InputTextColored(
+        auto edited_jacket = song.metadata.jacket;
+        feis::InputTextColored(
             "Jacket",
-            &song.metadata.jacket,
+            &edited_jacket,
             jacket.has_value(),
             "Invalid Jacket Path"
-        )) {
+        );
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            history.push(std::make_shared<ChangeJacket>(song.metadata.jacket, edited_jacket));
+            song.metadata.jacket = edited_jacket;
             reload_jacket();
         }
 
         ImGui::Separator();
         
         ImGui::Text("Preview");
-        ImGui::Checkbox("Use separate preview file", &song.metadata.use_preview_file);
+        if (ImGui::Checkbox("Use separate preview file", &song.metadata.use_preview_file)) {
+            if (song.metadata.use_preview_file) {
+                history.push(std::make_shared<ChangePreview>(song.metadata.preview_loop, song.metadata.preview_file));
+            } else {
+                history.push(std::make_shared<ChangePreview>(song.metadata.preview_file, song.metadata.preview_loop));
+            }
+        };
         if (song.metadata.use_preview_file) {
-            if (feis::InputTextColored(
+            auto edited_preview_file = song.metadata.preview_file;
+            feis::InputTextColored(
                 "File",
-                &song.metadata.preview_file,
+                &edited_preview_file,
                 preview_audio.has_value(),
                 "Invalid Path"
-            )) {
+            );
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                history.push(std::make_shared<ChangePreview>(song.metadata.preview_file, edited_preview_file));
+                song.metadata.preview_file = edited_preview_file;
                 reload_preview_audio();
             }
         } else {
-            if (feis::InputDecimal("Start", &song.metadata.preview_loop.start)) {
-                song.metadata.preview_loop.start = std::max(
+            auto edited_loop_start = song.metadata.preview_loop.start;
+            feis::InputDecimal(
+                "Start", 
+                &edited_loop_start
+            );
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                edited_loop_start = std::max(
                     Decimal{0},
-                    song.metadata.preview_loop.start
+                    edited_loop_start
                 );
                 if (music.has_value()) {
-                    song.metadata.preview_loop.start = std::min(
+                    edited_loop_start = std::min(
                         Decimal{(**music).getDuration().asMicroseconds()} / 1000000,
-                        song.metadata.preview_loop.start
+                        edited_loop_start
                     );
                 }
+                history.push(std::make_shared<ChangePreview>(
+                    song.metadata.preview_loop,
+                    better::PreviewLoop{edited_loop_start, song.metadata.preview_loop.duration}
+                ));
+                song.metadata.preview_loop.start = edited_loop_start;
             }
-            if (feis::InputDecimal("Duration", &song.metadata.preview_loop.duration)) {
-                song.metadata.preview_loop.duration = std::max(
+            auto edited_loop_duration = song.metadata.preview_loop.duration;
+            feis::InputDecimal(
+                "Duration",
+                &edited_loop_duration
+            );
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                edited_loop_duration = std::max(
                     Decimal{0},
-                    song.metadata.preview_loop.duration
+                    edited_loop_duration
                 );
                 if (music.has_value()) {
-                    song.metadata.preview_loop.start = std::min(
+                    edited_loop_duration = std::min(
                         (
                             Decimal{
                                 (**music)
@@ -546,9 +590,14 @@ void EditorState::display_file_properties() {
                             } / 1000000 
                             - song.metadata.preview_loop.start
                         ),
-                        song.metadata.preview_loop.start
+                        edited_loop_duration
                     );
                 }
+                history.push(std::make_shared<ChangePreview>(
+                    song.metadata.preview_loop,
+                    better::PreviewLoop{song.metadata.preview_loop.start, edited_loop_duration}
+                ));
+                song.metadata.preview_loop.duration = edited_loop_duration;
             }
         }
 
