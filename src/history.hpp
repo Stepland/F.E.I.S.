@@ -9,32 +9,32 @@
 #include <stack>
 
 #include <imgui/imgui.h>
+#include <variant>
 
 #include "history_item.hpp"
 
+struct InitialStateSaved {};
+
 /*
  *  History implemented this way :
- *
- *  last action            ->  *  <- back of next_actions
- *                             *
- *                             *
- *                             *  <- front of next_actions
- *
- *  given state of stuff   ->  o
- *
- *  cause of current state ->  *  <- front of previous_actions
- *                             *
- *                             *
- *  first action ever done ->  *  <- back of previous_actions
- *
+ * 
+ *                               last action ->  *  <- back of next_actions
+ *                                               *
+ *                                               *
+ *                                               *  <- front of next_actions
+ *        
+ *          current song state in the editor ->  o
+ *        
+ *                    cause of current state ->  *  <- front of previous_actions
+ *                                               *
+ *                                               *
+ *                    first action ever done ->  *  <- back of previous_actions
+ *       
+ * initial state the file was in when opened ->  x
  */
 class History {
     using item = std::shared_ptr<HistoryItem>;
 public:
-    /*
-     * we cannot undo the very first action, which in F.E.I.S corresponds to
-     * opening a chart
-     */
     std::optional<item> pop_previous() {
         if (previous_actions.empty()) {
             return {};
@@ -68,8 +68,8 @@ public:
         if (ImGui::Begin("History", &show)) {
             for (const auto& it : next_actions | std::views::reverse) {
                 ImGui::TextUnformatted(it->get_message().c_str());
-                if (last_saved_action) {
-                    if (*last_saved_action == it) {
+                if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
+                    if (std::get<item>(*last_saved_action) == it) {
                         ImGui::SameLine();
                         ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
                     }
@@ -81,8 +81,8 @@ public:
                     ImGui::SameLine();
                     ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
                 }
-                if (last_saved_action) {
-                    if (*last_saved_action == it) {
+                if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
+                    if (std::get<item>(*last_saved_action) == it) {
                         ImGui::SameLine();
                         ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
                     }
@@ -93,6 +93,10 @@ public:
                 ImGui::SameLine();
                 ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
             }
+            if (last_saved_action and std::holds_alternative<InitialStateSaved>(*last_saved_action)) {
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+            }
         }
         ImGui::End();
     }
@@ -100,6 +104,8 @@ public:
     void mark_as_saved() {
         if (not previous_actions.empty()) {
             last_saved_action = previous_actions.front();
+        } else {
+            last_saved_action = InitialStateSaved{};
         }
     }
 
@@ -107,14 +113,24 @@ public:
         if (not last_saved_action) {
             return false;
         } else {
-            return *last_saved_action == previous_actions.front();
+            const auto is_saved_ = VariantVisitor {
+                [&](const InitialStateSaved& i) { return previous_actions.empty(); },
+                [&](const item& i) {
+                    if (not previous_actions.empty()) {
+                        return i == previous_actions.front();
+                    } else {
+                        return false;
+                    }
+                }
+            };
+            return std::visit(is_saved_, *last_saved_action);
         }
     };
 
 private:
     std::deque<item> previous_actions;
     std::deque<item> next_actions;
-    std::optional<item> last_saved_action;
+    std::optional<std::variant<InitialStateSaved, item>> last_saved_action;
 };
 
 #endif  // FEIS_HISTORY_H

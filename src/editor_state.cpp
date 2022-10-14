@@ -68,6 +68,7 @@ EditorState::EditorState(
         auto& [name, _] = *this->song.charts.begin();
         open_chart(name);
     }
+    history.mark_as_saved();
     reload_music();
     reload_jacket();
 };
