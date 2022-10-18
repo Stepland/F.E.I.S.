@@ -147,6 +147,8 @@ public:
     bool show_new_chart_dialog = false;
     bool show_chart_properties = false;
     
+    bool show_tempo_menu = false;
+    void display_tempo_menu();
 
     enum class SaveOutcome {
         UserSaved,

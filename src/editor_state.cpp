@@ -33,6 +33,7 @@
 #include "notifications_queue.hpp"
 #include "special_numeric_types.hpp"
 #include "src/better_metadata.hpp"
+#include "src/better_timing.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 
@@ -902,6 +903,19 @@ void EditorState::display_editor_settings() {
 
 void EditorState::display_history() {
     history.display(show_history);
+}
+
+void EditorState::display_tempo_menu() {
+    if (ImGui::Begin("Adjust Tempo", &show_tempo_menu)) {
+        auto bpm = std::visit(
+            [&](const auto& pos){return applicable_timing.bpm_at(pos);},
+            playback_position
+        );
+        if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            applicable_timing.insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+        }
+    }
+    ImGui::End();
 }
 
 bool EditorState::needs_to_save() const {

@@ -1,5 +1,7 @@
 #include "better_timing.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <string>
 
 #include <fmt/core.h>
@@ -77,56 +79,7 @@ namespace better {
         offset(offset_),
         offset_as_double(std::stod(offset_.format("f")))
     {
-        if (events.empty()) {
-            throw std::invalid_argument(
-                "Attempted to create a Timing object with no BPM events"
-            );
-        }
-
-        std::multiset<BPMAtBeat, OrderByBeats> grouped_by_beats{events.begin(), events.end()};
-        std::set<BPMAtBeat, OrderByBeats> sorted_events{events.begin(), events.end()};
-
-        for (const auto& bpm_at_beat : sorted_events) {
-            auto [begin, end] = grouped_by_beats.equal_range(bpm_at_beat);
-            if (std::distance(begin, end) > 1) {
-                std::stringstream ss;
-                ss << "Attempted to create a Timing object with multiple ";
-                ss << "BPMs defined at beat " << bpm_at_beat.get_beats();
-                ss << " :";
-                std::for_each(begin, end, [&ss](auto b){
-                    ss << " (bpm: " << b.get_bpm() << ", beat: ";
-                    ss << b.get_beats() << "),";
-                });
-                throw std::invalid_argument(ss.str());
-            }
-        }
-
-        auto first_event = sorted_events.begin();
-        double current_second = 0;
-        std::vector<BPMEvent> bpm_changes;
-        bpm_changes.reserve(sorted_events.size());
-        bpm_changes.emplace_back(
-            first_event->get_beats(),
-            current_second,
-            first_event->get_bpm()
-        );
-
-        auto previous = first_event;
-        auto current = std::next(first_event);
-        for (; current != sorted_events.end(); ++previous, ++current) {
-            const Fraction beats_since_last_event = current->get_beats() - previous->get_beats();
-            double seconds_since_last_event = static_cast<double>(beats_since_last_event) * 60 / previous->get_bpm_as_double();
-            current_second += seconds_since_last_event;
-            bpm_changes.emplace_back(
-                current->get_beats(),
-                current_second,
-                current->get_bpm()
-            );
-        }
-        this->events_by_beats
-            .insert(bpm_changes.begin(), bpm_changes.end());
-        this->events_by_seconds
-            .insert(bpm_changes.begin(), bpm_changes.end());
+        reload_events_from(events);
     }
 
     /*
@@ -137,15 +90,12 @@ namespace better {
     change
     */
     double Timing::seconds_at(Fraction beats) const {
-        auto bpm_change = this->events_by_beats.upper_bound(BPMEvent(beats, 0, 0));
-        if (bpm_change != this->events_by_beats.begin()) {
-            bpm_change = std::prev(bpm_change);
-        }
-        const Fraction beats_since_previous_event = beats - bpm_change->get_beats();
-        double seconds_since_previous_event = static_cast<double>(beats_since_previous_event) * 60 / bpm_change->get_bpm_as_double();
+        const auto& bpm_change = bpm_event_in_effect_at(beats);
+        const Fraction beats_since_previous_event = beats - bpm_change.get_beats();
+        double seconds_since_previous_event = static_cast<double>(beats_since_previous_event) * 60 / bpm_change.get_bpm_as_double();
         return (
             offset_as_double
-            + bpm_change->get_seconds()
+            + bpm_change.get_seconds()
             + seconds_since_previous_event
         );
     };
@@ -168,19 +118,45 @@ namespace better {
     };
 
     Fraction Timing::beats_at(double seconds) const {
-        seconds -= offset_as_double;
-        auto bpm_change = this->events_by_seconds.upper_bound(BPMEvent(0, seconds, 0));
-        if (bpm_change != this->events_by_seconds.begin()) {
-            bpm_change = std::prev(bpm_change);
-        }
-        auto seconds_since_previous_event = seconds - bpm_change->get_seconds();
+        const auto& bpm_change = bpm_event_in_effect_at(seconds);
+        auto seconds_since_previous_event = seconds - bpm_change.get_seconds();
         auto beats_since_previous_event = (
-            convert_to_fraction(bpm_change->get_bpm())
+            convert_to_fraction(bpm_change.get_bpm())
             * Fraction{seconds_since_previous_event}
             / 60
         );
-        return bpm_change->get_beats() + beats_since_previous_event;
+        return bpm_change.get_beats() + beats_since_previous_event;
     };
+
+    Decimal Timing::bpm_at(sf::Time time) const {
+        const auto seconds = static_cast<double>(time.asMicroseconds()) / 1000000.0;
+        return bpm_at(seconds);
+    }
+
+    Decimal Timing::bpm_at(double seconds) const {
+        const auto& bpm_change = bpm_event_in_effect_at(seconds);
+        return bpm_change.get_bpm();
+    }
+
+    Decimal Timing::bpm_at(Fraction beats) const {
+        const auto& bpm_change = bpm_event_in_effect_at(beats);
+        return bpm_change.get_bpm();
+    }
+
+    void Timing::insert(const BPMAtBeat& new_bpm) {
+        std::vector<BPMAtBeat> new_events;
+        new_events.reserve(events_by_beats.size() + 1);
+        // put the new bpm in front so it's kept instead of existing events at the same beat
+        new_events.push_back(new_bpm);
+        std::transform(
+            events_by_beats.begin(),
+            events_by_beats.end(),
+            std::back_inserter(new_events),
+            [&](const BPMEvent& bpm){ return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};}
+        );
+        reload_events_from(new_events);
+    }
+
 
     nlohmann::ordered_json Timing::dump_to_memon_1_0_0() const {
         nlohmann::ordered_json j;
@@ -239,6 +215,102 @@ namespace better {
     const std::set<BPMEvent, OrderByBeats>& Timing::get_events_by_beats() const {
         return events_by_beats;
     }
+
+    void Timing::reload_events_from(const std::vector<BPMAtBeat>& events) {
+        if (events.empty()) {
+            throw std::invalid_argument(
+                "Attempted to create a Timing object with no BPM events"
+            );
+        }
+
+        // Sort events by beat, keeping only the first in insertion order in
+        // case there are multiple on a given beat
+        std::set<BPMAtBeat, OrderByBeats> sorted_events;
+        for (const auto& event: events) {
+            if (not sorted_events.contains(event)) {
+                sorted_events.insert(event);
+            }
+        }
+
+        // Remove redundant bpm changes
+        std::set<BPMAtBeat, OrderByBeats> filtered_events;
+        for (const auto& event : sorted_events) {
+            if (filtered_events.empty()) {
+                filtered_events.insert(event);
+            } else {
+                const auto& previous_event = filtered_events.crbegin();
+                if (event.get_bpm() != previous_event->get_bpm()) {
+                    filtered_events.insert(event);
+                }
+            }
+        }
+
+        auto first_event = filtered_events.begin();
+        double current_second = 0;
+        std::vector<BPMEvent> bpm_changes;
+        bpm_changes.reserve(filtered_events.size());
+        bpm_changes.emplace_back(
+            first_event->get_beats(),
+            current_second,
+            first_event->get_bpm()
+        );
+
+        auto previous = first_event;
+        auto current = std::next(first_event);
+        for (; current != filtered_events.end(); ++previous, ++current) {
+            const Fraction beats_since_last_event = current->get_beats() - previous->get_beats();
+            double seconds_since_last_event = static_cast<double>(beats_since_last_event) * 60 / previous->get_bpm_as_double();
+            current_second += seconds_since_last_event;
+            bpm_changes.emplace_back(
+                current->get_beats(),
+                current_second,
+                current->get_bpm()
+            );
+        }
+        this->events_by_beats.clear();
+        this->events_by_beats.insert(bpm_changes.begin(), bpm_changes.end());
+        this->events_by_seconds.clear();
+        this->events_by_seconds.insert(bpm_changes.begin(), bpm_changes.end());
+    }
+
+    const BPMEvent& Timing::bpm_event_in_effect_at(sf::Time time) const {
+        return *iterator_to_bpm_event_in_effect_at(time);
+    }
+
+    const BPMEvent& Timing::bpm_event_in_effect_at(double seconds) const {
+        return *iterator_to_bpm_event_in_effect_at(seconds);
+    }
+
+    const BPMEvent& Timing::bpm_event_in_effect_at(Fraction beats) const {
+        return *iterator_to_bpm_event_in_effect_at(beats);
+    }
+
+    Timing::events_by_seconds_type::iterator Timing::iterator_to_bpm_event_in_effect_at(sf::Time time) const {
+        const auto seconds = static_cast<double>(time.asMicroseconds()) / 1000000.0;
+        return iterator_to_bpm_event_in_effect_at(seconds);
+    }
+
+    Timing::events_by_seconds_type::iterator Timing::iterator_to_bpm_event_in_effect_at(double seconds) const {
+        auto bpm_change = this->events_by_seconds.upper_bound(
+            BPMEvent(0, seconds - offset_as_double, 0)
+        );
+        if (bpm_change != this->events_by_seconds.begin()) {
+            bpm_change = std::prev(bpm_change);
+        }
+        return bpm_change;
+    }
+
+    Timing::events_by_beats_type::iterator Timing::iterator_to_bpm_event_in_effect_at(Fraction beats) const {
+        auto bpm_change = this->events_by_beats.upper_bound(
+            BPMEvent(beats, 0, 0)
+        );
+        if (bpm_change != this->events_by_beats.begin()) {
+            bpm_change = std::prev(bpm_change);
+        }
+        return bpm_change;
+    }
+
+
 
     std::ostream& operator<<(std::ostream& out, const Timing& t) {
         out << fmt::format("{}", t);

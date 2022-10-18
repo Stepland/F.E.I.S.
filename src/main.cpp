@@ -28,8 +28,6 @@
 
 int main() {
     // TODO : Make the playfield not appear when there's no chart selected
-    // TODO : Make the linear preview display the end of the chart
-    // TODO : Make the linear preview timebar height movable
 
     // extend SFML to be able to read mp3's
     sf::SoundFileFactory::registerReader<sf::priv::SoundFileReaderMp3>();
@@ -498,6 +496,9 @@ int main() {
             if (editor_state->show_editor_settings) {
                 editor_state->display_editor_settings();
             }
+            if (editor_state->show_tempo_menu) {
+                editor_state->display_tempo_menu();
+            }
         } else {
             bg.render(window);
         }
@@ -613,6 +614,12 @@ int main() {
                         editor_state->chart_state.has_value())) {
                     editor_state->song.charts.erase(editor_state->chart_state->difficulty_name);
                     editor_state->chart_state.reset();
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Tempo", editor_state.has_value())) {
+                if (ImGui::MenuItem("Adjust Tempo")) {
+                    editor_state->show_tempo_menu = true;
                 }
                 ImGui::EndMenu();
             }

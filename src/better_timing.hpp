@@ -64,6 +64,10 @@ namespace better {
 
     class Timing {
     public:
+
+        using events_by_beats_type = std::set<BPMEvent, OrderByBeats>;
+        using events_by_seconds_type = std::set<BPMEvent, OrderBySeconds>;
+
         Timing();
         Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
 
@@ -75,12 +79,18 @@ namespace better {
         Fraction beats_at(sf::Time time) const;
         Fraction beats_at(double seconds) const;
 
+        Decimal bpm_at(sf::Time time) const;
+        Decimal bpm_at(double seconds) const;
+        Decimal bpm_at(Fraction beats) const;
+
+        void insert(const BPMAtBeat& bpm_change);
+
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
 
-        const std::set<BPMEvent, OrderByBeats>& get_events_by_beats() const;
+        const events_by_beats_type& get_events_by_beats() const;
 
         bool operator==(const Timing&) const = default;
 
@@ -88,9 +98,19 @@ namespace better {
         friend fmt::formatter<better::Timing>;
     private:
         Decimal offset;
-        double offset_as_double;
-        std::set<BPMEvent, OrderByBeats> events_by_beats;
-        std::set<BPMEvent, OrderBySeconds> events_by_seconds;
+        double offset_as_double; 
+        events_by_beats_type events_by_beats;
+        events_by_seconds_type events_by_seconds;
+
+        void reload_events_from(const std::vector<BPMAtBeat>& events);
+
+        const BPMEvent& bpm_event_in_effect_at(sf::Time time) const;
+        const BPMEvent& bpm_event_in_effect_at(double seconds) const;
+        const BPMEvent& bpm_event_in_effect_at(Fraction beats) const;
+
+        events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(sf::Time time) const;
+        events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(double seconds) const;
+        events_by_beats_type::iterator iterator_to_bpm_event_in_effect_at(Fraction beats) const;
     };
 }
 
