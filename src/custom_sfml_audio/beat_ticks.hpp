@@ -11,20 +11,20 @@
 class BeatTicks: public FakePitchedSoundStream {
 public:
     BeatTicks(
-        const better::Timing* timing_,
+        const std::shared_ptr<better::Timing>& timing_,
         const std::filesystem::path& assets,
         float pitch_
     );
 
     BeatTicks(
-        const better::Timing* timing_,
+        const std::shared_ptr<better::Timing>& timing_,
         std::shared_ptr<sf::SoundBuffer> beat_tick_,
         float pitch_
     );
-
-    void set_timing(const better::Timing* timing);
     
     std::shared_ptr<BeatTicks> with_pitch(float pitch);
+
+    std::shared_ptr<BeatTicks> with_timing(const std::shared_ptr<better::Timing>& timing_);
 
 protected:
     bool onGetData(Chunk& data) override;
@@ -33,5 +33,5 @@ protected:
 private:
     std::set<std::int64_t> beat_at_sample;
 
-    const better::Timing* timing;
+    std::shared_ptr<better::Timing> timing;
 };

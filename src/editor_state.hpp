@@ -178,7 +178,7 @@ public:
     */
     std::optional<std::filesystem::path> ask_for_save_path_if_needed();
 
-    void toggle_note_at_current_time(const better::Position& pos);
+    void insert_long_note_just_created();
 
     void move_backwards_in_time();
     void move_forwards_in_time();
@@ -197,6 +197,10 @@ public:
     void reload_preview_audio();
 
 private:
+
+    void reload_sounds_that_depend_on_notes();
+    void reload_sounds_that_depend_on_timing();
+    void reload_all_sounds();
 
     int volume = 10;  // 0 -> 10
     int speed = 10;  // 1 -> 20
@@ -217,7 +221,7 @@ private:
     Interval<sf::Time> choose_editable_range();
     void clear_music();
 
-    better::Timing& applicable_timing;
+    std::shared_ptr<better::Timing> applicable_timing;
     void reload_applicable_timing();
 
     std::filesystem::path assets;

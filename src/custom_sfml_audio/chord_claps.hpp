@@ -12,20 +12,23 @@
 class ChordClaps: public FakePitchedSoundStream {
 public:
     ChordClaps(
-        const better::Notes* notes_,
-        const better::Timing* timing_,
+        const std::shared_ptr<better::Notes>& notes_,
+        const std::shared_ptr<better::Timing>& timing_,
         const std::filesystem::path& assets,
         float pitch_
     );
 
     ChordClaps(
-        const better::Notes* notes_,
-        const better::Timing* timing_,
+        const std::shared_ptr<better::Notes>& notes_,
+        const std::shared_ptr<better::Timing>& timing_,
         std::shared_ptr<sf::SoundBuffer> note_clap_,
         float pitch_
     );
 
-    void set_notes_and_timing(const better::Notes* notes, const better::Timing* timing);
+    std::shared_ptr<ChordClaps> with_notes_and_timing(
+        const std::shared_ptr<better::Notes>& notes_,
+        const std::shared_ptr<better::Timing>& timing_
+    );
 
     std::shared_ptr<ChordClaps> with_pitch(float pitch);
 
@@ -36,6 +39,6 @@ protected:
 private:
     std::map<std::int64_t, unsigned int> notes_at_sample;
 
-    const better::Notes* notes;
-    const better::Timing* timing;
+    std::shared_ptr<better::Notes> notes;
+    std::shared_ptr<better::Timing> timing;
 };

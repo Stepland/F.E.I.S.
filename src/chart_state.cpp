@@ -33,7 +33,7 @@ void ChartState::cut(NotificationsQueue& nq) {
 
         notes_clipboard.copy(selected_notes);
         for (const auto& [_, note] : selected_notes) {
-            chart.notes.erase(note);
+            chart.notes->erase(note);
         }
         history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_notes));
         selected_notes.clear();
@@ -63,7 +63,7 @@ void ChartState::paste(Fraction at_beat, NotificationsQueue& nq) {
         nq.push(std::make_shared<TextNotification>(message));
         better::Notes overwritten;
         for (const auto& [_, note] : pasted_notes) {
-            auto&& erased = chart.notes.overwriting_insert(note);
+            auto&& erased = chart.notes->overwriting_insert(note);
             overwritten.merge(std::move(erased));
         }
         if (not overwritten.empty()) {
@@ -82,7 +82,7 @@ void ChartState::delete_(NotificationsQueue& nq) {
             std::make_shared<TextNotification>("Deleted selected notes")
         );
         for (const auto& [_, note] : selected_notes) {
-            chart.notes.erase(note);
+            chart.notes->erase(note);
         }
         selected_notes.clear();
     }
@@ -105,7 +105,7 @@ Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position, 
 
 void ChartState::update_visible_notes(const sf::Time& playback_position, const better::Timing& timing) {
     const auto bounds = visible_beats(playback_position, timing);
-    visible_notes = chart.notes.between(bounds);
+    visible_notes = chart.notes->between(bounds);
 };
 
 void ChartState::toggle_note(
@@ -116,7 +116,7 @@ void ChartState::toggle_note(
 ) {
     better::Notes toggled_notes;
     const auto bounds = visible_beats(playback_position, timing);
-    chart.notes.in(
+    chart.notes->in(
         {bounds.start, bounds.end},
         [&](const better::Notes::const_iterator& it){
             if (it->second.get_position() == button) {
@@ -126,7 +126,7 @@ void ChartState::toggle_note(
     );
     if (not toggled_notes.empty()) {
         for (const auto& [_, note] : toggled_notes) {
-            chart.notes.erase(note);
+            chart.notes->erase(note);
         }
         history.push(std::make_shared<RemoveNotes>(difficulty_name, toggled_notes));
     } else {
@@ -136,7 +136,7 @@ void ChartState::toggle_note(
         );
         const auto new_note = better::TapNote{rounded_beats, button};
         toggled_notes.insert(new_note);
-        chart.notes.insert(new_note);
+        chart.notes->insert(new_note);
         history.push(std::make_shared<AddNotes>(difficulty_name, toggled_notes));
     }
     density_graph.should_recompute = true;
@@ -148,9 +148,28 @@ void ChartState::handle_time_selection_tab(Fraction beats) {
     } else {
         if (time_selection->width() == 0) {
             *time_selection += beats;
-            selected_notes = chart.notes.between(*time_selection);
+            selected_notes = chart.notes->between(*time_selection);
         } else {
             time_selection.emplace(beats, beats);
         }
     }
+}
+
+void ChartState::insert_long_note_just_created(std::uint64_t snap) {
+    if (not long_note_being_created) {
+        return;
+    }
+    auto new_note = make_linear_view_long_note_dummy(
+        *long_note_being_created,
+        snap
+    );
+    better::Notes new_notes;
+    new_notes.insert(new_note);
+    const auto& overwritten = chart.notes->overwriting_insert(new_note);
+    long_note_being_created.reset();
+    creating_long_note = false;
+    if (not overwritten.empty()) {
+        history.push(std::make_shared<RemoveNotes>(difficulty_name, overwritten));
+    }
+    history.push(std::make_shared<AddNotes>(difficulty_name,new_notes));
 }

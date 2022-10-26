@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <json.hpp>
+#include <memory>
 #include <optional>
 
 #include "json_decimal_handling.hpp"
@@ -18,7 +19,7 @@ namespace better {
         if (not chart_timing.empty()) {
             json_chart["timing"] = chart_timing;
         }
-        json_chart["notes"] = notes.dump_to_memon_1_0_0();
+        json_chart["notes"] = notes->dump_to_memon_1_0_0();
 
         return json_chart;
     };
@@ -32,12 +33,12 @@ namespace better {
         if (json.contains("resolution")) {
             chart_resolution = json["resolution"].get<std::uint64_t>();
         }
-        std::optional<Timing> timing;
+        std::optional<std::shared_ptr<Timing>> timing;
         std::optional<Hakus> hakus;
         if (json.contains("timing")) {
             auto chart_timing = fallback_timing;
             chart_timing.update(json["timing"]);
-            timing = Timing::load_from_memon_1_0_0(chart_timing);
+            timing = std::make_shared<Timing>(Timing::load_from_memon_1_0_0(chart_timing));
             /*
             Don't re-use the merged 'chart_timing' here :
             
@@ -51,7 +52,7 @@ namespace better {
             .level = level,
             .timing = timing,
             .hakus = hakus,
-            .notes = Notes::load_from_memon_1_0_0(json.at("notes"), chart_resolution)
+            .notes = std::make_shared<Notes>(Notes::load_from_memon_1_0_0(json.at("notes"), chart_resolution))
         };
     }
 
@@ -60,10 +61,10 @@ namespace better {
             .level = Decimal{json["level"].get<int>()},
             .timing = {},
             .hakus = {},
-            .notes = Notes::load_from_memon_legacy(
+            .notes = std::make_shared<Notes>(Notes::load_from_memon_legacy(
                 json.at("notes"),
                 json.at("resolution").get<std::uint64_t>()
-            )
+            ))
         };
     }
 
@@ -90,13 +91,13 @@ namespace better {
     };
 
     nlohmann::ordered_json dump_memon_1_0_0_timing_object(
-        const std::optional<better::Timing>& timing,
+        const std::optional<std::shared_ptr<better::Timing>>& timing,
         const std::optional<Hakus>& hakus,
         const nlohmann::ordered_json& fallback_timing_object
     ) {
         auto complete_song_timing = nlohmann::ordered_json::object();
         if (timing.has_value()) {
-            complete_song_timing.update(timing->dump_to_memon_1_0_0());
+            complete_song_timing.update((**timing).dump_to_memon_1_0_0());
         }
         if (hakus.has_value()) {
             complete_song_timing["hakus"] = dump_hakus(*hakus);

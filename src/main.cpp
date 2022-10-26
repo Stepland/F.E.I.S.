@@ -125,38 +125,8 @@ int main() {
                 case sf::Event::MouseButtonReleased:
                     switch (event.mouseButton.button) {
                         case sf::Mouse::Button::Right:
-                            if (editor_state and editor_state->chart_state) {
-                                if (editor_state->chart_state->long_note_being_created) {
-                                    auto new_note = make_linear_view_long_note_dummy(
-                                        *editor_state->chart_state->long_note_being_created,
-                                        editor_state->get_snap_step()
-                                    );
-                                    better::Notes new_notes;
-                                    new_notes.insert(new_note);
-                                    const auto& overwritten = (
-                                        editor_state
-                                        ->chart_state
-                                        ->chart
-                                        .notes
-                                        .overwriting_insert(new_note)
-                                    );
-                                    editor_state->chart_state->long_note_being_created.reset();
-                                    editor_state->chart_state->creating_long_note = false;
-                                    if (not overwritten.empty()) {
-                                        editor_state->chart_state->history.push(
-                                            std::make_shared<RemoveNotes>(
-                                                editor_state->chart_state->difficulty_name,
-                                                overwritten
-                                            )
-                                        );
-                                    }
-                                    editor_state->chart_state->history.push(
-                                        std::make_shared<AddNotes>(
-                                            editor_state->chart_state->difficulty_name,
-                                            new_notes
-                                        )
-                                    );
-                                }
+                            if (editor_state) {
+                                editor_state->insert_long_note_just_created();
                             }
                             break;
                         default:

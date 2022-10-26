@@ -109,7 +109,7 @@ namespace better {
         if (memon.contains("timing")) {
             song_timing_json.update(memon["timing"]);
         }
-        const auto song_timing = Timing::load_from_memon_1_0_0(song_timing_json);
+        const auto song_timing = std::make_shared<Timing>(Timing::load_from_memon_1_0_0(song_timing_json));
         const auto hakus = load_hakus(song_timing_json);
         Song song{
             .charts = {},
@@ -127,7 +127,7 @@ namespace better {
     Song Song::load_from_memon_0_3_0(const nlohmann::json& memon) {
         const auto json_metadata = memon["metadata"];
         const auto metadata = Metadata::load_from_memon_0_3_0(memon["metadata"]);
-        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        const auto timing = std::make_shared<Timing>(Timing::load_from_memon_legacy(json_metadata));
         Song song{
             .charts = {},
             .metadata = metadata,
@@ -144,7 +144,7 @@ namespace better {
     Song Song::load_from_memon_0_2_0(const nlohmann::json& memon) {
         const auto json_metadata = memon["metadata"];
         const auto metadata = Metadata::load_from_memon_0_2_0(memon["metadata"]);
-        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        const auto timing = std::make_shared<Timing>(Timing::load_from_memon_legacy(json_metadata));
         Song song{
             .charts = {},
             .metadata = metadata,
@@ -161,7 +161,7 @@ namespace better {
     Song Song::load_from_memon_0_1_0(const nlohmann::json& memon) {
         const auto json_metadata = memon["metadata"];
         const auto metadata = Metadata::load_from_memon_0_1_0(memon["metadata"]);
-        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        const auto timing = std::make_shared<Timing>(Timing::load_from_memon_legacy(json_metadata));
         Song song{
             .charts = {},
             .metadata = metadata,
@@ -178,7 +178,7 @@ namespace better {
     Song Song::load_from_memon_legacy(const nlohmann::json& memon) {
         const auto json_metadata = memon["metadata"];
         const auto metadata = Metadata::load_from_memon_legacy(memon["metadata"]);
-        const auto timing = Timing::load_from_memon_legacy(json_metadata);
+        const auto timing = std::make_shared<Timing>(Timing::load_from_memon_legacy(json_metadata));
         Song song{
             .charts = {},
             .metadata = metadata,

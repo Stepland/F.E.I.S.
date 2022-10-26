@@ -57,6 +57,9 @@ struct ChartState {
 
     // Is the user currently holding right click ? (over the playfield or not)
     bool creating_long_note;
+
+    void insert_long_note_just_created(std::uint64_t snap);
+
     History& history;
     DensityGraph density_graph;
 };

@@ -14,8 +14,8 @@
 class NoteClaps: public FakePitchedSoundStream {
 public:
     NoteClaps(
-        const better::Notes* notes_,
-        const better::Timing* timing_,
+        const std::shared_ptr<better::Notes>& notes_,
+        const std::shared_ptr<better::Timing>& timing_,
         const std::filesystem::path& assets,
         float pitch_,
         bool play_chords = true,
@@ -23,15 +23,13 @@ public:
     );
 
     NoteClaps(
-        const better::Notes* notes_,
-        const better::Timing* timing_,
+        const std::shared_ptr<better::Notes>& notes_,
+        const std::shared_ptr<better::Timing>& timing_,
         std::shared_ptr<sf::SoundBuffer> note_clap_,
         float pitch_,
         bool play_chords = true,
         bool play_long_note_ends = false
     );
-
-    void set_notes_and_timing(const better::Notes* notes, const better::Timing* timing);
 
     std::shared_ptr<NoteClaps> with_pitch(float pitch);
 
@@ -41,10 +39,15 @@ public:
     bool does_play_long_note_ends() const {return play_long_note_ends;};
     std::shared_ptr<NoteClaps> with_long_note_ends(bool play_long_note_ends);
 
-    std::shared_ptr<NoteClaps> with(
+    std::shared_ptr<NoteClaps> with_params(
         float pitch,
         bool play_chords,
         bool play_long_note_ends
+    );
+
+    std::shared_ptr<NoteClaps> with_notes_and_timing(
+        const std::shared_ptr<better::Notes>& notes_,
+        const std::shared_ptr<better::Timing>& timing_
     );
 protected:
     bool onGetData(Chunk& data) override;
@@ -56,6 +59,6 @@ private:
     bool play_chords = true;
     bool play_long_note_ends = false;
 
-    const better::Notes* notes;
-    const better::Timing* timing;
+    std::shared_ptr<better::Notes> notes;
+    std::shared_ptr<better::Timing> timing;
 };

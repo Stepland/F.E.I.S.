@@ -41,7 +41,7 @@ void AddNotes::do_action(EditorState& ed) const {
             ed.open_chart(difficulty_name);
         }
         for (const auto& [_, note] : notes) {
-            ed.chart_state->chart.notes.insert(note);
+            ed.chart_state->chart.notes->insert(note);
         }
     }
 }
@@ -53,7 +53,7 @@ void AddNotes::undo_action(EditorState& ed) const {
             ed.open_chart(difficulty_name);
         }
         for (const auto& [_, note] : notes) {
-            ed.chart_state->chart.notes.erase(note);
+            ed.chart_state->chart.notes->erase(note);
         }
     }
 }

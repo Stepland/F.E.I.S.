@@ -51,7 +51,7 @@ void DensityGraph::compute_densities(
         sf::Time section_duration = (to - from) / static_cast<sf::Int64>(sections);
         last_section_duration = section_duration;
 
-        for (const auto& [_, note] : chart.notes) {
+        for (const auto& [_, note] : *chart.notes) {
             const auto note_time = note.get_time();
             const auto note_seconds = timing.time_at(note_time);
             const auto float_section = note_seconds / section_duration;
@@ -60,7 +60,7 @@ void DensityGraph::compute_densities(
             densities.at(section).density += 1;
             if (not densities.at(section).has_collisions) {
                 densities.at(section).has_collisions =
-                    chart.notes.is_colliding(note, timing);
+                    chart.notes->is_colliding(note, timing);
             }
         }
     }

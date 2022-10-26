@@ -147,7 +147,7 @@ void LinearView::draw(
             };
             auto collision_zone_color = normal_collision_zone_color;
             auto tap_note_color = normal_tap_note_color;
-            if (chart_state.chart.notes.is_colliding(tap_note, timing)) {
+            if (chart_state.chart.notes->is_colliding(tap_note, timing)) {
                 collision_zone_color = conflicting_collision_zone_color;
                 tap_note_color = conflicting_tap_note_color;
             }
@@ -197,7 +197,7 @@ void LinearView::draw(
             auto collision_zone_color = normal_collision_zone_color;
             auto tap_note_color = normal_tap_note_color;
             auto long_note_color = normal_long_note_color;
-            if (chart_state.chart.notes.is_colliding(long_note, timing)) {
+            if (chart_state.chart.notes->is_colliding(long_note, timing)) {
                 collision_zone_color = conflicting_collision_zone_color;
                 tap_note_color = conflicting_tap_note_color;
                 long_note_color = conflicting_long_note_color;
@@ -246,7 +246,7 @@ void LinearView::draw(
     const auto first_visible_collision_zone = timing.beats_at(first_visible_second - sf::milliseconds(500));
     const auto last_visible_second = timing.time_at(last_beat_in_frame);
     const auto last_visible_collision_zone = timing.beats_at(last_visible_second + sf::milliseconds(500));
-    chart_state.chart.notes.in(
+    chart_state.chart.notes->in(
         first_visible_collision_zone,
         last_visible_collision_zone,
         [&](const better::Notes::iterator& it){

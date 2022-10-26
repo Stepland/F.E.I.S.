@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <sstream>
@@ -30,7 +31,7 @@ namespace better {
     struct Song {
         std::map<std::string, better::Chart, OrderByDifficultyName> charts;
         Metadata metadata;
-        Timing timing;
+        std::shared_ptr<Timing> timing;
         std::optional<Hakus> hakus;
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
@@ -95,7 +96,7 @@ struct fmt::formatter<better::Song>: formatter<string_view> {
             "Song(charts: {}, metadata: {}, timing: {}, hakus: {})",
             s.charts,
             s.metadata,
-            s.timing,
+            *s.timing,
             s.hakus
         );
     }

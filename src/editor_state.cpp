@@ -135,7 +135,7 @@ void EditorState::toggle_note_claps() {
     ) {
         audio.update_streams({}, {note_clap_stream, chord_clap_stream});
     } else {
-        note_claps = note_claps->with(
+        note_claps = note_claps->with_params(
             get_pitch(),
             not distinct_chord_clap,
             clap_on_long_note_ends
@@ -151,7 +151,7 @@ void EditorState::toggle_note_claps() {
 
 void EditorState::toggle_clap_on_long_note_ends() {
     clap_on_long_note_ends = not clap_on_long_note_ends;
-    note_claps = note_claps->with(
+    note_claps = note_claps->with_params(
         get_pitch(),
         not distinct_chord_clap,
         clap_on_long_note_ends
@@ -161,7 +161,7 @@ void EditorState::toggle_clap_on_long_note_ends() {
 
 void EditorState::toggle_distinct_chord_claps() {
     distinct_chord_clap = not distinct_chord_clap;
-    note_claps = note_claps->with(
+    note_claps = note_claps->with_params(
         get_pitch(),
         not distinct_chord_clap,
         clap_on_long_note_ends
@@ -309,11 +309,11 @@ sf::Time EditorState::previous_time() const {
 }
 
 Fraction EditorState::beats_at(sf::Time time) const {
-    return applicable_timing.beats_at(time);
+    return applicable_timing->beats_at(time);
 };
 
 sf::Time EditorState::time_at(Fraction beat) const {
-    return applicable_timing.time_at(beat);
+    return applicable_timing->time_at(beat);
 };
 
 Fraction EditorState::get_snap_step() const {
@@ -353,7 +353,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                         get_snap_step()
                     ),
                     current_time(),
-                    applicable_timing
+                    *applicable_timing
                 );
             }
 
@@ -376,7 +376,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                     this->playfield.draw_long_note(
                         long_note,
                         current_time(),
-                        applicable_timing,
+                        *applicable_timing,
                         marker,
                         markerEndingState
                     );
@@ -411,8 +411,9 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                             current_time(),
                             snap, 
                             {x, y},
-                            applicable_timing
+                            *applicable_timing
                         );
+                        reload_sounds_that_depend_on_notes();
                     }
                 }
                 if (ImGui::IsItemHovered() and chart_state and chart_state->creating_long_note) {
@@ -435,7 +436,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
             for (const auto& [_, note] : chart_state->visible_notes) {
-                if (chart_state->chart.notes.is_colliding(note, applicable_timing)) {
+                if (chart_state->chart.notes->is_colliding(note, *applicable_timing)) {
                     collisions[note.get_position().index()] = true;
                 }
             }
@@ -711,7 +712,7 @@ void EditorState::display_timeline() {
         chart_state->density_graph.update(
             height,
             chart_state->chart,
-            applicable_timing,
+            *applicable_timing,
             editable_range.start,
             editable_range.end
         );
@@ -790,7 +791,7 @@ void EditorState::display_chart_list() {
                 ImGui::NextColumn();
                 ImGui::TextUnformatted(better::stringify_level(chart.level).c_str());
                 ImGui::NextColumn();
-                ImGui::Text("%d", static_cast<int>(chart.notes.size()));
+                ImGui::Text("%d", static_cast<int>(chart.notes->size()));
                 ImGui::NextColumn();
             }
         }
@@ -810,7 +811,7 @@ void EditorState::display_linear_view() {
             linear_view.draw(
                 ImGui::GetWindowDrawList(),
                 *chart_state,
-                applicable_timing,
+                *applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
                 get_snap_step(),
@@ -908,11 +909,12 @@ void EditorState::display_history() {
 void EditorState::display_tempo_menu() {
     if (ImGui::Begin("Adjust Tempo", &show_tempo_menu)) {
         auto bpm = std::visit(
-            [&](const auto& pos){return applicable_timing.bpm_at(pos);},
+            [&](const auto& pos){return applicable_timing->bpm_at(pos);},
             playback_position
         );
         if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            applicable_timing.insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+            applicable_timing->insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+            reload_sounds_that_depend_on_timing();
         }
     }
     ImGui::End();
@@ -992,6 +994,13 @@ std::optional<std::filesystem::path> EditorState::ask_for_save_path_if_needed() 
     }
 };
 
+void EditorState::insert_long_note_just_created() {
+    if (not chart_state) {
+        return;
+    }
+    chart_state->insert_long_note_just_created(snap);
+}
+
 void EditorState::move_backwards_in_time() {
     auto beats = current_snaped_beats();
     if (beats >= current_exact_beats()) {
@@ -1031,16 +1040,14 @@ void EditorState::open_chart(const std::string& name) {
     chart_state.emplace(chart, name_ref, history, assets);
     reload_editable_range();
     reload_applicable_timing();
-    note_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
-    chord_claps->set_notes_and_timing(&chart.notes, &applicable_timing);
-    beat_ticks->set_timing(&applicable_timing);
+    reload_all_sounds();
 };
 
 void EditorState::update_visible_notes() {
     if (chart_state) {
         chart_state->update_visible_notes(
             current_time(),
-            applicable_timing
+            *applicable_timing
         );
     }
 };
@@ -1064,8 +1071,8 @@ Interval<sf::Time> EditorState::choose_editable_range() {
     } else {
         // If there is no music :
         // make sure we can edit 10 seconds after the end of the current chart
-        if (chart_state and not chart_state->chart.notes.empty()) {
-            const auto beat_of_last_event = chart_state->chart.notes.crbegin()->second.get_end();
+        if (chart_state and not chart_state->chart.notes->empty()) {
+            const auto beat_of_last_event = chart_state->chart.notes->crbegin()->second.get_end();
             new_range += time_at(beat_of_last_event) + sf::seconds(10);
         }
         // and at at least the first whole minute in any case
@@ -1155,6 +1162,78 @@ void EditorState::reload_preview_audio() {
         preview_audio.reset();
     }
 };
+
+void EditorState::reload_sounds_that_depend_on_notes() {
+    std::map<std::string, NewStream> update;
+    const auto pitch = get_pitch();
+    std::shared_ptr<better::Notes> notes = [&](){
+        if (chart_state) {
+            return chart_state->chart.notes;
+        } else {
+            return std::shared_ptr<better::Notes>{};
+        }
+    }();
+    note_claps = (
+        note_claps
+        ->with_pitch(pitch)
+        ->with_notes_and_timing(notes, applicable_timing)
+    );
+    if (audio.contains_stream(note_clap_stream)) {
+        update[note_clap_stream] = {note_claps, true};
+    }
+    chord_claps = (
+        chord_claps
+        ->with_pitch(pitch)
+        ->with_notes_and_timing(notes, applicable_timing)
+    );
+    if (audio.contains_stream(chord_clap_stream)) {
+        update[chord_clap_stream] = {chord_claps, true};
+    }
+    audio.update_streams(update, {}, pitch);
+}
+
+void EditorState::reload_sounds_that_depend_on_timing() {
+    std::map<std::string, NewStream> update;
+    const auto pitch = get_pitch();
+    std::shared_ptr<better::Notes> notes = [&](){
+        if (chart_state) {
+            return chart_state->chart.notes;
+        } else {
+            return std::shared_ptr<better::Notes>{};
+        }
+    }();
+    note_claps = (
+        note_claps
+        ->with_pitch(pitch)
+        ->with_notes_and_timing(notes, applicable_timing)
+    );
+    if (audio.contains_stream(note_clap_stream)) {
+        update[note_clap_stream] = {note_claps, true};
+    }
+
+    beat_ticks = (
+        beat_ticks
+        ->with_pitch(get_pitch())
+        ->with_timing(applicable_timing)
+    );
+    if (audio.contains_stream(beat_tick_stream)) {
+        update[beat_tick_stream] = {beat_ticks, true};
+    }
+    chord_claps = (
+        chord_claps
+        ->with_pitch(pitch)
+        ->with_notes_and_timing(notes, applicable_timing)
+    );
+    if (audio.contains_stream(chord_clap_stream)) {
+        update[chord_clap_stream] = {chord_claps, true};
+    }
+    audio.update_streams(update, {}, pitch);
+}
+
+void EditorState::reload_all_sounds() {
+    reload_sounds_that_depend_on_timing();
+}
+
 
 void EditorState::reload_applicable_timing() {
     if (chart_state and chart_state->chart.timing) {

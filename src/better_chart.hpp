@@ -15,9 +15,9 @@
 namespace better {
     struct Chart {
         std::optional<Decimal> level;
-        std::optional<Timing> timing;
+        std::optional<std::shared_ptr<Timing>> timing;
         std::optional<Hakus> hakus;
-        Notes notes;
+        std::shared_ptr<Notes> notes = std::make_shared<Notes>();
 
         bool operator==(const Chart&) const = default;
 
@@ -41,7 +41,7 @@ namespace better {
     );
 
     nlohmann::ordered_json dump_memon_1_0_0_timing_object(
-        const std::optional<better::Timing>& timing,
+        const std::optional<std::shared_ptr<better::Timing>>& timing,
         const std::optional<Hakus>& hakus,
         const nlohmann::ordered_json& fallback_timing_object
     );
@@ -56,6 +56,19 @@ struct fmt::formatter<std::optional<T>>: formatter<string_view> {
             return format_to(ctx.out(), "{}", *opt);
         } else {
             return format_to(ctx.out(), "∅");
+        }
+    }
+};
+
+template <class T>
+struct fmt::formatter<std::shared_ptr<T>>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(const std::shared_ptr<T>& ptr, FormatContext& ctx) {
+        if (ptr) {
+            return format_to(ctx.out(), "{}", *ptr);
+        } else {
+            return format_to(ctx.out(), "nullptr");
         }
     }
 };

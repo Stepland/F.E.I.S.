@@ -13,8 +13,8 @@
 #include "src/special_numeric_types.hpp"
 
 NoteClaps::NoteClaps(
-    const better::Notes* notes_,
-    const better::Timing* timing_,
+    const std::shared_ptr<better::Notes>& notes_,
+    const std::shared_ptr<better::Timing>& timing_,
     const std::filesystem::path& assets,
     float pitch_,
     bool play_chords_,
@@ -28,8 +28,8 @@ NoteClaps::NoteClaps(
 {}
 
 NoteClaps::NoteClaps(
-    const better::Notes* notes_,
-    const better::Timing* timing_,
+    const std::shared_ptr<better::Notes>& notes_,
+    const std::shared_ptr<better::Timing>& timing_,
     std::shared_ptr<sf::SoundBuffer> note_clap,
     float pitch,
     bool play_chords_,
@@ -41,11 +41,6 @@ NoteClaps::NoteClaps(
     notes(notes_),
     timing(timing_)
 {}
-
-void NoteClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
-    notes = notes_;
-    timing = timing_;
-}
 
 std::shared_ptr<NoteClaps> NoteClaps::with_pitch(float new_pitch) {
     return std::make_shared<NoteClaps>(
@@ -80,7 +75,7 @@ std::shared_ptr<NoteClaps> NoteClaps::with_long_note_ends(bool new_play_long_not
     );
 }
 
-std::shared_ptr<NoteClaps> NoteClaps::with(
+std::shared_ptr<NoteClaps> NoteClaps::with_params(
     float pitch_,
     bool play_chords_,
     bool play_long_note_ends_
@@ -95,8 +90,22 @@ std::shared_ptr<NoteClaps> NoteClaps::with(
     );
 }
 
+std::shared_ptr<NoteClaps> NoteClaps::with_notes_and_timing(
+    const std::shared_ptr<better::Notes>& notes_,
+    const std::shared_ptr<better::Timing>& timing_
+) {
+    return std::make_shared<NoteClaps>(
+        notes_,
+        timing_,
+        sample,
+        pitch,
+        play_chords,
+        play_long_note_ends
+    );
+}
+
 bool NoteClaps::onGetData(sf::SoundStream::Chunk& data) {
-    if (timing != nullptr and notes != nullptr) {
+    if (timing and notes) {
         long_note_ends.clear();
         const auto absolute_buffer_start = first_sample_of_next_buffer;
         const std::int64_t absolute_buffer_end = first_sample_of_next_buffer + static_cast<std::int64_t>(output_buffer.size());

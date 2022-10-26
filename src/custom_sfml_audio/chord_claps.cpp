@@ -12,8 +12,8 @@
 #include "src/special_numeric_types.hpp"
 
 ChordClaps::ChordClaps(
-    const better::Notes* notes_,
-    const better::Timing* timing_,
+    const std::shared_ptr<better::Notes>& notes_,
+    const std::shared_ptr<better::Timing>& timing_,
     const std::filesystem::path& assets,
     float pitch_
 ) :
@@ -23,8 +23,8 @@ ChordClaps::ChordClaps(
 {}
 
 ChordClaps::ChordClaps(
-    const better::Notes* notes_,
-    const better::Timing* timing_,
+    const std::shared_ptr<better::Notes>& notes_,
+    const std::shared_ptr<better::Timing>& timing_,
     std::shared_ptr<sf::SoundBuffer> note_clap,
     float pitch
 ) :
@@ -33,9 +33,16 @@ ChordClaps::ChordClaps(
     timing(timing_)
 {}
 
-void ChordClaps::set_notes_and_timing(const better::Notes* notes_, const better::Timing* timing_) {
-    notes = notes_;
-    timing = timing_;
+std::shared_ptr<ChordClaps> ChordClaps::with_notes_and_timing(
+    const std::shared_ptr<better::Notes>& notes_,
+    const std::shared_ptr<better::Timing>& timing_
+) {
+    return std::make_shared<ChordClaps>(
+        notes_,
+        timing_,
+        sample,
+        pitch
+    );
 }
 
 std::shared_ptr<ChordClaps> ChordClaps::with_pitch(float new_pitch) {
@@ -48,7 +55,7 @@ std::shared_ptr<ChordClaps> ChordClaps::with_pitch(float new_pitch) {
 }
 
 bool ChordClaps::onGetData(sf::SoundStream::Chunk& data) {
-    if (timing != nullptr and notes != nullptr) {
+    if (timing and notes) {
         const auto absolute_buffer_start = first_sample_of_next_buffer;
         const std::int64_t absolute_buffer_end = first_sample_of_next_buffer + static_cast<std::int64_t>(output_buffer.size());
         const auto start_time = samples_to_music_time(absolute_buffer_start);
