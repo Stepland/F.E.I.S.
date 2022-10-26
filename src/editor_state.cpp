@@ -999,6 +999,7 @@ void EditorState::insert_long_note_just_created() {
         return;
     }
     chart_state->insert_long_note_just_created(snap);
+    reload_sounds_that_depend_on_notes();
 }
 
 void EditorState::move_backwards_in_time() {
