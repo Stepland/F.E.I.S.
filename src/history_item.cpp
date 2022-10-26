@@ -10,6 +10,7 @@
 #include "better_song.hpp"
 #include "editor_state.hpp"
 #include "src/better_metadata.hpp"
+#include "src/better_timing.hpp"
 
 
 const std::string& HistoryItem::get_message() const {
@@ -167,7 +168,7 @@ ChangeTitle::ChangeTitle(
     const std::string& old_value,
     const std::string& new_value
 ) :
-    ChangeMetadataValue(old_value, new_value)
+    ChangeValue(old_value, new_value)
 {
     message = fmt::format(
         "Change song title : \"{}\" -> \"{}\"",
@@ -184,7 +185,7 @@ ChangeArtist::ChangeArtist(
     const std::string& old_value,
     const std::string& new_value
 ) :
-    ChangeMetadataValue(old_value, new_value)
+    ChangeValue(old_value, new_value)
 {
     message = fmt::format(
         "Change song artist : \"{}\" -> \"{}\"",
@@ -201,7 +202,7 @@ ChangeAudio::ChangeAudio(
     const std::string& old_value,
     const std::string& new_value
 ) :
-    ChangeMetadataValue(old_value, new_value)
+    ChangeValue(old_value, new_value)
 {
     message = fmt::format(
         "Change audio : \"{}\" -> \"{}\"",
@@ -219,7 +220,7 @@ ChangeJacket::ChangeJacket(
     const std::string& old_value,
     const std::string& new_value
 ) :
-    ChangeMetadataValue(old_value, new_value)
+    ChangeValue(old_value, new_value)
 {
     message = fmt::format(
         "Change jacket : \"{}\" -> \"{}\"",
@@ -237,7 +238,7 @@ ChangePreview::ChangePreview(
     const PreviewState& old_value,
     const PreviewState& new_value
 ) :
-    ChangeMetadataValue(old_value, new_value)
+    ChangeValue(old_value, new_value)
 {
     message = fmt::format(
         "Change preview : {} -> {}",
@@ -260,4 +261,30 @@ void ChangePreview::set_value(EditorState& ed, const PreviewState& value) const 
         },
     };
     std::visit(set_value_, value);
+}
+
+
+ChangeTiming::ChangeTiming(
+    const better::Timing& old_timing,
+    const better::Timing& new_timing,
+    const TimingOrigin& origin
+) :
+    ChangeValue(old_timing, new_timing),
+    origin(origin)
+{
+    message = "Change Timing";
+}
+
+void ChangeTiming::set_value(EditorState& ed, const better::Timing& value) const {
+    const auto set_value_ = VariantVisitor {
+        [&](const GlobalTimingObject& g) {
+            ed.song.timing = std::make_shared<better::Timing>(value);
+        },
+        [&](const std::string& chart) {
+            ed.song.charts.at(chart).timing = std::make_shared<better::Timing>(value);
+        }
+    };
+    std::visit(set_value_, origin);
+    ed.reload_applicable_timing();
+    ed.reload_sounds_that_depend_on_timing();
 }

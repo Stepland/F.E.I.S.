@@ -195,12 +195,12 @@ public:
     void reload_jacket();
     void reload_music();
     void reload_preview_audio();
-
-private:
-
+    void reload_applicable_timing();
     void reload_sounds_that_depend_on_notes();
     void reload_sounds_that_depend_on_timing();
     void reload_all_sounds();
+
+private:
 
     int volume = 10;  // 0 -> 10
     int speed = 10;  // 1 -> 20
@@ -222,7 +222,7 @@ private:
     void clear_music();
 
     std::shared_ptr<better::Timing> applicable_timing;
-    void reload_applicable_timing();
+    TimingOrigin timing_origin();
 
     std::filesystem::path assets;
 };

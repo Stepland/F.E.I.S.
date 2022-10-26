@@ -31,7 +31,7 @@ namespace better {
     struct Song {
         std::map<std::string, better::Chart, OrderByDifficultyName> charts;
         Metadata metadata;
-        std::shared_ptr<Timing> timing;
+        std::shared_ptr<Timing> timing = std::make_shared<Timing>();
         std::optional<Hakus> hakus;
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;

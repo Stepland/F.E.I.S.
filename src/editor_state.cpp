@@ -913,8 +913,12 @@ void EditorState::display_tempo_menu() {
             playback_position
         );
         if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            auto before = *applicable_timing;
             applicable_timing->insert(better::BPMAtBeat{bpm, current_snaped_beats()});
-            reload_sounds_that_depend_on_timing();
+            if (*applicable_timing != before) {
+                reload_sounds_that_depend_on_timing();
+                history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
+            }
         }
     }
     ImGui::End();
@@ -1243,6 +1247,14 @@ void EditorState::reload_applicable_timing() {
         applicable_timing = song.timing;
     }
 };
+
+TimingOrigin EditorState::timing_origin() {
+    if (chart_state and chart_state->chart.timing) {
+        return chart_state->difficulty_name;
+    } else {
+        return GlobalTimingObject{};
+    }
+}
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();

@@ -90,10 +90,10 @@ protected:
 };
 
 template<class T>
-class ChangeMetadataValue : public HistoryItem {
+class ChangeValue : public HistoryItem {
 public:
 
-    ChangeMetadataValue(const T& old_value, const T& new_value) :
+    ChangeValue(const T& old_value, const T& new_value) :
         old_value(old_value),
         new_value(new_value)
     {
@@ -114,28 +114,28 @@ protected:
     T new_value;
 };
 
-class ChangeTitle : public ChangeMetadataValue<std::string> {
+class ChangeTitle : public ChangeValue<std::string> {
 public:
     ChangeTitle(const std::string& old_value, const std::string& new_value);
 protected:
     void set_value(EditorState& ed, const std::string& value) const override;
 };
 
-class ChangeArtist : public ChangeMetadataValue<std::string> {
+class ChangeArtist : public ChangeValue<std::string> {
 public:
     ChangeArtist(const std::string& old_value, const std::string& new_value);
 protected:
     void set_value(EditorState& ed, const std::string& value) const override;
 };
 
-class ChangeAudio : public ChangeMetadataValue<std::string> {
+class ChangeAudio : public ChangeValue<std::string> {
 public:
     ChangeAudio(const std::string& old_value, const std::string& new_value);
 protected:
     void set_value(EditorState& ed, const std::string& value) const override;
 };
 
-class ChangeJacket : public ChangeMetadataValue<std::string> {
+class ChangeJacket : public ChangeValue<std::string> {
 public:
     ChangeJacket(const std::string& old_value, const std::string& new_value);;
 protected:
@@ -161,9 +161,26 @@ struct fmt::formatter<PreviewState>: formatter<string_view> {
     }
 };
 
-class ChangePreview : public ChangeMetadataValue<PreviewState> {
+class ChangePreview : public ChangeValue<PreviewState> {
 public:
     ChangePreview(const PreviewState& old_value, const PreviewState& new_value);
 protected:
     void set_value(EditorState& ed, const PreviewState& value) const override;
+};
+
+struct GlobalTimingObject {};
+
+using TimingOrigin = std::variant<GlobalTimingObject, std::string>;
+
+class ChangeTiming : public ChangeValue<better::Timing> {
+public:
+    ChangeTiming(
+        const better::Timing& old_timing,
+        const better::Timing& new_timing,
+        const TimingOrigin& origin
+    );
+protected:
+    TimingOrigin origin;
+
+    void set_value(EditorState& ed, const better::Timing& value) const override;
 };
