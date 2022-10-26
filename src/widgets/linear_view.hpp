@@ -69,3 +69,5 @@ void draw_rectangle(
     const sf::Color& fill,
     const std::optional<sf::Color>& outline = {}
 );
+
+void cross(ImDrawList* draw_list, const sf::Vector2f& pos);

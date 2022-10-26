@@ -63,13 +63,22 @@ namespace Toolbox {
     }
 
     template<class T>
-    sf::Vector2<T> position_with_normalized_origin(
+    sf::Vector2<T> top_left_given_normalized_anchor(
         const sf::Vector2<T>& pos,
-        const sf::Vector2<T> size,
+        const sf::Vector2<T>& size,
         const sf::Vector2f origin
     ) {
         const sf::Vector2<T> offset = {size.x * origin.x, size.y * origin.y};
         return pos - offset;
+    }
+
+    template<class T>
+    sf::Vector2<T> bottom_left_given_normalized_anchor(
+        const sf::Vector2<T>& pos,
+        const sf::Vector2<T>& size,
+        const sf::Vector2f origin
+    ) {
+        return top_left_given_normalized_anchor(pos, size, origin) + sf::Vector2<T>{0, size.y};
     }
 }
 

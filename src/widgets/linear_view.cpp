@@ -103,18 +103,25 @@ void LinearView::draw(
         if (bpm_change_y >= 0 and bpm_change_y <= y) {
             const auto bpm_text = it->get_bpm().format(".3f");
             const sf::Vector2f text_size = ImGui::CalcTextSize(bpm_text.c_str(), bpm_text.c_str()+bpm_text.size());
+            const auto style = ImGui::GetStyle();
+            sf::Vector2f button_size = ImGui::CalcItemSize(
+                sf::Vector2f{0,0},
+                text_size.x + style.FramePadding.x * 2.0f,
+                text_size.y + style.FramePadding.y * 2.0f
+            );
             const sf::Vector2f bpm_text_raw_pos = {timeline_right + 10, static_cast<float>(static_cast<double>(bpm_change_y))};
-            const auto bpm_text_pos = Toolbox::position_with_normalized_origin(
+            const auto bpm_button_pos = Toolbox::bottom_left_given_normalized_anchor(
                 bpm_text_raw_pos,
-                text_size,
+                button_size,
                 {0.f, 0.5f}
             );
-            draw_list->AddText(
-                origin + bpm_text_pos,
-                ImColor(bpm_text_color),
-                bpm_text.c_str(),
-                bpm_text.c_str() + bpm_text.size()
-            );
+            ImGui::SetCursorPos(bpm_button_pos);
+            ImGui::PushID(&*it);
+            ImGui::PushStyleColor(ImGuiCol_Button, sf::Color::Transparent);
+            ImGui::PushStyleColor(ImGuiCol_Text, bpm_text_color);
+            ImGui::ButtonEx(bpm_text.c_str(), {0,0}, ImGuiButtonFlags_AlignTextBaseLine);
+            ImGui::PopStyleColor(2);
+            ImGui::PopID();
         }
     }
 
@@ -355,7 +362,7 @@ void draw_rectangle(
     const sf::Color& fill,
     const std::optional<sf::Color>& outline
 ) {
-    const auto real_pos = Toolbox::position_with_normalized_origin(
+    const auto real_pos = Toolbox::top_left_given_normalized_anchor(
         pos,
         size,
         normalized_anchor
@@ -374,4 +381,9 @@ void draw_rectangle(
             ImColor(ImVec4(*outline))
         );
     }
+}
+
+void cross(ImDrawList* draw_list, const sf::Vector2f& pos) {
+    draw_list->AddLine(pos - sf::Vector2f{3, 0}, pos + sf::Vector2f{4, 0}, ImColor(sf::Color::White));
+    draw_list->AddLine(pos - sf::Vector2f{0, 3}, pos + sf::Vector2f{0, 4}, ImColor(sf::Color::White));
 }
