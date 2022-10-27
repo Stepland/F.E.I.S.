@@ -63,6 +63,8 @@ int main() {
         16.f);
     ImGui::SFML::UpdateFontTexture();
 
+    IO.ConfigWindowsMoveFromTitleBarOnly = true;
+
     // SoundEffect beatTick {assets_folder / "sounds" / "beat.wav"};
     // SoundEffect noteTick {assets_folder / "sounds" / "note.wav"};
     // SoundEffect chordTick {assets_folder / "sounds" / "chord.wav"};

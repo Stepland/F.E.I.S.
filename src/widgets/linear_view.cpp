@@ -16,9 +16,15 @@
 #include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
 #include "imgui_internal.h"
+#include "src/better_timing.hpp"
 #include "src/imgui_extras.hpp"
 
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
+
+void SelectionRectangle::reset() {
+    start = {-1, -1};
+    end = {-1, -1};
+}
 
 LinearView::LinearView(std::filesystem::path assets) :
     beats_to_pixels_proportional(0, 1, 0, 100)
@@ -88,42 +94,21 @@ void LinearView::draw(
     }
 
     // Draw the bpm changes
-    const auto first_visible_bpm_change = timing.get_events_by_beats().lower_bound(
-        {first_beat_in_frame, 0, 1}
-    );
-    const auto one_past_last_visible_bpm_change = timing.get_events_by_beats().upper_bound(
-        {last_beat_in_frame, 0, 1}
-    );
-    for (
-        auto it = first_visible_bpm_change;
-        it != one_past_last_visible_bpm_change;
-        ++it
-    ) {
-        const auto bpm_change_y = beats_to_pixels_absolute.transform(it->get_beats());
-        if (bpm_change_y >= 0 and bpm_change_y <= y) {
-            const auto bpm_text = it->get_bpm().format(".3f");
-            const sf::Vector2f text_size = ImGui::CalcTextSize(bpm_text.c_str(), bpm_text.c_str()+bpm_text.size());
-            const auto style = ImGui::GetStyle();
-            sf::Vector2f button_size = ImGui::CalcItemSize(
-                sf::Vector2f{0,0},
-                text_size.x + style.FramePadding.x * 2.0f,
-                text_size.y + style.FramePadding.y * 2.0f
-            );
-            const sf::Vector2f bpm_text_raw_pos = {timeline_right + 10, static_cast<float>(static_cast<double>(bpm_change_y))};
-            const auto bpm_button_pos = Toolbox::bottom_left_given_normalized_anchor(
-                bpm_text_raw_pos,
-                button_size,
-                {0.f, 0.5f}
-            );
-            ImGui::SetCursorPos(bpm_button_pos);
-            ImGui::PushID(&*it);
-            ImGui::PushStyleColor(ImGuiCol_Button, sf::Color::Transparent);
-            ImGui::PushStyleColor(ImGuiCol_Text, bpm_text_color);
-            ImGui::ButtonEx(bpm_text.c_str(), {0,0}, ImGuiButtonFlags_AlignTextBaseLine);
-            ImGui::PopStyleColor(2);
-            ImGui::PopID();
+    timing.for_each_event_between(
+        first_beat_in_frame,
+        last_beat_in_frame,
+        [&](const auto& event){
+            const auto bpm_change_y = beats_to_pixels_absolute.transform(event.get_beats());
+            if (bpm_change_y >= 0 and bpm_change_y <= y) {
+                const sf::Vector2f bpm_text_raw_pos = {timeline_right + 10, static_cast<float>(static_cast<double>(bpm_change_y))};
+                draw_BPM_button(
+                    event,
+                    bpm_text_raw_pos,
+                    bpm_button_colors
+                );
+            }
         }
-    }
+    );
 
     float note_width = timeline_width / 16.f;
     float collizion_zone_width = note_width - 2.f;
@@ -304,9 +289,31 @@ void LinearView::draw(
                 origin + selection_pos,
                 selection_size,
                 {0, 0},
-                tab_selection_fill,
-                tab_selection_outline
+                tab_selection_colors.fill,
+                tab_selection_colors.border
             );
+        }
+    }
+
+    // Don't start the selection rect if we start outside the contents of the window
+    if (
+        ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+        and ImGui::GetCurrentWindow()->InnerRect.Contains(ImGui::GetMousePos())
+    ) {
+        started_selection_inside_window = true;
+    }
+
+    if (started_selection_inside_window) {
+        if (
+            draw_selection_rect(
+                draw_list,
+                selection_rectangle.start,
+                selection_rectangle.end,
+                selection_rect_colors
+            )
+        ) {
+            selection_rectangle.reset();
+            started_selection_inside_window = false;
         }
     }
 }
@@ -317,26 +324,44 @@ void LinearView::set_zoom(int newZoom) {
 }
 
 void LinearView::display_settings() {
-    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (ImGui::TreeNodeEx("Palette##Linear View Settings",ImGuiTreeNodeFlags_DefaultOpen)) {
-            feis::ColorEdit4("BPM Text", bpm_text_color);
+    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
+        if (ImGui::TreeNode("Colors##Linear View Settings")) {
             feis::ColorEdit4("Cursor", cursor_color);
-            feis::ColorEdit4("Tab Selection Fill", tab_selection_fill);
-            feis::ColorEdit4("Tab Selection Outline", tab_selection_outline);
-            feis::ColorEdit4("Note (normal)", normal_tap_note_color);
-            feis::ColorEdit4("Note (conflicting)", conflicting_tap_note_color);
-            feis::ColorEdit4("Note Collision Zone (normal)", normal_collision_zone_color);
-            feis::ColorEdit4("Note Collision Zone (conflicting)", conflicting_collision_zone_color);
-            feis::ColorEdit4("Long Note Tail (normal)", normal_long_note_color);
-            feis::ColorEdit4("Long Note Tail (conflicting)", conflicting_long_note_color);
-            feis::ColorEdit4("Selected Note Fill", selected_note_fill);
-            feis::ColorEdit4("Selected Note Outline", selected_note_outline);
             feis::ColorEdit4("Measure Lines", measure_lines_color);
             feis::ColorEdit4("Measure Numbers", measure_numbers_color);
             feis::ColorEdit4("Beat Lines", beat_lines_color);
+            if (ImGui::TreeNode("Selection Rectangle")) {
+                feis::ColorEdit4("Fill##Selection Rectangle Colors", selection_rect_colors.fill);
+                feis::ColorEdit4("Border##Selection Rectangle Colors", selection_rect_colors.border);
+                ImGui::TreePop();
+            }
+            if (ImGui::TreeNode("BPM Events##Color settings")) {
+                feis::ColorEdit4("Text##BPM Event Color", bpm_button_colors.text);
+                feis::ColorEdit4("Button##BPM Event Color", bpm_button_colors.button);
+                feis::ColorEdit4("Hover##BPM Event Color", bpm_button_colors.hover);
+                feis::ColorEdit4("Active##BPM Event Color", bpm_button_colors.active);
+                feis::ColorEdit4("Border##BPM Event Color", bpm_button_colors.border);
+                ImGui::TreePop();
+            }
+            if (ImGui::TreeNode("Tab Selection##Color settings")) {
+                feis::ColorEdit4("Fill##Tab Selection", tab_selection_colors.fill);
+                feis::ColorEdit4("Border##Tab Selection", tab_selection_colors.border);
+                ImGui::TreePop();
+            }
+            if (ImGui::TreeNode("Notes##Color settings tree element")) {
+                feis::ColorEdit4("Note##Color settings", normal_tap_note_color);
+                feis::ColorEdit4("Note (conflict)##Color settings", conflicting_tap_note_color);
+                feis::ColorEdit4("Collision Zone##Color settings", normal_collision_zone_color);
+                feis::ColorEdit4("Collision Zone (conflict)##Color settings", conflicting_collision_zone_color);
+                feis::ColorEdit4("Long Tail##Color settings", normal_long_note_color);
+                feis::ColorEdit4("Long Tail (conflict)##Color settings", conflicting_long_note_color);
+                feis::ColorEdit4("Selected Fill##Color settings", selected_note_fill);
+                feis::ColorEdit4("Selected Outline##Color settings", selected_note_outline);
+                ImGui::TreePop();
+            }
             ImGui::TreePop();
         }
-        if (ImGui::TreeNodeEx("Metrics##Linear View Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::TreeNode("Metrics##Linear View Settings")) {
             ImGui::DragInt("Cursor Height", &cursor_height);
             ImGui::DragInt("Timeline Margin", &timeline_margin);
             ImGui::TreePop();
@@ -383,7 +408,65 @@ void draw_rectangle(
     }
 }
 
+void draw_BPM_button(
+    const better::SelectableBPMEvent& event,
+    const sf::Vector2f& pos,
+    const ButtonColors& colors
+) {
+    const auto bpm_text = event.get_bpm().format(".3f");
+    const sf::Vector2f text_size = ImGui::CalcTextSize(bpm_text.c_str(), bpm_text.c_str()+bpm_text.size());
+    const auto style = ImGui::GetStyle();
+    sf::Vector2f button_size = ImGui::CalcItemSize(
+        sf::Vector2f{0,0},
+        text_size.x + style.FramePadding.x * 2.0f,
+        text_size.y + style.FramePadding.y * 2.0f
+    );
+    const auto bpm_button_pos = Toolbox::bottom_left_given_normalized_anchor(
+        pos,
+        button_size,
+        {0.f, 0.5f}
+    );
+    ImGui::SetCursorPos(bpm_button_pos);
+    ImGui::PushID(&event);
+    const auto was_selected = event.selected;
+    if (was_selected) {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.f);
+    }
+    ImGui::PushStyleColor(ImGuiCol_Button, colors.button);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors.hover);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors.active);
+    ImGui::PushStyleColor(ImGuiCol_Text, colors.text);
+    ImGui::PushStyleColor(ImGuiCol_Border, colors.border);
+    if (ImGui::Button(bpm_text.c_str())) {
+        event.selected = not event.selected;
+    };
+    ImGui::PopStyleColor(5);
+    if (was_selected) {
+        ImGui::PopStyleVar();
+    }
+    ImGui::PopID();
+}
+
 void cross(ImDrawList* draw_list, const sf::Vector2f& pos) {
     draw_list->AddLine(pos - sf::Vector2f{3, 0}, pos + sf::Vector2f{4, 0}, ImColor(sf::Color::White));
     draw_list->AddLine(pos - sf::Vector2f{0, 3}, pos + sf::Vector2f{0, 4}, ImColor(sf::Color::White));
+}
+
+// thanks rokups
+// https://github.com/ocornut/imgui/issues/4883#issuecomment-1143414484
+bool draw_selection_rect(
+    ImDrawList* draw_list,
+    sf::Vector2f& start_pos,
+    sf::Vector2f& end_pos,
+    const RectangleColors& colors,
+    ImGuiMouseButton mouse_button
+) {
+    if (ImGui::IsMouseClicked(mouse_button)) {
+        start_pos = ImGui::GetMousePos();
+    }
+    if (ImGui::IsMouseDown(mouse_button)) {
+        end_pos = ImGui::GetMousePos();
+        draw_rectangle(draw_list, start_pos, end_pos - start_pos, {0,0}, colors.fill, colors.border);
+    }
+    return ImGui::IsMouseReleased(mouse_button);
 }

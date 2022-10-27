@@ -31,16 +31,18 @@ namespace better {
         Fraction beats;
     };
 
-    class BPMEvent {
+    class SelectableBPMEvent {
     public:
-        BPMEvent(Fraction beats, double seconds, Decimal bpm);
+        SelectableBPMEvent(Fraction beats, double seconds, Decimal bpm);
         Decimal get_bpm() const;
         double get_bpm_as_double() const;
         Fraction get_beats() const;
         double get_seconds() const;
 
-        bool operator==(const BPMEvent&) const = default;
-        friend std::ostream& operator<<(std::ostream& out, const BPMEvent& b);
+        bool operator==(const SelectableBPMEvent&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const SelectableBPMEvent& b);
+
+        mutable bool selected = false;
     private:
         Decimal bpm;
         double bpm_as_double;
@@ -65,8 +67,8 @@ namespace better {
     class Timing {
     public:
 
-        using events_by_beats_type = std::set<BPMEvent, OrderByBeats>;
-        using events_by_seconds_type = std::set<BPMEvent, OrderBySeconds>;
+        using events_by_beats_type = std::set<SelectableBPMEvent, OrderByBeats>;
+        using events_by_seconds_type = std::set<SelectableBPMEvent, OrderBySeconds>;
 
         Timing();
         Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
@@ -89,8 +91,17 @@ namespace better {
 
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
-
-        const events_by_beats_type& get_events_by_beats() const;
+        
+        template<typename Callback>
+        void for_each_event_between(const Fraction& first, const Fraction& last, const Callback& cb) const {
+            const auto first_element = events_by_beats.lower_bound(
+                {first, 0, 1}
+            );
+            const auto last_element = events_by_beats.upper_bound(
+                {last, 0, 1}
+            );
+            std::for_each(first_element, last_element, cb);
+        }
 
         bool operator==(const Timing&) const = default;
 
@@ -104,9 +115,9 @@ namespace better {
 
         void reload_events_from(const std::vector<BPMAtBeat>& events);
 
-        const BPMEvent& bpm_event_in_effect_at(sf::Time time) const;
-        const BPMEvent& bpm_event_in_effect_at(double seconds) const;
-        const BPMEvent& bpm_event_in_effect_at(Fraction beats) const;
+        const SelectableBPMEvent& bpm_event_in_effect_at(sf::Time time) const;
+        const SelectableBPMEvent& bpm_event_in_effect_at(double seconds) const;
+        const SelectableBPMEvent& bpm_event_in_effect_at(Fraction beats) const;
 
         events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(sf::Time time) const;
         events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(double seconds) const;
@@ -115,10 +126,10 @@ namespace better {
 }
 
 template <>
-struct fmt::formatter<better::BPMEvent>: formatter<string_view> {
+struct fmt::formatter<better::SelectableBPMEvent>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
-    auto format(const better::BPMEvent& b, FormatContext& ctx) {
+    auto format(const better::SelectableBPMEvent& b, FormatContext& ctx) {
         return format_to(
             ctx.out(),
             "BPMEvent(beats: {}, bpm: {})",

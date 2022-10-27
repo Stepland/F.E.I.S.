@@ -36,30 +36,30 @@ namespace better {
         return beats;
     }
 
-    BPMEvent::BPMEvent(Fraction beats_, double seconds_, Decimal bpm_) :
+    SelectableBPMEvent::SelectableBPMEvent(Fraction beats_, double seconds_, Decimal bpm_) :
         bpm(bpm_),
         bpm_as_double(std::stod(bpm_.format("f"))),
         beats(beats_),
         seconds(seconds_)
     {};
 
-    Decimal BPMEvent::get_bpm() const {
+    Decimal SelectableBPMEvent::get_bpm() const {
         return bpm;
     }
 
-    double BPMEvent::get_bpm_as_double() const {
+    double SelectableBPMEvent::get_bpm_as_double() const {
         return bpm_as_double;
     }
     
-    Fraction BPMEvent::get_beats() const {
+    Fraction SelectableBPMEvent::get_beats() const {
         return beats;
     }
 
-    double BPMEvent::get_seconds() const {
+    double SelectableBPMEvent::get_seconds() const {
         return seconds;
     };
 
-    std::ostream& operator<<(std::ostream& out, const BPMEvent& b) {
+    std::ostream& operator<<(std::ostream& out, const SelectableBPMEvent& b) {
         out << fmt::format("{}", b);
         return out;
     }
@@ -152,7 +152,7 @@ namespace better {
             events_by_beats.begin(),
             events_by_beats.end(),
             std::back_inserter(new_events),
-            [&](const BPMEvent& bpm){ return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};}
+            [&](const SelectableBPMEvent& bpm){ return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};}
         );
         reload_events_from(new_events);
     }
@@ -212,10 +212,6 @@ namespace better {
         return Timing{{{bpm, 0}}, -1 * offset};
     };
 
-    const std::set<BPMEvent, OrderByBeats>& Timing::get_events_by_beats() const {
-        return events_by_beats;
-    }
-
     void Timing::reload_events_from(const std::vector<BPMAtBeat>& events) {
         if (events.empty()) {
             throw std::invalid_argument(
@@ -232,7 +228,7 @@ namespace better {
             }
         }
 
-        // Remove redundant bpm changes
+        // Only keep non-redundant bpm changes
         std::set<BPMAtBeat, OrderByBeats> filtered_events;
         for (const auto& event : sorted_events) {
             if (filtered_events.empty()) {
@@ -247,7 +243,7 @@ namespace better {
 
         auto first_event = filtered_events.begin();
         double current_second = 0;
-        std::vector<BPMEvent> bpm_changes;
+        std::vector<SelectableBPMEvent> bpm_changes;
         bpm_changes.reserve(filtered_events.size());
         bpm_changes.emplace_back(
             first_event->get_beats(),
@@ -273,15 +269,15 @@ namespace better {
         this->events_by_seconds.insert(bpm_changes.begin(), bpm_changes.end());
     }
 
-    const BPMEvent& Timing::bpm_event_in_effect_at(sf::Time time) const {
+    const SelectableBPMEvent& Timing::bpm_event_in_effect_at(sf::Time time) const {
         return *iterator_to_bpm_event_in_effect_at(time);
     }
 
-    const BPMEvent& Timing::bpm_event_in_effect_at(double seconds) const {
+    const SelectableBPMEvent& Timing::bpm_event_in_effect_at(double seconds) const {
         return *iterator_to_bpm_event_in_effect_at(seconds);
     }
 
-    const BPMEvent& Timing::bpm_event_in_effect_at(Fraction beats) const {
+    const SelectableBPMEvent& Timing::bpm_event_in_effect_at(Fraction beats) const {
         return *iterator_to_bpm_event_in_effect_at(beats);
     }
 
@@ -292,7 +288,7 @@ namespace better {
 
     Timing::events_by_seconds_type::iterator Timing::iterator_to_bpm_event_in_effect_at(double seconds) const {
         auto bpm_change = this->events_by_seconds.upper_bound(
-            BPMEvent(0, seconds - offset_as_double, 0)
+            SelectableBPMEvent(0, seconds - offset_as_double, 0)
         );
         if (bpm_change != this->events_by_seconds.begin()) {
             bpm_change = std::prev(bpm_change);
@@ -302,7 +298,7 @@ namespace better {
 
     Timing::events_by_beats_type::iterator Timing::iterator_to_bpm_event_in_effect_at(Fraction beats) const {
         auto bpm_change = this->events_by_beats.upper_bound(
-            BPMEvent(beats, 0, 0)
+            SelectableBPMEvent(beats, 0, 0)
         );
         if (bpm_change != this->events_by_beats.begin()) {
             bpm_change = std::prev(bpm_change);
