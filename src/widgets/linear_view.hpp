@@ -94,6 +94,7 @@ private:
 
     SelectionRectangle selection_rectangle;
     bool started_selection_inside_window = false;
+    bool any_bpm_button_hovered = false;
 };
 
 void draw_rectangle(
@@ -105,7 +106,7 @@ void draw_rectangle(
     const std::optional<sf::Color>& outline = {}
 );
 
-void draw_BPM_button(
+void BPMButton(
     const better::SelectableBPMEvent& event,
     const sf::Vector2f& pos,
     const ButtonColors& colors
@@ -119,4 +120,4 @@ bool draw_selection_rect(
     ImGuiMouseButton mouse_button = ImGuiMouseButton_Left
 );
 
-void cross(ImDrawList* draw_list, const sf::Vector2f& pos);
+void select_everything_inside(const sf::Vector2f& rect);

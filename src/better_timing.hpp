@@ -4,8 +4,10 @@
 #include <algorithm>
 #include <iterator>
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 #include <json.hpp>
@@ -50,25 +52,28 @@ namespace better {
         double seconds;
     };
 
-    struct OrderByBeats {
-        template<class T>
-        bool operator()(const T& a, const T& b) const {
-            return a.get_beats() < b.get_beats();
-        }
-    };
-    
-    struct OrderBySeconds {
-        template<class T>
-        bool operator()(const T& a, const T& b) const {
-            return a.get_seconds() < b.get_seconds();
-        }
-    };
-
     class Timing {
     public:
 
-        using events_by_beats_type = std::set<SelectableBPMEvent, OrderByBeats>;
-        using events_by_seconds_type = std::set<SelectableBPMEvent, OrderBySeconds>;
+        using event_type = SelectableBPMEvent;
+        using key_type = std::shared_ptr<event_type>;
+
+        struct OrderByBeats {
+            template<class T>
+            bool operator()(const T& a, const T& b) const {
+                return a->get_beats() < b->get_beats();
+            }
+        };
+        
+        struct OrderBySeconds {
+            template<class T>
+            bool operator()(const T& a, const T& b) const {
+                return a->get_seconds() < b->get_seconds();
+            }
+        };
+
+        using events_by_beats_type = std::set<key_type, OrderByBeats>;
+        using events_by_seconds_type = std::set<key_type, OrderBySeconds>;
 
         Timing();
         Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
@@ -95,13 +100,15 @@ namespace better {
         template<typename Callback>
         void for_each_event_between(const Fraction& first, const Fraction& last, const Callback& cb) const {
             const auto first_element = events_by_beats.lower_bound(
-                {first, 0, 1}
+                std::make_shared<event_type>(first, 0, 1)
             );
             const auto last_element = events_by_beats.upper_bound(
-                {last, 0, 1}
+                std::make_shared<event_type>(last, 0, 1)
             );
-            std::for_each(first_element, last_element, cb);
+            std::for_each(first_element, last_element, [&](const key_type& ptr){cb(*ptr);});
         }
+
+        void unselect_everything() const;
 
         bool operator==(const Timing&) const = default;
 
@@ -109,15 +116,17 @@ namespace better {
         friend fmt::formatter<better::Timing>;
     private:
         Decimal offset;
-        double offset_as_double; 
+        double offset_as_double;
+
+        // These containers hold shared pointers to the same objects
         events_by_beats_type events_by_beats;
         events_by_seconds_type events_by_seconds;
 
         void reload_events_from(const std::vector<BPMAtBeat>& events);
 
-        const SelectableBPMEvent& bpm_event_in_effect_at(sf::Time time) const;
-        const SelectableBPMEvent& bpm_event_in_effect_at(double seconds) const;
-        const SelectableBPMEvent& bpm_event_in_effect_at(Fraction beats) const;
+        const key_type& bpm_event_in_effect_at(sf::Time time) const;
+        const key_type& bpm_event_in_effect_at(double seconds) const;
+        const key_type& bpm_event_in_effect_at(Fraction beats) const;
 
         events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(sf::Time time) const;
         events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(double seconds) const;

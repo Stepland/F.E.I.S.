@@ -9,19 +9,20 @@ using TapNotePair = std::pair<better::TapNote, better::TapNote>;
 
 /*
 Construct a special note that will only be used to repurpose the long note
-drawing routine so that it also displays the *preview* of the long note
-currently being created. It's basically the same at the real long note being
-created but its start time is set to the exactly current beat (passed as a
-parameter).
+drawing routine of the playfield so that it also displays the *preview* of the
+long note currently being created. It's basically the same at the real long
+note being created but its start time is set to the exactly current beat
+(passed as a parameter).
 */
-better::LongNote make_playfield_long_note_dummy(
+better::LongNote make_long_note_dummy_for_playfield(
     const Fraction& current_beat,
     const TapNotePair& long_note_being_created,
     const Fraction& snap
 );
 
-// Turn the tap pair into the real long note the user wants to create
-better::LongNote make_linear_view_long_note_dummy(
+// Turn the tap pair into the real long note the user wants to create, this
+// is also what's displayed on the linear view
+better::LongNote make_long_note_dummy_for_linear_view(
     const TapNotePair& long_note_being_created,
     const Fraction& snap
 );

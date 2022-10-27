@@ -347,7 +347,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             playfield.resize(static_cast<unsigned int>(ImGui::GetWindowSize().x));
             if (chart_state->long_note_being_created) {
                 playfield.draw_tail_and_receptor(
-                    make_playfield_long_note_dummy(
+                    make_long_note_dummy_for_playfield(
                         current_exact_beats(),
                         *chart_state->long_note_being_created,
                         get_snap_step()

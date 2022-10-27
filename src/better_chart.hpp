@@ -11,6 +11,7 @@
 #include "better_notes.hpp"
 #include "better_timing.hpp"
 #include "special_numeric_types.hpp"
+#include "toolbox.hpp"
 
 namespace better {
     struct Chart {
@@ -46,32 +47,6 @@ namespace better {
         const nlohmann::ordered_json& fallback_timing_object
     );
 }
-
-template <class T>
-struct fmt::formatter<std::optional<T>>: formatter<string_view> {
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    auto format(const std::optional<T>& opt, FormatContext& ctx) {
-        if (opt) {
-            return format_to(ctx.out(), "{}", *opt);
-        } else {
-            return format_to(ctx.out(), "∅");
-        }
-    }
-};
-
-template <class T>
-struct fmt::formatter<std::shared_ptr<T>>: formatter<string_view> {
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    auto format(const std::shared_ptr<T>& ptr, FormatContext& ctx) {
-        if (ptr) {
-            return format_to(ctx.out(), "{}", *ptr);
-        } else {
-            return format_to(ctx.out(), "nullptr");
-        }
-    }
-};
 
 template <>
 struct fmt::formatter<better::Chart>: formatter<string_view> {

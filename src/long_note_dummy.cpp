@@ -1,11 +1,11 @@
 #include "long_note_dummy.hpp"
 
-better::LongNote make_playfield_long_note_dummy(
+better::LongNote make_long_note_dummy_for_playfield(
     const Fraction& current_beat,
     const TapNotePair& long_note_being_created,
     const Fraction& snap
 ) {
-    const auto note = make_linear_view_long_note_dummy(long_note_being_created, snap);
+    const auto note = make_long_note_dummy_for_linear_view(long_note_being_created, snap);
     return better::LongNote{
         current_beat,
         note.get_position(),
@@ -14,7 +14,7 @@ better::LongNote make_playfield_long_note_dummy(
     };
 };
 
-better::LongNote make_linear_view_long_note_dummy(
+better::LongNote make_long_note_dummy_for_linear_view(
     const TapNotePair& long_note_being_created,
     const Fraction& snap
 ) {

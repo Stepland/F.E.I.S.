@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <variant>
@@ -93,6 +94,8 @@ void LinearView::draw(
         }
     }
 
+    const float bpm_events_left = timeline_right + 10;
+
     // Draw the bpm changes
     timing.for_each_event_between(
         first_beat_in_frame,
@@ -100,8 +103,8 @@ void LinearView::draw(
         [&](const auto& event){
             const auto bpm_change_y = beats_to_pixels_absolute.transform(event.get_beats());
             if (bpm_change_y >= 0 and bpm_change_y <= y) {
-                const sf::Vector2f bpm_text_raw_pos = {timeline_right + 10, static_cast<float>(static_cast<double>(bpm_change_y))};
-                draw_BPM_button(
+                const sf::Vector2f bpm_text_raw_pos = {bpm_events_left, static_cast<float>(static_cast<double>(bpm_change_y))};
+                BPMButton(
                     event,
                     bpm_text_raw_pos,
                     bpm_button_colors
@@ -248,7 +251,7 @@ void LinearView::draw(
 
     if (chart_state.long_note_being_created.has_value()) {
         draw_note(
-            make_linear_view_long_note_dummy(
+            make_long_note_dummy_for_linear_view(
                 *chart_state.long_note_being_created,
                 snap
             )
@@ -295,10 +298,17 @@ void LinearView::draw(
         }
     }
 
-    // Don't start the selection rect if we start outside the contents of the window
+    
+    const auto current_window = ImGui::GetCurrentWindow();
+
+    // Don't start the selection rect if :
+    // - we start
+    //   - outside the contents of the window
+    //   - over anything
     if (
         ImGui::IsMouseClicked(ImGuiMouseButton_Left)
-        and ImGui::GetCurrentWindow()->InnerRect.Contains(ImGui::GetMousePos())
+        and current_window->InnerClipRect.Contains(ImGui::GetMousePos())
+        and not ImGui::IsAnyItemHovered()
     ) {
         started_selection_inside_window = true;
     }
@@ -312,6 +322,30 @@ void LinearView::draw(
                 selection_rect_colors
             )
         ) {
+            timing.unselect_everything();
+            // Select everything inside the selection rectangle
+            const sf::Vector2f upper_left = {
+                std::min(selection_rectangle.start.x, selection_rectangle.end.x),
+                std::min(selection_rectangle.start.y, selection_rectangle.end.y),
+            };
+            const sf::Vector2f lower_right = {
+                std::max(selection_rectangle.start.x, selection_rectangle.end.x),
+                std::max(selection_rectangle.start.y, selection_rectangle.end.y),
+            };
+            const ImRect full_selection = {upper_left, lower_right};
+            ImRect bpm_zone = {origin.x + bpm_events_left, -INFINITY, INFINITY, INFINITY};
+            bpm_zone.ClipWith(current_window->InnerRect);
+            if (full_selection.Overlaps(bpm_zone)) {
+                const auto first_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Min.y - origin.y);
+                const auto last_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Max.y - origin.y);
+                timing.for_each_event_between(
+                first_selected_beat,
+                last_selected_beat,
+                [&](const auto& event){
+                    event.selected = true;
+                }
+            );
+            }
             selection_rectangle.reset();
             started_selection_inside_window = false;
         }
@@ -408,7 +442,7 @@ void draw_rectangle(
     }
 }
 
-void draw_BPM_button(
+void BPMButton(
     const better::SelectableBPMEvent& event,
     const sf::Vector2f& pos,
     const ButtonColors& colors

@@ -159,7 +159,7 @@ void ChartState::insert_long_note_just_created(std::uint64_t snap) {
     if (not long_note_being_created) {
         return;
     }
-    auto new_note = make_linear_view_long_note_dummy(
+    auto new_note = make_long_note_dummy_for_linear_view(
         *long_note_being_created,
         snap
     );
