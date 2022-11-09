@@ -37,7 +37,7 @@ public:
 
     void draw(
         ImDrawList* draw_list,
-        const ChartState& chart_state,
+        ChartState& chart_state,
         const better::Timing& timing,
         const Fraction& current_beat,
         const Fraction& last_editable_beat,
@@ -106,8 +106,9 @@ void draw_rectangle(
     const std::optional<sf::Color>& outline = {}
 );
 
-void BPMButton(
-    const better::SelectableBPMEvent& event,
+bool BPMButton(
+    const better::BPMEvent& event,
+    bool selected,
     const sf::Vector2f& pos,
     const ButtonColors& colors
 );

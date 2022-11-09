@@ -33,7 +33,7 @@ LinearView::LinearView(std::filesystem::path assets) :
 
 void LinearView::draw(
     ImDrawList* draw_list,
-    const ChartState& chart_state,
+    ChartState& chart_state,
     const better::Timing& timing,
     const Fraction& current_beat,
     const Fraction& last_editable_beat,
@@ -104,11 +104,15 @@ void LinearView::draw(
             const auto bpm_change_y = beats_to_pixels_absolute.transform(event.get_beats());
             if (bpm_change_y >= 0 and bpm_change_y <= y) {
                 const sf::Vector2f bpm_text_raw_pos = {bpm_events_left, static_cast<float>(static_cast<double>(bpm_change_y))};
-                BPMButton(
-                    event,
-                    bpm_text_raw_pos,
-                    bpm_button_colors
-                );
+                const auto bpm_at_beat = better::BPMAtBeat{event.get_bpm(), event.get_beats()};
+                const auto selected = chart_state.selected_stuff.bpm_events.contains(bpm_at_beat);
+                if (BPMButton(event, selected, bpm_text_raw_pos, bpm_button_colors)) {
+                    if (selected) {
+                        chart_state.selected_stuff.bpm_events.erase(bpm_at_beat);
+                    } else {
+                        chart_state.selected_stuff.bpm_events.insert(bpm_at_beat);
+                    }
+                }
             }
         }
     );
@@ -161,7 +165,7 @@ void LinearView::draw(
                 {0.5f, 0.5f},
                 tap_note_color
             );
-            if (chart_state.selected_notes.contains(tap_note)) {
+            if (chart_state.selected_stuff.notes.contains(tap_note)) {
                 draw_rectangle(
                     draw_list,
                     origin + note_pos,
@@ -224,7 +228,7 @@ void LinearView::draw(
                 {0.5f, 0.5f},
                 tap_note_color
             );
-            if (chart_state.selected_notes.contains(long_note)) {
+            if (chart_state.selected_stuff.notes.contains(long_note)) {
                 draw_rectangle(
                     draw_list,
                     origin + note_pos,
@@ -301,10 +305,9 @@ void LinearView::draw(
     
     const auto current_window = ImGui::GetCurrentWindow();
 
-    // Don't start the selection rect if :
-    // - we start
-    //   - outside the contents of the window
-    //   - over anything
+    // Don't start the selection rect if we start :
+    //  - outside the contents of the window
+    //  - over anything
     if (
         ImGui::IsMouseClicked(ImGuiMouseButton_Left)
         and current_window->InnerClipRect.Contains(ImGui::GetMousePos())
@@ -322,7 +325,7 @@ void LinearView::draw(
                 selection_rect_colors
             )
         ) {
-            timing.unselect_everything();
+            chart_state.selected_stuff.clear();
             // Select everything inside the selection rectangle
             const sf::Vector2f upper_left = {
                 std::min(selection_rectangle.start.x, selection_rectangle.end.x),
@@ -339,12 +342,14 @@ void LinearView::draw(
                 const auto first_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Min.y - origin.y);
                 const auto last_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Max.y - origin.y);
                 timing.for_each_event_between(
-                first_selected_beat,
-                last_selected_beat,
-                [&](const auto& event){
-                    event.selected = true;
-                }
-            );
+                    first_selected_beat,
+                    last_selected_beat,
+                    [&](const auto& event){
+                        chart_state.selected_stuff.bpm_events.insert(
+                            {event.get_bpm(), event.get_beats()}
+                        );
+                    }
+                );
             }
             selection_rectangle.reset();
             started_selection_inside_window = false;
@@ -442,8 +447,9 @@ void draw_rectangle(
     }
 }
 
-void BPMButton(
-    const better::SelectableBPMEvent& event,
+bool BPMButton(
+    const better::BPMEvent& event,
+    bool selected,
     const sf::Vector2f& pos,
     const ButtonColors& colors
 ) {
@@ -462,8 +468,7 @@ void BPMButton(
     );
     ImGui::SetCursorPos(bpm_button_pos);
     ImGui::PushID(&event);
-    const auto was_selected = event.selected;
-    if (was_selected) {
+    if (selected) {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.f);
     }
     ImGui::PushStyleColor(ImGuiCol_Button, colors.button);
@@ -471,14 +476,13 @@ void BPMButton(
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors.active);
     ImGui::PushStyleColor(ImGuiCol_Text, colors.text);
     ImGui::PushStyleColor(ImGuiCol_Border, colors.border);
-    if (ImGui::Button(bpm_text.c_str())) {
-        event.selected = not event.selected;
-    };
+    const auto result = ImGui::Button(bpm_text.c_str());
     ImGui::PopStyleColor(5);
-    if (was_selected) {
+    if (selected) {
         ImGui::PopStyleVar();
     }
     ImGui::PopID();
+    return result;
 }
 
 void cross(ImDrawList* draw_list, const sf::Vector2f& pos) {

@@ -22,7 +22,7 @@
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "marker.hpp"
-#include "notes_clipboard.hpp"
+#include "clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
 
@@ -185,6 +185,13 @@ public:
 
     void undo(NotificationsQueue& nq);
     void redo(NotificationsQueue& nq);
+
+    void cut(NotificationsQueue& nq);
+    void copy(NotificationsQueue& nq);
+    void paste(NotificationsQueue& nq);
+    void delete_(NotificationsQueue& nq);
+
+    void discard_selection();
 
     void save(const std::filesystem::path& path);
 

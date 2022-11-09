@@ -22,69 +22,135 @@ ChartState::ChartState(
     density_graph(assets)
 {}
 
-void ChartState::cut(NotificationsQueue& nq) {
-    if (not selected_notes.empty()) {
-        const auto message = fmt::format(
-            "Cut {} note{}",
-            selected_notes.size(),
-            selected_notes.size() > 1 ? "s" : ""
-        );
-        nq.push(std::make_shared<TextNotification>(message));
-
-        notes_clipboard.copy(selected_notes);
-        for (const auto& [_, note] : selected_notes) {
-            chart.notes->erase(note);
+void ChartState::cut(
+    NotificationsQueue& nq,
+    better::Timing& timing,
+    const TimingOrigin& timing_origin
+) {
+    if (not selected_stuff.empty()) {
+        if (not selected_stuff.notes.empty()) {
+            const auto message = fmt::format(
+                "Cut {} note{}",
+                selected_stuff.notes.size(),
+                selected_stuff.notes.size() > 1 ? "s" : ""
+            );
+            nq.push(std::make_shared<TextNotification>(message));
+            for (const auto& [_, note] : selected_stuff.notes) {
+                chart.notes->erase(note);
+            }
+            history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_stuff.notes));
         }
-        history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_notes));
-        selected_notes.clear();
+        if (not selected_stuff.bpm_events.empty()) {
+            const auto message = fmt::format(
+                "Cut {} BPM event{}",
+                selected_stuff.bpm_events.size(),
+                selected_stuff.bpm_events.size() > 1 ? "s" : ""
+            );
+            nq.push(std::make_shared<TextNotification>(message));
+            const auto before = timing;
+            for (const auto& bpm_event : selected_stuff.bpm_events) {
+                timing.erase(bpm_event);
+            }
+            history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+        }
     }
+
+    clipboard.copy(selected_stuff);
+    selected_stuff.clear();
 };
 
 void ChartState::copy(NotificationsQueue& nq) {
-    if (not selected_notes.empty()) {
+    if (not selected_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Copied {} note{}",
-            selected_notes.size(),
-            selected_notes.size() > 1 ? "s" : ""
+            selected_stuff.notes.size(),
+            selected_stuff.notes.size() > 1 ? "s" : ""
         );
         nq.push(std::make_shared<TextNotification>(message));
-        notes_clipboard.copy(selected_notes);
     }
+
+    if (not selected_stuff.bpm_events.empty()) {
+        const auto message = fmt::format(
+            "Copied {} BPM event{}",
+            selected_stuff.bpm_events.size(),
+            selected_stuff.bpm_events.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+    }
+
+    clipboard.copy(selected_stuff);
+    selected_stuff.clear();
 };
 
-void ChartState::paste(Fraction at_beat, NotificationsQueue& nq) {
-    if (not notes_clipboard.empty()) {
-        const auto pasted_notes = notes_clipboard.paste(at_beat);
+void ChartState::paste(
+    Fraction at_beat,
+    NotificationsQueue& nq,
+    better::Timing& timing,
+    const TimingOrigin& timing_origin
+) {
+    if (clipboard.empty()) {
+        return;
+    }
+
+    const auto pasted_stuff = clipboard.paste(at_beat);
+    if (not pasted_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Pasted {} note{}",
-            pasted_notes.size(),
-            pasted_notes.size() > 1 ? "s" : ""
+            pasted_stuff.notes.size(),
+            pasted_stuff.notes.size() > 1 ? "s" : ""
         );
         nq.push(std::make_shared<TextNotification>(message));
         better::Notes overwritten;
-        for (const auto& [_, note] : pasted_notes) {
+        for (const auto& [_, note] : pasted_stuff.notes) {
             auto&& erased = chart.notes->overwriting_insert(note);
             overwritten.merge(std::move(erased));
         }
         if (not overwritten.empty()) {
             history.push(std::make_shared<RemoveNotes>(difficulty_name, overwritten));
         }
-        selected_notes = pasted_notes;
-        history.push(std::make_shared<AddNotes>(difficulty_name, selected_notes));
+        selected_stuff.notes = pasted_stuff.notes;
+        history.push(std::make_shared<AddNotes>(difficulty_name, selected_stuff.notes));
         density_graph.should_recompute = true;
+    }
+    if (not pasted_stuff.bpm_events.empty()) {
+        const auto message = fmt::format(
+            "Pasted {} BPM event{}",
+            selected_stuff.bpm_events.size(),
+            selected_stuff.bpm_events.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+        const auto before = timing;
+        for (const auto& bpm_event : pasted_stuff.bpm_events) {
+            timing.insert(bpm_event);
+        }
+        history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
     }
 };
 
-void ChartState::delete_(NotificationsQueue& nq) {
-    if (not selected_notes.empty()) {
-        history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_notes));
+void ChartState::delete_(
+    NotificationsQueue& nq,
+    better::Timing& timing,
+    const TimingOrigin& timing_origin
+) {
+    if (not selected_stuff.notes.empty()) {
+        history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_stuff.notes));
         nq.push(
             std::make_shared<TextNotification>("Deleted selected notes")
         );
-        for (const auto& [_, note] : selected_notes) {
+        for (const auto& [_, note] : selected_stuff.notes) {
             chart.notes->erase(note);
         }
-        selected_notes.clear();
+        selected_stuff.notes.clear();
+    }
+    if (not selected_stuff.bpm_events.empty()) {
+        const auto before = timing;
+        for (const auto& bpm_event : selected_stuff.bpm_events) {
+            timing.erase(bpm_event);
+        }
+        history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+        nq.push(
+            std::make_shared<TextNotification>("Deleted selected BPM events")
+        );
     }
 }
 
@@ -148,7 +214,7 @@ void ChartState::handle_time_selection_tab(Fraction beats) {
     } else {
         if (time_selection->width() == 0) {
             *time_selection += beats;
-            selected_notes = chart.notes->between(*time_selection);
+            selected_stuff.notes = chart.notes->between(*time_selection);
         } else {
             time_selection.emplace(beats, beats);
         }

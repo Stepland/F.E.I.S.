@@ -166,12 +166,8 @@ int main() {
                         // - time selection
                         // - selected notes
                         case sf::Keyboard::Escape:
-                            if (editor_state and editor_state->chart_state) {
-                                if (editor_state->chart_state->time_selection) {
-                                    editor_state->chart_state->time_selection.reset();
-                                } else if (not editor_state->chart_state->selected_notes.empty()) {
-                                    editor_state->chart_state->selected_notes.clear();
-                                }
+                            if (editor_state) {
+                                editor_state->discard_selection();
                             }
                             break;
 
@@ -187,8 +183,8 @@ int main() {
                         // Delete selected notes from the chart and discard
                         // time selection
                         case sf::Keyboard::Delete:
-                            if (editor_state and editor_state->chart_state) {
-                                editor_state->chart_state->delete_(notificationsQueue);
+                            if (editor_state) {
+                                editor_state->delete_(notificationsQueue);
                             }
                             break;
 
@@ -357,18 +353,15 @@ int main() {
                             break;
                         case sf::Keyboard::V:
                             if (event.key.control) {
-                                if (editor_state and editor_state->chart_state) {
-                                    editor_state->chart_state->paste(
-                                        editor_state->current_snaped_beats(),
-                                        notificationsQueue
-                                    );
+                                if (editor_state) {
+                                    editor_state->paste(notificationsQueue);
                                 }
                             }
                             break;
                         case sf::Keyboard::X:
                             if (event.key.control) {
-                                if (editor_state and editor_state->chart_state) {
-                                    editor_state->chart_state->cut(notificationsQueue);
+                                if (editor_state) {
+                                    editor_state->cut(notificationsQueue);
                                 }
                             }
                             break;
@@ -539,8 +532,8 @@ int main() {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Cut", "Ctrl+X")) {
-                    if (editor_state and editor_state->chart_state) {
-                        editor_state->chart_state->cut(notificationsQueue);
+                    if (editor_state) {
+                        editor_state->cut(notificationsQueue);
                     }
                 }
                 if (ImGui::MenuItem("Copy", "Ctrl+C")) {
@@ -549,16 +542,13 @@ int main() {
                     }
                 }
                 if (ImGui::MenuItem("Paste", "Ctrl+V")) {
-                    if (editor_state and editor_state->chart_state) {
-                        editor_state->chart_state->paste(
-                            editor_state->current_snaped_beats(),
-                            notificationsQueue
-                        );
+                    if (editor_state) {
+                        editor_state->paste(notificationsQueue);
                     }
                 }
                 if (ImGui::MenuItem("Delete", "Delete")) {
-                    if (editor_state and editor_state->chart_state) {
-                        editor_state->chart_state->delete_(notificationsQueue);
+                    if (editor_state) {
+                        editor_state->delete_(notificationsQueue);
                     }
                 }
                 ImGui::EndMenu();

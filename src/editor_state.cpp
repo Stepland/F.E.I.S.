@@ -454,7 +454,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
 
             // Display selected notes
             for (const auto& [_, note] : chart_state->visible_notes) {
-                if (chart_state->selected_notes.contains(note)) {
+                if (chart_state->selected_stuff.notes.contains(note)) {
                     ImGui::SetCursorPos({
                         note.get_position().get_x() * squareSize,
                         TitlebarHeight + note.get_position().get_y() * squareSize
@@ -919,7 +919,7 @@ void EditorState::display_tempo_menu() {
             playback_position
         );
         if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            auto before = *applicable_timing;
+            const auto before = *applicable_timing;
             applicable_timing->insert(better::BPMAtBeat{bpm, current_snaped_beats()});
             if (*applicable_timing != before) {
                 reload_sounds_that_depend_on_timing();
@@ -1045,6 +1045,49 @@ void EditorState::redo(NotificationsQueue& nq) {
         chart_state->density_graph.should_recompute = true;
     }
 };
+
+void EditorState::cut(NotificationsQueue& nq) {
+    if (chart_state) {
+        chart_state->cut(nq, *applicable_timing, timing_origin());
+        reload_all_sounds();
+    }
+}
+
+void EditorState::copy(NotificationsQueue& nq) {
+    if (chart_state) {
+        chart_state->copy(nq);
+    }
+}
+
+void EditorState::paste(NotificationsQueue& nq) {
+    if (chart_state) {
+        chart_state->paste(
+            current_snaped_beats(),
+            nq,
+            *applicable_timing,
+            timing_origin()
+        );
+    }
+}
+
+void EditorState::delete_(NotificationsQueue& nq) {
+    if (chart_state) {
+        chart_state->delete_(nq, *applicable_timing, timing_origin());
+    }
+}
+
+// Discard, in that order :
+// - time selection
+// - notes & bpm event selection
+void EditorState::discard_selection() {
+    if (chart_state) {
+        if (chart_state->time_selection) {
+            chart_state->time_selection.reset();
+        } else if (not chart_state->selected_stuff.empty()) {
+            chart_state->selected_stuff.clear();
+        }
+    }
+}
 
 void EditorState::open_chart(const std::string& name) {
     auto& [name_ref, chart] = *song.charts.find(name);

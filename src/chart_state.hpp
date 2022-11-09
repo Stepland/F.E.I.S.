@@ -11,7 +11,7 @@
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "long_note_dummy.hpp"
-#include "notes_clipboard.hpp"
+#include "clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "widgets/density_graph.hpp"
 
@@ -25,10 +25,23 @@ struct ChartState {
     better::Chart& chart;
     const std::string& difficulty_name;
 
-    void cut(NotificationsQueue& nq);
+    void cut(
+        NotificationsQueue& nq,
+        better::Timing& timing,
+        const TimingOrigin& timing_origin
+    );
     void copy(NotificationsQueue& nq);
-    void paste(Fraction at_beat, NotificationsQueue& nq);
-    void delete_(NotificationsQueue& nq);
+    void paste(
+        Fraction at_beat,
+        NotificationsQueue& nq,
+        better::Timing& timing,
+        const TimingOrigin& timing_origin
+    );
+    void delete_(
+        NotificationsQueue& nq,
+        better::Timing& timing,
+        const TimingOrigin& timing_origin
+    );
 
     Interval<Fraction> visible_beats(const sf::Time& playback_position, const better::Timing& timing);
     void update_visible_notes(const sf::Time& playback_position, const better::Timing& timing);
@@ -41,8 +54,8 @@ struct ChartState {
         const better::Timing& timing
     );
 
-    better::Notes selected_notes;
-    NotesClipboard notes_clipboard;
+    ClipboardContents selected_stuff;
+    Clipboard clipboard;
 
     void handle_time_selection_tab(Fraction beats);
     std::optional<Interval<Fraction>> time_selection;

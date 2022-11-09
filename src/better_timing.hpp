@@ -33,18 +33,16 @@ namespace better {
         Fraction beats;
     };
 
-    class SelectableBPMEvent {
+    class BPMEvent {
     public:
-        SelectableBPMEvent(Fraction beats, double seconds, Decimal bpm);
+        BPMEvent(Fraction beats, double seconds, Decimal bpm);
         Decimal get_bpm() const;
         double get_bpm_as_double() const;
         Fraction get_beats() const;
         double get_seconds() const;
 
-        bool operator==(const SelectableBPMEvent&) const = default;
-        friend std::ostream& operator<<(std::ostream& out, const SelectableBPMEvent& b);
-
-        mutable bool selected = false;
+        bool operator==(const BPMEvent&) const = default;
+        friend std::ostream& operator<<(std::ostream& out, const BPMEvent& b);
     private:
         Decimal bpm;
         double bpm_as_double;
@@ -55,25 +53,17 @@ namespace better {
     class Timing {
     public:
 
-        using event_type = SelectableBPMEvent;
-        using key_type = std::shared_ptr<event_type>;
+        using bpm_event_type = BPMEvent;
+        using key_type = bpm_event_type;
 
-        struct OrderByBeats {
+        struct beat_order_for_events {
             template<class T>
             bool operator()(const T& a, const T& b) const {
-                return a->get_beats() < b->get_beats();
-            }
-        };
-        
-        struct OrderBySeconds {
-            template<class T>
-            bool operator()(const T& a, const T& b) const {
-                return a->get_seconds() < b->get_seconds();
+                return a.get_beats() < b.get_beats();
             }
         };
 
-        using events_by_beats_type = std::set<key_type, OrderByBeats>;
-        using events_by_seconds_type = std::set<key_type, OrderBySeconds>;
+        using keys_by_beats_type = std::set<bpm_event_type, beat_order_for_events>;
 
         Timing();
         Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
@@ -91,6 +81,7 @@ namespace better {
         Decimal bpm_at(Fraction beats) const;
 
         void insert(const BPMAtBeat& bpm_change);
+        void erase(const BPMAtBeat& bpm_change);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
@@ -99,16 +90,10 @@ namespace better {
         
         template<typename Callback>
         void for_each_event_between(const Fraction& first, const Fraction& last, const Callback& cb) const {
-            const auto first_element = events_by_beats.lower_bound(
-                std::make_shared<event_type>(first, 0, 1)
-            );
-            const auto last_element = events_by_beats.upper_bound(
-                std::make_shared<event_type>(last, 0, 1)
-            );
-            std::for_each(first_element, last_element, [&](const key_type& ptr){cb(*ptr);});
+            const auto first_element = events_by_beats.lower_bound(bpm_event_type{first, 0, 1});
+            const auto last_element = events_by_beats.upper_bound(bpm_event_type{last, 0, 1});
+            std::for_each(first_element, last_element, [&](const bpm_event_type& ptr){cb(ptr);});
         }
-
-        void unselect_everything() const;
 
         bool operator==(const Timing&) const = default;
 
@@ -119,26 +104,22 @@ namespace better {
         double offset_as_double;
 
         // These containers hold shared pointers to the same objects
-        events_by_beats_type events_by_beats;
-        events_by_seconds_type events_by_seconds;
+        keys_by_beats_type events_by_beats;
+        std::map<double, Fraction> seconds_to_beats;
 
         void reload_events_from(const std::vector<BPMAtBeat>& events);
 
         const key_type& bpm_event_in_effect_at(sf::Time time) const;
         const key_type& bpm_event_in_effect_at(double seconds) const;
         const key_type& bpm_event_in_effect_at(Fraction beats) const;
-
-        events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(sf::Time time) const;
-        events_by_seconds_type::iterator iterator_to_bpm_event_in_effect_at(double seconds) const;
-        events_by_beats_type::iterator iterator_to_bpm_event_in_effect_at(Fraction beats) const;
     };
 }
 
 template <>
-struct fmt::formatter<better::SelectableBPMEvent>: formatter<string_view> {
+struct fmt::formatter<better::BPMEvent>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
-    auto format(const better::SelectableBPMEvent& b, FormatContext& ctx) {
+    auto format(const better::BPMEvent& b, FormatContext& ctx) {
         return format_to(
             ctx.out(),
             "BPMEvent(beats: {}, bpm: {})",

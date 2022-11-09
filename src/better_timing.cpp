@@ -39,30 +39,30 @@ namespace better {
         return beats;
     }
 
-    SelectableBPMEvent::SelectableBPMEvent(Fraction beats_, double seconds_, Decimal bpm_) :
+    BPMEvent::BPMEvent(Fraction beats_, double seconds_, Decimal bpm_) :
         bpm(bpm_),
         bpm_as_double(std::stod(bpm_.format("f"))),
         beats(beats_),
         seconds(seconds_)
     {};
 
-    Decimal SelectableBPMEvent::get_bpm() const {
+    Decimal BPMEvent::get_bpm() const {
         return bpm;
     }
 
-    double SelectableBPMEvent::get_bpm_as_double() const {
+    double BPMEvent::get_bpm_as_double() const {
         return bpm_as_double;
     }
     
-    Fraction SelectableBPMEvent::get_beats() const {
+    Fraction BPMEvent::get_beats() const {
         return beats;
     }
 
-    double SelectableBPMEvent::get_seconds() const {
+    double BPMEvent::get_seconds() const {
         return seconds;
     };
 
-    std::ostream& operator<<(std::ostream& out, const SelectableBPMEvent& b) {
+    std::ostream& operator<<(std::ostream& out, const BPMEvent& b) {
         out << fmt::format("{}", b);
         return out;
     }
@@ -94,11 +94,11 @@ namespace better {
     */
     double Timing::seconds_at(Fraction beats) const {
         const auto& bpm_change = bpm_event_in_effect_at(beats);
-        const Fraction beats_since_previous_event = beats - bpm_change->get_beats();
-        double seconds_since_previous_event = static_cast<double>(beats_since_previous_event) * 60 / bpm_change->get_bpm_as_double();
+        const Fraction beats_since_previous_event = beats - bpm_change.get_beats();
+        double seconds_since_previous_event = static_cast<double>(beats_since_previous_event) * 60 / bpm_change.get_bpm_as_double();
         return (
             offset_as_double
-            + bpm_change->get_seconds()
+            + bpm_change.get_seconds()
             + seconds_since_previous_event
         );
     };
@@ -122,13 +122,13 @@ namespace better {
 
     Fraction Timing::beats_at(double seconds) const {
         const auto& bpm_change = bpm_event_in_effect_at(seconds);
-        auto seconds_since_previous_event = seconds - bpm_change->get_seconds();
+        auto seconds_since_previous_event = seconds - bpm_change.get_seconds();
         auto beats_since_previous_event = (
-            convert_to_fraction(bpm_change->get_bpm())
+            convert_to_fraction(bpm_change.get_bpm())
             * Fraction{seconds_since_previous_event}
             / 60
         );
-        return bpm_change->get_beats() + beats_since_previous_event;
+        return bpm_change.get_beats() + beats_since_previous_event;
     };
 
     Decimal Timing::bpm_at(sf::Time time) const {
@@ -138,12 +138,12 @@ namespace better {
 
     Decimal Timing::bpm_at(double seconds) const {
         const auto& bpm_change = bpm_event_in_effect_at(seconds);
-        return bpm_change->get_bpm();
+        return bpm_change.get_bpm();
     }
 
     Decimal Timing::bpm_at(Fraction beats) const {
         const auto& bpm_change = bpm_event_in_effect_at(beats);
-        return bpm_change->get_bpm();
+        return bpm_change.get_bpm();
     }
 
     void Timing::insert(const BPMAtBeat& new_bpm) {
@@ -155,7 +155,27 @@ namespace better {
             events_by_beats.begin(),
             events_by_beats.end(),
             std::back_inserter(new_events),
-            [&](const key_type& bpm){ return BPMAtBeat{bpm->get_bpm(), bpm->get_beats()};}
+            [&](const key_type& bpm){
+                return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};
+            }
+        );
+        reload_events_from(new_events);
+    }
+
+    void Timing::erase(const BPMAtBeat& event) {
+        if (events_by_beats.size() == 1) {
+            return;
+        }
+        events_by_beats.erase({event.get_beats(), 0, 0});
+        std::vector<BPMAtBeat> new_events;
+        new_events.reserve(events_by_beats.size());
+        std::transform(
+            events_by_beats.begin(),
+            events_by_beats.end(),
+            std::back_inserter(new_events),
+            [&](const key_type& bpm){
+                return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};
+            }
         );
         reload_events_from(new_events);
     }
@@ -167,8 +187,8 @@ namespace better {
         auto bpms = nlohmann::ordered_json::array();
         for (const auto& bpm_change : events_by_beats) {
             bpms.push_back({
-                {"beat", beat_to_best_form(bpm_change->get_beats())},
-                {"bpm", bpm_change->get_bpm().format("f")}
+                {"beat", beat_to_best_form(bpm_change.get_beats())},
+                {"bpm", bpm_change.get_bpm().format("f")}
             });
         }
         j["bpms"] = bpms;
@@ -215,19 +235,6 @@ namespace better {
         return Timing{{{bpm, 0}}, -1 * offset};
     };
 
-    void Timing::unselect_everything() const {
-        std::ranges::for_each(events_by_beats, [&](auto& event){
-            event->selected = false;
-        });
-    }
-
-    struct _OrderByBeatsDeref {
-        template<class T>
-        bool operator()(const T& a, const T& b) const {
-            return a.get_beats() < b.get_beats();
-        }
-    };
-
     void Timing::reload_events_from(const std::vector<BPMAtBeat>& events) {
         if (events.empty()) {
             throw std::invalid_argument(
@@ -237,7 +244,7 @@ namespace better {
 
         // Sort events by beat, keeping only the first in insertion order in
         // case there are multiple on a given beat
-        std::set<BPMAtBeat, _OrderByBeatsDeref> sorted_events;
+        std::set<BPMAtBeat, Timing::beat_order_for_events> sorted_events;
         for (const auto& event: events) {
             if (not sorted_events.contains(event)) {
                 sorted_events.insert(event);
@@ -245,7 +252,7 @@ namespace better {
         }
 
         // Only keep non-redundant bpm changes
-        std::set<BPMAtBeat, _OrderByBeatsDeref> filtered_events;
+        std::set<BPMAtBeat, Timing::beat_order_for_events> filtered_events;
         for (const auto& event : sorted_events) {
             if (filtered_events.empty()) {
                 filtered_events.insert(event);
@@ -257,14 +264,20 @@ namespace better {
             }
         }
 
+        // Compute seconds offsets
+        // Bootstrap the alg by computing the first one out of the loop
         auto first_event = filtered_events.begin();
         double current_second = 0;
-        std::vector<SelectableBPMEvent> bpm_changes;
-        bpm_changes.reserve(filtered_events.size());
-        bpm_changes.emplace_back(
+        events_by_beats.clear();
+        events_by_beats.emplace(
             first_event->get_beats(),
             current_second,
             first_event->get_bpm()
+        );
+        seconds_to_beats.clear();
+        seconds_to_beats.emplace(
+            current_second,
+            first_event->get_beats()
         );
 
         auto previous = first_event;
@@ -273,63 +286,39 @@ namespace better {
             const Fraction beats_since_last_event = current->get_beats() - previous->get_beats();
             double seconds_since_last_event = static_cast<double>(beats_since_last_event) * 60 / previous->get_bpm_as_double();
             current_second += seconds_since_last_event;
-            bpm_changes.emplace_back(
+            events_by_beats.emplace(
                 current->get_beats(),
                 current_second,
                 current->get_bpm()
             );
+            seconds_to_beats.emplace(
+                current_second,
+                current->get_beats()
+            );
         }
-        events_by_beats.clear();
-        std::transform(
-            bpm_changes.begin(),
-            bpm_changes.end(),
-            std::inserter(events_by_beats, events_by_beats.begin()),
-            [](auto&& event){
-                return std::make_shared<event_type>(std::move(event));
-            }
-        );
-        events_by_seconds.clear();
-        events_by_seconds.insert(events_by_beats.begin(), events_by_beats.end());
     }
 
     const Timing::key_type& Timing::bpm_event_in_effect_at(sf::Time time) const {
-        return *iterator_to_bpm_event_in_effect_at(time);
+        const auto seconds = static_cast<double>(time.asMicroseconds()) / 1000000.0;
+        return bpm_event_in_effect_at(seconds);
     }
 
     const Timing::key_type& Timing::bpm_event_in_effect_at(double seconds) const {
-        return *iterator_to_bpm_event_in_effect_at(seconds);
+        auto it = seconds_to_beats.upper_bound(seconds);
+        if (it != seconds_to_beats.begin()) {
+            it = std::prev(it);
+        }
+        const auto [_, beat] = *it;
+        return bpm_event_in_effect_at(beat);
     }
 
     const Timing::key_type& Timing::bpm_event_in_effect_at(Fraction beats) const {
-        return *iterator_to_bpm_event_in_effect_at(beats);
-    }
-
-    Timing::events_by_seconds_type::iterator Timing::iterator_to_bpm_event_in_effect_at(sf::Time time) const {
-        const auto seconds = static_cast<double>(time.asMicroseconds()) / 1000000.0;
-        return iterator_to_bpm_event_in_effect_at(seconds);
-    }
-
-    Timing::events_by_seconds_type::iterator Timing::iterator_to_bpm_event_in_effect_at(double seconds) const {
-        auto bpm_change = this->events_by_seconds.upper_bound(
-            std::make_shared<event_type>(0, seconds - offset_as_double, 0)
-        );
-        if (bpm_change != this->events_by_seconds.begin()) {
-            bpm_change = std::prev(bpm_change);
+        auto it = events_by_beats.upper_bound(bpm_event_type{beats, 0, 0});
+        if (it != events_by_beats.begin()) {
+            it = std::prev(it);
         }
-        return bpm_change;
+        return *it;
     }
-
-    Timing::events_by_beats_type::iterator Timing::iterator_to_bpm_event_in_effect_at(Fraction beats) const {
-        auto bpm_change = this->events_by_beats.upper_bound(
-            std::make_shared<event_type>(beats, 0, 0)
-        );
-        if (bpm_change != this->events_by_beats.begin()) {
-            bpm_change = std::prev(bpm_change);
-        }
-        return bpm_change;
-    }
-
-
 
     std::ostream& operator<<(std::ostream& out, const Timing& t) {
         out << fmt::format("{}", t);
