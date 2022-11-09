@@ -83,6 +83,9 @@ namespace better {
         void insert(const BPMAtBeat& bpm_change);
         void erase(const BPMAtBeat& bpm_change);
 
+        Decimal get_offset() const;
+        void set_offset(const Decimal& new_offset);
+
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
 
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
@@ -100,14 +103,22 @@ namespace better {
         friend std::ostream& operator<<(std::ostream& out, const Timing& t);
         friend fmt::formatter<better::Timing>;
     private:
-        Decimal offset;
-        double offset_as_double;
+        Decimal offset = 0;
+        double offset_as_double = 0;
 
         // These containers hold shared pointers to the same objects
-        keys_by_beats_type events_by_beats;
-        std::map<double, Fraction> seconds_to_beats;
+        keys_by_beats_type events_by_beats = {};
+        std::map<double, Fraction> seconds_to_beats = {};
 
+        void reconstruct(const std::vector<BPMAtBeat>& events, const Decimal& offset);
+
+        /* Reload the timing object assuming the first event in the given
+        vector happens at second zero */
         void reload_events_from(const std::vector<BPMAtBeat>& events);
+
+        /* Shift all events in the timing object to make beat zero happen
+        at the given offset in seconds */
+        void shift_to_match(const Decimal& offset);
 
         const key_type& bpm_event_in_effect_at(sf::Time time) const;
         const key_type& bpm_event_in_effect_at(double seconds) const;

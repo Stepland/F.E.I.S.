@@ -113,17 +113,19 @@ void ChartState::paste(
         density_graph.should_recompute = true;
     }
     if (not pasted_stuff.bpm_events.empty()) {
-        const auto message = fmt::format(
-            "Pasted {} BPM event{}",
-            selected_stuff.bpm_events.size(),
-            selected_stuff.bpm_events.size() > 1 ? "s" : ""
-        );
-        nq.push(std::make_shared<TextNotification>(message));
         const auto before = timing;
         for (const auto& bpm_event : pasted_stuff.bpm_events) {
             timing.insert(bpm_event);
         }
-        history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+        if (before != timing) {
+            const auto message = fmt::format(
+                "Pasted {} BPM event{}",
+                selected_stuff.bpm_events.size(),
+                selected_stuff.bpm_events.size() > 1 ? "s" : ""
+            );
+            nq.push(std::make_shared<TextNotification>(message));
+            history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+        }
     }
 };
 
@@ -147,10 +149,12 @@ void ChartState::delete_(
         for (const auto& bpm_event : selected_stuff.bpm_events) {
             timing.erase(bpm_event);
         }
-        history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
-        nq.push(
-            std::make_shared<TextNotification>("Deleted selected BPM events")
-        );
+        if (before != timing) {
+            history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+            nq.push(
+                std::make_shared<TextNotification>("Deleted selected BPM events")
+            );
+        }
     }
 }
 

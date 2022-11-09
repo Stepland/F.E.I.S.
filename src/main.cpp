@@ -461,8 +461,8 @@ int main() {
             if (editor_state->show_editor_settings) {
                 editor_state->display_editor_settings();
             }
-            if (editor_state->show_tempo_menu) {
-                editor_state->display_tempo_menu();
+            if (editor_state->show_timing_menu) {
+                editor_state->display_timing_menu();
             }
         } else {
             bg.render(window);
@@ -579,9 +579,9 @@ int main() {
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Tempo", editor_state.has_value())) {
-                if (ImGui::MenuItem("Adjust Tempo")) {
-                    editor_state->show_tempo_menu = true;
+            if (ImGui::BeginMenu("Timing", editor_state.has_value())) {
+                if (ImGui::MenuItem("Adjust Timing")) {
+                    editor_state->show_timing_menu = true;
                 }
                 ImGui::EndMenu();
             }

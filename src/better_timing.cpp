@@ -75,14 +75,10 @@ namespace better {
     
     /*
     Create a Time Map from a list of BPM changes with times given in
-    beats, the offset parameter is more flexible than a "regular" beat zero
-    offset as it accepts non-zero beats
+    beats, and the beat zero offset
     */
-    Timing::Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset_) :
-        offset(offset_),
-        offset_as_double(std::stod(offset_.format("f")))
-    {
-        reload_events_from(events);
+    Timing::Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset_) {
+        reconstruct(events, offset_);
     }
 
     /*
@@ -159,7 +155,7 @@ namespace better {
                 return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};
             }
         );
-        reload_events_from(new_events);
+        reconstruct(new_events, offset);
     }
 
     void Timing::erase(const BPMAtBeat& event) {
@@ -177,7 +173,16 @@ namespace better {
                 return BPMAtBeat{bpm.get_bpm(), bpm.get_beats()};
             }
         );
-        reload_events_from(new_events);
+        reconstruct(new_events, offset);
+    }
+
+
+    Decimal Timing::get_offset() const {
+        return offset;
+    }
+
+    void Timing::set_offset(const Decimal& new_offset) {
+        shift_to_match(new_offset);
     }
 
 
@@ -235,6 +240,11 @@ namespace better {
         return Timing{{{bpm, 0}}, -1 * offset};
     };
 
+    void Timing::reconstruct(const std::vector<BPMAtBeat>& events, const Decimal& offset) {
+        reload_events_from(events);
+        shift_to_match(offset);
+    }
+
     void Timing::reload_events_from(const std::vector<BPMAtBeat>& events) {
         if (events.empty()) {
             throw std::invalid_argument(
@@ -264,7 +274,8 @@ namespace better {
             }
         }
 
-        // Compute seconds offsets
+        // Compute seconds offsets as if the first event happened at second 0
+        // then shift
         // Bootstrap the alg by computing the first one out of the loop
         auto first_event = filtered_events.begin();
         double current_second = 0;
@@ -273,11 +284,6 @@ namespace better {
             first_event->get_beats(),
             current_second,
             first_event->get_bpm()
-        );
-        seconds_to_beats.clear();
-        seconds_to_beats.emplace(
-            current_second,
-            first_event->get_beats()
         );
 
         auto previous = first_event;
@@ -291,11 +297,26 @@ namespace better {
                 current_second,
                 current->get_bpm()
             );
-            seconds_to_beats.emplace(
-                current_second,
-                current->get_beats()
-            );
         }
+    }
+
+    void Timing::shift_to_match(const Decimal& offset_) {
+        offset = offset_;
+        offset_as_double = std::stod(offset_.format("f"));
+        const auto shift = offset_as_double - seconds_at(0);
+        Timing::keys_by_beats_type shifted_events;
+        seconds_to_beats.clear();
+        std::for_each(
+            events_by_beats.cbegin(),
+            events_by_beats.cend(),
+            [&](const auto& event) {
+                const auto seconds = event.get_seconds() + shift;
+                const auto beats = event.get_beats();
+                shifted_events.emplace(beats, seconds, event.get_bpm());
+                seconds_to_beats.emplace(seconds, beats);
+            }
+        );
+        std::swap(shifted_events, events_by_beats);
     }
 
     const Timing::key_type& Timing::bpm_event_in_effect_at(sf::Time time) const {

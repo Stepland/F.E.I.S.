@@ -912,8 +912,8 @@ void EditorState::display_history() {
     history.display(show_history);
 }
 
-void EditorState::display_tempo_menu() {
-    if (ImGui::Begin("Adjust Tempo", &show_tempo_menu)) {
+void EditorState::display_timing_menu() {
+    if (ImGui::Begin("Adjust Timing", &show_timing_menu)) {
         auto bpm = std::visit(
             [&](const auto& pos){return applicable_timing->bpm_at(pos);},
             playback_position
@@ -925,6 +925,11 @@ void EditorState::display_tempo_menu() {
                 reload_sounds_that_depend_on_timing();
                 history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
             }
+        }
+        auto offset = applicable_timing->get_offset();
+        if (feis::InputDecimal("beat zero offset", &offset, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            applicable_timing->set_offset(offset);
+            reload_sounds_that_depend_on_timing();
         }
     }
     ImGui::End();
