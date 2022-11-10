@@ -85,6 +85,35 @@ void RemoveNotes::undo_action(EditorState& ed) const {
     AddNotes::do_action(ed);
 }
 
+AddChart::AddChart(const std::string& difficulty_name_, const better::Chart& chart_) :
+    difficulty_name(difficulty_name_),
+    chart(chart_)
+{
+    message = fmt::format("Added {} chart", difficulty_name_);
+}
+
+void AddChart::do_action(EditorState& ed) const {
+    ed.insert_chart(difficulty_name, chart);
+}
+
+void AddChart::undo_action(EditorState& ed) const {
+    ed.erase_chart(difficulty_name);
+}
+
+RemoveChart::RemoveChart(const std::string& difficulty_name_, const better::Chart& chart_) :
+    AddChart(difficulty_name_, chart_)
+{
+    message = fmt::format("Removed {} chart", difficulty_name_);
+}
+
+void RemoveChart::do_action(EditorState& ed) const {
+    AddChart::undo_action(ed);
+}
+
+void RemoveChart::undo_action(EditorState& ed) const {
+    AddChart::do_action(ed);
+}
+
 RerateChart::RerateChart(
     const std::string& chart,
     const std::optional<Decimal>& old_level,

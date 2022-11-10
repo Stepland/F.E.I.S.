@@ -195,7 +195,12 @@ public:
 
     void save(const std::filesystem::path& path);
 
+    void insert_chart(const std::string& name, const better::Chart& chart);
+    void insert_chart_and_push_history(const std::string& name, const better::Chart& chart);
+    void erase_chart(const std::string& name);
+    void erase_chart_and_push_history(const std::string& name);
     void open_chart(const std::string& name);
+    void close_chart();
 
     void update_visible_notes();
 

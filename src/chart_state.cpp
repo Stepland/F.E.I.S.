@@ -41,17 +41,19 @@ void ChartState::cut(
             history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_stuff.notes));
         }
         if (not selected_stuff.bpm_events.empty()) {
-            const auto message = fmt::format(
-                "Cut {} BPM event{}",
-                selected_stuff.bpm_events.size(),
-                selected_stuff.bpm_events.size() > 1 ? "s" : ""
-            );
-            nq.push(std::make_shared<TextNotification>(message));
             const auto before = timing;
             for (const auto& bpm_event : selected_stuff.bpm_events) {
                 timing.erase(bpm_event);
             }
-            history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+            if (before != timing) {
+                const auto message = fmt::format(
+                    "Cut {} BPM event{}",
+                    selected_stuff.bpm_events.size(),
+                    selected_stuff.bpm_events.size() > 1 ? "s" : ""
+                );
+                nq.push(std::make_shared<TextNotification>(message));
+                history.push(std::make_shared<ChangeTiming>(before, timing, timing_origin));
+            }
         }
     }
 

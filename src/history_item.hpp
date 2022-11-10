@@ -55,6 +55,32 @@ public:
     void undo_action(EditorState& ed) const override;
 };
 
+class AddChart : public HistoryItem {
+public:
+    AddChart(
+        const std::string& difficulty_name,
+        const better::Chart& chart
+    );
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+
+protected:
+    std::string difficulty_name;
+    better::Chart chart;
+};
+
+class RemoveChart : public AddChart {
+public:
+    RemoveChart(
+        const std::string& difficulty_name,
+        const better::Chart& chart
+    );
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+};
+
 
 class RerateChart : public HistoryItem {
 public:

@@ -930,6 +930,7 @@ void EditorState::display_timing_menu() {
         if (feis::InputDecimal("beat zero offset", &offset, ImGuiInputTextFlags_EnterReturnsTrue)) {
             applicable_timing->set_offset(offset);
             reload_sounds_that_depend_on_timing();
+            set_playback_position(current_exact_beats());
         }
     }
     ImGui::End();
@@ -1094,12 +1095,49 @@ void EditorState::discard_selection() {
     }
 }
 
+void EditorState::insert_chart(const std::string& name, const better::Chart& chart) {
+    if (song.charts.try_emplace(name, chart).second) {
+        open_chart(name);
+    }
+}
+
+void EditorState::insert_chart_and_push_history(const std::string& name, const better::Chart& chart) {
+    insert_chart(name, chart);
+    history.push(std::make_shared<AddChart>(name, chart));
+}
+
+void EditorState::erase_chart(const std::string& name) {
+    const auto& it = song.charts.find(name);
+    if (it != song.charts.end()) {
+        if (chart_state and name == chart_state->difficulty_name) {
+            close_chart();
+        }
+        song.charts.erase(name);
+    }
+}
+
+
+void EditorState::erase_chart_and_push_history(const std::string& name) {
+    const auto& it = song.charts.find(name);
+    if (it != song.charts.end()) {
+        if (chart_state and name == chart_state->difficulty_name) {
+            close_chart();
+        }
+        history.push(std::make_shared<RemoveChart>(name, it->second));
+        song.charts.erase(name);
+    }
+}
+
 void EditorState::open_chart(const std::string& name) {
     auto& [name_ref, chart] = *song.charts.find(name);
     chart_state.emplace(chart, name_ref, history, assets);
     reload_editable_range();
     reload_applicable_timing();
     reload_all_sounds();
+};
+
+void EditorState::close_chart() {
+    chart_state.reset();
 };
 
 void EditorState::update_visible_notes() {

@@ -443,9 +443,7 @@ int main() {
                 if (pair) {
                     auto& [dif_name, new_chart] = *pair;
                     editor_state->show_new_chart_dialog = false;
-                    if (editor_state->song.charts.try_emplace(dif_name, new_chart).second) {
-                        editor_state->open_chart(dif_name);
-                    }
+                    editor_state->insert_chart_and_push_history(dif_name, new_chart);
                 }
             } else {
                 newChartDialog.resetValues();
@@ -574,8 +572,7 @@ int main() {
                         nullptr,
                         false,
                         editor_state->chart_state.has_value())) {
-                    editor_state->song.charts.erase(editor_state->chart_state->difficulty_name);
-                    editor_state->chart_state.reset();
+                    editor_state->erase_chart_and_push_history(editor_state->chart_state->difficulty_name);
                 }
                 ImGui::EndMenu();
             }

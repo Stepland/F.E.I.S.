@@ -14,6 +14,8 @@
 - History now takes into account when you :
     - Rename a chart (you change its difficulty)
     - Re-rate a chart
+    - Add and remove charts
+    - Change the timing (either BPMs or offset)
 
 ## 🚧 Small Changes 🚧
 - Force using the asset folder next to the executable
