@@ -20,7 +20,7 @@ namespace better {
         std::optional<Hakus> hakus;
         std::shared_ptr<Notes> notes = std::make_shared<Notes>();
 
-        bool operator==(const Chart&) const = default;
+        bool operator==(const Chart&) const;
 
         nlohmann::ordered_json dump_to_memon_1_0_0(
             const nlohmann::ordered_json& fallback_timing_object

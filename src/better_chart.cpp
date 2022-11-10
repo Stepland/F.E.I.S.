@@ -8,6 +8,17 @@
 #include "json_decimal_handling.hpp"
 
 namespace better {
+    bool Chart::operator==(const Chart& other) const {
+        return (
+            level == other.level
+            and (
+                ((not timing.has_value()) and (not other.timing.has_value()))
+                or (**timing == **other.timing)
+            ) and hakus == other.hakus
+            and *notes == *other.notes
+        );
+    }
+
     nlohmann::ordered_json Chart::dump_to_memon_1_0_0(
         const nlohmann::ordered_json& fallback_timing_object
     ) const {

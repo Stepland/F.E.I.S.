@@ -69,6 +69,9 @@ namespace better {
         Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
 
         double seconds_at(Fraction beats) const;
+    private:
+        double seconds_without_offset_at(Fraction beats) const;
+    public:
         double seconds_between(Fraction beat_a, Fraction beat_b) const;
         sf::Time time_at(Fraction beats) const;
         sf::Time time_between(Fraction beat_a, Fraction beat_b) const;
@@ -106,14 +109,17 @@ namespace better {
         Decimal offset = 0;
         double offset_as_double = 0;
 
-        // These containers hold shared pointers to the same objects
+        // holds the bpm changes with seconds precomputed, seconds are synced
+        // as if beat zero was happening at zero seconds, ignoring any offset
         keys_by_beats_type events_by_beats = {};
+        // holds a <seconds, beats> pair for each event to allow a quick search
+        // when querying by seconds, seconds held in this are synced as if beat
+        // zero was happenning at zero seconds
         std::map<double, Fraction> seconds_to_beats = {};
 
         void reconstruct(const std::vector<BPMAtBeat>& events, const Decimal& offset);
 
-        /* Reload the timing object assuming the first event in the given
-        vector happens at second zero */
+        /* Reload using the given events */
         void reload_events_from(const std::vector<BPMAtBeat>& events);
 
         /* Shift all events in the timing object to make beat zero happen

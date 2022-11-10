@@ -312,6 +312,7 @@ void LinearView::draw(
         ImGui::IsMouseClicked(ImGuiMouseButton_Left)
         and current_window->InnerClipRect.Contains(ImGui::GetMousePos())
         and not ImGui::IsAnyItemHovered()
+        and ImGui::IsWindowFocused()
     ) {
         started_selection_inside_window = true;
     }

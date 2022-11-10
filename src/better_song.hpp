@@ -77,7 +77,7 @@ namespace better {
         */
         static Song load_from_memon_legacy(const nlohmann::json& memon);
 
-        bool operator==(const Song&) const = default;
+        bool operator==(const Song&) const;
         friend std::ostream& operator<<(std::ostream& out, const Song& s);
     };
 

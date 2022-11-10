@@ -1,5 +1,6 @@
 #include "better_song.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include <fmt/core.h>
@@ -192,6 +193,15 @@ namespace better {
         }
         return song;
     };
+
+    bool Song::operator==(const Song& other) const {
+        return (
+            charts == other.charts
+            and metadata == other.metadata
+            and *timing == *other.timing
+            and hakus == other.hakus
+        );
+    }
 
     std::ostream& operator<<(std::ostream& out, const Song& s) {
         out << fmt::format("{}", s);

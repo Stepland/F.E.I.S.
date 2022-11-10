@@ -89,15 +89,16 @@ namespace better {
     change
     */
     double Timing::seconds_at(Fraction beats) const {
+        return offset_as_double + seconds_without_offset_at(beats);
+    };
+
+    double Timing::seconds_without_offset_at(Fraction beats) const {
         const auto& bpm_change = bpm_event_in_effect_at(beats);
         const Fraction beats_since_previous_event = beats - bpm_change.get_beats();
         double seconds_since_previous_event = static_cast<double>(beats_since_previous_event) * 60 / bpm_change.get_bpm_as_double();
-        return (
-            offset_as_double
-            + bpm_change.get_seconds()
-            + seconds_since_previous_event
-        );
-    };
+        const auto previous_event_seconds = bpm_change.get_seconds();
+        return previous_event_seconds + seconds_since_previous_event;
+    }
 
     double Timing::seconds_between(Fraction beat_a, Fraction beat_b) const {
         return seconds_at(beat_b) - seconds_at(beat_a);
@@ -118,8 +119,9 @@ namespace better {
 
     Fraction Timing::beats_at(double seconds) const {
         const auto& bpm_change = bpm_event_in_effect_at(seconds);
-        auto seconds_since_previous_event = seconds - bpm_change.get_seconds();
-        auto beats_since_previous_event = (
+        const auto previous_event_seconds = bpm_change.get_seconds() + offset_as_double;
+        const auto seconds_since_previous_event = seconds - previous_event_seconds;
+        const auto beats_since_previous_event = (
             convert_to_fraction(bpm_change.get_bpm())
             * Fraction{seconds_since_previous_event}
             / 60
@@ -182,7 +184,8 @@ namespace better {
     }
 
     void Timing::set_offset(const Decimal& new_offset) {
-        shift_to_match(new_offset);
+        offset = new_offset;
+        offset_as_double = std::stod(new_offset.format("f"));
     }
 
 
@@ -242,7 +245,7 @@ namespace better {
 
     void Timing::reconstruct(const std::vector<BPMAtBeat>& events, const Decimal& offset) {
         reload_events_from(events);
-        shift_to_match(offset);
+        set_offset(offset);
     }
 
     void Timing::reload_events_from(const std::vector<BPMAtBeat>& events) {
@@ -274,9 +277,8 @@ namespace better {
             }
         }
 
-        // Compute seconds offsets as if the first event happened at second 0
-        // then shift
-        // Bootstrap the alg by computing the first one out of the loop
+        // Compute everything as if the first BPM change happened at zero
+        // seconds
         auto first_event = filtered_events.begin();
         double current_second = 0;
         events_by_beats.clear();
@@ -298,19 +300,17 @@ namespace better {
                 current->get_bpm()
             );
         }
-    }
 
-    void Timing::shift_to_match(const Decimal& offset_) {
-        offset = offset_;
-        offset_as_double = std::stod(offset_.format("f"));
-        const auto shift = offset_as_double - seconds_at(0);
+        // Shift events so their precomputed "seconds" put beat zero
+        // at zero seconds
+        const auto shift = seconds_without_offset_at(0);
         Timing::keys_by_beats_type shifted_events;
         seconds_to_beats.clear();
         std::for_each(
             events_by_beats.cbegin(),
             events_by_beats.cend(),
             [&](const auto& event) {
-                const auto seconds = event.get_seconds() + shift;
+                const auto seconds = event.get_seconds() - shift;
                 const auto beats = event.get_beats();
                 shifted_events.emplace(beats, seconds, event.get_bpm());
                 seconds_to_beats.emplace(seconds, beats);
@@ -325,7 +325,7 @@ namespace better {
     }
 
     const Timing::key_type& Timing::bpm_event_in_effect_at(double seconds) const {
-        auto it = seconds_to_beats.upper_bound(seconds);
+        auto it = seconds_to_beats.upper_bound(seconds - offset_as_double);
         if (it != seconds_to_beats.begin()) {
             it = std::prev(it);
         }

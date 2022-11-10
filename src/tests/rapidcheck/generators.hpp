@@ -20,6 +20,7 @@
 #include "../../better_song.hpp"
 #include "../../better_timing.hpp"
 #include "../../variant_visitor.hpp"
+#include "rapidcheck/gen/Arbitrary.hpp"
 
 
 namespace rc {
@@ -153,10 +154,15 @@ namespace rc {
         }
     };
 
+    struct TimingParams {
+        std::vector<better::BPMAtBeat> events;
+        Decimal offset;
+    };
+
     template<>
-    struct Arbitrary<better::Timing> {
-        static Gen<better::Timing> arbitrary() {
-            return gen::construct<better::Timing>(
+    struct Arbitrary<TimingParams> {
+        static Gen<TimingParams> arbitrary() {
+            return gen::construct<TimingParams>(
                 gen::withSize([](std::size_t size) {
                     return gen::uniqueBy<std::vector<better::BPMAtBeat>>(
                         std::max(std::size_t(1), size),
@@ -165,6 +171,18 @@ namespace rc {
                     );
                 }),
                 gen::arbitrary<Decimal>()
+            );
+        }
+    };
+
+    template<>
+    struct Arbitrary<better::Timing> {
+        static Gen<better::Timing> arbitrary() {
+            return gen::map(
+                gen::arbitrary<TimingParams>(),
+                [](const TimingParams& t){
+                    return better::Timing{t.events, t.offset};
+                }
             );
         }
     };
@@ -197,9 +215,13 @@ namespace rc {
         static Gen<better::Chart> arbitrary() {
             return gen::construct<better::Chart>(
                 gen::arbitrary<std::optional<Decimal>>(),
-                gen::construct<std::optional<better::Timing>>(gen::arbitrary<better::Timing>()),
+                gen::construct<std::optional<std::shared_ptr<better::Timing>>>(
+                    gen::makeShared<better::Timing>(gen::arbitrary<better::Timing>())
+                ),
                 gen::arbitrary<std::optional<Hakus>>(),
-                gen::arbitrary<better::Notes>()
+                gen::construct<std::shared_ptr<better::Notes>>(
+                    gen::makeShared<better::Notes>(gen::arbitrary<better::Notes>())
+                )
             );
         }
     };
@@ -254,7 +276,7 @@ namespace rc {
             return gen::construct<better::Song>(
                 gen::arbitrary<std::map<std::string, better::Chart, better::OrderByDifficultyName>>(),
                 gen::arbitrary<better::Metadata>(),
-                gen::arbitrary<better::Timing>(),
+                gen::makeShared<better::Timing>(gen::arbitrary<better::Timing>()),
                 gen::arbitrary<std::optional<Hakus>>()
             );
         }
