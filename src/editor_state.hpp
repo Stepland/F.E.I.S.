@@ -161,6 +161,8 @@ public:
 
     SaveOutcome save_if_needed();
 
+    SaveOutcome save_asking_for_path();
+
     bool needs_to_save() const;
 
     enum class UserWantsToSave {
@@ -240,7 +242,7 @@ private:
 };
 
 namespace feis {
-    void save(
+    void force_save(
         std::optional<EditorState>& ed,
         NotificationsQueue& nq
     );

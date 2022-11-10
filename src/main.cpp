@@ -348,7 +348,7 @@ int main() {
                             break;
                         case sf::Keyboard::S:
                             if (event.key.control) {
-                                feis::save(editor_state, notificationsQueue);
+                                feis::force_save(editor_state, notificationsQueue);
                             }
                             break;
                         case sf::Keyboard::V:
@@ -502,7 +502,7 @@ int main() {
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Save", "Ctrl+S", false, editor_state.has_value())) {
-                    feis::save(editor_state, notificationsQueue);
+                    feis::force_save(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Save As", "", false, editor_state.has_value())) {
                     if (editor_state) {

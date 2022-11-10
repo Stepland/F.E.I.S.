@@ -943,7 +943,7 @@ bool EditorState::needs_to_save() const {
 EditorState::UserWantsToSave EditorState::ask_if_user_wants_to_save() const {
     int response_code = tinyfd_messageBox(
         "Warning",
-        "Chart has unsaved changes, do you want to save ?",
+        "The currently open chart has unsaved changes, do you want to save ?",
         "yesnocancel",
         "warning",
         1
@@ -972,15 +972,7 @@ EditorState::SaveOutcome EditorState::save_if_needed_and_user_wants_to() {
     }
     switch (ask_if_user_wants_to_save()) {
         case EditorState::UserWantsToSave::Yes:
-            {
-                const auto path = ask_for_save_path_if_needed();
-                if (not path) {
-                    return EditorState::SaveOutcome::UserCanceled; 
-                } else {
-                    save(*path);
-                    return EditorState::SaveOutcome::UserSaved;
-                }
-            }
+            return save_asking_for_path();
         case EditorState::UserWantsToSave::No:
             return EditorState::SaveOutcome::UserDeclindedSaving;
         default:
@@ -992,13 +984,17 @@ EditorState::SaveOutcome EditorState::save_if_needed() {
     if (not needs_to_save()) {
         return EditorState::SaveOutcome::NoSavingNeeded;
     } else {
-        const auto path = ask_for_save_path_if_needed();
-        if (not path) {
-            return EditorState::SaveOutcome::UserCanceled; 
-        } else {
-            save(*path);
-            return EditorState::SaveOutcome::UserSaved;
-        }
+        return save_asking_for_path();
+    }
+};
+
+EditorState::SaveOutcome EditorState::save_asking_for_path() {
+    const auto path = ask_for_save_path_if_needed();
+    if (not path) {
+        return EditorState::SaveOutcome::UserCanceled; 
+    } else {
+        save(*path);
+        return EditorState::SaveOutcome::UserSaved;
     }
 };
 
@@ -1367,12 +1363,12 @@ void EditorState::save(const std::filesystem::path& path) {
     history.mark_as_saved();
 };
 
-void feis::save(
+void feis::force_save(
     std::optional<EditorState>& ed,
     NotificationsQueue& nq
 ) {
     if (ed) {
-        if (ed->save_if_needed() == EditorState::SaveOutcome::UserSaved) {
+        if (ed->save_asking_for_path() == EditorState::SaveOutcome::UserSaved) {
             nq.push(std::make_shared<TextNotification>("Saved file"));
         }
     }
