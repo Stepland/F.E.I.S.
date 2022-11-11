@@ -1,5 +1,6 @@
 #include "editor_state.hpp"
 
+#include <SFML/Audio/Music.hpp>
 #include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Audio/SoundStream.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -72,6 +73,7 @@ EditorState::EditorState(
     history.mark_as_saved();
     reload_music();
     reload_jacket();
+    reload_preview_audio();
 };
 
 int EditorState::get_volume() const {
@@ -108,6 +110,19 @@ void EditorState::speed_up() {
 
 void EditorState::speed_down() {
     set_speed(speed - 1);
+}
+
+void EditorState::play_music_preview() {
+    if (song.metadata.use_preview_file) {
+        if (preview_audio) {
+            if (preview_audio->getStatus() == sf::Music::Playing) {
+                preview_audio->stop();
+            } else {
+                preview_audio->stop();
+                preview_audio->play();
+            }
+        }
+    }
 }
 
 
@@ -530,6 +545,10 @@ void EditorState::display_file_properties() {
         ImGui::Separator();
         
         ImGui::Text("Preview");
+        if (ImGui::ArrowButton("Play", ImGuiDir_Right)) {
+            play_music_preview();
+        }
+        ImGui::SameLine();
         if (ImGui::Checkbox("Use separate preview file", &song.metadata.use_preview_file)) {
             if (song.metadata.use_preview_file) {
                 history.push(std::make_shared<ChangePreview>(song.metadata.preview_loop, song.metadata.preview_file));

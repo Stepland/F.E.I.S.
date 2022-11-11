@@ -72,6 +72,8 @@ public:
 
     std::optional<sf::Music> preview_audio;
 
+    void play_music_preview();
+
     Playfield playfield;
     LinearView linear_view;
 
