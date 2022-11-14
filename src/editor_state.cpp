@@ -717,6 +717,38 @@ void EditorState::display_file_properties() {
         );
         ImGui::PopItemFlag();
         ImGui::PopItemWidth();
+        const bool should_display_quick_define = chart_state and chart_state->time_selection;
+        if (not should_display_quick_define) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Define from time selection")) {
+            stop_music_preview();
+            const auto before = [&]() -> PreviewState {
+                if (song.metadata.use_preview_file) {
+                    return song.metadata.preview_file;
+                } else {
+                    return song.metadata.preview_loop;
+                }
+            }();
+            const auto start = time_at(chart_state->time_selection->start);
+            const auto end = time_at(chart_state->time_selection->end);
+            const auto duration = end - start;
+            song.metadata.use_preview_file = false;
+            song.metadata.preview_loop.start = Decimal{fmt::format("{:.03}", start.asSeconds())};
+            song.metadata.preview_loop.duration = Decimal{fmt::format("{:.03}", duration.asSeconds())};
+            history.push(std::make_shared<ChangePreview>(before, song.metadata.preview_loop));
+        }
+        if (not should_display_quick_define) {
+            ImGui::EndDisabled();
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted(
+                    "You must define a time selection in the linear view first !\n"
+                    "Open up 'View' > 'Linear View' then use the Tab key to set the start, then the end"
+                );
+                ImGui::EndTooltip();
+            }
+        }
     }
     ImGui::End();
 };
