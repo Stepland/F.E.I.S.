@@ -122,6 +122,68 @@ void EditorState::play_music_preview() {
                 preview_audio->play();
             }
         }
+    } else {
+        set_playback_position(sf::seconds(std::stod(song.metadata.preview_loop.start.format("f"))));
+        play();
+        is_playing_preview_music_from_sss = true;
+    }
+}
+
+void EditorState::stop_music_preview() {
+    if (song.metadata.use_preview_file) {
+        if (preview_audio) {
+            preview_audio->stop();
+        }
+    } else {
+        stop();
+        is_playing_preview_music_from_sss = false;
+    }
+}
+
+bool EditorState::music_preview_is_playing() const {
+    if (song.metadata.use_preview_file) {
+        if (preview_audio) {
+            return preview_audio->getStatus() == sf::Music::Playing;
+        } else {
+            return false;
+        }
+    } else {
+        return is_playing_preview_music_from_sss;
+    }
+}
+
+sf::Time EditorState::music_preview_position() const {
+    if (not music_preview_is_playing()) {
+        return sf::Time::Zero;
+    }
+
+    if (song.metadata.use_preview_file) {
+        if (preview_audio) {
+            return preview_audio->getPlayingOffset();
+        }
+    } else if (is_playing_preview_music_from_sss) {
+        return audio.getPlayingOffset() - sf::seconds(std::stod(song.metadata.preview_loop.start.format("f")));
+    }
+
+    return sf::Time::Zero;
+}
+
+sf::Time EditorState::music_preview_duration() const {
+    if (song.metadata.use_preview_file) {
+        if (preview_audio) {
+            return preview_audio->getDuration();
+        }
+    } else {
+        return sf::seconds(std::stod(song.metadata.preview_loop.duration.format("f")));
+    }
+    return sf::Time::Zero;
+}
+
+void EditorState::update_music_preview_status() {
+    if (is_playing_preview_music_from_sss) {
+        if (music_preview_position() > music_preview_duration()) {
+            stop_music_preview();
+        }
     }
 }
 
@@ -545,11 +607,8 @@ void EditorState::display_file_properties() {
         ImGui::Separator();
         
         ImGui::Text("Preview");
-        if (ImGui::ArrowButton("Play", ImGuiDir_Right)) {
-            play_music_preview();
-        }
-        ImGui::SameLine();
         if (ImGui::Checkbox("Use separate preview file", &song.metadata.use_preview_file)) {
+            stop_music_preview();
             if (song.metadata.use_preview_file) {
                 history.push(std::make_shared<ChangePreview>(song.metadata.preview_loop, song.metadata.preview_file));
             } else {
@@ -622,8 +681,42 @@ void EditorState::display_file_properties() {
                 song.metadata.preview_loop.duration = edited_loop_duration;
             }
         }
-
-
+        if (music_preview_is_playing()) {
+            if (ImGui::Button("Stop##Mucic Preview")) {
+                stop_music_preview();
+            }
+        } else {
+            if (ImGui::Button("Play##Music Preview")) {
+                play_music_preview();
+            }
+        }
+        ImGui::SameLine();
+        const auto position = music_preview_position();
+        const auto duration = music_preview_duration();
+        float progress = [&](){
+            if (duration == sf::Time::Zero) {
+                return 0.f;
+            } else {
+                return position / duration;
+            }
+        }();
+        ImGui::PushItemWidth(ImGui::CalcItemWidth() - ImGui::GetCursorPosX() + ImGui::GetStyle().WindowPadding.x);
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        ImGui::SliderFloat(
+            "##Progress",
+            &progress,
+            0.f,
+            1.f,
+            fmt::format(
+                "{:02}:{:02} / {:02}:{:02}",
+                static_cast<unsigned int>(position / sf::seconds(60)),
+                static_cast<unsigned int>(position.asSeconds()) % 60,
+                static_cast<unsigned int>(duration / sf::seconds(60)),
+                static_cast<unsigned int>(duration.asSeconds()) % 60
+            ).c_str()
+        );
+        ImGui::PopItemFlag();
+        ImGui::PopItemWidth();
     }
     ImGui::End();
 };

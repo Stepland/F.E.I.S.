@@ -58,6 +58,7 @@ public:
     std::shared_ptr<ChordClaps> chord_claps;
     std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
+    bool is_playing_preview_music_from_sss = false;
 
     int get_volume() const;
     void set_volume(int newMusicVolume);
@@ -73,6 +74,11 @@ public:
     std::optional<sf::Music> preview_audio;
 
     void play_music_preview();
+    void stop_music_preview();
+    bool music_preview_is_playing() const;
+    sf::Time music_preview_position() const;
+    sf::Time music_preview_duration() const;
+    void update_music_preview_status();
 
     Playfield playfield;
     LinearView linear_view;

@@ -394,6 +394,7 @@ int main() {
         // Audio playback management
         if (editor_state) {
             editor_state->update_visible_notes();
+            editor_state->update_music_preview_status();
             if (editor_state->get_status() == sf::SoundSource::Playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
                 if (editor_state->has_any_audio()) {

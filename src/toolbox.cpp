@@ -57,20 +57,16 @@ std::vector<std::string> Toolbox::getRecentFiles(std::filesystem::path settings)
  * return an sf::Time as ±MM:SS.mmm in a string
  */
 std::string Toolbox::to_string(sf::Time time) {
-    std::ostringstream stringStream;
     int minutes = static_cast<int>(std::abs(time.asSeconds())) / 60;
     int seconds = static_cast<int>(std::abs(time.asSeconds())) % 60;
     int miliseconds = static_cast<int>(std::abs(time.asMilliseconds())) % 1000;
-    if (time.asSeconds() < 0) {
-        stringStream << "-";
-    } else {
-        stringStream << "+";
-    }
-    stringStream.fill('0');
-    stringStream << std::setw(2) << minutes << ":" << std::setw(2) << seconds
-                 << "." << std::setw(3) << miliseconds;
-    //("-%02d:%02d.%03d",minutes,seconds,miliseconds);
-    return stringStream.str();
+    return fmt::format(
+        "{}{:02}:{:02}.{:03}",
+        time.asSeconds() < 0 ? "-" : "+",
+        minutes,
+        seconds,
+        miliseconds
+    );
 }
 
 float Toolbox::convertVolumeToNormalizedDB(int input) {
