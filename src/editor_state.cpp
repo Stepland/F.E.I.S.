@@ -682,11 +682,11 @@ void EditorState::display_file_properties() {
             }
         }
         if (music_preview_is_playing()) {
-            if (ImGui::Button("Stop##Mucic Preview")) {
+            if (feis::StopButton("##Stop Mucic Preview")) {
                 stop_music_preview();
             }
         } else {
-            if (ImGui::Button("Play##Music Preview")) {
+            if (ImGui::ArrowButton("##Play Music Preview", ImGuiDir_Right)) {
                 play_music_preview();
             }
         }

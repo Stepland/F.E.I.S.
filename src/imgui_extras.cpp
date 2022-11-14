@@ -1,7 +1,10 @@
 #include "imgui_extras.hpp"
 
+#include <SFML/System/Vector2.hpp>
+#include <imgui.h>
+
 #include <imgui_stdlib.h>
-#include "imgui.h"
+#include "imgui_internal.h"
 
 bool feis::ColorEdit4(const char* label, sf::Color& col, ImGuiColorEditFlags flags) {
     float array_col[4] = {
@@ -86,4 +89,15 @@ void feis::HelpMarker(const char* desc) {
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
+}
+
+bool feis::StopButton(const char* str_id) {
+    return IconButton(str_id, [](const ImRect& bb, const ImU32& color){
+        const auto size = sf::Vector2f{bb.GetSize()};
+        ImGui::GetWindowDrawList()->AddRectFilled(
+            sf::Vector2f{bb.Min} + size / 4.f,
+            sf::Vector2f{bb.Max} - size / 4.f + sf::Vector2f{1.f, 1.f},
+            color
+        );
+    });
 }
