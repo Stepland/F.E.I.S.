@@ -1,8 +1,8 @@
 project(
-    'F.E.I.S.',
+    'F.E.I.S',
     'cpp',
     meson_version : '>=0.62.0',
-    version : '1.1.0',
+    version : '2.0.0-alpha',
     default_options : ['cpp_std=c++20'],
 )
 
@@ -35,7 +35,7 @@ include_sources = {}
 subdir('include')  # Defines `inc` and adds stuff in `include_sources`
 
 sources = []
-subdir('src')  # Adds stuff in the `sources` list
+subdir('src')  # Adds stuff in the `sources` list and defines configuration_inc
 
 subdir('tests')
 
@@ -47,5 +47,8 @@ executable(
     'FEIS',
     sources: sources,
     dependencies: deps,
-    include_directories: inc,
+    include_directories: [
+        inc,
+        configuration_inc
+    ]
 )

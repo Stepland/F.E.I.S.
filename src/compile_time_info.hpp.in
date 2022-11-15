@@ -1,0 +1,4 @@
+#pragma once
+
+#define FEIS_NAME "@name@"
+#define FEIS_VERSION "@version@"

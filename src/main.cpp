@@ -94,6 +94,7 @@ int main() {
     feis::NewChartDialog newChartDialog;
     feis::ChartPropertiesDialog chartPropertiesDialog;
     bool show_shortcuts_help = false;
+    bool show_about_menu = false;
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
@@ -475,6 +476,9 @@ int main() {
         if (show_shortcuts_help) {
             feis::display_shortcuts_help(show_shortcuts_help);
         }
+        if (show_about_menu) {
+            feis::display_about_menu(show_about_menu);
+        }
 
         notificationsQueue.display();
 
@@ -662,8 +666,11 @@ int main() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Help")) {
-                if (ImGui::MenuItem("Shortcuts...", "F1")) {
+                if (ImGui::MenuItem("Shortcuts", "F1")) {
                     show_shortcuts_help = true;
+                }
+                if (ImGui::MenuItem("About")) {
+                    show_about_menu = true;
                 }
                 ImGui::EndMenu();
             }

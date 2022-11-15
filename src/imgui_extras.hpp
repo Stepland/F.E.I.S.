@@ -59,6 +59,8 @@ namespace feis {
         draw_icon(bb, text_col);
         return pressed;
     }
+
+    void CenteredText(const std::string& text);
 }
 
 namespace colors {

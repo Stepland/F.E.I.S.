@@ -6,6 +6,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <filesystem>
 
 #include <fmt/core.h>
@@ -26,6 +27,7 @@
 #include "better_note.hpp"
 #include "better_song.hpp"
 #include "chart_state.hpp"
+#include "compile_time_info.hpp"
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
@@ -1756,9 +1758,6 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
 };
 
 void feis::display_shortcuts_help(bool& show) {
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     const auto table_shortcut = [](const char* action, const char* keys){
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
@@ -1766,7 +1765,7 @@ void feis::display_shortcuts_help(bool& show) {
         ImGui::TableNextColumn();
         ImGui::TextUnformatted(keys);
     };
-    if (ImGui::Begin("Shortcuts", &show, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+    if (ImGui::Begin("Shortcuts", &show, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Navigation");
         if (
             ImGui::BeginTable(
@@ -1832,5 +1831,72 @@ void feis::display_shortcuts_help(bool& show) {
         }
     }
     ImGui::End();
-    ImGui::PopStyleVar();
 };
+
+const std::vector<std::vector<sf::Vector2f>> lines = {
+    {{1, 5}, {1, 1}, {4, 1}}, // F
+    {{1, 3}, {3, 3}},
+    {{4.8f, 4.8f}, {5.2f, 4.8f}, {5.2f, 5.2f}, {4.8f, 5.2f}, {4.8f, 4.8f}}, // .
+    {{9, 5}, {6, 5}, {6, 1}, {9, 1}}, // E
+    {{6, 3}, {8, 3}},
+    {{9.8f, 4.8f}, {10.2f, 4.8f}, {10.2f, 5.2f}, {9.8f, 5.2f}, {9.8f, 4.8f}}, // .
+    {{11, 1}, {14, 1}}, // I
+    {{12.5f, 1}, {12.5f, 5}},
+    {{11, 5}, {14, 5}},
+    {{14.8f, 4.8f}, {15.2f, 4.8f}, {15.2f, 5.2f}, {14.8f, 5.2f}, {14.8f, 4.8f}}, // .
+    {{16, 4.5f}, {16, 5}, {19, 5}, {19, 3}, {16, 3}, {16, 1}, {19, 1}, {19, 1.5f}} // S
+};
+
+const std::vector<float> random_offsets = {
+    +0.34f, -0.11f, +0.28f, -0.13f, -0.09f,
+    +0.03f, +0.22f, +0.01f, +0.13f, +0.15f,
+    +0.23f, -0.16f, -0.28f,	+0.08f, -0.23f,
+    +0.05f, +0.22f, -0.03f, +0.22f, +0.46f
+};
+
+void feis::display_about_menu(bool &show) {
+    static float scale = 10.0f;
+    static float noise_scale = 0.65f;
+    static sf::Vector2f offset = {19, 60};
+    static sf::Vector2f dummy_size = {225, 125};
+    static std::size_t index = 0;
+    /*
+    if (ImGui::Begin("About Debug")) {
+        ImGui::SliderFloat("Scale", &scale, 0, 10);
+        ImGui::SliderFloat("Noise scale", &noise_scale, 0, 1, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat2("Offset", &offset.x, 0, 200);
+        ImGui::SliderFloat2("Dummy", &dummy_size.x, 0, 300);
+    }
+    ImGui::End();
+    */
+    if (ImGui::Begin("About", &show, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)) {
+        ImGui::Dummy(dummy_size);
+        auto drawlist = ImGui::GetWindowDrawList();
+        auto origin = sf::Vector2f{ImGui::GetWindowPos()};
+        for (const auto& points : lines) {
+            for (auto point = points.begin(); point != points.end(); ++point) {
+                auto next_point = std::next(point);
+                if (next_point != points.end()) {
+                    const auto random_offset = sf::Vector2f{
+                        random_offsets.at(index % random_offsets.size()),
+                        random_offsets.at((index + 1) % random_offsets.size())
+                    };
+                    const auto next_random_offset = sf::Vector2f{
+                        random_offsets.at((index + 2) % random_offsets.size()),
+                        random_offsets.at((index + 3) % random_offsets.size()),
+                    };
+                    drawlist->AddLine(
+                        origin +((*point + (random_offset * noise_scale)) * scale) + offset,
+                        origin +((*next_point + (next_random_offset * noise_scale)) * scale) + offset,
+                        ImColor(sf::Color::White)
+                    );
+                    index += 2;
+                    index %= random_offsets.size();
+                }
+            }
+        }
+        feis::CenteredText(fmt::format("{} {}", FEIS_NAME, FEIS_VERSION));
+        feis::CenteredText("Made with <3 by Stepland");
+    }
+    ImGui::End();
+}

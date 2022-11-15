@@ -308,4 +308,5 @@ namespace feis {
     };
 
     void display_shortcuts_help(bool& show);
+    void display_about_menu(bool& show);
 }

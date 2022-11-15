@@ -101,3 +101,11 @@ bool feis::StopButton(const char* str_id) {
         );
     });
 }
+
+void feis::CenteredText(const std::string& text) {
+    const auto c_str = text.c_str();
+    const auto window_width = ImGui::GetWindowSize().x;
+    const auto text_width = ImGui::CalcTextSize(c_str).x;
+    ImGui::SetCursorPosX((window_width - text_width) / 2);
+    ImGui::TextUnformatted(c_str);
+}
