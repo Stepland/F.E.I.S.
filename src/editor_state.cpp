@@ -1754,3 +1754,83 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
     }
     ImGui::End();
 };
+
+void feis::display_shortcuts_help(bool& show) {
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    const auto table_shortcut = [](const char* action, const char* keys){
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(action);
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(keys);
+    };
+    if (ImGui::Begin("Shortcuts", &show, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+        ImGui::Text("Navigation");
+        if (
+            ImGui::BeginTable(
+                "Navigation",
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+            )
+        ) {
+            table_shortcut("Play / Pause", "Space");
+            table_shortcut("Move Backwards In Time", "Down");
+            table_shortcut("Move Forwards In Time", "Up");
+            table_shortcut("Decrease Snap", "Left");
+            table_shortcut("Increase Snap", "Right");
+            ImGui::EndTable();
+        }
+
+        ImGui::Text("Linear View");
+        if (
+            ImGui::BeginTable(
+                "Linear View",
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+            )
+        ) {
+            table_shortcut("Zoom In", "Numpad +");
+            table_shortcut("Zoom Out", "Numpad -");
+            table_shortcut("Set Time Selection Bounds", "Tab");
+            table_shortcut("Discard Selection", "Escape");
+            ImGui::EndTable();
+        }
+
+        ImGui::Text("Editing");
+        if (
+            ImGui::BeginTable(
+                "Editing",
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+            )
+        ) {
+            table_shortcut("Cut", "Ctrl+X");
+            table_shortcut("Copy", "Ctrl+C");
+            table_shortcut("Paste", "Ctrl+V");
+            table_shortcut("Delete", "Delete");
+            ImGui::EndTable();
+        }
+
+        ImGui::Text("Sound");
+        if (
+            ImGui::BeginTable(
+                "Sound",
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+            )
+        ) {
+            table_shortcut("Increase Music Volume", "Shift+Up");
+            table_shortcut("Decrease Music Volume", "Shift+Down");
+            table_shortcut("Slow Down Playback", "Shift+Left");
+            table_shortcut("Speed Up Playback", "Shift+Right");
+            table_shortcut("Toggle Beat Tick", "F3");
+            table_shortcut("Toggle Note Tick", "F4");
+            table_shortcut("Toggle Chord Tick", "Shift+F4");
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+};

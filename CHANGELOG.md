@@ -16,13 +16,15 @@
     - Re-rate a chart
     - Add and remove charts
     - Change the timing (either BPMs or offset)
+- New Keyboard Shortcuts help dialog
 
-## 🚧 Small Changes 🚧
+## 🚧 Changes 🚧
 - Force using the asset folder next to the executable
 - Sound files in the assets have been renamed
 - The long note currently being created (by holding right click) is dropped when the mouse stops hovering over the playfield
 - The history window changed looks and now displays "current" and "saved" next to the correct history item
 - Saving with `File > Save` or `Ctrl+S` now forces saving to isk even if no changes were made
+- File Properties Dialog has been reconstructed from scratch
 
 ## 🗿 Bugfixes 🗿
 - Playfield

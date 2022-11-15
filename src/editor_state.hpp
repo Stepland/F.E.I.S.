@@ -306,4 +306,6 @@ namespace feis {
         std::set<std::string> difficulty_names_in_use;
         bool show_custom_dif_name = false;
     };
+
+    void display_shortcuts_help(bool& show);
 }

@@ -1,4 +1,5 @@
 
+#include <SFML/Window/Keyboard.hpp>
 #include <string>
 #include <filesystem>
 #include <variant>
@@ -92,6 +93,7 @@ int main() {
     NotificationsQueue notificationsQueue;
     feis::NewChartDialog newChartDialog;
     feis::ChartPropertiesDialog chartPropertiesDialog;
+    bool show_shortcuts_help = false;
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
@@ -273,6 +275,9 @@ int main() {
                         /*
                          * F keys
                          */
+                        case sf::Keyboard::F1:
+                            show_shortcuts_help = not show_shortcuts_help;
+                            break;
                         case sf::Keyboard::F3:
                             /*
                             if (beatTick.toggle()) {
@@ -467,6 +472,10 @@ int main() {
             bg.render(window);
         }
 
+        if (show_shortcuts_help) {
+            feis::display_shortcuts_help(show_shortcuts_help);
+        }
+
         notificationsQueue.display();
 
         // Main Menu bar drawing
@@ -649,6 +658,12 @@ int main() {
                         ImGui::TextUnformatted(name.c_str());
                     }
                     ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Help")) {
+                if (ImGui::MenuItem("Shortcuts...", "F1")) {
+                    show_shortcuts_help = true;
                 }
                 ImGui::EndMenu();
             }
