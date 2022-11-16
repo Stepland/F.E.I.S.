@@ -95,6 +95,7 @@ private:
     SelectionRectangle selection_rectangle;
     bool started_selection_inside_window = false;
     bool any_bpm_button_hovered = false;
+    std::array<std::optional<unsigned int>, 16> lane_order;
 };
 
 void draw_rectangle(
@@ -121,4 +122,4 @@ bool draw_selection_rect(
     ImGuiMouseButton mouse_button = ImGuiMouseButton_Left
 );
 
-void select_everything_inside(const sf::Vector2f& rect);
+void LaneOrderPreview(const std::array<std::optional<unsigned int>, 16>& order);

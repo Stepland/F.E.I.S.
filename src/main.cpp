@@ -531,7 +531,7 @@ int main() {
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::BeginMenu("Edit", editor_state.has_value())) {
                 if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
                     if (editor_state) {
                         editor_state->undo(notificationsQueue);

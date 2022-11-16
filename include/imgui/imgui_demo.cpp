@@ -2742,18 +2742,18 @@ static void ShowDemoWindowLayout()
             "IsItemHovered()/IsItemActive() or SameLine() etc. on the whole group.");
         ImGui::BeginGroup();
         {
-            ImGui::BeginGroup();
-            ImGui::Button("AAA");
-            ImGui::SameLine();
-            ImGui::Button("BBB");
-            ImGui::SameLine();
-            ImGui::BeginGroup();
-            ImGui::Button("CCC");
-            ImGui::Button("DDD");
-            ImGui::EndGroup();
-            ImGui::SameLine();
-            ImGui::Button("EEE");
-            ImGui::EndGroup();
+            ImGui::BeginGroup(); {
+                ImGui::Button("AAA");
+                ImGui::SameLine();
+                ImGui::Button("BBB");
+                ImGui::SameLine();
+                ImGui::BeginGroup(); {
+                    ImGui::Button("CCC");
+                    ImGui::Button("DDD");
+                } ImGui::EndGroup();
+                ImGui::SameLine();
+                ImGui::Button("EEE");
+            } ImGui::EndGroup();
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("First group hovered");
         }

@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <iostream>
 #include <variant>
@@ -28,7 +29,8 @@ void SelectionRectangle::reset() {
 }
 
 LinearView::LinearView(std::filesystem::path assets) :
-    beats_to_pixels_proportional(0, 1, 0, 100)
+    beats_to_pixels_proportional(0, 1, 0, 100),
+    lane_order({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})
 {}
 
 void LinearView::draw(
@@ -363,9 +365,19 @@ void LinearView::set_zoom(int newZoom) {
     reload_transforms();
 }
 
+const std::array<std::string, 16> letters = {
+    "1","2","3","4",
+    "5","6","7","8",
+    "9","a","b","c",
+    "d","e","f","g"
+};
+
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
-        if (ImGui::TreeNode("Colors##Linear View Settings")) {
+        if (ImGui::CollapsingHeader("Lane Layout##Linear View Settings")) {
+            LaneOrderPreview(lane_order);
+        }
+        if (ImGui::CollapsingHeader("Colors##Linear View Settings")) {
             feis::ColorEdit4("Cursor", cursor_color);
             feis::ColorEdit4("Measure Lines", measure_lines_color);
             feis::ColorEdit4("Measure Numbers", measure_numbers_color);
@@ -399,12 +411,10 @@ void LinearView::display_settings() {
                 feis::ColorEdit4("Selected Outline##Color settings", selected_note_outline);
                 ImGui::TreePop();
             }
-            ImGui::TreePop();
         }
-        if (ImGui::TreeNode("Metrics##Linear View Settings")) {
+        if (ImGui::CollapsingHeader("Metrics##Linear View Settings")) {
             ImGui::DragInt("Cursor Height", &cursor_height);
             ImGui::DragInt("Timeline Margin", &timeline_margin);
-            ImGui::TreePop();
         }
     }
     ImGui::End();
@@ -508,4 +518,42 @@ bool draw_selection_rect(
         draw_rectangle(draw_list, start_pos, end_pos - start_pos, {0,0}, colors.fill, colors.border);
     }
     return ImGui::IsMouseReleased(mouse_button);
+}
+
+void LaneOrderPreview(const std::array<std::optional<unsigned int>, 16>& order) {
+    static float scale = 16.f;
+    static sf::Vector2f offset = {0, 0};
+    static float decalage_output = 5.f;
+    if (ImGui::Begin("Debug Linear View Settings")) {
+        ImGui::SliderFloat("Scale", &scale, 0, 20, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat2("Offset", &offset.x, 0, 1000);
+        ImGui::SliderFloat("Décalage output", &decalage_output, 0, 10);
+    }
+    ImGui::End();
+    const auto origin = sf::Vector2f{ImGui::GetCursorPos()};
+    auto col = ImColor(sf::Color::White);
+    for (auto y = 0; y < 4; y++) {
+        for (auto x = 0; x < 4; x++) {
+            const auto index = x + 4*y;
+            ImGui::SetCursorPos(origin + offset + sf::Vector2f{static_cast<float>(x), static_cast<float>(y)} * scale);
+            ImGui::ColorConvertHSVtoRGB(static_cast<float>(index)/16.f, 1, 1, col.Value.x, col.Value.y, col.Value.z);
+            ImGui::TextColored(col, "%s", letters[index].c_str());
+            if (x != 3) {
+                ImGui::SameLine();
+            }
+        }
+    }
+    const auto screen_origin = sf::Vector2f{ImGui::GetCursorScreenPos()};
+    ImGui::RenderArrow(ImGui::GetWindowDrawList(), screen_origin + offset + sf::Vector2f{decalage_output, 1.5f} * scale, ImColor(sf::Color::White), ImGuiDir_Right);
+    for (std::size_t i = 0; i < order.size(); i++) {
+        const auto button = order.at(i);
+        if (button) {
+            const auto index = *button % 16;
+            ImGui::SetCursorPos(origin + offset + sf::Vector2f{static_cast<float>(decalage_output+2+index), 1.5f} * scale);
+            ImGui::ColorConvertHSVtoRGB(static_cast<float>(index)/16.f, 1, 1, col.Value.x, col.Value.y, col.Value.z);
+            ImGui::TextColored(col, "%s", letters[index].c_str());
+        }
+    }
+    ImGui::SetCursorPos(origin);
+    ImGui::Dummy(sf::Vector2f{23, 4}*scale);
 }
