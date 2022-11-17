@@ -1,8 +1,8 @@
 executable(
     'hsluv_rainbow_maker',
     'hsluv_rainbow_maker.cpp',
-    'hsluv/hsluv.c',
     include_sources['imgui'],
+    include_sources['hsluv'],
     dependencies: deps,
     include_directories: inc,
 )

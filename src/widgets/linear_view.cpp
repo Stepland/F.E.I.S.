@@ -381,37 +381,38 @@ const std::array<std::string, 16> letters = {
 
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
-        if (ImGui::CollapsingHeader("Lane Layout##Linear View Settings")) {
-            if (ImGui::BeginCombo("Lane Order", lane_order_name())) {
-                for ()
-                if (ImGui::Selectable("Default", order_kind_index)) {
-                    lane_order_string = "123456789abcdefg";
-                    update_lane_order_from_string();
+        if (ImGui::CollapsingHeader("Lanes##Linear View Settings")) {
+            if (ImGui::BeginCombo("Order", lane_order_name().c_str())) {
+                if (ImGui::Selectable(
+                    "Default",
+                    std::holds_alternative<LaneOrderPresets::Default>(lane_order)
+                )) {
+                    lane_order = LaneOrderPresets::Default{};
                 }
-                if (ImGui::Selectable(items[n], is_selected))
-                        item_current_idx = n;
+                if (ImGui::Selectable(
+                    "Vertical",
+                    std::holds_alternative<LaneOrderPresets::Vertical>(lane_order)
+                )) {
+                    lane_order = LaneOrderPresets::Vertical{};
+                }
+                if (ImGui::Selectable(
+                    "Custom",
+                    std::holds_alternative<CustomLaneOrder>(lane_order)
+                )) {
+                    if (not std::holds_alternative<CustomLaneOrder>(lane_order)) {
+                        lane_order = CustomLaneOrder{};
+                    }
                 }
                 ImGui::EndCombo();
             }
-            ImGui::Text("Preview");
-            LaneOrderPreview(lane_order);
-            if (ImGui::InputText("Input as text", &lane_order_string)) {
-                update_lane_order_from_string();
-            };
-            if (ImGui::TreeNode("Presets")) {
-                if (ImGui::Button("Default")) {
-                    lane_order_string = "123456789abcdefg";
-                    update_lane_order_from_string();
-                }
-                ImGui::SameLine();
-                feis::HelpMarker("left-to-right then top-to-bottom");
-                if (ImGui::Button("Vertical")) {
-                    lane_order_string = "159d26ae37bf48cg";
-                    update_lane_order_from_string();
-                }
-                ImGui::SameLine();
-                feis::HelpMarker("top-to-bottom then left-to-right");
-                ImGui::TreePop();
+            if (std::holds_alternative<CustomLaneOrder>(lane_order)) {
+                auto& order = std::get<CustomLaneOrder>(lane_order);
+                if (ImGui::InputText("Custom", &order.as_string)) {
+                    order.cleanup_string();
+                    order.update_from_string();
+                };
+                ImGui::Text("Preview :");
+                LaneOrderPreview(order.lane_to_button);
             }
         }
         if (ImGui::CollapsingHeader("Colors##Linear View Settings")) {
@@ -466,7 +467,7 @@ void LinearView::reload_transforms() {
     };
 }
 
-consteval std::string LinearView::lane_order_name() {
+std::string LinearView::lane_order_name() {
     const auto name = VariantVisitor {
         [](LaneOrderPresets::Default) { return "Default"; },
         [](LaneOrderPresets::Vertical) { return "Vertical"; },
@@ -566,24 +567,25 @@ bool draw_selection_rect(
     return ImGui::IsMouseReleased(mouse_button);
 }
 
-// (H: [0° -> 360°], S: 90%, V: 90%)
-const std::array<sf::Color, 16> rainbow = {{
-    {230, 23, 23},
-    {230, 100, 23},
-    {230, 178, 23},
-    {204, 230, 23},
-    {126, 230, 23},
-    {49, 230, 23},
-    {23, 230, 75},
-    {23, 230, 152},
-    {23, 230, 230},
-    {23, 152, 230},
-    {23, 75, 230},
-    {49, 23, 230},
-    {126, 23, 230},
-    {204, 23, 230},
-    {230, 23, 178},
-    {230, 23, 100}
+// (H: [0° -> 360°], S: 100%, L: 62.581%)
+// in HSLuv https://www.hsluv.org/
+static std::array<sf::Color, 16> rainbow = {{
+    {255, 94, 137},
+    {255, 103, 23},
+    {210, 135, 0},
+    {180, 149, 0},
+    {151, 158, 0},
+    {108, 168, 0},
+    {0, 175, 78},
+    {0, 172, 132},
+    {0, 170, 157},
+    {0, 168, 178},
+    {0, 165, 204},
+    {0, 157, 253},
+    {152, 134, 255},
+    {213, 103, 255},
+    {255, 65, 235},
+    {255, 84, 186},
 }};
 
 void LaneOrderPreview(const std::array<std::optional<unsigned int>, 16>& order) {
@@ -627,6 +629,18 @@ LinearView::CustomLaneOrder::CustomLaneOrder() :
     update_from_array();
 }
 
+void LinearView::CustomLaneOrder::update_from_array() {
+    std::stringstream ss;
+    std::for_each(lane_to_button.begin(), lane_to_button.end(), [&](const auto& button){
+        if (button) {
+            ss << letters.at(*button);
+        } else {
+            ss << "_";
+        }
+    });
+    as_string = ss.str();
+}
+
 const std::map<char, unsigned int> letter_to_index = {
     {'1', 0}, {'2', 1}, {'3', 2}, {'4', 3},
     {'5', 4}, {'6', 5}, {'7', 6}, {'8', 7},
@@ -634,31 +648,28 @@ const std::map<char, unsigned int> letter_to_index = {
     {'d', 12}, {'e', 13}, {'f', 14}, {'g', 15},
 };
 
-void LinearView::CustomLaneOrder::update_from_array() {
-    std::stringstream ss;
-    std::for_each(lane_order.begin(), lane_order.end(), [&](const auto& button){
-        if (button) {
-            ss << letters.at(*button);
-        } else {
-            ss << "_";
+void LinearView::CustomLaneOrder::cleanup_string() {
+    as_string.resize(16);
+    for (auto& c : as_string) {
+        if (not letter_to_index.contains(c)) {
+            c = '_';
         }
-    });
-    lane_order_string = ss.str();
+    }
 }
 
 void LinearView::CustomLaneOrder::update_from_string() {
-    lane_order = {{
+    lane_to_button = {{
         {}, {}, {}, {},
         {}, {}, {}, {},
         {}, {}, {}, {},
         {}, {}, {}, {}
     }};
-    const auto upper_bound = std::min(16UL, lane_order_string.length());
+    const auto upper_bound = std::min(16UL, as_string.length());
     for (std::size_t i = 0; i < upper_bound; i++) {
-        const auto letter = lane_order_string.at(i);
+        const auto letter = as_string.at(i);
         const auto pair = letter_to_index.find(letter);
         if (pair != letter_to_index.end()) {
-            lane_order[i] = pair->second;
+            lane_to_button[i] = pair->second;
         }
     }
 }

@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include <SFML/Graphics.hpp>
 
-#include "hsluv/hsluv.h"
+#include <hsluv/hsluv.h>
 
 void imgui_main() {
     static float H_offset = 0.f;

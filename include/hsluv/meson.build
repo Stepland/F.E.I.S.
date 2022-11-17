@@ -1,0 +1,1 @@
+include_sources += {'hsluv': files('hsluv.c')}
