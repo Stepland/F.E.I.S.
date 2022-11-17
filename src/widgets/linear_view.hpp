@@ -95,7 +95,22 @@ private:
     SelectionRectangle selection_rectangle;
     bool started_selection_inside_window = false;
     bool any_bpm_button_hovered = false;
-    std::array<std::optional<unsigned int>, 16> lane_order;
+
+    struct LaneOrderPresets {
+        struct Default {};
+        struct Vertical {};
+    };
+
+    struct CustomLaneOrder {
+        CustomLaneOrder();
+        std::array<std::optional<unsigned int>, 16> lane_to_button;
+        std::string as_string;
+        void update_from_string();
+        void update_from_array();
+    };
+
+    std::variant<LaneOrderPresets::Default, LaneOrderPresets::Vertical, CustomLaneOrder> lane_order;
+    consteval std::string lane_order_name();
 };
 
 void draw_rectangle(

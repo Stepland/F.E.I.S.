@@ -1,15 +1,23 @@
 #include "linear_view.hpp"
 
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <array>
+#include <bits/ranges_algo.h>
 #include <cmath>
 #include <cstddef>
 #include <functional>
 #include <iostream>
+#include <ranges>
+#include <sstream>
 #include <variant>
 
 #include <fmt/core.h>
 #include <imgui.h>
+#include <imgui_stdlib.h>
+#include <imgui-SFML.h>
+#include <imgui_internal.h>
 #include <SFML/System/Time.hpp>
 
 #include "../special_numeric_types.hpp"
@@ -17,7 +25,6 @@
 #include "../chart_state.hpp"
 #include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
-#include "imgui_internal.h"
 #include "src/better_timing.hpp"
 #include "src/imgui_extras.hpp"
 
@@ -30,7 +37,7 @@ void SelectionRectangle::reset() {
 
 LinearView::LinearView(std::filesystem::path assets) :
     beats_to_pixels_proportional(0, 1, 0, 100),
-    lane_order({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})
+    lane_order(LaneOrderPresets::Default{})
 {}
 
 void LinearView::draw(
@@ -375,7 +382,37 @@ const std::array<std::string, 16> letters = {
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
         if (ImGui::CollapsingHeader("Lane Layout##Linear View Settings")) {
+            if (ImGui::BeginCombo("Lane Order", lane_order_name())) {
+                for ()
+                if (ImGui::Selectable("Default", order_kind_index)) {
+                    lane_order_string = "123456789abcdefg";
+                    update_lane_order_from_string();
+                }
+                if (ImGui::Selectable(items[n], is_selected))
+                        item_current_idx = n;
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::Text("Preview");
             LaneOrderPreview(lane_order);
+            if (ImGui::InputText("Input as text", &lane_order_string)) {
+                update_lane_order_from_string();
+            };
+            if (ImGui::TreeNode("Presets")) {
+                if (ImGui::Button("Default")) {
+                    lane_order_string = "123456789abcdefg";
+                    update_lane_order_from_string();
+                }
+                ImGui::SameLine();
+                feis::HelpMarker("left-to-right then top-to-bottom");
+                if (ImGui::Button("Vertical")) {
+                    lane_order_string = "159d26ae37bf48cg";
+                    update_lane_order_from_string();
+                }
+                ImGui::SameLine();
+                feis::HelpMarker("top-to-bottom then left-to-right");
+                ImGui::TreePop();
+            }
         }
         if (ImGui::CollapsingHeader("Colors##Linear View Settings")) {
             feis::ColorEdit4("Cursor", cursor_color);
@@ -427,6 +464,15 @@ void LinearView::reload_transforms() {
         Fraction{0},
         Fraction{100}
     };
+}
+
+consteval std::string LinearView::lane_order_name() {
+    const auto name = VariantVisitor {
+        [](LaneOrderPresets::Default) { return "Default"; },
+        [](LaneOrderPresets::Vertical) { return "Vertical"; },
+        [](CustomLaneOrder) { return "Custom"; },
+    };
+    return std::visit(name, lane_order);
 }
 
 void draw_rectangle(
@@ -520,40 +566,99 @@ bool draw_selection_rect(
     return ImGui::IsMouseReleased(mouse_button);
 }
 
+// (H: [0° -> 360°], S: 90%, V: 90%)
+const std::array<sf::Color, 16> rainbow = {{
+    {230, 23, 23},
+    {230, 100, 23},
+    {230, 178, 23},
+    {204, 230, 23},
+    {126, 230, 23},
+    {49, 230, 23},
+    {23, 230, 75},
+    {23, 230, 152},
+    {23, 230, 230},
+    {23, 152, 230},
+    {23, 75, 230},
+    {49, 23, 230},
+    {126, 23, 230},
+    {204, 23, 230},
+    {230, 23, 178},
+    {230, 23, 100}
+}};
+
 void LaneOrderPreview(const std::array<std::optional<unsigned int>, 16>& order) {
-    static float scale = 16.f;
-    static sf::Vector2f offset = {0, 0};
-    static float decalage_output = 5.f;
-    if (ImGui::Begin("Debug Linear View Settings")) {
-        ImGui::SliderFloat("Scale", &scale, 0, 20, "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat2("Offset", &offset.x, 0, 1000);
-        ImGui::SliderFloat("Décalage output", &decalage_output, 0, 10);
-    }
-    ImGui::End();
+    const float scale = 16.f;
+    const float arrow_x_pos = 4.5f;
     const auto origin = sf::Vector2f{ImGui::GetCursorPos()};
-    auto col = ImColor(sf::Color::White);
+    const auto screen_origin = sf::Vector2f{ImGui::GetCursorScreenPos()};
     for (auto y = 0; y < 4; y++) {
         for (auto x = 0; x < 4; x++) {
             const auto index = x + 4*y;
-            ImGui::SetCursorPos(origin + offset + sf::Vector2f{static_cast<float>(x), static_cast<float>(y)} * scale);
-            ImGui::ColorConvertHSVtoRGB(static_cast<float>(index)/16.f, 1, 1, col.Value.x, col.Value.y, col.Value.z);
-            ImGui::TextColored(col, "%s", letters[index].c_str());
+            ImGui::SetCursorPos(origin + sf::Vector2f{static_cast<float>(x), static_cast<float>(y)} * scale);
+            ImGui::TextColored(rainbow.at(index), "%s", letters.at(index).c_str());
             if (x != 3) {
                 ImGui::SameLine();
             }
         }
     }
-    const auto screen_origin = sf::Vector2f{ImGui::GetCursorScreenPos()};
-    ImGui::RenderArrow(ImGui::GetWindowDrawList(), screen_origin + offset + sf::Vector2f{decalage_output, 1.5f} * scale, ImColor(sf::Color::White), ImGuiDir_Right);
-    for (std::size_t i = 0; i < order.size(); i++) {
-        const auto button = order.at(i);
-        if (button) {
-            const auto index = *button % 16;
-            ImGui::SetCursorPos(origin + offset + sf::Vector2f{static_cast<float>(decalage_output+2+index), 1.5f} * scale);
-            ImGui::ColorConvertHSVtoRGB(static_cast<float>(index)/16.f, 1, 1, col.Value.x, col.Value.y, col.Value.z);
-            ImGui::TextColored(col, "%s", letters[index].c_str());
+    ImGui::RenderArrow(
+        ImGui::GetWindowDrawList(),
+        screen_origin + sf::Vector2f{arrow_x_pos, 1.5f} * scale,
+        ImColor(sf::Color::White),
+        ImGuiDir_Right
+    );
+    for (std::size_t lane = 0; lane < order.size(); lane++) {
+        ImGui::SetCursorPos(origin + sf::Vector2f{static_cast<float>(arrow_x_pos+2+lane), 1.5f} * scale);
+        const auto optional_button = order.at(lane);
+        if (optional_button) {
+            const auto button = *optional_button % 16;
+            ImGui::TextColored(rainbow.at(button), "%s", letters.at(button).c_str());
+        } else {
+            ImGui::TextDisabled("_");
         }
     }
     ImGui::SetCursorPos(origin);
     ImGui::Dummy(sf::Vector2f{23, 4}*scale);
+}
+
+LinearView::CustomLaneOrder::CustomLaneOrder() :
+    lane_to_button({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})
+{
+    update_from_array();
+}
+
+const std::map<char, unsigned int> letter_to_index = {
+    {'1', 0}, {'2', 1}, {'3', 2}, {'4', 3},
+    {'5', 4}, {'6', 5}, {'7', 6}, {'8', 7},
+    {'9', 8}, {'a', 9}, {'b', 10}, {'c', 11},
+    {'d', 12}, {'e', 13}, {'f', 14}, {'g', 15},
+};
+
+void LinearView::CustomLaneOrder::update_from_array() {
+    std::stringstream ss;
+    std::for_each(lane_order.begin(), lane_order.end(), [&](const auto& button){
+        if (button) {
+            ss << letters.at(*button);
+        } else {
+            ss << "_";
+        }
+    });
+    lane_order_string = ss.str();
+}
+
+void LinearView::CustomLaneOrder::update_from_string() {
+    lane_order = {{
+        {}, {}, {}, {},
+        {}, {}, {}, {},
+        {}, {}, {}, {},
+        {}, {}, {}, {}
+    }};
+    const auto upper_bound = std::min(16UL, lane_order_string.length());
+    for (std::size_t i = 0; i < upper_bound; i++) {
+        const auto letter = lane_order_string.at(i);
+        const auto pair = letter_to_index.find(letter);
+        if (pair != letter_to_index.end()) {
+            lane_order[i] = pair->second;
+        }
+    }
 }
