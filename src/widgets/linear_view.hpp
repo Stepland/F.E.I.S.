@@ -104,6 +104,7 @@ private:
     struct CustomLaneOrder {
         CustomLaneOrder();
         std::array<std::optional<unsigned int>, 16> lane_to_button;
+        std::map<unsigned int, unsigned int> button_to_lane;
         std::string as_string;
         void cleanup_string();
         void update_from_string();
@@ -112,6 +113,7 @@ private:
 
     std::variant<LaneOrderPresets::Default, LaneOrderPresets::Vertical, CustomLaneOrder> lane_order;
     std::string lane_order_name();
+    std::optional<unsigned int> button_to_lane(const better::Position& button);
 };
 
 void draw_rectangle(

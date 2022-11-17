@@ -25,6 +25,7 @@
 #include "../chart_state.hpp"
 #include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
+#include "better_note.hpp"
 #include "src/better_timing.hpp"
 #include "src/imgui_extras.hpp"
 
@@ -138,8 +139,13 @@ void LinearView::draw(
     // Draw the notes
     auto draw_note = VariantVisitor {
         [&](const better::TapNote& tap_note){
-            float note_x = timeline_left + note_width * (tap_note.get_position().index() + 0.5f);
-            float note_y = static_cast<double>(beats_to_pixels_absolute.transform(tap_note.get_time()));
+            const auto opt_lane = button_to_lane(tap_note.get_position());
+            if (not opt_lane) {
+                return;
+            }
+            const auto lane = *opt_lane;
+            const float note_x = timeline_left + note_width * (lane + 0.5f);
+            const float note_y = static_cast<double>(beats_to_pixels_absolute.transform(tap_note.get_time()));
             const auto note_seconds = timing.time_at(tap_note.get_time());
             const auto first_colliding_beat = timing.beats_at(note_seconds - sf::milliseconds(500));
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
@@ -186,7 +192,12 @@ void LinearView::draw(
             }
         },
         [&](const better::LongNote& long_note){
-            float note_x = timeline_left + note_width * (long_note.get_position().index() + 0.5f);
+            const auto opt_lane = button_to_lane(long_note.get_position());
+            if (not opt_lane) {
+                return;
+            }
+            const auto lane = *opt_lane;
+            float note_x = timeline_left + note_width * (lane + 0.5f);
             float note_y = static_cast<double>(beats_to_pixels_absolute.transform(long_note.get_time()));
             const auto note_start_seconds = timing.time_at(long_note.get_time());
             const auto first_colliding_beat = timing.beats_at(note_start_seconds - sf::milliseconds(500));
@@ -476,6 +487,26 @@ std::string LinearView::lane_order_name() {
     return std::visit(name, lane_order);
 }
 
+std::optional<unsigned int> LinearView::button_to_lane(const better::Position& button) {
+    const auto _button_to_lane = VariantVisitor {
+        [button](const LaneOrderPresets::Default&){
+            return static_cast<std::optional<unsigned int>>(button.index());
+        },
+        [button](const LaneOrderPresets::Vertical&){
+            return static_cast<std::optional<unsigned int>>(button.get_y() + 4 * button.get_x());
+        },
+        [button](const CustomLaneOrder& c){
+            const auto pair = c.button_to_lane.find(button.index());
+            if (pair != c.button_to_lane.end()) {
+                return static_cast<std::optional<unsigned int>>(pair->second);
+            } else {
+                return std::optional<unsigned int>{};
+            }
+        },
+    };
+    return std::visit(_button_to_lane, lane_order);
+}
+
 void draw_rectangle(
     ImDrawList* draw_list,
     const sf::Vector2f& pos,
@@ -631,13 +662,16 @@ LinearView::CustomLaneOrder::CustomLaneOrder() :
 
 void LinearView::CustomLaneOrder::update_from_array() {
     std::stringstream ss;
-    std::for_each(lane_to_button.begin(), lane_to_button.end(), [&](const auto& button){
+    button_to_lane.clear();
+    for (std::size_t lane = 0; lane < lane_to_button.size(); lane++) {
+        const auto button = lane_to_button.at(lane);
         if (button) {
             ss << letters.at(*button);
+            button_to_lane[*button] = lane;
         } else {
             ss << "_";
         }
-    });
+    }
     as_string = ss.str();
 }
 
@@ -664,12 +698,15 @@ void LinearView::CustomLaneOrder::update_from_string() {
         {}, {}, {}, {},
         {}, {}, {}, {}
     }};
+    button_to_lane.clear();
     const auto upper_bound = std::min(16UL, as_string.length());
-    for (std::size_t i = 0; i < upper_bound; i++) {
-        const auto letter = as_string.at(i);
+    for (std::size_t lane = 0; lane < upper_bound; lane++) {
+        const auto letter = as_string.at(lane);
         const auto pair = letter_to_index.find(letter);
         if (pair != letter_to_index.end()) {
-            lane_to_button[i] = pair->second;
+            const auto button = pair->second;
+            lane_to_button[lane] = button;
+            button_to_lane[button] = lane;
         }
     }
 }
