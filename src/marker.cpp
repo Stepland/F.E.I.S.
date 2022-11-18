@@ -4,9 +4,7 @@
 #include <fmt/core.h>
 #include <stdexcept>
 
-Marker first_available_marker_in(
-    const std::filesystem::path& assets_folder
-) {
+Marker first_available_marker_in(const std::filesystem::path& assets_folder) {
     for (auto& folder : std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         try {
             return Marker{folder};
@@ -15,8 +13,9 @@ Marker first_available_marker_in(
     throw std::runtime_error("No valid marker found");
 }
 
-Marker::Marker(const std::filesystem::path& folder):
-    fps(30)
+Marker::Marker(const std::filesystem::path& folder_):
+    fps(30),
+    folder(folder_)
 {
     const auto emplace_back = [&](std::vector<sf::Texture>& vec, const std::string& file){
         auto& tex = vec.emplace_back();
@@ -33,7 +32,7 @@ Marker::Marker(const std::filesystem::path& folder):
     };
 
     for (int num = 100; num < 116; num++) {
-        emplace_back(early, fmt::format("h{:03}.png", num));
+        emplace_back(poor, fmt::format("h{:03}.png", num));
     }
 
     for (int num = 200; num < 216; num++) {
@@ -89,8 +88,8 @@ std::vector<sf::Texture>& Marker::texture_vector_of(Judgement state) {
             return great;
         case Judgement::Good:
             return good;
-        case Judgement::Early:
-            return early;
+        case Judgement::Poor:
+            return poor;
         case Judgement::Miss:
             return miss;
         default:

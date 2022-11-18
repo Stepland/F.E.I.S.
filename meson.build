@@ -27,6 +27,8 @@ deps += [gmp_dep]
 nowide_dep = dependency('nowide')
 deps += [nowide_dep]
 deps += dependency('threads')
+tomlplusplus_dep = dependency('tomlplusplus')
+deps += [tomlplusplus_dep]
 
 # I chose to put the .cpp files of the libs I vendor directly in include/
 # I store the files in a (lib name -> files) dict so that tests can

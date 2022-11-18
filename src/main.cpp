@@ -1,5 +1,6 @@
 
 #include <SFML/Window/Keyboard.hpp>
+#include <exception>
 #include <string>
 #include <filesystem>
 #include <variant>
@@ -16,13 +17,13 @@
 #include <whereami++.hpp>
 
 #include "chart_state.hpp"
+#include "config.hpp"
 #include "editor_state.hpp"
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "marker.hpp"
 #include "mp3_reader.hpp"
 #include "notifications_queue.hpp"
-#include "preferences.hpp"
 #include "sound_effect.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/blank_screen.hpp"
@@ -36,6 +37,8 @@ int main() {
     auto executable_folder = std::filesystem::u8path(whereami::executable_dir());
     auto assets_folder = executable_folder / "assets";
     auto settings_folder = executable_folder / "settings";
+
+    config::Config config{settings_folder};
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
     window.setVerticalSyncEnabled(true);
@@ -66,10 +69,6 @@ int main() {
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    // SoundEffect beatTick {assets_folder / "sounds" / "beat.wav"};
-    // SoundEffect noteTick {assets_folder / "sounds" / "note.wav"};
-    // SoundEffect chordTick {assets_folder / "sounds" / "chord.wav"};
-
     // Loading markers preview
     std::map<std::filesystem::path, sf::Texture> markerPreviews;
     for (const auto& folder :
@@ -82,11 +81,33 @@ int main() {
         }
     }
 
-    Preferences preferences{assets_folder, settings_folder};
+    std::optional<Marker> default_marker_opt;
+    try {
+        default_marker_opt = first_available_marker_in(assets_folder);
+    } catch (const std::exception& e) {
+        fmt::print("Couldn't load any marker folder, aborting");
+        return -1;
+    }
+    Marker& default_marker = *default_marker_opt;
 
-    Marker defaultMarker = Marker(preferences.marker);
-    Marker& marker = defaultMarker;
-    Judgement& markerEndingState = preferences.marker_ending_state;
+    std::optional<Marker> marker_opt;
+    if (config.marker.folder) {
+        try {
+            marker_opt = Marker(*config.marker.folder);
+        } catch (const std::exception& e) {
+            fmt::print("Failed to load marker from preferences");
+            marker_opt = default_marker_opt;
+            config.marker.folder = marker_opt->get_folder();
+        }
+    } else {
+        marker_opt = default_marker_opt;
+        config.marker.folder = marker_opt->get_folder();
+    }
+    Marker& marker = *marker_opt;
+    if (not config.marker.ending_state) {
+        config.marker.ending_state = Judgement::Perfect;
+    }
+    Judgement& markerEndingState = *config.marker.ending_state;
 
     BlankScreen bg{assets_folder};
     std::optional<EditorState> editor_state;
@@ -103,7 +124,6 @@ int main() {
             ImGui::SFML::ProcessEvent(event);
             switch (event.type) {
                 case sf::Event::Closed:
-                    preferences.save();
                     if (editor_state) {
                         if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
                             window.close();
@@ -634,7 +654,7 @@ int main() {
                         if (ImGui::ImageButton(tuple.second, {100, 100})) {
                             try {
                                 marker = Marker(tuple.first);
-                                preferences.marker = tuple.first.string();
+                                config.marker.folder = marker.get_folder();
                             } catch (const std::exception& e) {
                                 tinyfd_messageBox(
                                     "Error",
@@ -642,7 +662,8 @@ int main() {
                                     "ok",
                                     "error",
                                     1);
-                                marker = defaultMarker;
+                                marker = default_marker;
+                                config.marker.folder = marker.get_folder();
                             }
                         }
                         ImGui::PopID();
@@ -654,7 +675,7 @@ int main() {
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Marker Ending State")) {
-                    for (const auto& [judgement, name] : marker_state_previews) {
+                    for (const auto& [judgement, name] : judgement_to_name) {
                         if (ImGui::ImageButton(marker.preview(judgement), {100, 100})) {
                             markerEndingState = judgement;
                         }
