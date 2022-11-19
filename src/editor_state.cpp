@@ -1042,7 +1042,13 @@ void EditorState::display_sound_settings() {
 }
 
 void EditorState::display_editor_settings() {
-    if (ImGui::Begin("Editor Settings", &show_editor_settings)) {
+    if (
+        ImGui::Begin(
+            "Editor Settings",
+            &show_editor_settings,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize
+        )
+    ) {
         static const std::uint64_t step = 1;
         if (ImGui::InputScalar("Snap##Editor Settings", ImGuiDataType_U64, &snap, &step, nullptr, "%d")) {
             snap = std::clamp(snap, 1UL, 1000UL);
@@ -1064,17 +1070,17 @@ void EditorState::display_editor_settings() {
         }
         ImGui::SameLine();
         feis::HelpMarker(
-            "Change the underlying snap value, this allows setting snap "
-            "values that aren't a divisor of 240. "
-            "This changes the underlying value that's multiplied "
-            "by 4 before being shown in the status bar"
+            "Suggested minimal duration between two notes on the same "
+            "button.\n"
+            "If two notes are closer than this they \"collide\" and are "
+            "highlighted in red everywhere"
         );
         const std::array<std::pair<const char*, sf::Time>, 3> presets{{
             {"F.E.I.S default", sf::seconds(1)},
             {"Safe", sf::milliseconds(1066)},
             {"jubeat plus", sf::milliseconds(1030)}
         }};
-        if (ImGui::BeginCombo("Collision Zone Presets", presets[0].first)) {
+        if (ImGui::BeginCombo("Collision Zone Presets", "Choose ...")) {
             for (const auto& [name, value] : presets) {
                 if (ImGui::Selectable(name, false)) {
                     config.editor.collision_zone = value;

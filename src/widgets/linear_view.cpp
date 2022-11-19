@@ -157,9 +157,9 @@ void LinearView::draw(
             const float note_x = timeline_left + note_width * (lane + 0.5f);
             const float note_y = static_cast<double>(beats_to_pixels_absolute.transform(tap_note.get_time()));
             const auto note_seconds = timing.time_at(tap_note.get_time());
-            const auto first_colliding_beat = timing.beats_at(note_seconds - sf::milliseconds(500));
+            const auto first_colliding_beat = timing.beats_at(note_seconds - collision_zone * 0.5f);
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
-            const auto last_colliding_beat = timing.beats_at(note_seconds + sf::milliseconds(500));
+            const auto last_colliding_beat = timing.beats_at(note_seconds + collision_zone * 0.5f);
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
             const sf::Vector2f collision_zone_pos = {
                 note_x,
@@ -210,10 +210,10 @@ void LinearView::draw(
             float note_x = timeline_left + note_width * (lane + 0.5f);
             float note_y = static_cast<double>(beats_to_pixels_absolute.transform(long_note.get_time()));
             const auto note_start_seconds = timing.time_at(long_note.get_time());
-            const auto first_colliding_beat = timing.beats_at(note_start_seconds - sf::milliseconds(500));
+            const auto first_colliding_beat = timing.beats_at(note_start_seconds - collision_zone * 0.5f);
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
             const auto note_end_seconds = timing.time_at(long_note.get_end());
-            const auto last_colliding_beat = timing.beats_at(note_end_seconds + sf::milliseconds(500));
+            const auto last_colliding_beat = timing.beats_at(note_end_seconds + collision_zone * 0.5f);
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
             const sf::Vector2f collision_zone_pos = {
                 note_x,
