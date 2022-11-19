@@ -9,6 +9,7 @@
 #include <type_traits>
 
 
+#include "config.hpp"
 #include "custom_sfml_audio/beat_ticks.hpp"
 #include "custom_sfml_audio/chord_claps.hpp"
 #include "custom_sfml_audio/note_claps.hpp"
@@ -38,12 +39,18 @@ const std::string beat_tick_stream = "beat_tick";
  */
 class EditorState {
 public:
-    explicit EditorState(const std::filesystem::path& assets);
+    explicit EditorState(
+        const std::filesystem::path& assets,
+        config::Config& config
+    );
     EditorState(
         const better::Song& song,
         const std::filesystem::path& assets,
-        const std::filesystem::path& save_path
+        const std::filesystem::path& save_path,
+        config::Config& config
     );
+
+    config::Config& config;
     
     History history;
 
@@ -258,21 +265,24 @@ namespace feis {
     void save_ask_open(
         std::optional<EditorState>& ed,
         const std::filesystem::path& assets,
-        const std::filesystem::path& settings
+        const std::filesystem::path& settings,
+        config::Config& config
     );
 
     void save_open(
         std::optional<EditorState>& ed,
         const std::filesystem::path& file,
         const std::filesystem::path& assets,
-        const std::filesystem::path& settings
+        const std::filesystem::path& settings,
+        config::Config& config
     );
 
     void open_from_file(
         std::optional<EditorState>& ed,
         const std::filesystem::path& file,
         const std::filesystem::path& assets,
-        const std::filesystem::path& settings
+        const std::filesystem::path& settings,
+        config::Config& config
     );
 
     void save_close(std::optional<EditorState>& ed);

@@ -40,12 +40,13 @@
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 
-EditorState::EditorState(const std::filesystem::path& assets_) : 
+EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
+    config(config_),
     note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_, 1.f)),
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    linear_view(assets_),
+    linear_view(assets_, config_.linear_view),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -56,15 +57,17 @@ EditorState::EditorState(const std::filesystem::path& assets_) :
 EditorState::EditorState(
     const better::Song& song_,
     const std::filesystem::path& assets_,
-    const std::filesystem::path& song_path = {}
+    const std::filesystem::path& song_path_,
+    config::Config& config_
 ) : 
+    config(config_),
     song(song_),
-    song_path(song_path),
+    song_path(song_path_),
     note_claps(std::make_shared<NoteClaps>(nullptr, nullptr, assets_, 1.f)),
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    linear_view(assets_),
+    linear_view(assets_, config_.linear_view),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -1524,14 +1527,15 @@ void feis::force_save(
 void feis::save_ask_open(
     std::optional<EditorState>& ed,
     const std::filesystem::path& assets,
-    const std::filesystem::path& settings
+    const std::filesystem::path& settings,
+    config::Config& config
 ) {
     if (ed and ed->save_if_needed_and_user_wants_to() == EditorState::SaveOutcome::UserCanceled) {
         return;
     }
 
     if (const auto& filepath = feis::open_file_dialog()) {
-        feis::open_from_file(ed, *filepath, assets, settings);
+        feis::open_from_file(ed, *filepath, assets, settings, config);
     }
 };
 
@@ -1540,13 +1544,14 @@ void feis::save_open(
     std::optional<EditorState>& ed,
     const std::filesystem::path& song_path,
     const std::filesystem::path& assets,
-    const std::filesystem::path& settings
+    const std::filesystem::path& settings,
+    config::Config& config
 ) {
     if (ed and ed->save_if_needed_and_user_wants_to() == EditorState::SaveOutcome::UserCanceled) {
         return;
     }
 
-    feis::open_from_file(ed, song_path, assets, settings);
+    feis::open_from_file(ed, song_path, assets, settings, config);
 };
 
 
@@ -1554,7 +1559,8 @@ void feis::open_from_file(
     std::optional<EditorState>& ed,
     const std::filesystem::path& song_path,
     const std::filesystem::path& assets,
-    const std::filesystem::path& settings
+    const std::filesystem::path& settings,
+    config::Config& config
 ) {
     try {
         // force utf-8 song path on windows 
@@ -1571,7 +1577,7 @@ void feis::open_from_file(
         };
         const auto json = load_json_preserving_decimals(f);
         auto song = better::Song::load_from_memon(json);
-        ed.emplace(song, assets, song_path);
+        ed.emplace(song, assets, song_path, config);
         Toolbox::pushNewRecentFile(std::filesystem::canonical(song_path), settings);
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);

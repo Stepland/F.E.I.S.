@@ -3,8 +3,10 @@
 #include <SFML/Config.hpp>
 #include <filesystem>
 #include <fmt/format.h>
+#include <toml++/toml.h>
+
+#include "colors.hpp"
 #include "marker.hpp"
-#include "toml++/impl/node_view.h"
 
 toml::array config::dump_color(const sf::Color& color) {
     return toml::array{color.r, color.g, color.b, color.a};
@@ -83,59 +85,61 @@ void config::Marker::dump_as_v1_0_0(toml::table &tbl) {
     tbl.insert_or_assign("marker", marker_table);
 }
 
-void config::LinearViewColors::load_from_v1_0_0_table(const toml::table& linear_view) {
-    const auto colors = linear_view["colors"];
-    load_color(colors["cursor"], cursor);
-    load_color(colors["tab_selection"]["fill"], tab_selection.fill);
-    load_color(colors["tab_selection"]["border"], tab_selection.border);
-    load_color(colors["normal_tap_note"], normal_tap_note);
-    load_color(colors["conflicting_tap_note"], conflicting_tap_note);
-    load_color(colors["normal_collision_zone"], normal_collision_zone);
-    load_color(colors["conflicting_collision_zone"], conflicting_collision_zone);
-    load_color(colors["normal_long_note"], normal_long_note);
-    load_color(colors["conflicting_long_note"], conflicting_long_note);
-    load_color(colors["selected_note_fill"], selected_note_fill);
-    load_color(colors["selected_note_outline"], selected_note_outline);
-    load_color(colors["measure_line"], measure_line);
-    load_color(colors["measure_number"], measure_number);
-    load_color(colors["beat_line"], beat_line);
-    load_color(colors["bpm_button"]["text"], bpm_button.text);
-    load_color(colors["bpm_button"]["button"], bpm_button.button);
-    load_color(colors["bpm_button"]["hover"], bpm_button.hover);
-    load_color(colors["bpm_button"]["active"], bpm_button.active);
-    load_color(colors["bpm_button"]["border"], bpm_button.border);
-    load_color(colors["selection_rect"]["fill"], selection_rect.fill);
-    load_color(colors["selection_rect"]["border"], selection_rect.border);
+LinearViewColors config::load_linear_view_colors_from_v1_0_0_table(const toml::table& linear_view) {
+    auto colors = default_linear_view_colors;
+    const auto colors_node = linear_view["colors"];
+    load_color(colors_node["cursor"], colors.cursor);
+    load_color(colors_node["tab_selection"]["fill"], colors.tab_selection.fill);
+    load_color(colors_node["tab_selection"]["border"], colors.tab_selection.border);
+    load_color(colors_node["normal_tap_note"], colors.normal_tap_note);
+    load_color(colors_node["conflicting_tap_note"], colors.conflicting_tap_note);
+    load_color(colors_node["normal_collision_zone"], colors.normal_collision_zone);
+    load_color(colors_node["conflicting_collision_zone"], colors.conflicting_collision_zone);
+    load_color(colors_node["normal_long_note"], colors.normal_long_note);
+    load_color(colors_node["conflicting_long_note"], colors.conflicting_long_note);
+    load_color(colors_node["selected_note_fill"], colors.selected_note_fill);
+    load_color(colors_node["selected_note_outline"], colors.selected_note_outline);
+    load_color(colors_node["measure_line"], colors.measure_line);
+    load_color(colors_node["measure_number"], colors.measure_number);
+    load_color(colors_node["beat_line"], colors.beat_line);
+    load_color(colors_node["bpm_button"]["text"], colors.bpm_button.text);
+    load_color(colors_node["bpm_button"]["button"], colors.bpm_button.button);
+    load_color(colors_node["bpm_button"]["hover"], colors.bpm_button.hover);
+    load_color(colors_node["bpm_button"]["active"], colors.bpm_button.active);
+    load_color(colors_node["bpm_button"]["border"], colors.bpm_button.border);
+    load_color(colors_node["selection_rect"]["fill"], colors.selection_rect.fill);
+    load_color(colors_node["selection_rect"]["border"], colors.selection_rect.border);
+    return colors;
 }
 
-void config::LinearViewColors::dump_as_v1_0_0(toml::table& linear_view) {
+void config::dump_linear_view_colors_as_v1_0_0(const LinearViewColors& colors, toml::table& linear_view) {
     toml::table colors_table{
-        {"cursor", dump_color(cursor)},
+        {"cursor", dump_color(colors.cursor)},
         {"tab_selection", toml::table{
-            {"fill", dump_color(tab_selection.fill)},
-            {"border", dump_color(tab_selection.border)},
+            {"fill", dump_color(colors.tab_selection.fill)},
+            {"border", dump_color(colors.tab_selection.border)},
         }},
-        {"normal_tap_note", dump_color(normal_tap_note)},
-        {"conflicting_tap_note", dump_color(conflicting_tap_note)},
-        {"normal_collision_zone", dump_color(normal_collision_zone)},
-        {"conflicting_collision_zone", dump_color(conflicting_collision_zone)},
-        {"normal_long_note", dump_color(normal_long_note)},
-        {"conflicting_long_note", dump_color(conflicting_long_note)},
-        {"selected_note_fill", dump_color(selected_note_fill)},
-        {"selected_note_outline", dump_color(selected_note_outline)},
-        {"measure_line", dump_color(measure_line)},
-        {"measure_number", dump_color(measure_number)},
-        {"beat_line", dump_color(beat_line)},
+        {"normal_tap_note", dump_color(colors.normal_tap_note)},
+        {"conflicting_tap_note", dump_color(colors.conflicting_tap_note)},
+        {"normal_collision_zone", dump_color(colors.normal_collision_zone)},
+        {"conflicting_collision_zone", dump_color(colors.conflicting_collision_zone)},
+        {"normal_long_note", dump_color(colors.normal_long_note)},
+        {"conflicting_long_note", dump_color(colors.conflicting_long_note)},
+        {"selected_note_fill", dump_color(colors.selected_note_fill)},
+        {"selected_note_outline", dump_color(colors.selected_note_outline)},
+        {"measure_line", dump_color(colors.measure_line)},
+        {"measure_number", dump_color(colors.measure_number)},
+        {"beat_line", dump_color(colors.beat_line)},
         {"bpm_button", toml::table{
-            {"text", dump_color(bpm_button.text)},
-            {"button", dump_color(bpm_button.button)},
-            {"hover", dump_color(bpm_button.hover)},
-            {"active", dump_color(bpm_button.active)},
-            {"border", dump_color(bpm_button.border)},
+            {"text", dump_color(colors.bpm_button.text)},
+            {"button", dump_color(colors.bpm_button.button)},
+            {"hover", dump_color(colors.bpm_button.hover)},
+            {"active", dump_color(colors.bpm_button.active)},
+            {"border", dump_color(colors.bpm_button.border)},
         }},
         {"selection_rect", toml::table{
-            {"fill", dump_color(selection_rect.fill)},
-            {"border", dump_color(selection_rect.border)},
+            {"fill", dump_color(colors.selection_rect.fill)},
+            {"border", dump_color(colors.selection_rect.border)},
         }}
     };
     linear_view.insert_or_assign("colors", colors_table);   
@@ -143,13 +147,13 @@ void config::LinearViewColors::dump_as_v1_0_0(toml::table& linear_view) {
 
 void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
     if (tbl["linear_view"].is_table()) {
-        colors.load_from_v1_0_0_table(tbl["linear_view"].ref<toml::table>());
+        colors = load_linear_view_colors_from_v1_0_0_table(tbl["linear_view"].ref<toml::table>());
     }
 }
 
 void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
     toml::table linear_view;
-    colors.dump_as_v1_0_0(linear_view);
+    dump_linear_view_colors_as_v1_0_0(colors, linear_view);
     tbl.insert_or_assign("linear_view", linear_view);
 }
 

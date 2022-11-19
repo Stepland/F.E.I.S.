@@ -364,7 +364,7 @@ int main() {
                             break;
                         case sf::Keyboard::O:
                             if (event.key.control) {
-                                feis::save_ask_open(editor_state, assets_folder, settings_folder);
+                                feis::save_ask_open(editor_state, assets_folder, settings_folder, config);
                             }
                             break;
                         case sf::Keyboard::P:
@@ -508,23 +508,23 @@ int main() {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
                     if (not editor_state) {
-                        editor_state.emplace(assets_folder);
+                        editor_state.emplace(assets_folder, config);
                     } else {
                         if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
-                            editor_state.emplace(assets_folder);
+                            editor_state.emplace(assets_folder, config);
                         }
                     }
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Open", "Ctrl+O")) {
-                    feis::save_ask_open(editor_state, assets_folder, settings_folder);
+                    feis::save_ask_open(editor_state, assets_folder, settings_folder, config);
                 }
                 if (ImGui::BeginMenu("Recent Files")) {
                     int i = 0;
                     for (const auto& file : Toolbox::getRecentFiles(settings_folder)) {
                         ImGui::PushID(i);
                         if (ImGui::MenuItem(file.c_str())) {
-                            feis::save_open(editor_state, file, assets_folder, settings_folder);
+                            feis::save_open(editor_state, file, assets_folder, settings_folder, config);
                         }
                         ImGui::PopID();
                         ++i;

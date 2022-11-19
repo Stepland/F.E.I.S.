@@ -11,7 +11,11 @@
 #include "special_numeric_types.hpp"
 
 namespace feis {
-    bool ColorEdit4(const char* label, sf::Color& col, ImGuiColorEditFlags flags = 0);
+    bool ColorEdit4(
+        const char* label,
+        sf::Color& col,
+        ImGuiColorEditFlags flags = ImGuiColorEditFlags_AlphaPreviewHalf
+    );
     bool InputDecimal(
         const char *label,
         Decimal* value,

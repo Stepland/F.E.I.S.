@@ -20,14 +20,16 @@
 #include <imgui_internal.h>
 #include <SFML/System/Time.hpp>
 
+#include "../better_timing.hpp"
+#include "../better_note.hpp"
+#include "../chart_state.hpp"
+#include "../colors.hpp"
+#include "../imgui_extras.hpp"
+#include "../long_note_dummy.hpp"
 #include "../special_numeric_types.hpp"
 #include "../toolbox.hpp"
-#include "../chart_state.hpp"
-#include "../long_note_dummy.hpp"
 #include "../variant_visitor.hpp"
-#include "better_note.hpp"
-#include "src/better_timing.hpp"
-#include "src/imgui_extras.hpp"
+
 
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
 
@@ -36,7 +38,8 @@ void SelectionRectangle::reset() {
     end = {-1, -1};
 }
 
-LinearView::LinearView(std::filesystem::path assets) :
+LinearView::LinearView(std::filesystem::path assets, config::LinearView& config_) :
+    colors(config_.colors),
     beats_to_pixels_proportional(0, 1, 0, 100),
     lane_order(LaneOrderPresets::Default{})
 {}
@@ -88,19 +91,19 @@ void LinearView::draw(
         const sf::Vector2f beat_line_start = {timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))};
         const sf::Vector2f beat_line_end = beat_line_start + sf::Vector2f{timeline_width, 0};
         if (next_beat % 4 == 0) {
-            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(measure_lines_color));
+            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(colors.measure_line));
             const Fraction measure = next_beat / 4;
             const auto measure_string = fmt::format("{}", static_cast<std::int64_t>(measure));
             const sf::Vector2f text_size = ImGui::CalcTextSize(measure_string.c_str(), measure_string.c_str()+measure_string.size());
             const sf::Vector2f measure_text_pos = {timeline_left - 10, static_cast<float>(static_cast<double>(next_beat_line_y))};
             draw_list->AddText(
                 origin + measure_text_pos - sf::Vector2f{text_size.x, text_size.y * 0.5f},
-                ImColor(measure_numbers_color),
+                ImColor(colors.measure_number),
                 measure_string.c_str(),
                 measure_string.c_str() + measure_string.size()
             );
         } else {
-            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(beat_lines_color));
+            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(colors.beat_line));
         }
     }
 
@@ -116,7 +119,7 @@ void LinearView::draw(
                 const sf::Vector2f bpm_text_raw_pos = {bpm_events_left, static_cast<float>(static_cast<double>(bpm_change_y))};
                 const auto bpm_at_beat = better::BPMAtBeat{event.get_bpm(), event.get_beats()};
                 const auto selected = chart_state.selected_stuff.bpm_events.contains(bpm_at_beat);
-                if (BPMButton(event, selected, bpm_text_raw_pos, bpm_button_colors)) {
+                if (BPMButton(event, selected, bpm_text_raw_pos, colors.bpm_button)) {
                     if (selected) {
                         chart_state.selected_stuff.bpm_events.erase(bpm_at_beat);
                     } else {
@@ -159,11 +162,11 @@ void LinearView::draw(
                 collizion_zone_width,
                 static_cast<float>(static_cast<double>(collision_zone_height))
             };
-            auto collision_zone_color = normal_collision_zone_color;
-            auto tap_note_color = normal_tap_note_color;
+            auto collision_zone_color = colors.normal_collision_zone;
+            auto tap_note_color = colors.normal_tap_note;
             if (chart_state.chart.notes->is_colliding(tap_note, timing)) {
-                collision_zone_color = conflicting_collision_zone_color;
-                tap_note_color = conflicting_tap_note_color;
+                collision_zone_color = colors.conflicting_collision_zone;
+                tap_note_color = colors.conflicting_tap_note;
             }
             draw_rectangle(
                 draw_list,
@@ -186,8 +189,8 @@ void LinearView::draw(
                     origin + note_pos,
                     selected_note_size,
                     {0.5f, 0.5f},
-                    selected_note_fill,
-                    selected_note_outline
+                    colors.selected_note_fill,
+                    colors.selected_note_outline
                 );
             }
         },
@@ -213,13 +216,13 @@ void LinearView::draw(
                 collizion_zone_width,
                 static_cast<float>(static_cast<double>(collision_zone_height))
             };
-            auto collision_zone_color = normal_collision_zone_color;
-            auto tap_note_color = normal_tap_note_color;
-            auto long_note_color = normal_long_note_color;
+            auto collision_zone_color = colors.normal_collision_zone;
+            auto tap_note_color = colors.normal_tap_note;
+            auto long_note_color = colors.normal_long_note;
             if (chart_state.chart.notes->is_colliding(long_note, timing)) {
-                collision_zone_color = conflicting_collision_zone_color;
-                tap_note_color = conflicting_tap_note_color;
-                long_note_color = conflicting_long_note_color;
+                collision_zone_color = colors.conflicting_collision_zone;
+                tap_note_color = colors.conflicting_tap_note;
+                long_note_color = colors.conflicting_long_note;
             }
             draw_rectangle(
                 draw_list,
@@ -254,8 +257,8 @@ void LinearView::draw(
                     origin + note_pos,
                     selected_note_size,
                     {0.5f, 0.5f},
-                    selected_note_fill,
-                    selected_note_outline
+                    colors.selected_note_fill,
+                    colors.selected_note_outline
                 );
             }
         },
@@ -292,7 +295,7 @@ void LinearView::draw(
         origin + cursor_pos,
         cursor_size,
         {0, 0.5},
-        cursor_color
+        colors.cursor
     );
 
     // Draw the time selection
@@ -316,8 +319,8 @@ void LinearView::draw(
                 origin + selection_pos,
                 selection_size,
                 {0, 0},
-                tab_selection_colors.fill,
-                tab_selection_colors.border
+                colors.tab_selection.fill,
+                colors.tab_selection.border
             );
         }
     }
@@ -343,7 +346,7 @@ void LinearView::draw(
                 draw_list,
                 selection_rectangle.start,
                 selection_rectangle.end,
-                selection_rect_colors
+                colors.selection_rect
             )
         ) {
             chart_state.selected_stuff.clear();
@@ -427,37 +430,40 @@ void LinearView::display_settings() {
             }
         }
         if (ImGui::CollapsingHeader("Colors##Linear View Settings")) {
-            feis::ColorEdit4("Cursor", cursor_color);
-            feis::ColorEdit4("Measure Lines", measure_lines_color);
-            feis::ColorEdit4("Measure Numbers", measure_numbers_color);
-            feis::ColorEdit4("Beat Lines", beat_lines_color);
+            if (ImGui::Button("Reset##Colors##Linear View Settings")) {
+                colors = default_linear_view_colors;
+            }
+            feis::ColorEdit4("Cursor", colors.cursor);
+            feis::ColorEdit4("Measure Lines", colors.measure_line);
+            feis::ColorEdit4("Measure Numbers", colors.measure_number);
+            feis::ColorEdit4("Beat Lines", colors.beat_line);
             if (ImGui::TreeNode("Selection Rectangle")) {
-                feis::ColorEdit4("Fill##Selection Rectangle Colors", selection_rect_colors.fill);
-                feis::ColorEdit4("Border##Selection Rectangle Colors", selection_rect_colors.border);
+                feis::ColorEdit4("Fill##Selection Rectangle Colors", colors.selection_rect.fill);
+                feis::ColorEdit4("Border##Selection Rectangle Colors", colors.selection_rect.border);
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("BPM Events##Color settings")) {
-                feis::ColorEdit4("Text##BPM Event Color", bpm_button_colors.text);
-                feis::ColorEdit4("Button##BPM Event Color", bpm_button_colors.button);
-                feis::ColorEdit4("Hover##BPM Event Color", bpm_button_colors.hover);
-                feis::ColorEdit4("Active##BPM Event Color", bpm_button_colors.active);
-                feis::ColorEdit4("Border##BPM Event Color", bpm_button_colors.border);
+                feis::ColorEdit4("Text##BPM Event Color", colors.bpm_button.text);
+                feis::ColorEdit4("Button##BPM Event Color", colors.bpm_button.button);
+                feis::ColorEdit4("Hover##BPM Event Color", colors.bpm_button.hover);
+                feis::ColorEdit4("Active##BPM Event Color", colors.bpm_button.active);
+                feis::ColorEdit4("Border##BPM Event Color", colors.bpm_button.border);
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("Tab Selection##Color settings")) {
-                feis::ColorEdit4("Fill##Tab Selection", tab_selection_colors.fill);
-                feis::ColorEdit4("Border##Tab Selection", tab_selection_colors.border);
+                feis::ColorEdit4("Fill##Tab Selection", colors.tab_selection.fill);
+                feis::ColorEdit4("Border##Tab Selection", colors.tab_selection.border);
                 ImGui::TreePop();
             }
             if (ImGui::TreeNode("Notes##Color settings tree element")) {
-                feis::ColorEdit4("Note##Color settings", normal_tap_note_color);
-                feis::ColorEdit4("Note (conflict)##Color settings", conflicting_tap_note_color);
-                feis::ColorEdit4("Collision Zone##Color settings", normal_collision_zone_color);
-                feis::ColorEdit4("Collision Zone (conflict)##Color settings", conflicting_collision_zone_color);
-                feis::ColorEdit4("Long Tail##Color settings", normal_long_note_color);
-                feis::ColorEdit4("Long Tail (conflict)##Color settings", conflicting_long_note_color);
-                feis::ColorEdit4("Selected Fill##Color settings", selected_note_fill);
-                feis::ColorEdit4("Selected Outline##Color settings", selected_note_outline);
+                feis::ColorEdit4("Note##Color settings", colors.normal_tap_note);
+                feis::ColorEdit4("Note (conflict)##Color settings", colors.conflicting_tap_note);
+                feis::ColorEdit4("Collision Zone##Color settings", colors.normal_collision_zone);
+                feis::ColorEdit4("Collision Zone (conflict)##Color settings", colors.conflicting_collision_zone);
+                feis::ColorEdit4("Long Tail##Color settings", colors.normal_long_note);
+                feis::ColorEdit4("Long Tail (conflict)##Color settings", colors.conflicting_long_note);
+                feis::ColorEdit4("Selected Fill##Color settings", colors.selected_note_fill);
+                feis::ColorEdit4("Selected Outline##Color settings", colors.selected_note_outline);
                 ImGui::TreePop();
             }
         }
