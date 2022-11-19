@@ -75,7 +75,7 @@ namespace better {
     };
 
 
-    bool Notes::is_colliding(const better::Note& note, const better::Timing& timing) const {
+    bool Notes::is_colliding(const better::Note& note, const better::Timing& timing, const sf::Time& collision_zone) const {
         const auto [start_beat, end_beat] = note.get_time_bounds();
 
         /*
@@ -92,11 +92,9 @@ namespace better {
         Reverse-engineering of the jubeat plus iOS app suggest the "official"
         note collision zone size is 1030 ms, so actually I wasn't that far off
         with 1000 ms !
-
-        TODO: Make the collision zone customizable
         */
-        const auto collision_start = timing.beats_at(timing.time_at(start_beat) - sf::seconds(1));
-        const auto collision_end = timing.beats_at(timing.time_at(end_beat) + sf::seconds(1));
+        const auto collision_start = timing.beats_at(timing.time_at(start_beat) - collision_zone);
+        const auto collision_end = timing.beats_at(timing.time_at(end_beat) + collision_zone);
 
         bool found_collision = false;
         in(

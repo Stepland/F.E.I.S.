@@ -4,8 +4,9 @@
 
 const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
 
-DensityGraph::DensityGraph(std::filesystem::path assets) :
-    texture_path(assets / texture_file)
+DensityGraph::DensityGraph(std::filesystem::path assets, const config::Config& config) :
+    texture_path(assets / texture_file),
+    collision_zone(config.editor.collision_zone)
 {
     if (!base_texture.loadFromFile(texture_path)) {
         std::cerr << "Unable to load texture " << texture_path;
@@ -60,7 +61,7 @@ void DensityGraph::compute_densities(
             densities.at(section).density += 1;
             if (not densities.at(section).has_collisions) {
                 densities.at(section).has_collisions =
-                    chart.notes->is_colliding(note, timing);
+                    chart.notes->is_colliding(note, timing, collision_zone);
             }
         }
     }

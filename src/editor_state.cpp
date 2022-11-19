@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 
 #include <fmt/core.h>
@@ -46,7 +47,7 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    linear_view(assets_, config_.linear_view),
+    linear_view(assets_, config_),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -67,7 +68,7 @@ EditorState::EditorState(
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    linear_view(assets_, config_.linear_view),
+    linear_view(assets_, config_),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -518,7 +519,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
             // Check for collisions then display them
             std::array<bool, 16> collisions = {};
             for (const auto& [_, note] : chart_state->visible_notes) {
-                if (chart_state->chart.notes->is_colliding(note, *applicable_timing)) {
+                if (chart_state->chart.notes->is_colliding(note, *applicable_timing, config.editor.collision_zone)) {
                     collisions[note.get_position().index()] = true;
                 }
             }
@@ -1043,7 +1044,7 @@ void EditorState::display_sound_settings() {
 void EditorState::display_editor_settings() {
     if (ImGui::Begin("Editor Settings", &show_editor_settings)) {
         static const std::uint64_t step = 1;
-        if (ImGui::InputScalar("Snap", ImGuiDataType_U64, &snap, &step, nullptr, "%d")) {
+        if (ImGui::InputScalar("Snap##Editor Settings", ImGuiDataType_U64, &snap, &step, nullptr, "%d")) {
             snap = std::clamp(snap, 1UL, 1000UL);
         };
         ImGui::SameLine();
@@ -1053,6 +1054,37 @@ void EditorState::display_editor_settings() {
             "This changes the underlying value that's multiplied "
             "by 4 before being shown in the status bar"
         );
+        int collision_zone_ms = config.editor.collision_zone.asMilliseconds();
+        if (ImGui::SliderInt("Collision Zone##Editor Settings", &collision_zone_ms, 100, 2000, "%d ms")) {
+            collision_zone_ms = std::clamp(collision_zone_ms, 100, 2000);
+            config.editor.collision_zone = sf::milliseconds(collision_zone_ms);
+            if (chart_state) {
+                chart_state->density_graph.should_recompute = true;
+            }
+        }
+        ImGui::SameLine();
+        feis::HelpMarker(
+            "Change the underlying snap value, this allows setting snap "
+            "values that aren't a divisor of 240. "
+            "This changes the underlying value that's multiplied "
+            "by 4 before being shown in the status bar"
+        );
+        const std::array<std::pair<const char*, sf::Time>, 3> presets{{
+            {"F.E.I.S default", sf::seconds(1)},
+            {"Safe", sf::milliseconds(1066)},
+            {"jubeat plus", sf::milliseconds(1030)}
+        }};
+        if (ImGui::BeginCombo("Collision Zone Presets", presets[0].first)) {
+            for (const auto& [name, value] : presets) {
+                if (ImGui::Selectable(name, false)) {
+                    config.editor.collision_zone = value;
+                    if (chart_state) {
+                        chart_state->density_graph.should_recompute = true;
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
     }
     ImGui::End();
 }
@@ -1275,7 +1307,7 @@ void EditorState::erase_chart_and_push_history(const std::string& name) {
 
 void EditorState::open_chart(const std::string& name) {
     auto& [name_ref, chart] = *song.charts.find(name);
-    chart_state.emplace(chart, name_ref, history, assets);
+    chart_state.emplace(chart, name_ref, history, assets, config);
     reload_editable_range();
     reload_applicable_timing();
     reload_all_sounds();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Time.hpp>
 #include <filesystem>
 
 #include <toml++/toml.h>
@@ -38,6 +39,14 @@ namespace config {
         linear_view::Colors colors;
         linear_view::Sizes sizes;
         linear_view::LaneOrder lane_order;
+        int zoom = 0;
+
+        void load_from_v1_0_0_table(const toml::table& tbl);
+        void dump_as_v1_0_0(toml::table& tbl);
+    };
+
+    struct Editor {
+        sf::Time collision_zone = sf::seconds(1);
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);
@@ -54,6 +63,7 @@ namespace config {
 
         Marker marker;
         LinearView linear_view;
+        Editor editor;
 
     private:
         void load_from_v1_0_0_table(const toml::table& tbl);

@@ -39,7 +39,7 @@ namespace better {
         is colliding with ANOTHER note. This means notes exactly equal to the
         one passed as an argument are NOT taken into account.
         */
-        bool is_colliding(const better::Note& note, const better::Timing& timing) const;
+        bool is_colliding(const better::Note& note, const better::Timing& timing, const sf::Time& collision_zone) const;
 
         Notes between(const Interval<Fraction>& bounds);
         std::size_t count_between(const Interval<Fraction>& bounds);

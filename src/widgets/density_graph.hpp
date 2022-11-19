@@ -6,6 +6,7 @@
 #include <filesystem>
 
 #include "../better_song.hpp"
+#include "../config.hpp"
 
 class DensityGraph {
 public:
@@ -14,7 +15,7 @@ public:
         bool has_collisions;
     };
 
-    DensityGraph(std::filesystem::path assets);
+    DensityGraph(std::filesystem::path assets, const config::Config& config);
     sf::Texture base_texture;
     sf::Sprite normal_square;
     sf::Sprite collision_square;
@@ -38,6 +39,7 @@ public:
 
 private:
     const std::filesystem::path texture_path;
+    const sf::Time& collision_zone;
 
     void compute_densities(
         unsigned int height,

@@ -25,7 +25,7 @@ struct SelectionRectangle {
 
 class LinearView {
 public:
-    LinearView(std::filesystem::path assets, config::LinearView& config);
+    LinearView(std::filesystem::path assets, config::Config& config);
 
     void draw(
         ImDrawList* draw_list,
@@ -47,17 +47,16 @@ public:
 
     void display_settings();
 
-
-
 private:
     linear_view::Colors& colors;
     linear_view::Sizes& sizes;
+    const sf::Time& collision_zone;
 
     AffineTransform<Fraction> beats_to_pixels_proportional;
 
     void reload_transforms();
 
-    int zoom = 0;
+    int& zoom;
 
     SelectionRectangle selection_rectangle;
     bool started_selection_inside_window = false;

@@ -8,6 +8,7 @@
 #include "better_note.hpp"
 #include "better_notes.hpp"
 #include "better_song.hpp"
+#include "config.hpp"
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "long_note_dummy.hpp"
@@ -20,10 +21,13 @@ struct ChartState {
         better::Chart& c,
         const std::string& name,
         History& history,
-        std::filesystem::path assets
+        std::filesystem::path assets,
+        const config::Config& config
     );
     better::Chart& chart;
     const std::string& difficulty_name;
+    
+    const config::Config& config;
 
     void cut(
         NotificationsQueue& nq,

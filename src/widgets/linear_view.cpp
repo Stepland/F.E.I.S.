@@ -40,12 +40,16 @@ void SelectionRectangle::reset() {
     end = {-1, -1};
 }
 
-LinearView::LinearView(std::filesystem::path assets, config::LinearView& config_) :
-    colors(config_.colors),
-    sizes(config_.sizes),
+LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
+    colors(config_.linear_view.colors),
+    sizes(config_.linear_view.sizes),
+    collision_zone(config_.editor.collision_zone),
     beats_to_pixels_proportional(0, 1, 0, 100),
-    lane_order(config_.lane_order)
-{}
+    zoom(config_.linear_view.zoom),
+    lane_order(config_.linear_view.lane_order)
+{
+    set_zoom(config_.linear_view.zoom);
+}
 
 void LinearView::draw(
     ImDrawList* draw_list,
@@ -167,7 +171,7 @@ void LinearView::draw(
             };
             auto collision_zone_color = colors.normal_collision_zone;
             auto tap_note_color = colors.normal_tap_note;
-            if (chart_state.chart.notes->is_colliding(tap_note, timing)) {
+            if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
                 collision_zone_color = colors.conflicting_collision_zone;
                 tap_note_color = colors.conflicting_tap_note;
             }
@@ -222,7 +226,7 @@ void LinearView::draw(
             auto collision_zone_color = colors.normal_collision_zone;
             auto tap_note_color = colors.normal_tap_note;
             auto long_note_color = colors.normal_long_note;
-            if (chart_state.chart.notes->is_colliding(long_note, timing)) {
+            if (chart_state.chart.notes->is_colliding(long_note, timing, collision_zone)) {
                 collision_zone_color = colors.conflicting_collision_zone;
                 tap_note_color = colors.conflicting_tap_note;
                 long_note_color = colors.conflicting_long_note;
@@ -391,6 +395,9 @@ void LinearView::set_zoom(int newZoom) {
 
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
+        if (ImGui::SliderInt("Zoom##Linear View Settings", &zoom, -10, 10, "%d")) {
+            set_zoom(zoom);
+        }
         if (ImGui::CollapsingHeader("Lanes##Linear View Settings")) {
             if (ImGui::BeginCombo("Order", lane_order_name().c_str())) {
                 if (ImGui::Selectable(

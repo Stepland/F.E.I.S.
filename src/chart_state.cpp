@@ -14,12 +14,14 @@ ChartState::ChartState(
     better::Chart& c,
     const std::string& name,
     History& history,
-    std::filesystem::path assets
+    std::filesystem::path assets,
+    const config::Config& config_
 ) :
     chart(c),
     difficulty_name(name),
+    config(config_),
     history(history),
-    density_graph(assets)
+    density_graph(assets, config_)
 {}
 
 void ChartState::cut(

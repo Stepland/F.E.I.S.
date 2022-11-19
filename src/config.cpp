@@ -1,6 +1,7 @@
 #include "config.hpp"
 
 #include <SFML/Config.hpp>
+#include <SFML/System/Time.hpp>
 #include <filesystem>
 #include <fmt/format.h>
 #include <toml++/toml.h>
@@ -219,11 +220,13 @@ void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
     if (not tbl["linear_view"].is_table()) {
         return;
     }
-
     const auto linear_view_table = tbl["linear_view"].ref<toml::table>();
     colors = load_linear_view_colors_from_v1_0_0_table(linear_view_table);
     sizes = load_linear_view_sizes_from_v1_0_0_table(linear_view_table);
     lane_order = load_linear_view_lane_order_from_v1_0_0_table(linear_view_table);
+    if (linear_view_table["zoom"].is_integer()) {
+        zoom = *linear_view_table["zoom"].value<int>();
+    }
 }
 
 void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
@@ -231,9 +234,28 @@ void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
     dump_linear_view_colors_as_v1_0_0(colors, linear_view);
     dump_linear_view_sizes_as_v1_0_0(sizes, linear_view);
     dump_linear_view_lane_order_as_v1_0_0(lane_order, linear_view);
+    linear_view.insert_or_assign("zoom", zoom);
     tbl.insert_or_assign("linear_view", linear_view);
 }
 
+
+void config::Editor::load_from_v1_0_0_table(const toml::table& tbl) {
+    if (not tbl["editor"].is_table()) {
+        return;
+    }
+    const auto editor_table = tbl["editor"].ref<toml::table>();
+    if (editor_table["collision_zone"].is_integer()) {
+        const auto ms = editor_table["collision_zone"].value<int>();
+        collision_zone = sf::milliseconds(std::clamp(*ms, 100, 2000));
+    }
+
+}
+
+void config::Editor::dump_as_v1_0_0(toml::table& tbl) {
+    tbl.insert_or_assign("editor", toml::table{{
+        "collision_zone", collision_zone.asMilliseconds()
+    }});
+}
 
 
 config::Config::Config(const std::filesystem::path& settings) :
@@ -271,6 +293,7 @@ toml::table config::Config::dump_as_v1_0_0() {
     };
     marker.dump_as_v1_0_0(tbl);
     linear_view.dump_as_v1_0_0(tbl);
+    editor.dump_as_v1_0_0(tbl);
     return tbl;
 }
 
@@ -284,4 +307,5 @@ config::Config::~Config() {
 void config::Config::load_from_v1_0_0_table(const toml::table& tbl) {
     marker.load_from_v1_0_0_table(tbl);
     linear_view.load_from_v1_0_0_table(tbl);
+    editor.load_from_v1_0_0_table(tbl);
 }
