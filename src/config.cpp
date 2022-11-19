@@ -4,9 +4,12 @@
 #include <filesystem>
 #include <fmt/format.h>
 #include <toml++/toml.h>
+#include <variant>
 
 #include "colors.hpp"
 #include "marker.hpp"
+#include "variant_visitor.hpp"
+#include "widgets/lane_order.hpp"
 
 toml::array config::dump_color(const sf::Color& color) {
     return toml::array{color.r, color.g, color.b, color.a};
@@ -85,8 +88,8 @@ void config::Marker::dump_as_v1_0_0(toml::table &tbl) {
     tbl.insert_or_assign("marker", marker_table);
 }
 
-LinearViewColors config::load_linear_view_colors_from_v1_0_0_table(const toml::table& linear_view) {
-    auto colors = default_linear_view_colors;
+linear_view::Colors config::load_linear_view_colors_from_v1_0_0_table(const toml::table& linear_view) {
+    auto colors = linear_view::default_colors;
     const auto colors_node = linear_view["colors"];
     load_color(colors_node["cursor"], colors.cursor);
     load_color(colors_node["tab_selection"]["fill"], colors.tab_selection.fill);
@@ -112,7 +115,7 @@ LinearViewColors config::load_linear_view_colors_from_v1_0_0_table(const toml::t
     return colors;
 }
 
-void config::dump_linear_view_colors_as_v1_0_0(const LinearViewColors& colors, toml::table& linear_view) {
+void config::dump_linear_view_colors_as_v1_0_0(const linear_view::Colors& colors, toml::table& linear_view) {
     toml::table colors_table{
         {"cursor", dump_color(colors.cursor)},
         {"tab_selection", toml::table{
@@ -145,15 +148,89 @@ void config::dump_linear_view_colors_as_v1_0_0(const LinearViewColors& colors, t
     linear_view.insert_or_assign("colors", colors_table);   
 }
 
-void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
-    if (tbl["linear_view"].is_table()) {
-        colors = load_linear_view_colors_from_v1_0_0_table(tbl["linear_view"].ref<toml::table>());
+linear_view::Sizes config::load_linear_view_sizes_from_v1_0_0_table(const toml::table& linear_view) {
+    auto sizes = linear_view::default_sizes;
+    const auto sizes_node = linear_view["sizes"];
+    sizes.timeline_margin = sizes_node["timeline_margin"].value<int>().value_or(sizes.timeline_margin);
+    sizes.cursor_height = sizes_node["cursor_height"].value<int>().value_or(sizes.cursor_height);
+    return sizes;
+}
+
+void config::dump_linear_view_sizes_as_v1_0_0(const linear_view::Sizes& sizes, toml::table& linear_view) {
+    toml::table sizes_table{
+        {"timeline_margin", sizes.timeline_margin},
+        {"cursor_height", sizes.cursor_height},
+    };
+    linear_view.insert_or_assign("sizes", sizes_table);  
+}
+
+linear_view::LaneOrder config::load_linear_view_lane_order_from_v1_0_0_table(const toml::table& linear_view) {
+    auto lane_order = linear_view::default_lane_order;
+    const auto lane_order_node = linear_view["lane_order"];
+    const auto type = lane_order_node["type"].value<std::string>();
+    if (not type) {
+        return lane_order;
     }
+    
+    if (*type == "default") {
+        return linear_view::lane_order::Default{};
+    } else if (*type == "vertical") {
+        return linear_view::lane_order::Vertical{};
+    } else if (*type == "custom") {
+        const auto order_as_string = lane_order_node["order"].value<std::string>();
+        if (order_as_string) {
+            return linear_view::lane_order::Custom{*order_as_string};
+        }
+    }
+    
+    return lane_order;
+
+
+}
+
+void config::dump_linear_view_lane_order_as_v1_0_0(const linear_view::LaneOrder& lane_order, toml::table& linear_view) {
+    const auto _dump = VariantVisitor {
+        [&](const linear_view::lane_order::Default&) {
+            linear_view.insert_or_assign(
+                "lane_order",
+                toml::table{{"type", "default"}}
+            );
+        },
+        [&](const linear_view::lane_order::Vertical&) {
+            linear_view.insert_or_assign(
+                "lane_order",
+                toml::table{{"type", "vertical"}}
+            );
+        },
+        [&](const linear_view::lane_order::Custom& custom) {
+            linear_view.insert_or_assign(
+                "lane_order",
+                toml::table{
+                    {"type", "custom"},
+                    {"order", custom.as_string}
+                }
+            );
+        }
+    };
+    std::visit(_dump, lane_order);
+}
+
+void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
+    if (not tbl["linear_view"].is_table()) {
+        return;
+    }
+
+    const auto linear_view_table = tbl["linear_view"].ref<toml::table>();
+    colors = load_linear_view_colors_from_v1_0_0_table(linear_view_table);
+    sizes = load_linear_view_sizes_from_v1_0_0_table(linear_view_table);
+    lane_order = load_linear_view_lane_order_from_v1_0_0_table(linear_view_table);
 }
 
 void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
     toml::table linear_view;
     dump_linear_view_colors_as_v1_0_0(colors, linear_view);
+    dump_linear_view_sizes_as_v1_0_0(sizes, linear_view);
+    dump_linear_view_lane_order_as_v1_0_0(lane_order, linear_view);
     tbl.insert_or_assign("linear_view", linear_view);
 }
 

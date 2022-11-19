@@ -5,7 +5,9 @@
 #include <toml++/toml.h>
 
 #include "colors.hpp"
+#include "sizes.hpp"
 #include "marker.hpp"
+#include "widgets/lane_order.hpp"
 
 
 namespace config {
@@ -23,11 +25,19 @@ namespace config {
         void dump_as_v1_0_0(toml::table& tbl);
     };
 
-    LinearViewColors load_linear_view_colors_from_v1_0_0_table(const toml::table& linear_view);
-    void dump_linear_view_colors_as_v1_0_0(const LinearViewColors& colors, toml::table& linear_view);
+    linear_view::Colors load_linear_view_colors_from_v1_0_0_table(const toml::table& linear_view);
+    void dump_linear_view_colors_as_v1_0_0(const linear_view::Colors& colors, toml::table& linear_view);
+
+    linear_view::Sizes load_linear_view_sizes_from_v1_0_0_table(const toml::table& linear_view);
+    void dump_linear_view_sizes_as_v1_0_0(const linear_view::Sizes& sizes, toml::table& linear_view);
+
+    linear_view::LaneOrder load_linear_view_lane_order_from_v1_0_0_table(const toml::table& linear_view);
+    void dump_linear_view_lane_order_as_v1_0_0(const linear_view::LaneOrder& lane_order, toml::table& linear_view);
 
     struct LinearView {
-        LinearViewColors colors;
+        linear_view::Colors colors;
+        linear_view::Sizes sizes;
+        linear_view::LaneOrder lane_order;
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);

@@ -29,6 +29,8 @@
 #include "../special_numeric_types.hpp"
 #include "../toolbox.hpp"
 #include "../variant_visitor.hpp"
+#include "sizes.hpp"
+#include "widgets/lane_order.hpp"
 
 
 const std::string font_file = "fonts/NotoSans-Medium.ttf";
@@ -40,8 +42,9 @@ void SelectionRectangle::reset() {
 
 LinearView::LinearView(std::filesystem::path assets, config::LinearView& config_) :
     colors(config_.colors),
+    sizes(config_.sizes),
     beats_to_pixels_proportional(0, 1, 0, 100),
-    lane_order(LaneOrderPresets::Default{})
+    lane_order(config_.lane_order)
 {}
 
 void LinearView::draw(
@@ -57,12 +60,12 @@ void LinearView::draw(
     int x = std::max(300, static_cast<int>(size.x));
     int y = std::max(300, static_cast<int>(size.y));
 
-    const float timeline_width = static_cast<float>(x) - static_cast<float>(timeline_margin);
-    const float timeline_left = static_cast<float>(timeline_margin) / 2;
+    const float timeline_width = static_cast<float>(x) - static_cast<float>(sizes.timeline_margin);
+    const float timeline_left = static_cast<float>(sizes.timeline_margin) / 2;
     const float timeline_right = timeline_left + timeline_width;
 
     // Just in case, clamp the beat cursor inside the window, with some margin
-    const float cursor_y = std::clamp(static_cast<float>(cursor_height), 25.f, static_cast<float>(y) - 25.f);
+    const float cursor_y = std::clamp(static_cast<float>(sizes.cursor_height), 25.f, static_cast<float>(y) - 25.f);
 
     // Here we compute the range of visible beats from the size of the window
     // in pixels, we know by definition that the current beat is exactly at
@@ -386,41 +389,34 @@ void LinearView::set_zoom(int newZoom) {
     reload_transforms();
 }
 
-const std::array<std::string, 16> letters = {
-    "1","2","3","4",
-    "5","6","7","8",
-    "9","a","b","c",
-    "d","e","f","g"
-};
-
 void LinearView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
         if (ImGui::CollapsingHeader("Lanes##Linear View Settings")) {
             if (ImGui::BeginCombo("Order", lane_order_name().c_str())) {
                 if (ImGui::Selectable(
                     "Default",
-                    std::holds_alternative<LaneOrderPresets::Default>(lane_order)
+                    std::holds_alternative<linear_view::lane_order::Default>(lane_order)
                 )) {
-                    lane_order = LaneOrderPresets::Default{};
+                    lane_order = linear_view::lane_order::Default{};
                 }
                 if (ImGui::Selectable(
                     "Vertical",
-                    std::holds_alternative<LaneOrderPresets::Vertical>(lane_order)
+                    std::holds_alternative<linear_view::lane_order::Vertical>(lane_order)
                 )) {
-                    lane_order = LaneOrderPresets::Vertical{};
+                    lane_order = linear_view::lane_order::Vertical{};
                 }
                 if (ImGui::Selectable(
                     "Custom",
-                    std::holds_alternative<CustomLaneOrder>(lane_order)
+                    std::holds_alternative<linear_view::lane_order::Custom>(lane_order)
                 )) {
-                    if (not std::holds_alternative<CustomLaneOrder>(lane_order)) {
-                        lane_order = CustomLaneOrder{};
+                    if (not std::holds_alternative<linear_view::lane_order::Custom>(lane_order)) {
+                        lane_order = linear_view::lane_order::Custom{};
                     }
                 }
                 ImGui::EndCombo();
             }
-            if (std::holds_alternative<CustomLaneOrder>(lane_order)) {
-                auto& order = std::get<CustomLaneOrder>(lane_order);
+            if (std::holds_alternative<linear_view::lane_order::Custom>(lane_order)) {
+                auto& order = std::get<linear_view::lane_order::Custom>(lane_order);
                 if (ImGui::InputText("Custom", &order.as_string)) {
                     order.cleanup_string();
                     order.update_from_string();
@@ -431,7 +427,7 @@ void LinearView::display_settings() {
         }
         if (ImGui::CollapsingHeader("Colors##Linear View Settings")) {
             if (ImGui::Button("Reset##Colors##Linear View Settings")) {
-                colors = default_linear_view_colors;
+                colors = linear_view::default_colors;
             }
             feis::ColorEdit4("Cursor", colors.cursor);
             feis::ColorEdit4("Measure Lines", colors.measure_line);
@@ -468,8 +464,11 @@ void LinearView::display_settings() {
             }
         }
         if (ImGui::CollapsingHeader("Metrics##Linear View Settings")) {
-            ImGui::DragInt("Cursor Height", &cursor_height);
-            ImGui::DragInt("Timeline Margin", &timeline_margin);
+            if (ImGui::Button("Reset##Metrics##Linear View Settings")) {
+                sizes = linear_view::default_sizes;
+            }
+            ImGui::DragInt("Cursor Height", &sizes.cursor_height);
+            ImGui::DragInt("Timeline Margin", &sizes.timeline_margin);
         }
     }
     ImGui::End();
@@ -486,22 +485,22 @@ void LinearView::reload_transforms() {
 
 std::string LinearView::lane_order_name() {
     const auto name = VariantVisitor {
-        [](LaneOrderPresets::Default) { return "Default"; },
-        [](LaneOrderPresets::Vertical) { return "Vertical"; },
-        [](CustomLaneOrder) { return "Custom"; },
+        [](linear_view::lane_order::Default) { return "Default"; },
+        [](linear_view::lane_order::Vertical) { return "Vertical"; },
+        [](linear_view::lane_order::Custom) { return "Custom"; },
     };
     return std::visit(name, lane_order);
 }
 
 std::optional<unsigned int> LinearView::button_to_lane(const better::Position& button) {
     const auto _button_to_lane = VariantVisitor {
-        [button](const LaneOrderPresets::Default&){
+        [button](const linear_view::lane_order::Default&){
             return static_cast<std::optional<unsigned int>>(button.index());
         },
-        [button](const LaneOrderPresets::Vertical&){
+        [button](const linear_view::lane_order::Vertical&){
             return static_cast<std::optional<unsigned int>>(button.get_y() + 4 * button.get_x());
         },
-        [button](const CustomLaneOrder& c){
+        [button](const linear_view::lane_order::Custom& c){
             const auto pair = c.button_to_lane.find(button.index());
             if (pair != c.button_to_lane.end()) {
                 return static_cast<std::optional<unsigned int>>(pair->second);
@@ -634,7 +633,7 @@ void LaneOrderPreview(const std::array<std::optional<unsigned int>, 16>& order) 
         for (auto x = 0; x < 4; x++) {
             const auto index = x + 4*y;
             ImGui::SetCursorPos(origin + sf::Vector2f{static_cast<float>(x), static_cast<float>(y)} * scale);
-            ImGui::TextColored(rainbow.at(index), "%s", letters.at(index).c_str());
+            ImGui::TextColored(rainbow.at(index), "%s", linear_view::lane_order::letters.at(index).c_str());
             if (x != 3) {
                 ImGui::SameLine();
             }
@@ -651,68 +650,11 @@ void LaneOrderPreview(const std::array<std::optional<unsigned int>, 16>& order) 
         const auto optional_button = order.at(lane);
         if (optional_button) {
             const auto button = *optional_button % 16;
-            ImGui::TextColored(rainbow.at(button), "%s", letters.at(button).c_str());
+            ImGui::TextColored(rainbow.at(button), "%s", linear_view::lane_order::letters.at(button).c_str());
         } else {
             ImGui::TextDisabled("_");
         }
     }
     ImGui::SetCursorPos(origin);
     ImGui::Dummy(sf::Vector2f{23, 4}*scale);
-}
-
-LinearView::CustomLaneOrder::CustomLaneOrder() :
-    lane_to_button({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})
-{
-    update_from_array();
-}
-
-void LinearView::CustomLaneOrder::update_from_array() {
-    std::stringstream ss;
-    button_to_lane.clear();
-    for (std::size_t lane = 0; lane < lane_to_button.size(); lane++) {
-        const auto button = lane_to_button.at(lane);
-        if (button) {
-            ss << letters.at(*button);
-            button_to_lane[*button] = lane;
-        } else {
-            ss << "_";
-        }
-    }
-    as_string = ss.str();
-}
-
-const std::map<char, unsigned int> letter_to_index = {
-    {'1', 0}, {'2', 1}, {'3', 2}, {'4', 3},
-    {'5', 4}, {'6', 5}, {'7', 6}, {'8', 7},
-    {'9', 8}, {'a', 9}, {'b', 10}, {'c', 11},
-    {'d', 12}, {'e', 13}, {'f', 14}, {'g', 15},
-};
-
-void LinearView::CustomLaneOrder::cleanup_string() {
-    as_string.resize(16);
-    for (auto& c : as_string) {
-        if (not letter_to_index.contains(c)) {
-            c = '_';
-        }
-    }
-}
-
-void LinearView::CustomLaneOrder::update_from_string() {
-    lane_to_button = {{
-        {}, {}, {}, {},
-        {}, {}, {}, {},
-        {}, {}, {}, {},
-        {}, {}, {}, {}
-    }};
-    button_to_lane.clear();
-    const auto upper_bound = std::min(16UL, as_string.length());
-    for (std::size_t lane = 0; lane < upper_bound; lane++) {
-        const auto letter = as_string.at(lane);
-        const auto pair = letter_to_index.find(letter);
-        if (pair != letter_to_index.end()) {
-            const auto button = pair->second;
-            lane_to_button[lane] = button;
-            button_to_lane[button] = lane;
-        }
-    }
 }

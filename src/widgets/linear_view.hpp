@@ -1,16 +1,20 @@
 #pragma once
 
+#include <filesystem>
+
+#include <imgui.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
-#include <filesystem>
 
 #include "../better_timing.hpp"
 #include "../chart_state.hpp"
 #include "../toolbox.hpp"
-#include "config.hpp"
-#include "imgui.h"
+#include "../colors.hpp"
+#include "../config.hpp"
+#include "../sizes.hpp"
+#include "lane_order.hpp"
 
 struct SelectionRectangle {
     sf::Vector2f start = {-1, -1};
@@ -43,11 +47,12 @@ public:
 
     void display_settings();
 
-private:
-    LinearViewColors& colors;
 
-    int timeline_margin = 130;
-    int cursor_height = 100;
+
+private:
+    linear_view::Colors& colors;
+    linear_view::Sizes& sizes;
+
     AffineTransform<Fraction> beats_to_pixels_proportional;
 
     void reload_transforms();
@@ -58,22 +63,7 @@ private:
     bool started_selection_inside_window = false;
     bool any_bpm_button_hovered = false;
 
-    struct LaneOrderPresets {
-        struct Default {};
-        struct Vertical {};
-    };
-
-    struct CustomLaneOrder {
-        CustomLaneOrder();
-        std::array<std::optional<unsigned int>, 16> lane_to_button;
-        std::map<unsigned int, unsigned int> button_to_lane;
-        std::string as_string;
-        void cleanup_string();
-        void update_from_string();
-        void update_from_array();
-    };
-
-    std::variant<LaneOrderPresets::Default, LaneOrderPresets::Vertical, CustomLaneOrder> lane_order;
+    linear_view::LaneOrder& lane_order;
     std::string lane_order_name();
     std::optional<unsigned int> button_to_lane(const better::Position& button);
 };
