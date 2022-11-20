@@ -7,10 +7,14 @@
 
 ## 🍒 Small improvements 🍒
 - Linear View
-    - The cursor height can now be changed in the settings
+    - new settings
+        - lane order
+        - cursor height
 - Frendlier error message when the UI font is not found in the assets folder
 - Playback position is kept instead of being reset to zero when you change charts or reload the audio file
-- New menu `Settings > Editor` allows setting a custom snap value
+- New menu `Settings > Editor`, allows setting
+    - snap value
+    - note collision zone size
 - History now takes into account when you :
     - Rename a chart (you change its difficulty)
     - Re-rate a chart
@@ -33,9 +37,10 @@
     - Fixed jerky motion when scrolling down (that one was *hard* to track down)
 - Density Graph
     - Shows up for charts without music !
-    - updates when :
-        - copy/pasting notes
+    - Updates more often, notably when :
+        - cutting/pasting/deleting notes with the keyboard shortcuts or the menu item
         - the audio file changes or is unloaded (because of an invalid path for example) (or more generally when the end point of the chart changes without the notes changing)
+        - BPMs are inserted
 
 # v1.1.0
 ## 🍓 New Stuff 🍓
