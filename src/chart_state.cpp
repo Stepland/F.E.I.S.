@@ -41,6 +41,7 @@ void ChartState::cut(
                 chart.notes->erase(note);
             }
             history.push(std::make_shared<RemoveNotes>(difficulty_name, selected_stuff.notes));
+            density_graph.should_recompute = true;
         }
         if (not selected_stuff.bpm_events.empty()) {
             const auto before = timing;
@@ -147,6 +148,7 @@ void ChartState::delete_(
             chart.notes->erase(note);
         }
         selected_stuff.notes.clear();
+        density_graph.should_recompute = true;
     }
     if (not selected_stuff.bpm_events.empty()) {
         const auto before = timing;

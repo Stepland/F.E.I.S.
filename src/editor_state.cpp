@@ -1106,11 +1106,16 @@ void EditorState::display_timing_menu() {
             playback_position
         );
         if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            const auto before = *applicable_timing;
-            applicable_timing->insert(better::BPMAtBeat{bpm, current_snaped_beats()});
-            if (*applicable_timing != before) {
-                reload_sounds_that_depend_on_timing();
-                history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
+            if (bpm > 0) {
+                const auto before = *applicable_timing;
+                applicable_timing->insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+                if (*applicable_timing != before) {
+                    reload_sounds_that_depend_on_timing();
+                    history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
+                }
+                if (chart_state) {
+                    chart_state->density_graph.should_recompute = true;
+                }
             }
         }
         auto offset = applicable_timing->get_offset();
@@ -1118,6 +1123,9 @@ void EditorState::display_timing_menu() {
             applicable_timing->set_offset(offset);
             reload_sounds_that_depend_on_timing();
             set_playback_position(current_exact_beats());
+            if (chart_state) {
+                chart_state->density_graph.should_recompute = true;
+            }
         }
     }
     ImGui::End();
@@ -1222,7 +1230,6 @@ void EditorState::undo(NotificationsQueue& nq) {
     if (previous) {
         nq.push(std::make_shared<UndoNotification>(**previous));
         (*previous)->undo_action(*this);
-        chart_state->density_graph.should_recompute = true;
     }
 };
 
@@ -1231,7 +1238,6 @@ void EditorState::redo(NotificationsQueue& nq) {
     if (next) {
         nq.push(std::make_shared<RedoNotification>(**next));
         (*next)->do_action(*this);
-        chart_state->density_graph.should_recompute = true;
     }
 };
 

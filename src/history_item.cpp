@@ -44,6 +44,7 @@ void AddNotes::do_action(EditorState& ed) const {
         for (const auto& [_, note] : notes) {
             ed.chart_state->chart.notes->insert(note);
         }
+        ed.chart_state->density_graph.should_recompute = true;
     }
 }
 
@@ -56,6 +57,7 @@ void AddNotes::undo_action(EditorState& ed) const {
         for (const auto& [_, note] : notes) {
             ed.chart_state->chart.notes->erase(note);
         }
+        ed.chart_state->density_graph.should_recompute = true;
     }
 }
 
@@ -316,4 +318,7 @@ void ChangeTiming::set_value(EditorState& ed, const better::Timing& value) const
     std::visit(set_value_, origin);
     ed.reload_applicable_timing();
     ed.reload_sounds_that_depend_on_timing();
+    if (ed.chart_state) {
+        ed.chart_state->density_graph.should_recompute = true;
+    }
 }
