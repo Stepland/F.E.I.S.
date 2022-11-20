@@ -9,6 +9,7 @@
 
 #include "colors.hpp"
 #include "marker.hpp"
+#include "toml++/impl/toml_formatter.h"
 #include "variant_visitor.hpp"
 #include "widgets/lane_order.hpp"
 
@@ -301,7 +302,12 @@ config::Config::~Config() {
     std::filesystem::create_directories(config_path.parent_path());
     const auto tbl = dump_as_v1_0_0();
     std::ofstream config_file_stream{config_path};
-    config_file_stream << tbl << std::endl;
+    const auto flags = (
+        toml::toml_formatter::default_flags
+        & ~toml::format_flags::allow_literal_strings
+        & ~toml::format_flags::indent_sub_tables
+    );
+    config_file_stream << toml::toml_formatter{tbl, flags} << std::endl;
 }
 
 void config::Config::load_from_v1_0_0_table(const toml::table& tbl) {
