@@ -1829,6 +1829,10 @@ void feis::display_shortcuts_help(bool& show) {
         ImGui::TableNextColumn();
         ImGui::TextUnformatted(keys);
     };
+    const auto table_header = [&](){
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 175.f);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+    };
     if (ImGui::Begin("Shortcuts", &show, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Navigation");
         if (
@@ -1838,11 +1842,24 @@ void feis::display_shortcuts_help(bool& show) {
                 ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
             )
         ) {
+            table_header();
             table_shortcut("Play / Pause", "Space");
             table_shortcut("Move Backwards In Time", "Down");
             table_shortcut("Move Forwards In Time", "Up");
             table_shortcut("Decrease Snap", "Left");
             table_shortcut("Increase Snap", "Right");
+            ImGui::EndTable();
+        }
+        ImGui::Text("Playfield");
+        if (
+            ImGui::BeginTable(
+                "Playfield",
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+            )
+        ) {
+            table_header();
+            table_shortcut("Show Free Buttons", "F");
             ImGui::EndTable();
         }
 
@@ -1854,6 +1871,7 @@ void feis::display_shortcuts_help(bool& show) {
                 ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
             )
         ) {
+            table_header();
             table_shortcut("Zoom In", "Numpad +");
             table_shortcut("Zoom Out", "Numpad -");
             table_shortcut("Set Time Selection Bounds", "Tab");
@@ -1869,6 +1887,7 @@ void feis::display_shortcuts_help(bool& show) {
                 ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
             )
         ) {
+            table_header();
             table_shortcut("Cut", "Ctrl+X");
             table_shortcut("Copy", "Ctrl+C");
             table_shortcut("Paste", "Ctrl+V");
@@ -1884,6 +1903,7 @@ void feis::display_shortcuts_help(bool& show) {
                 ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
             )
         ) {
+            table_header();
             table_shortcut("Increase Music Volume", "Shift+Up");
             table_shortcut("Decrease Music Volume", "Shift+Down");
             table_shortcut("Slow Down Playback", "Shift+Left");
