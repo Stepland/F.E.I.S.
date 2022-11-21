@@ -1,5 +1,6 @@
 #include "linear_view.hpp"
 
+#include <SFML/Config.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -14,6 +15,7 @@
 #include <variant>
 
 #include <fmt/core.h>
+#include <hsluv/hsluv.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <imgui-SFML.h>
@@ -46,6 +48,7 @@ LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
     collision_zone(config_.editor.collision_zone),
     beats_to_pixels_proportional(0, 1, 0, 100),
     zoom(config_.linear_view.zoom),
+    color_notes(config_.linear_view.color_notes),
     lane_order(config_.linear_view.lane_order)
 {
     set_zoom(config_.linear_view.zoom);
@@ -169,12 +172,22 @@ void LinearView::draw(
                 collizion_zone_width,
                 static_cast<float>(static_cast<double>(collision_zone_height))
             };
-            auto collision_zone_color = colors.normal_collision_zone;
-            auto tap_note_color = colors.normal_tap_note;
-            if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
-                collision_zone_color = colors.conflicting_collision_zone;
-                tap_note_color = colors.conflicting_tap_note;
-            }
+            const auto collision_zone_color = [&](){
+                if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
+                    return colors.conflicting_collision_zone;
+                } else {    
+                    return colors.normal_collision_zone;
+                }
+            }();
+            const auto tap_note_color = [&](){
+                if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
+                    return colors.conflicting_tap_note;
+                } else if (color_notes) {
+                    return color_of_note(tap_note.get_time());
+                } else {
+                    return colors.normal_tap_note;
+                }
+            }();
             draw_rectangle(
                 draw_list,
                 origin + collision_zone_pos,
@@ -224,7 +237,13 @@ void LinearView::draw(
                 static_cast<float>(static_cast<double>(collision_zone_height))
             };
             auto collision_zone_color = colors.normal_collision_zone;
-            auto tap_note_color = colors.normal_tap_note;
+            auto tap_note_color = [&](){
+                if (color_notes) {
+                    return color_of_note(long_note.get_time());
+                } else {
+                    return colors.normal_tap_note;
+                }
+            }();
             auto long_note_color = colors.normal_long_note;
             if (chart_state.chart.notes->is_colliding(long_note, timing, collision_zone)) {
                 collision_zone_color = colors.conflicting_collision_zone;
@@ -398,6 +417,21 @@ void LinearView::display_settings() {
         if (ImGui::SliderInt("Zoom##Linear View Settings", &zoom, -10, 10, "%d")) {
             set_zoom(zoom);
         }
+        if (ImGui::CollapsingHeader("Notes##Linear View Settings")) {
+            ImGui::Checkbox("Colored Quantization", &color_notes);
+            if (color_notes) {
+                for (auto& [quant, color] : note_colors) {
+                    feis::ColorEdit4(
+                        fmt::format(
+                            "{}##Colored Quantization",
+                            Toolbox::toOrdinal(quant*4)
+                        ).c_str(),
+                        color
+                    );
+                }
+                feis::ColorEdit4("Other", note_grey);
+            }
+        }
         if (ImGui::CollapsingHeader("Lanes##Linear View Settings")) {
             if (ImGui::BeginCombo("Order", lane_order_name().c_str())) {
                 if (ImGui::Selectable(
@@ -488,6 +522,18 @@ void LinearView::reload_transforms() {
         Fraction{0},
         Fraction{100}
     };
+}
+
+sf::Color LinearView::color_of_note(const Fraction& time) {
+    const auto denominator = time.denominator();
+    if (denominator > note_colors.rbegin()->first) {
+        return note_grey;
+    }
+    const auto& it = note_colors.find(static_cast<unsigned int>(denominator.get_ui()));
+    if (it == note_colors.end()) {
+        return note_grey;
+    }
+    return it->second;
 }
 
 std::string LinearView::lane_order_name() {

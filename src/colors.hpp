@@ -1,5 +1,6 @@
 #pragma once
 
+#include <hsluv/hsluv.h>
 #include <SFML/Graphics/Color.hpp>
 
 struct ButtonColors {
@@ -48,4 +49,13 @@ namespace linear_view {
 
     const linear_view::Colors default_colors = {};
 };
+
+struct HSLuvColor {
+    double h;
+    double s;
+    double l;
+};
+
+HSLuvColor color_to_hsluv(const sf::Color& rgb);
+sf::Color hslub_to_color(const HSLuvColor& hsl);
 

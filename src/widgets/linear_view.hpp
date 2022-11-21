@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <map>
 
 #include <imgui.h>
 #include <SFML/Graphics.hpp>
@@ -22,6 +23,18 @@ struct SelectionRectangle {
 
     void reset();
 };
+
+const std::map<unsigned int, sf::Color> reference_note_colors = {{
+    {1, {255, 40, 40}},
+    {2, {34, 140, 255}},
+    {3, {156, 0, 254}},
+    {4, {248, 236, 18}},
+    {6, {255, 131, 189}},
+    {8, {254, 135, 0}},
+    {12, {0, 254, 207}},
+    {16, {68, 254, 0}}
+}};
+const sf::Color reference_note_grey = {134, 110, 116};
 
 class LinearView {
 public:
@@ -57,6 +70,11 @@ private:
     void reload_transforms();
 
     int& zoom;
+
+    bool& color_notes;
+    std::map<unsigned int, sf::Color> note_colors = reference_note_colors;
+    sf::Color note_grey = reference_note_grey;
+    sf::Color color_of_note(const Fraction& time);
 
     SelectionRectangle selection_rectangle;
     bool started_selection_inside_window = false;

@@ -40,6 +40,7 @@ namespace config {
         linear_view::Sizes sizes;
         linear_view::LaneOrder lane_order;
         int zoom = 0;
+        bool color_notes = false;
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);

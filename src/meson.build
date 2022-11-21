@@ -9,6 +9,7 @@ sources += files(
     'better_timing.cpp',
     'chart_state.cpp',
     'clipboard.cpp',
+    'colors.cpp',
     'config.cpp',
     'editor_state.cpp',
     'file_dialogs.cpp',

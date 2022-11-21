@@ -228,6 +228,9 @@ void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
     if (linear_view_table["zoom"].is_integer()) {
         zoom = *linear_view_table["zoom"].value<int>();
     }
+    if (linear_view_table["color_notes"].is_boolean()) {
+        color_notes = *linear_view_table["color_notes"].value<bool>();
+    }
 }
 
 void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
@@ -236,6 +239,7 @@ void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
     dump_linear_view_sizes_as_v1_0_0(sizes, linear_view);
     dump_linear_view_lane_order_as_v1_0_0(lane_order, linear_view);
     linear_view.insert_or_assign("zoom", zoom);
+    linear_view.insert_or_assign("color_notes", color_notes);
     tbl.insert_or_assign("linear_view", linear_view);
 }
 
