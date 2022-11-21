@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hsluv/hsluv.h>
+#include <toml++/toml.h>
 #include <SFML/Graphics/Color.hpp>
 
 struct ButtonColors {
@@ -45,17 +45,11 @@ namespace linear_view {
             .fill = {144, 189, 255, 64},
             .border = {144, 189, 255}
         };
+
+        void load_from_v1_0_0_table(const toml::table& linear_view_table);
+        void dump_as_v1_0_0(toml::table& linear_view_table);
     };
 
     const linear_view::Colors default_colors = {};
 };
-
-struct HSLuvColor {
-    double h;
-    double s;
-    double l;
-};
-
-HSLuvColor color_to_hsluv(const sf::Color& rgb);
-sf::Color hslub_to_color(const HSLuvColor& hsl);
 

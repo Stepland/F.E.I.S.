@@ -12,9 +12,10 @@
 #include "../better_timing.hpp"
 #include "../chart_state.hpp"
 #include "../toolbox.hpp"
-#include "../colors.hpp"
 #include "../config.hpp"
-#include "../sizes.hpp"
+#include "../linear_view_sizes.hpp"
+#include "../linear_view_colors.hpp"
+#include "quantization_colors.hpp"
 #include "lane_order.hpp"
 
 struct SelectionRectangle {
@@ -71,10 +72,8 @@ private:
 
     int& zoom;
 
-    bool& color_notes;
-    std::map<unsigned int, sf::Color> note_colors = reference_note_colors;
-    sf::Color note_grey = reference_note_grey;
-    sf::Color color_of_note(const Fraction& time);
+    bool& use_quantization_colors;
+    linear_view::QuantizationColors& quantization_colors;
 
     SelectionRectangle selection_rectangle;
     bool started_selection_inside_window = false;

@@ -5,19 +5,14 @@
 
 #include <toml++/toml.h>
 
-#include "colors.hpp"
-#include "sizes.hpp"
+#include "quantization_colors.hpp"
+#include "linear_view_colors.hpp"
+#include "linear_view_sizes.hpp"
 #include "marker.hpp"
 #include "widgets/lane_order.hpp"
 
 
 namespace config {
-    using node_view = toml::node_view<const toml::node>;
-
-    toml::array dump_color(const sf::Color& color);
-    std::optional<sf::Color> parse_color(const node_view& node);
-    void load_color(const node_view& node, sf::Color& color);
-
     struct Marker {
         std::optional<std::filesystem::path> folder;
         std::optional<Judgement> ending_state;
@@ -26,21 +21,13 @@ namespace config {
         void dump_as_v1_0_0(toml::table& tbl);
     };
 
-    linear_view::Colors load_linear_view_colors_from_v1_0_0_table(const toml::table& linear_view);
-    void dump_linear_view_colors_as_v1_0_0(const linear_view::Colors& colors, toml::table& linear_view);
-
-    linear_view::Sizes load_linear_view_sizes_from_v1_0_0_table(const toml::table& linear_view);
-    void dump_linear_view_sizes_as_v1_0_0(const linear_view::Sizes& sizes, toml::table& linear_view);
-
-    linear_view::LaneOrder load_linear_view_lane_order_from_v1_0_0_table(const toml::table& linear_view);
-    void dump_linear_view_lane_order_as_v1_0_0(const linear_view::LaneOrder& lane_order, toml::table& linear_view);
-
     struct LinearView {
         linear_view::Colors colors;
         linear_view::Sizes sizes;
         linear_view::LaneOrder lane_order;
         int zoom = 0;
-        bool color_notes = false;
+        bool use_quantization_colors = false;
+        linear_view::QuantizationColors quantization_colors;
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);

@@ -25,13 +25,11 @@
 #include "../better_timing.hpp"
 #include "../better_note.hpp"
 #include "../chart_state.hpp"
-#include "../colors.hpp"
 #include "../imgui_extras.hpp"
 #include "../long_note_dummy.hpp"
 #include "../special_numeric_types.hpp"
 #include "../toolbox.hpp"
 #include "../variant_visitor.hpp"
-#include "sizes.hpp"
 #include "widgets/lane_order.hpp"
 
 
@@ -48,7 +46,8 @@ LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
     collision_zone(config_.editor.collision_zone),
     beats_to_pixels_proportional(0, 1, 0, 100),
     zoom(config_.linear_view.zoom),
-    color_notes(config_.linear_view.color_notes),
+    use_quantization_colors(config_.linear_view.use_quantization_colors),
+    quantization_colors(config_.linear_view.quantization_colors),
     lane_order(config_.linear_view.lane_order)
 {
     set_zoom(config_.linear_view.zoom);
@@ -182,8 +181,8 @@ void LinearView::draw(
             const auto tap_note_color = [&](){
                 if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
                     return colors.conflicting_tap_note;
-                } else if (color_notes) {
-                    return color_of_note(tap_note.get_time());
+                } else if (use_quantization_colors) {
+                    return quantization_colors.color_at_beat(tap_note.get_time());
                 } else {
                     return colors.normal_tap_note;
                 }
@@ -238,8 +237,8 @@ void LinearView::draw(
             };
             auto collision_zone_color = colors.normal_collision_zone;
             auto tap_note_color = [&](){
-                if (color_notes) {
-                    return color_of_note(long_note.get_time());
+                if (use_quantization_colors) {
+                    return quantization_colors.color_at_beat(long_note.get_time());
                 } else {
                     return colors.normal_tap_note;
                 }
@@ -418,9 +417,9 @@ void LinearView::display_settings() {
             set_zoom(zoom);
         }
         if (ImGui::CollapsingHeader("Notes##Linear View Settings")) {
-            ImGui::Checkbox("Colored Quantization", &color_notes);
-            if (color_notes) {
-                for (auto& [quant, color] : note_colors) {
+            ImGui::Checkbox("Colored Quantization", &use_quantization_colors);
+            if (use_quantization_colors) {
+                for (auto& [quant, color] : quantization_colors.palette) {
                     feis::ColorEdit4(
                         fmt::format(
                             "{}##Colored Quantization",
@@ -429,7 +428,10 @@ void LinearView::display_settings() {
                         color
                     );
                 }
-                feis::ColorEdit4("Other", note_grey);
+                feis::ColorEdit4("Other", quantization_colors.default_);
+                if (ImGui::Button("Reset##Colored Quantization")) {
+                    quantization_colors = linear_view::default_quantization_colors;
+                }
             }
         }
         if (ImGui::CollapsingHeader("Lanes##Linear View Settings")) {
@@ -522,18 +524,6 @@ void LinearView::reload_transforms() {
         Fraction{0},
         Fraction{100}
     };
-}
-
-sf::Color LinearView::color_of_note(const Fraction& time) {
-    const auto denominator = time.denominator();
-    if (denominator > note_colors.rbegin()->first) {
-        return note_grey;
-    }
-    const auto& it = note_colors.find(static_cast<unsigned int>(denominator.get_ui()));
-    if (it == note_colors.end()) {
-        return note_grey;
-    }
-    return it->second;
 }
 
 std::string LinearView::lane_order_name() {

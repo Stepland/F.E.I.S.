@@ -6,6 +6,8 @@
 #include <string>
 #include <variant>
 
+#include <toml++/toml.h>
+
 namespace linear_view {
     namespace lane_order {
         struct Default {};
@@ -34,9 +36,14 @@ namespace linear_view {
             {'9', 8}, {'a', 9}, {'b', 10}, {'c', 11},
             {'d', 12}, {'e', 13}, {'f', 14}, {'g', 15},
         };
-        }
+    }
 
     using LaneOrder = std::variant<lane_order::Default, lane_order::Vertical, lane_order::Custom>;
+
+    namespace lane_order {
+        linear_view::LaneOrder load_from_v1_0_0_table(const toml::table& linear_view);
+        void dump_as_v1_0_0(const linear_view::LaneOrder& lane_order, toml::table& linear_view);
+    }
 
     const LaneOrder default_lane_order = lane_order::Default{};
 }

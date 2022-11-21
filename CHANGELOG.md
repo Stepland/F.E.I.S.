@@ -9,6 +9,7 @@
 - Linear View
     - new settings
         - lane order
+        - color notes according to quantization
         - cursor height
 - Frendlier error message when the UI font is not found in the assets folder
 - Playback position is kept instead of being reset to zero when you change charts or reload the audio file
