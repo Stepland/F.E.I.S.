@@ -35,11 +35,19 @@ namespace better {
         void erase(const Note& note);
 
         /*
-        Returns true if the given note (assumed to already be in the container)
+        Returns true if the given note (assumed to ALREADY BE in the container)
         is colliding with ANOTHER note. This means notes exactly equal to the
         one passed as an argument are NOT taken into account.
         */
-        bool is_colliding(const better::Note& note, const better::Timing& timing, const sf::Time& collision_zone) const;
+        bool is_colliding(const better::Note& existing_note, const better::Timing& timing, const sf::Time& collision_zone) const;
+
+        /*
+        Returns true if INSERTING the note passed as argument would result
+        in a collision. The note is assumed not to be part of the container yet
+        so existing notes in the container that are exactly equal to the one
+        passed as argument WILL be taken into account
+        */
+        bool would_collide(const better::Note& potential_new_note, const better::Timing& timing, const sf::Time& collision_zone) const;
 
         Notes between(const Interval<Fraction>& bounds);
         std::size_t count_between(const Interval<Fraction>& bounds);

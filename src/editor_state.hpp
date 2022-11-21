@@ -165,6 +165,10 @@ public:
     bool show_timing_menu = false;
     void display_timing_menu();
 
+    // Toggled by the F hotkey, highlights in red on the playfield the buttons
+    // where adding a note would result in a collision
+    bool show_free_buttons = false;
+
     enum class SaveOutcome {
         UserSaved,
         UserDeclindedSaving,

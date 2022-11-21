@@ -516,11 +516,25 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
         }
 
         if (chart_state) {
-            // Check for collisions then display them
+            // Check for real (+ potential if requested) collisions
+            // then display them
             std::array<bool, 16> collisions = {};
             for (const auto& [_, note] : chart_state->visible_notes) {
                 if (chart_state->chart.notes->is_colliding(note, *applicable_timing, config.editor.collision_zone)) {
                     collisions[note.get_position().index()] = true;
+                }
+            }
+            if (show_free_buttons) {
+                for (unsigned int i = 0; i < 16; i++) {
+                    unsigned int x = i % 4;
+                    unsigned int y = i / 4;
+                    if (chart_state->chart.notes->would_collide(
+                        better::TapNote{current_exact_beats(), {x, y}},
+                        *applicable_timing,
+                        config.editor.collision_zone
+                    )) {
+                        collisions[i] = true;
+                    }
                 }
             }
             for (int i = 0; i < 16; ++i) {

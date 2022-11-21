@@ -79,6 +79,11 @@ namespace better {
         const auto [start_beat, end_beat] = note.get_time_bounds();
 
         /*
+        Old comment dating back to a time when "collision_zone" was set to a
+        fixed value of 1000ms :
+
+        ---
+
         Two notes collide if they are within ~one second of each other :
         Approach and burst animations of original jubeat markers last 16 frames
         at (supposedly) 30 fps, which means a note needs (a bit more than) half
@@ -109,6 +114,23 @@ namespace better {
         );
         return found_collision;
     };
+
+    bool Notes::would_collide(const better::Note& potential_new_note, const better::Timing& timing, const sf::Time& collision_zone) const {
+        const auto [start_beat, end_beat] = potential_new_note.get_time_bounds();
+        const auto collision_start = timing.beats_at(timing.time_at(start_beat) - collision_zone);
+        const auto collision_end = timing.beats_at(timing.time_at(end_beat) + collision_zone);
+
+        bool found_collision = false;
+        in(
+            {collision_start, collision_end},
+            [&](const Notes::const_iterator& it){
+                if (it->second.get_position() == potential_new_note.get_position()) {
+                    found_collision = true;
+                }
+            }
+        );
+        return found_collision;
+    }
 
     Notes Notes::between(const Interval<Fraction>& bounds) {
         Notes res;

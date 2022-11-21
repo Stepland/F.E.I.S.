@@ -362,6 +362,10 @@ int main() {
                                 }
                             }
                             break;
+                        case sf::Keyboard::F:
+                            if (editor_state) {
+                                editor_state->show_free_buttons = true;
+                            }
                         case sf::Keyboard::O:
                             if (event.key.control) {
                                 feis::save_ask_open(editor_state, assets_folder, settings_folder, config);
@@ -405,6 +409,16 @@ int main() {
                                 }
                             }
                             break;
+                        default:
+                            break;
+                    }
+                    break;
+                case sf::Event::KeyReleased:
+                    switch (event.key.code) {
+                        case sf::Keyboard::F:
+                            if (editor_state) {
+                                editor_state->show_free_buttons = false;
+                            }
                         default:
                             break;
                     }
