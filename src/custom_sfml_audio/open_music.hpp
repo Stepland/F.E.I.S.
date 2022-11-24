@@ -21,6 +21,8 @@ public:
     sf::Time getDuration() const;
     TimeSpan getLoopPoints() const;
     void setLoopPoints(TimeSpan timePoints);
+    sf::Uint64 timeToSamples(sf::Time position) const;
+    sf::Time samplesToTime(sf::Uint64 samples) const;
 
 protected:
     [[nodiscard]] bool onGetData(Chunk& data) override;
@@ -29,8 +31,6 @@ protected:
 
 private:
     void initialize();
-    sf::Uint64 timeToSamples(sf::Time position) const;
-    sf::Time samplesToTime(sf::Uint64 samples) const;
 
     sf::InputSoundFile m_file;     //!< The streamed music file
     std::vector<sf::Int16> m_samples;  //!< Temporary buffer of samples
