@@ -88,17 +88,17 @@ namespace better {
         const nlohmann::ordered_json& object,
         const nlohmann::ordered_json& fallback
     ) {
-        nlohmann::ordered_json j;
+        auto new_object = nlohmann::ordered_json::object();
         for (const auto& [key, value] : object.items()) {
             if (not fallback.contains(key)) {
-                j[key] = value;
+                new_object[key] = value;
             } else {
                 if (fallback[key] != value) {
-                    j[key] = value;
+                    new_object[key] = value;
                 }
             }
         }
-        return j;
+        return new_object;
     };
 
     nlohmann::ordered_json dump_memon_1_0_0_timing_object(
