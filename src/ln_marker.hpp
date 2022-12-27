@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <list>
 #include <map>
+#include <optional>
 
 #include <fmt/core.h>
 #include <SFML/Graphics/RenderTexture.hpp>
