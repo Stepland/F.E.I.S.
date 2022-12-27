@@ -165,7 +165,7 @@ std::uint64_t convert_to_u64(const mpz_class& z) {
     }
     /* We can only get unsigned longs from GMP (32 garanteed bits), so we have
     to split between low and high */
-    const mpz_class low = z & INT64_C(0x00000000ffffffff);
+    const mpz_class low = z & 0x00000000ffffffffUL;
     const mpz_class high = z >> 32;
     const auto low_ul = low.get_ui();
     const auto high_ul = high.get_ui();
