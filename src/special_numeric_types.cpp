@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <gmpxx.h>
 #include <stdexcept>
 
@@ -12,6 +13,24 @@ Fraction::Fraction(const unsigned long long a) {
 }
 
 Fraction::Fraction(const unsigned long long a, const unsigned long long b) {
+    value = Fraction{a}.value / Fraction{b}.value;
+}
+
+Fraction::Fraction(const long long a) {
+    const unsigned long long abs = [&](){
+        if (a == INT64_MIN) {
+            return static_cast<unsigned long long>(INT64_MAX) + 1;
+        } else {
+            return static_cast<unsigned long long>(a < 0 ? -a : a);
+        }
+    }();
+    value = Fraction{abs}.value;
+    if (a < 0) {
+        value = -value;
+    }
+}
+
+Fraction::Fraction(const long long a, const long long b) {
     value = Fraction{a}.value / Fraction{b}.value;
 }
 
