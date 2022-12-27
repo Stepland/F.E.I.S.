@@ -13,6 +13,8 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Time.hpp>
 
+#include "utf8_strings.hpp"
+
 using opt_tex_ref = std::optional<std::reference_wrapper<const sf::Texture>>;
 
 /*
@@ -65,7 +67,7 @@ std::array<sf::Texture, number> load_tex_with_prefix(
         );
         std::filesystem::path texFile = folder / filename;
         sf::Texture tex;
-        if (!tex.loadFromFile(texFile.string())) {
+        if (!tex.loadFromFile(to_utf8_encoded_string(texFile))) {
             throw std::runtime_error(fmt::format(
                 "Unable to load texture folder {}, failed on texture {}",
                 folder.string(),

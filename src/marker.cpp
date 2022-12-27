@@ -4,6 +4,8 @@
 #include <fmt/core.h>
 #include <stdexcept>
 
+#include "utf8_strings.hpp"
+
 Marker first_available_marker_in(const std::filesystem::path& assets_folder) {
     for (auto& folder : std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         try {
@@ -20,7 +22,7 @@ Marker::Marker(const std::filesystem::path& folder_):
     const auto emplace_back = [&](std::vector<sf::Texture>& vec, const std::string& file){
         auto& tex = vec.emplace_back();
         const auto path = folder / file;
-        if (not tex.loadFromFile(path.string())) {
+        if (not tex.loadFromFile(to_utf8_encoded_string(path))) {
             throw std::runtime_error(fmt::format(
                 "Unable to load marker {} - failed on image {}",
                 folder.string(),

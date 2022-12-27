@@ -77,7 +77,7 @@ int main() {
          std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         if (folder.is_directory()) {
             sf::Texture markerPreview;
-            markerPreview.loadFromFile((folder.path() / "ma15.png").string());
+            markerPreview.loadFromFile(to_utf8_encoded_string(folder.path() / "ma15.png"));
             markerPreview.setSmooth(true);
             markerPreviews.insert({folder, markerPreview});
         }

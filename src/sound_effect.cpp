@@ -3,12 +3,13 @@
 #include <imgui/imgui.h>
 
 #include "toolbox.hpp"
+#include "utf8_strings.hpp"
 
 SoundEffect::SoundEffect(std::filesystem::path path) :
     shouldPlay(false),
     buffer(),
     volume(10) {
-    if (!buffer.loadFromFile(path.string())) {
+    if (!buffer.loadFromFile(to_utf8_encoded_string(path))) {
         throw std::runtime_error("Unable to load sound : " + path.string());
     }
 

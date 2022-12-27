@@ -2,13 +2,15 @@
 
 #include <algorithm>
 
+#include "utf8_strings.hpp"
+
 const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
 
 DensityGraph::DensityGraph(std::filesystem::path assets, const config::Config& config) :
     texture_path(assets / texture_file),
     collision_zone(config.editor.collision_zone)
 {
-    if (!base_texture.loadFromFile(texture_path)) {
+    if (!base_texture.loadFromFile(to_utf8_encoded_string(texture_path))) {
         std::cerr << "Unable to load texture " << texture_path;
         throw std::runtime_error("Unable to load texture " + texture_path.string());
     }

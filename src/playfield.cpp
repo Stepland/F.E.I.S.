@@ -1,6 +1,7 @@
 #include "playfield.hpp"
 
 #include "toolbox.hpp"
+#include "utf8_strings.hpp"
 
 const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
 
@@ -8,7 +9,7 @@ Playfield::Playfield(std::filesystem::path assets_folder) :
     long_note(assets_folder / "textures" / "long"),
     texture_path(assets_folder / texture_file)
 {
-    if (!base_texture.loadFromFile(texture_path)) {
+    if (!base_texture.loadFromFile(to_utf8_encoded_string(texture_path))) {
         std::cerr << "Unable to load texture " << texture_path;
         throw std::runtime_error("Unable to load texture " + texture_path.string());
     }
