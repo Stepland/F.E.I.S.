@@ -38,7 +38,7 @@ Fraction load_memon_1_0_0_beat(const nlohmann::json& json, std::uint64_t resolut
         };
     } else if (json.is_array()) {
         return (
-            json[0].get<std::uint64_t>()
+            Fraction{json[0].get<std::uint64_t>()}
             + Fraction{
                 json[1].get<std::uint64_t>(),
                 json[2].get<std::uint64_t>()
