@@ -1065,7 +1065,7 @@ void EditorState::display_editor_settings() {
     ) {
         static const std::uint64_t step = 1;
         if (ImGui::InputScalar("Snap##Editor Settings", ImGuiDataType_U64, &snap, &step, nullptr, "%d")) {
-            snap = std::clamp(snap, 1UL, 1000UL);
+            snap = std::clamp(snap, UINT64_C(1), UINT64_C(1000));
         };
         ImGui::SameLine();
         feis::HelpMarker(
