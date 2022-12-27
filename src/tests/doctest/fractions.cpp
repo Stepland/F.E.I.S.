@@ -11,6 +11,11 @@ TEST_CASE("Fractions") {
         SUBCASE("std::uint64_t") {
             CHECK(Fraction{UINT64_MAX, UINT64_C(1)} == Fraction{"18446744073709551615/1"});
         }
+        SUBCASE("long long") {
+            CHECK(Fraction{-8446744073709551615LL} == Fraction{"-8446744073709551615/1"});
+            CHECK(Fraction{-1234567891234567891LL} == Fraction{"-1234567891234567891/1"});
+            CHECK(Fraction{1234567891234567LL, 1234567LL} == Fraction{"1234567891234567/1234567"});
+        }
         SUBCASE("unsigned long long") {
             CHECK(Fraction{18446744073709551615ULL} == Fraction{"18446744073709551615/1"});
             CHECK(Fraction{12345678912345678912ULL} == Fraction{"12345678912345678912/1"});
