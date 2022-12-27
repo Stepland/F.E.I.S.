@@ -237,7 +237,7 @@ void ChartState::insert_long_note_just_created(std::uint64_t snap) {
     }
     auto new_note = make_long_note_dummy_for_linear_view(
         *long_note_being_created,
-        snap
+        Fraction{snap}
     );
     better::Notes new_notes;
     new_notes.insert(new_note);
