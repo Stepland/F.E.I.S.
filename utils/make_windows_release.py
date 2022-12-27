@@ -1,12 +1,14 @@
 """Run this after you've compiled FEIS"""
 
 import argparse
+import datetime
 import shutil
 import subprocess
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("release_name")
+parser.add_argument("--timestamp", action="store_true")
 parser.add_argument("--build-dir", type=Path, default=Path("build"))
 args = parser.parse_args()
 
@@ -23,4 +25,15 @@ subprocess.run([
     "-f", release_folder / "FEIS.exe"
 ])
 
-shutil.make_archive(args.release_name, "zip", ".", release_folder)
+archive_name = args.release_name
+
+if args.timestamp:
+    timestamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")
+    archive_name = f"{args.release_name}+{timestamp}"
+
+shutil.make_archive(
+    archive_name,
+    "zip",
+    ".",
+    release_folder
+)
