@@ -18,7 +18,7 @@ Fraction::Fraction(const unsigned long long a, const unsigned long long b) {
 Fraction::Fraction(const Decimal& d) {
     const auto reduced = d.reduce();
     const mpq_class sign = (reduced.sign() > 0 ? 1 : -1);
-    const mpq_class coefficient = reduced.coeff().u64();
+    const mpq_class coefficient = Fraction{reduced.coeff().u64()}.value;
     const auto exponent = reduced.exponent();
     const mpq_class power = fast_pow(mpq_class(10), std::abs(exponent));
     if (exponent >= 0) {
@@ -142,7 +142,7 @@ std::int64_t convert_to_i64(const mpz_class& z) {
     const mpz_class abs = positive ? z : -z;
     /* We can only get unsigned longs from GMP (32 garanteed bits), so we have
     to split between low and high */
-    const mpz_class low = abs & INT64_C(0x00000000ffffffff);
+    const mpz_class low = abs & 0x00000000ffffffffUL;
     const mpz_class high = abs >> 32;
     const auto low_ul = low.get_ui();
     const auto high_ul = high.get_ui();
@@ -214,13 +214,13 @@ Fraction convert_to_fraction(const Decimal& d) {
 };
 
 Fraction round_beats(Fraction beats, std::uint64_t denominator) {
-    beats *= denominator;
+    beats *= Fraction{denominator};
     const auto nearest = round_fraction(beats);
     return nearest / Fraction{denominator};
 };
 
 Fraction floor_beats(Fraction beats, std::uint64_t denominator) {
-    beats *= denominator;
+    beats *= Fraction{denominator};
     const auto nearest = floor_fraction(beats);
     return nearest / Fraction{denominator};
 };
