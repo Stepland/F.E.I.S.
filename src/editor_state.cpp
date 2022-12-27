@@ -1553,7 +1553,7 @@ TimingOrigin EditorState::timing_origin() {
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();
-    nowide::ofstream file{path};
+    nowide::ofstream file{path.string()};
     if (not file) {
         throw std::runtime_error(
             fmt::format("Cannot write to file {}", path.string())
