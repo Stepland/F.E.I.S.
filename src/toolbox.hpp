@@ -1,14 +1,15 @@
 #pragma once
 
-#include <SFML/System/Vector2.hpp>
 #include <filesystem>
 #include <functional>
+#include <optional>
 
 #include <fmt/core.h>
 #include <imgui.h>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Shape.hpp>
 #include <SFML/System/Time.hpp>
+#include <SFML/System/Vector2.hpp>
 
 #include "imgui_extras.hpp"
 
