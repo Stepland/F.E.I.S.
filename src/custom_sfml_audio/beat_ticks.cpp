@@ -51,11 +51,11 @@ bool BeatTicks::onGetData(sf::SoundStream::Chunk& data) {
         const auto end_beat = timing->beats_at(end_time);
 
         auto first_beat = static_cast<std::int64_t>(start_beat);
-        while (first_beat < start_beat) {
+        while (Fraction{first_beat} < start_beat) {
             first_beat++;
         }
-        for (std::int64_t beat = first_beat; beat < end_beat; beat++) {
-            const auto time = timing->time_at(beat);
+        for (std::int64_t beat = first_beat; Fraction{beat} < end_beat; beat++) {
+            const auto time = timing->time_at(Fraction{beat});
             const auto sample = static_cast<std::int64_t>(music_time_to_samples(time));
             beat_at_sample.insert(sample);
         }
