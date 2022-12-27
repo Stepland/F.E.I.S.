@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "al_check.hpp"
+#include "utf8_strings.hpp"
 
 #if defined(__APPLE__)
     #if defined(__clang__)
@@ -24,7 +25,7 @@ OpenMusic::OpenMusic(const std::filesystem::path& filename) :
     m_file(),
     m_loopSpan(0, 0)
 {
-    if (not openFromFile(filename)) {
+    if (not openFromFile(to_utf8_encoded_string(filename))) {
         throw std::runtime_error("Could not open "+filename.string());
     }
 }
@@ -41,7 +42,7 @@ bool OpenMusic::openFromFile(const std::filesystem::path& filename) {
     stop();
 
     // Open the underlying sound file
-    if (!m_file.openFromFile(filename)) {
+    if (!m_file.openFromFile(to_utf8_encoded_string(filename))) {
         return false;
     }
 

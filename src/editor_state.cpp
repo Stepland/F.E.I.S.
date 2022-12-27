@@ -1459,7 +1459,7 @@ void EditorState::reload_preview_audio() {
 
     const auto path = song_path->parent_path() / song.metadata.preview_file;
     preview_audio.emplace();
-    if (not preview_audio->openFromFile(path.string())) {
+    if (not preview_audio->openFromFile(to_utf8_encoded_string(path))) {
         preview_audio.reset();
     }
 };
