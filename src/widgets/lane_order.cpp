@@ -1,5 +1,6 @@
 #include "lane_order.hpp"
 
+#include <cstddef>
 #include <sstream>
 
 #include "../variant_visitor.hpp"
@@ -50,7 +51,7 @@ void linear_view::lane_order::Custom::update_from_string() {
         {}, {}, {}, {}
     }};
     button_to_lane.clear();
-    const auto upper_bound = std::min(16UL, as_string.length());
+    const auto upper_bound = std::min(std::size_t{16}, as_string.length());
     for (std::size_t lane = 0; lane < upper_bound; lane++) {
         const auto letter = as_string.at(lane);
         const auto pair = letter_to_index.find(letter);
