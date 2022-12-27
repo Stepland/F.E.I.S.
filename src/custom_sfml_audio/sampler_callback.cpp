@@ -20,7 +20,7 @@ void copy_sample_at_points(
                 if (next != starting_points.end()) {
                     return *next;
                 } else {
-                    return std::numeric_limits<std::int64_t>::max();
+                    return INT64_MAX;
                 }
             }(it)
         );
