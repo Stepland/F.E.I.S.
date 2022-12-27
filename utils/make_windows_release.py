@@ -16,7 +16,7 @@ release_folder = Path(args.release_name)
 release_folder.mkdir(exist_ok=True)
 feis_exe = args.build_dir / "FEIS.exe"
 shutil.copy(feis_exe, release_folder)
-shutil.copytree("assets", release_folder)
+shutil.copytree("assets", release_folder, dirs_exist_ok=True)
 
 subprocess.run([
     "python",
