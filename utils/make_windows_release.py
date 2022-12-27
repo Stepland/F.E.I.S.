@@ -13,7 +13,9 @@ parser.add_argument("--build-dir", type=Path, default=Path("build"))
 args = parser.parse_args()
 
 release_folder = Path(args.release_name)
-release_folder.mkdir(exist_ok=True)
+if release_folder.exists():
+    shutil.rmtree(release_folder)
+release_folder.mkdir()
 feis_exe = args.build_dir / "FEIS.exe"
 shutil.copy(feis_exe, release_folder)
 shutil.copytree("assets", release_folder / "assets", dirs_exist_ok=True)
