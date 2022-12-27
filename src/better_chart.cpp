@@ -12,7 +12,7 @@ namespace better {
         return (
             level == other.level
             and (
-                ((not timing.has_value()) and (not other.timing.has_value()))
+                ((not timing.has_value()) or (not other.timing.has_value()))
                 or (**timing == **other.timing)
             ) and hakus == other.hakus
             and *notes == *other.notes
@@ -90,12 +90,8 @@ namespace better {
     ) {
         auto new_object = nlohmann::ordered_json::object();
         for (const auto& [key, value] : object.items()) {
-            if (not fallback.contains(key)) {
+            if ((not fallback.contains(key)) or (fallback[key] != value)) {
                 new_object[key] = value;
-            } else {
-                if (fallback[key] != value) {
-                    new_object[key] = value;
-                }
             }
         }
         return new_object;

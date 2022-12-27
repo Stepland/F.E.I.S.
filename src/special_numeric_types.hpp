@@ -21,6 +21,8 @@ public:
         value.canonicalize();
     };
 
+    explicit Fraction(const unsigned long long a);
+    Fraction(const unsigned long long a, const unsigned long long b);
     explicit Fraction(const Decimal& d);
     explicit operator std::int64_t() const;
     explicit operator std::uint64_t() const;

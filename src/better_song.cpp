@@ -55,7 +55,9 @@ namespace better {
         if (not song_timing.empty()) {
             memon["timing"] = song_timing;
         }
-        fallback_timing_object.update(song_timing);
+        // Adding this line back in will toggle "strict" timing mode :
+        // chart timing objects will have their redundant values removed
+        // fallback_timing_object.update(song_timing);
         auto json_charts = nlohmann::ordered_json::object();
         for (const auto& [name, chart] : charts) {
             json_charts[name] = chart.dump_to_memon_1_0_0(fallback_timing_object);

@@ -5,6 +5,16 @@
 #include <gmpxx.h>
 #include <stdexcept>
 
+Fraction::Fraction(const unsigned long long a) {
+    const unsigned long a_low = a & 0x00000000ffffffffULL;
+    const unsigned long a_high = a >> 32;
+    value = a_low + (mpq_class{a_high} << 32);
+}
+
+Fraction::Fraction(const unsigned long long a, const unsigned long long b) {
+    value = Fraction{a}.value / Fraction{b}.value;
+}
+
 Fraction::Fraction(const Decimal& d) {
     const auto reduced = d.reduce();
     const mpq_class sign = (reduced.sign() > 0 ? 1 : -1);
