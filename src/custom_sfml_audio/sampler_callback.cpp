@@ -1,5 +1,7 @@
 #include "sampler_callback.hpp"
 
+#include <limits>
+
 void copy_sample_at_points(
     const std::shared_ptr<sf::SoundBuffer>& sample,
     std::span<sf::Int16> output_buffer,
