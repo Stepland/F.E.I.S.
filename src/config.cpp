@@ -101,7 +101,7 @@ config::Config::Config(const std::filesystem::path& settings) :
     } catch (const toml::parse_error& err) {
         fmt::print(
             "Error while parsing {} :\n{}",
-            config_path.c_str(),
+            config_path.string(),
             err.what()
         );
         return;
