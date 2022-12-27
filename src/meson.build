@@ -31,6 +31,7 @@ sources += files(
     'sound_effect.cpp',
     'special_numeric_types.cpp',
     'toolbox.cpp',
+    'utf8_strings.cpp',
 )
 
 conf_data = configuration_data()

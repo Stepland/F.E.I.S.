@@ -1,4 +1,5 @@
 #include "file_dialogs.hpp"
+#include "utf8_strings.hpp"
 
 #include <cstring>
 
@@ -30,8 +31,8 @@ namespace feis {
         if (utf8_path == nullptr) {
             return {};
         } else {
-            const auto u8string_path = std::u8string{utf8_path, utf8_path+std::strlen(utf8_path)};
-            return std::filesystem::path{u8string_path};
+            const std::string utf8_string{utf8_path, utf8_path+std::strlen(utf8_path)};
+            return to_path(utf8_string);
         }
     }
 }

@@ -27,6 +27,7 @@
 #include "sound_effect.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/blank_screen.hpp"
+#include "utf8_strings.hpp"
 
 int main() {
     // TODO : Make the playfield not appear when there's no chart selected
@@ -53,7 +54,7 @@ int main() {
     if (not std::filesystem::exists(font_path)) {
         tinyfd_messageBox(
             "Error",
-            ("Could not open "+font_path.string()).c_str(),
+            ("Could not open "+to_utf8_encoded_string(font_path)).c_str(),
             "ok",
             "error",
             1
@@ -63,8 +64,9 @@ int main() {
     ImGuiIO& IO = ImGui::GetIO();
     IO.Fonts->Clear();
     IO.Fonts->AddFontFromFileTTF(
-        (assets_folder / "fonts" / "NotoSans-Medium.ttf").c_str(),
-        16.f);
+        to_utf8_encoded_string(assets_folder / "fonts" / "NotoSans-Medium.ttf").c_str(),
+        16.f
+    );
     ImGui::SFML::UpdateFontTexture();
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
