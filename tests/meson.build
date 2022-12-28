@@ -40,6 +40,14 @@ executable(
 )
 
 executable(
+    'nowide+whereami',
+    'nowide+whereami.cpp',
+    include_sources['whereami'],
+    dependencies: deps,
+    include_directories: inc,
+)
+
+executable(
     'scrollwheel',
     'scrollwheel.cpp',
     include_sources['imgui'],
