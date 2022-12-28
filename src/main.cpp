@@ -360,7 +360,10 @@ int main() {
                         case sf::Keyboard::C:
                             if (event.key.control) {
                                 if (editor_state and editor_state->chart_state) {
-                                    editor_state->chart_state->copy(notificationsQueue);
+                                    // Let imgui copy/paste work on its own
+                                    if (not ImGui::IsAnyItemActive()) {
+                                        editor_state->chart_state->copy(notificationsQueue);
+                                    }
                                 }
                             }
                             break;
@@ -386,14 +389,20 @@ int main() {
                         case sf::Keyboard::V:
                             if (event.key.control) {
                                 if (editor_state) {
-                                    editor_state->paste(notificationsQueue);
+                                    // Let imgui copy/paste work on its own
+                                    if (not ImGui::IsAnyItemActive()) {
+                                        editor_state->paste(notificationsQueue);
+                                    }
                                 }
                             }
                             break;
                         case sf::Keyboard::X:
                             if (event.key.control) {
                                 if (editor_state) {
-                                    editor_state->cut(notificationsQueue);
+                                    // Let imgui copy/paste work on its own
+                                    if (not ImGui::IsAnyItemActive()) {
+                                        editor_state->cut(notificationsQueue);
+                                    }
                                 }
                             }
                             break;
