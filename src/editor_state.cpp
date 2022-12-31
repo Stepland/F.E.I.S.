@@ -525,7 +525,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                     collisions[note.get_position().index()] = true;
                 }
             }
-            if (show_free_buttons) {
+            if (config.editor.show_free_buttons) {
                 for (unsigned int i = 0; i < 16; i++) {
                     unsigned int x = i % 4;
                     unsigned int y = i / 4;
@@ -1106,6 +1106,7 @@ void EditorState::display_editor_settings() {
             }
             ImGui::EndCombo();
         }
+        ImGui::Checkbox("Show Free Buttons", &config.editor.show_free_buttons);
     }
     ImGui::End();
 }

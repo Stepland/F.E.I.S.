@@ -35,6 +35,7 @@ namespace config {
 
     struct Editor {
         sf::Time collision_zone = sf::seconds(1);
+        bool show_free_buttons = false;
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);

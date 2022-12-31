@@ -78,13 +78,16 @@ void config::Editor::load_from_v1_0_0_table(const toml::table& tbl) {
         const auto ms = editor_table["collision_zone"].value<int>();
         collision_zone = sf::milliseconds(std::clamp(*ms, 100, 2000));
     }
-
+    if (editor_table["show_free_buttons"].is_boolean()) {
+        show_free_buttons = *editor_table["show_free_buttons"].value<bool>();
+    }
 }
 
 void config::Editor::dump_as_v1_0_0(toml::table& tbl) {
-    tbl.insert_or_assign("editor", toml::table{{
-        "collision_zone", collision_zone.asMilliseconds()
-    }});
+    tbl.insert_or_assign("editor", toml::table{
+        {"collision_zone", collision_zone.asMilliseconds()},
+        {"show_free_buttons", show_free_buttons}
+    });
 }
 
 

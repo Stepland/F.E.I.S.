@@ -44,6 +44,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(60);
+    window.setKeyRepeatEnabled(false);
 
     ImGui::SFML::Init(window, false);
 
@@ -369,7 +370,7 @@ int main() {
                             break;
                         case sf::Keyboard::F:
                             if (editor_state) {
-                                editor_state->show_free_buttons = true;
+                                config.editor.show_free_buttons = not config.editor.show_free_buttons;
                             }
                         case sf::Keyboard::O:
                             if (event.key.control) {
@@ -428,7 +429,7 @@ int main() {
                     switch (event.key.code) {
                         case sf::Keyboard::F:
                             if (editor_state) {
-                                editor_state->show_free_buttons = false;
+                                config.editor.show_free_buttons = not config.editor.show_free_buttons;
                             }
                         default:
                             break;
