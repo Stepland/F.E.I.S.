@@ -25,6 +25,7 @@
     - Add and remove charts
     - Change the timing (either BPMs or offset)
 - New Keyboard Shortcuts help dialog
+- New "Notes" menu with options to mirror or rotate the selected notes
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable

@@ -179,10 +179,10 @@ void LinearView::draw(
                 }
             }();
             const auto tap_note_color = [&](){
-                if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
-                    return colors.conflicting_tap_note;
-                } else if (use_quantization_colors) {
+                if (use_quantization_colors) {
                     return quantization_colors.color_at_beat(tap_note.get_time());
+                } else if (chart_state.chart.notes->is_colliding(tap_note, timing, collision_zone)) {
+                    return colors.conflicting_tap_note;
                 } else {
                     return colors.normal_tap_note;
                 }
@@ -246,7 +246,9 @@ void LinearView::draw(
             auto long_note_color = colors.normal_long_note;
             if (chart_state.chart.notes->is_colliding(long_note, timing, collision_zone)) {
                 collision_zone_color = colors.conflicting_collision_zone;
-                tap_note_color = colors.conflicting_tap_note;
+                if (not use_quantization_colors) {
+                    tap_note_color = colors.conflicting_tap_note;
+                }
                 long_note_color = colors.conflicting_long_note;
             }
             draw_rectangle(
