@@ -41,6 +41,26 @@ namespace better {
         return out;
     };
 
+    Position Position::mirror_horizontally() const {
+        return {3-x, y};
+    }
+
+    Position Position::mirror_vertically() const {
+        return {x, 3-y};
+    }
+
+    Position Position::rotate_90_clockwise() const {
+        return {3-y, x};
+    }
+
+    Position Position::rotate_90_counter_clockwise() const {
+        return {y, 3-x};
+    }
+
+    Position Position::rotate_180() const {
+        return {3-x, 3-y};
+    }
+
 
     TapNote::TapNote(Fraction time, Position position): time(time), position(position) {};
 
@@ -63,6 +83,27 @@ namespace better {
             {"t", beat_to_best_form(time)}
         };
     };
+
+    TapNote TapNote::mirror_horizontally() const {
+        return {time, position.mirror_horizontally()};
+    }
+
+    TapNote TapNote::mirror_vertically() const {
+        return {time, position.mirror_vertically()};
+    }
+
+    TapNote TapNote::rotate_90_clockwise() const {
+        return {time, position.rotate_90_clockwise()};
+    }
+
+    TapNote TapNote::rotate_90_counter_clockwise() const {
+        return {time, position.rotate_90_counter_clockwise()};
+    }
+
+    TapNote TapNote::rotate_180() const {
+        return {time, position.rotate_180()};
+    }
+
 
     LongNote::LongNote(Fraction time, Position position, Fraction duration, Position tail_tip) :
         time(time),
@@ -167,6 +208,52 @@ namespace better {
             return 3 + tail_tip.get_y() - int(tail_tip.get_y() > position.get_y());
         }
     }
+
+    LongNote LongNote::mirror_horizontally() const {
+        return {
+            time,
+            position.mirror_horizontally(),
+            duration,
+            tail_tip.mirror_horizontally()
+        };
+    }
+
+    LongNote LongNote::mirror_vertically() const {
+        return {
+            time,
+            position.mirror_vertically(),
+            duration,
+            tail_tip.mirror_vertically()
+        };
+    }
+
+    LongNote LongNote::rotate_90_clockwise() const {
+        return {
+            time,
+            position.rotate_90_clockwise(),
+            duration,
+            tail_tip.rotate_90_clockwise()
+        };
+    }
+
+    LongNote LongNote::rotate_90_counter_clockwise() const {
+        return {
+            time,
+            position.rotate_90_counter_clockwise(),
+            duration,
+            tail_tip.rotate_90_counter_clockwise()
+        };
+    }
+
+    LongNote LongNote::rotate_180() const {
+        return {
+            time,
+            position.rotate_180(),
+            duration,
+            tail_tip.rotate_180()
+        };
+    }
+
 
     /*
      *  legacy long note tail index is given relative to the note position :
@@ -286,6 +373,26 @@ namespace better {
         } else {
             return TapNote{time, position};
         }
+    }
+
+    Note Note::mirror_horizontally() const {
+        return std::visit([](const auto& n) -> Note {return n.mirror_horizontally();}, this->note);
+    }
+
+    Note Note::mirror_vertically() const {
+        return std::visit([](const auto& n) -> Note {return n.mirror_vertically();}, this->note);
+    }
+
+    Note Note::rotate_90_clockwise() const {
+        return std::visit([](const auto& n) -> Note {return n.rotate_90_clockwise();}, this->note);
+    }
+
+    Note Note::rotate_90_counter_clockwise() const {
+        return std::visit([](const auto& n) -> Note {return n.rotate_90_counter_clockwise();}, this->note);
+    }
+
+    Note Note::rotate_180() const {
+        return std::visit([](const auto& n) -> Note {return n.rotate_180();}, this->note);
     }
 }
 

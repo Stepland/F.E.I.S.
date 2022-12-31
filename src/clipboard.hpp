@@ -9,11 +9,11 @@
 #include "src/better_timing.hpp"
 #include "variant_visitor.hpp"
 
-struct ClipboardContents {
+struct NoteAndBPMSelection {
     better::Notes notes;
     std::set<better::BPMAtBeat, better::Timing::beat_order_for_events> bpm_events;
 
-    ClipboardContents shifted_by(Fraction offset) const;
+    NoteAndBPMSelection shifted_by(Fraction offset) const;
     bool empty() const;
     void clear();
 };
@@ -26,12 +26,12 @@ all the note starting times.
 class Clipboard {
 public:
     Clipboard() = default;
-    void copy(const ClipboardContents& contents);
-    ClipboardContents paste(Fraction beat) const;
+    void copy(const NoteAndBPMSelection& contents);
+    NoteAndBPMSelection paste(Fraction beat) const;
 
     bool empty() const;
 private:
-    ClipboardContents contents;
+    NoteAndBPMSelection contents;
 };
 
 

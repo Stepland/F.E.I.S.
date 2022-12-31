@@ -642,6 +642,40 @@ int main() {
                 }
                 ImGui::EndMenu();
             }
+            if (ImGui::BeginMenu("Notes", editor_state.has_value())) {
+                if (ImGui::BeginMenu("Mirror")) {
+                    if (ImGui::MenuItem("Horizontally")) {
+                        if (editor_state->chart_state.has_value()) {
+                            editor_state->chart_state->mirror_selected_horizontally(notificationsQueue);
+                        }
+                    }
+                    if (ImGui::MenuItem("Vertically")) {
+                        if (editor_state->chart_state.has_value()) {
+                            editor_state->chart_state->mirror_selected_vertically(notificationsQueue);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Rotate")) {
+                    if (ImGui::MenuItem("90° Clockwise")) {
+                        if (editor_state->chart_state.has_value()) {
+                            editor_state->chart_state->rotate_selected_90_clockwise(notificationsQueue);
+                        }
+                    }
+                    if (ImGui::MenuItem("90° Counter-Clockwise")) {
+                        if (editor_state->chart_state.has_value()) {
+                            editor_state->chart_state->rotate_selected_90_counter_clockwise(notificationsQueue);
+                        }
+                    }
+                    if (ImGui::MenuItem("180°")) {
+                        if (editor_state->chart_state.has_value()) {
+                            editor_state->chart_state->rotate_selected_180(notificationsQueue);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
             if (ImGui::BeginMenu("View", editor_state.has_value())) {
                 if (ImGui::MenuItem("Playfield", nullptr, editor_state->show_playfield)) {
                     editor_state->show_playfield = not editor_state->show_playfield;

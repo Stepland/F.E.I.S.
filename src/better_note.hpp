@@ -35,6 +35,11 @@ namespace better {
         auto operator<=>(const Position&) const = default;
         friend std::ostream& operator<<(std::ostream& out, const Position& pos);
 
+        Position mirror_horizontally() const;
+        Position mirror_vertically() const;
+        Position rotate_90_clockwise() const;
+        Position rotate_90_counter_clockwise() const;
+        Position rotate_180() const;
     private:
         std::uint64_t x;
         std::uint64_t y;
@@ -50,6 +55,12 @@ namespace better {
         friend std::ostream& operator<<(std::ostream& out, const TapNote& t);
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
+
+        TapNote mirror_horizontally() const;
+        TapNote mirror_vertically() const;
+        TapNote rotate_90_clockwise() const;
+        TapNote rotate_90_counter_clockwise() const;
+        TapNote rotate_180() const;
     private:
         Fraction time;
         Position position;
@@ -72,6 +83,12 @@ namespace better {
 
         nlohmann::ordered_json dump_to_memon_1_0_0() const;
         int tail_as_6_notation() const;
+
+        LongNote mirror_horizontally() const;
+        LongNote mirror_vertically() const;
+        LongNote rotate_90_clockwise() const;
+        LongNote rotate_90_counter_clockwise() const;
+        LongNote rotate_180() const;
     private:
         Fraction time;
         Position position;
@@ -108,6 +125,12 @@ namespace better {
             const nlohmann::json& json,
             std::uint64_t resolution
         );
+
+        Note mirror_horizontally() const;
+        Note mirror_vertically() const;
+        Note rotate_90_clockwise() const;
+        Note rotate_90_counter_clockwise() const;
+        Note rotate_180() const;
     private:
         std::variant<TapNote, LongNote> note;
     };

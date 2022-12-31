@@ -10,8 +10,8 @@
 #include "src/better_timing.hpp"
 #include "variant_visitor.hpp"
 
-ClipboardContents ClipboardContents::shifted_by(Fraction offset) const {
-    ClipboardContents res;
+NoteAndBPMSelection NoteAndBPMSelection::shifted_by(Fraction offset) const {
+    NoteAndBPMSelection res;
     const auto shift = VariantVisitor {
         [&](const better::TapNote& tap_note) {
             return better::Note(
@@ -43,16 +43,16 @@ ClipboardContents ClipboardContents::shifted_by(Fraction offset) const {
     return res;
 }
 
-bool ClipboardContents::empty() const {
+bool NoteAndBPMSelection::empty() const {
     return notes.empty() and bpm_events.empty();
 }
 
-void ClipboardContents::clear() {
+void NoteAndBPMSelection::clear() {
     notes.clear();
     bpm_events.clear();
 }
 
-void Clipboard::copy(const ClipboardContents& new_contents) {
+void Clipboard::copy(const NoteAndBPMSelection& new_contents) {
     const auto offset = [&](){
         std::set<Fraction> offsets = {};
         if (not new_contents.notes.empty()) {
@@ -71,7 +71,7 @@ void Clipboard::copy(const ClipboardContents& new_contents) {
     contents = new_contents.shifted_by(-1 * offset);
 }
 
-ClipboardContents Clipboard::paste(Fraction offset) const {
+NoteAndBPMSelection Clipboard::paste(Fraction offset) const {
     return contents.shifted_by(offset);
 }
 

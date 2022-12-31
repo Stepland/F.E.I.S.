@@ -164,6 +164,90 @@ void ChartState::delete_(
     }
 }
 
+void ChartState::transform_selected_notes(
+    std::function<better::Note(const better::Note&)> transform
+) {
+    if (not selected_stuff.notes.empty()) {
+        better::Notes removed = selected_stuff.notes;
+        // Erase all the original notes
+        for (const auto& [_, note] : selected_stuff.notes) {
+            chart.notes->erase(note);
+        }
+        // overwriting insert of the transformed notes
+        better::Notes transformed;
+        for (const auto& [_, note] : selected_stuff.notes) {
+            const auto transformed_note = transform(note);
+            transformed.insert(transformed_note);
+            auto&& erased = chart.notes->overwriting_insert(transformed_note);
+            removed.merge(std::move(erased));
+        }
+        selected_stuff.notes = transformed;
+        history.push(std::make_shared<RemoveThenAddNotes>(difficulty_name, removed, transformed));
+        density_graph.should_recompute = true;
+    }
+}
+
+void ChartState::mirror_selected_horizontally(NotificationsQueue& nq) {
+    if (not selected_stuff.notes.empty()) {
+        const auto message = fmt::format(
+            "Mirrored {} note{}",
+            selected_stuff.notes.size(),
+            selected_stuff.notes.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+        transform_selected_notes([](const better::Note& n){return n.mirror_horizontally();});
+    }
+}
+
+void ChartState::mirror_selected_vertically(NotificationsQueue& nq) {
+    if (not selected_stuff.notes.empty()) {
+        const auto message = fmt::format(
+            "Mirrored {} note{}",
+            selected_stuff.notes.size(),
+            selected_stuff.notes.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+        transform_selected_notes([](const better::Note& n){return n.mirror_vertically();});
+    }
+}
+
+void ChartState::rotate_selected_90_clockwise(NotificationsQueue& nq) {
+    if (not selected_stuff.notes.empty()) {
+        const auto message = fmt::format(
+            "Rotated {} note{}",
+            selected_stuff.notes.size(),
+            selected_stuff.notes.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+        transform_selected_notes([](const better::Note& n){return n.rotate_90_clockwise();});
+    }
+}
+
+void ChartState::rotate_selected_90_counter_clockwise(NotificationsQueue& nq) {
+    if (not selected_stuff.notes.empty()) {
+        const auto message = fmt::format(
+            "Rotated {} note{}",
+            selected_stuff.notes.size(),
+            selected_stuff.notes.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+        transform_selected_notes([](const better::Note& n){return n.rotate_90_counter_clockwise();});
+    }
+}
+
+void ChartState::rotate_selected_180(NotificationsQueue& nq) {
+    if (not selected_stuff.notes.empty()) {
+        const auto message = fmt::format(
+            "Rotated {} note{}",
+            selected_stuff.notes.size(),
+            selected_stuff.notes.size() > 1 ? "s" : ""
+        );
+        nq.push(std::make_shared<TextNotification>(message));
+        transform_selected_notes([](const better::Note& n){return n.rotate_180();});
+    }
+}
+
+
 Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position, const better::Timing& timing) {
     /*
     Approach and burst animations last (at most) 16 frames at 30 fps on

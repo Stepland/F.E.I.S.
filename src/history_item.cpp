@@ -45,6 +45,7 @@ void AddNotes::do_action(EditorState& ed) const {
             ed.chart_state->chart.notes->insert(note);
         }
         ed.chart_state->density_graph.should_recompute = true;
+        ed.chart_state->selected_stuff.notes = notes;
     }
 }
 
@@ -58,6 +59,7 @@ void AddNotes::undo_action(EditorState& ed) const {
             ed.chart_state->chart.notes->erase(note);
         }
         ed.chart_state->density_graph.should_recompute = true;
+        ed.chart_state->selected_stuff.notes.clear();
     }
 }
 
@@ -85,6 +87,65 @@ void RemoveNotes::do_action(EditorState& ed) const {
 
 void RemoveNotes::undo_action(EditorState& ed) const {
     AddNotes::do_action(ed);
+}
+
+RemoveThenAddNotes::RemoveThenAddNotes(
+    const std::string& chart,
+    const better::Notes& removed,
+    const better::Notes& added
+) :
+    difficulty_name(chart),
+    removed(removed),
+    added(added)
+{
+    if (removed.empty() or added.empty()) {
+        throw std::invalid_argument(
+            "Can't construct a RemoveThenAddNotes History Action with an empty"
+            "note set"
+        );
+    }
+    message = fmt::format(
+        "Removed {} note{} and added {} note{} from chart {}",
+        removed.size(),
+        removed.size() > 1 ? "s" : "",
+        added.size(),
+        added.size() > 1 ? "s" : "",
+        chart
+    );
+}
+
+void RemoveThenAddNotes::do_action(EditorState& ed) const {
+    ed.set_playback_position(ed.time_at(added.begin()->second.get_time()));
+    if (ed.chart_state) {
+        if (not (ed.chart_state->difficulty_name == difficulty_name)) {
+            ed.open_chart(difficulty_name);
+        }
+        for (const auto& [_, note] : removed) {
+            ed.chart_state->chart.notes->erase(note);
+        }
+        for (const auto& [_, note] : added) {
+            ed.chart_state->chart.notes->insert(note);
+        }
+        ed.chart_state->density_graph.should_recompute = true;
+        ed.chart_state->selected_stuff.notes = added;
+    }
+}
+
+void RemoveThenAddNotes::undo_action(EditorState& ed) const {
+    ed.set_playback_position(ed.time_at(added.begin()->second.get_time()));
+    if (ed.chart_state) {
+        if (not (ed.chart_state->difficulty_name == difficulty_name)) {
+            ed.open_chart(difficulty_name);
+        }
+        for (const auto& [_, note] : added) {
+            ed.chart_state->chart.notes->erase(note);
+        }
+        for (const auto& [_, note] : removed) {
+            ed.chart_state->chart.notes->insert(note);
+        }
+        ed.chart_state->density_graph.should_recompute = true;
+        ed.chart_state->selected_stuff.notes = removed;
+    }
 }
 
 AddChart::AddChart(const std::string& difficulty_name_, const better::Chart& chart_) :

@@ -47,6 +47,13 @@ struct ChartState {
         const TimingOrigin& timing_origin
     );
 
+    void transform_selected_notes(std::function<better::Note(const better::Note&)> transform);
+    void mirror_selected_horizontally(NotificationsQueue& nq);
+    void mirror_selected_vertically(NotificationsQueue& nq);
+    void rotate_selected_90_clockwise(NotificationsQueue& nq);
+    void rotate_selected_90_counter_clockwise(NotificationsQueue& nq);
+    void rotate_selected_180(NotificationsQueue& nq);
+
     Interval<Fraction> visible_beats(const sf::Time& playback_position, const better::Timing& timing);
     void update_visible_notes(const sf::Time& playback_position, const better::Timing& timing);
     better::Notes visible_notes;
@@ -58,7 +65,7 @@ struct ChartState {
         const better::Timing& timing
     );
 
-    ClipboardContents selected_stuff;
+    NoteAndBPMSelection selected_stuff;
     Clipboard clipboard;
 
     void handle_time_selection_tab(Fraction beats);

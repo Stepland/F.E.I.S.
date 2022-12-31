@@ -55,6 +55,22 @@ public:
     void undo_action(EditorState& ed) const override;
 };
 
+class RemoveThenAddNotes : public HistoryItem {
+public:
+    RemoveThenAddNotes(
+        const std::string& difficulty_name,
+        const better::Notes& removed,
+        const better::Notes& added
+    );
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+protected:
+    std::string difficulty_name;
+    better::Notes removed;
+    better::Notes added;
+};
+
 class AddChart : public HistoryItem {
 public:
     AddChart(

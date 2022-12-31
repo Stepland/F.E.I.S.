@@ -14,6 +14,7 @@ sources += files(
     'config.cpp',
     'editor_state.cpp',
     'file_dialogs.cpp',
+    'history.cpp',
     'history_item.cpp',
     'imgui_extras.cpp',
     'json_decimal_handling.cpp',
