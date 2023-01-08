@@ -16,7 +16,7 @@ void print_each_char_fmt(const std::string& text) {
     fmt::print("one char at a time : \n");
     for (const auto& c : text) {
         const int char_value = static_cast<int>(c);
-        fmt::print("{} (int) {:x} (hex)\n", c, char_value, char_value);
+        fmt::print("{} (int) {:x} (hex)\n", char_value, char_value);
     }
 }
 
