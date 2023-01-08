@@ -16,7 +16,7 @@ void print_each_char_fmt(const std::string& text) {
     fmt::print("one char at a time : \n");
     for (const auto& c : text) {
         const int char_value = static_cast<int>(c);
-        fmt::print("{} : {} (int) {:x} (hex)\n", c, char_value, char_value);
+        fmt::print("{} (int) {:x} (hex)\n", c, char_value, char_value);
     }
 }
 
@@ -25,7 +25,7 @@ void print_each_char_nowide(const std::string& text) {
     nowide::cout << "one char at a time :" << std::endl;
     for (const auto& c : text) {
         const int char_value = static_cast<int>(c);
-        nowide::cout << c << " : " << std::dec << char_value << " (int) " << std::hex << char_value << " (hex)" << std::endl;
+        nowide::cout << std::dec << char_value << " (int) " << std::hex << char_value << " (hex)" << std::endl;
     }
 }
 
