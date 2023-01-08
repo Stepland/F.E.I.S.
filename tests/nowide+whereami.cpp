@@ -2,47 +2,39 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
-
 #include <string>
+
 #include <nowide/args.hpp>
 #include <nowide/fstream.hpp>
 #include <nowide/iostream.hpp>
 #include <whereami++.hpp>
+#include <fmt/core.h>
 
-template <class T>
-void check_file(T& file) {
-	if (not file) {
-        nowide::cerr << "Can't open file" << std::endl;
-        return;
+
+void print_each_char_fmt(const std::string& text) {
+    fmt::print("full string : {}\n", text);
+    fmt::print("one char at a time : \n");
+    for (const auto& c : text) {
+        const int char_value = static_cast<int>(c);
+        fmt::print("{} : {} (int) {:x} (hex)\n", c, char_value, char_value);
     }
-    std::size_t total_lines = 0;
-    while (file) {
-        if(file.get() == '\n') {
-            total_lines++;
-        }
+}
+
+void print_each_char_nowide(const std::string& text) {
+    nowide::cout << "full string : " << text << std::endl;
+    nowide::cout << "one char at a time :" << std::endl;
+    for (const auto& c : text) {
+        const int char_value = static_cast<int>(c);
+        nowide::cout << c << " : " << std::dec << char_value << " (int) " << std::hex << char_value << " (hex)" << std::endl;
     }
-    nowide::cout << "File has " << total_lines << " lines" << std::endl;
 }
 
 int main() {
     std::string executable_folder = whereami::executable_dir();
-    nowide::cout << "whereami::executable_dir() = " << executable_folder << std::endl;
+    fmt::print("whereami::executable_dir() (throught fmt::print)\n");
+    print_each_char_fmt(executable_folder);
 
-    auto direct_u8path = std::filesystem::u8path(whereami::executable_dir());
-    nowide::cout << "u8path{whereami::executable_dir()} = " << direct_u8path << std::endl;
-	
-    auto u8string = std::u8string(executable_folder.begin(), executable_folder.end());
-    nowide::cout << "std::u8string{_} = " << reinterpret_cast<const char*>(u8string.c_str()) << std::endl;
-
-    std::filesystem::path u8path{u8string};
-    nowide::cout << "std::filesystem::path{_} = " << u8path << std::endl;
-
-	nowide::cout << "nowide::ifstream{_.string()} : " << std::endl;
-	nowide::ifstream file_from_path((u8path / "test_file.txt").string());
-	check_file(file_from_path);
-
-    nowide::cout << "nowide::ifstream{direct_u8path.string()} : " << std::endl;
-	nowide::ifstream file_from_path2((direct_u8path / "test_file.txt").string());
-	check_file(file_from_path2);
+    fmt::print("whereami::executable_dir() (throught nowide::cout)\n");
+    print_each_char_nowide(executable_folder);
     return 0;
 }

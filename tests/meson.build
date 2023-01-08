@@ -43,6 +43,7 @@ executable(
     'nowide+whereami',
     'nowide+whereami.cpp',
     include_sources['whereami'],
+    include_sources['fmt'],
     dependencies: deps,
     include_directories: inc,
 )
