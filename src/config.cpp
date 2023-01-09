@@ -101,7 +101,7 @@ config::Config::Config(const std::filesystem::path& settings) :
     }
     
     toml::table tbl;
-    nowide::ifstream config_stream{to_utf8_encoded_string(settings)};
+    nowide::ifstream config_stream{to_utf8_encoded_string(config_path)};
     try {
         tbl = toml::parse(config_stream);
     } catch (const toml::parse_error& err) {
