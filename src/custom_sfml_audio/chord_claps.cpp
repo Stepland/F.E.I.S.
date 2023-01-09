@@ -25,7 +25,7 @@ ChordClaps::ChordClaps(
 ChordClaps::ChordClaps(
     const std::shared_ptr<better::Notes>& notes_,
     const std::shared_ptr<better::Timing>& timing_,
-    std::shared_ptr<sf::SoundBuffer> note_clap,
+    std::shared_ptr<FakePitchedSoundStream::sound_buffer_type> note_clap,
     float pitch
 ) :
     FakePitchedSoundStream(note_clap, pitch),

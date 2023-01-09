@@ -25,7 +25,7 @@ public:
     NoteClaps(
         const std::shared_ptr<better::Notes>& notes_,
         const std::shared_ptr<better::Timing>& timing_,
-        std::shared_ptr<sf::SoundBuffer> note_clap_,
+        std::shared_ptr<FakePitchedSoundStream::sound_buffer_type> note_clap_,
         float pitch_,
         bool play_chords = true,
         bool play_long_note_ends = false

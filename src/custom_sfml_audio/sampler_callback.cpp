@@ -3,7 +3,7 @@
 #include <limits>
 
 void copy_sample_at_points(
-    const std::shared_ptr<sf::SoundBuffer>& sample,
+    const std::shared_ptr<FakePitchedSoundStream::sound_buffer_type>& sample,
     std::span<sf::Int16> output_buffer,
     std::set<std::int64_t>& starting_points,
     std::int64_t absolute_buffer_start

@@ -7,6 +7,7 @@
 
 #include "../better_song.hpp"
 #include "../config.hpp"
+#include "../utf8_sfml.hpp"
 
 class DensityGraph {
 public:
@@ -16,7 +17,7 @@ public:
     };
 
     DensityGraph(std::filesystem::path assets, const config::Config& config);
-    sf::Texture base_texture;
+    feis::LoadFromPathMixin<sf::Texture> base_texture;
     sf::Sprite normal_square;
     sf::Sprite collision_square;
     sf::RenderTexture graph;

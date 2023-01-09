@@ -10,6 +10,7 @@
 #include <optional>
 #include <sstream>
 #include <unordered_map>
+#include "utf8_sfml.hpp"
 
 enum class Judgement {
     Perfect,
@@ -44,6 +45,9 @@ using opt_ref_tex = std::optional<ref_tex>;
  */
 class Marker {
 public:
+    using texture_type = feis::LoadFromPathMixin<sf::Texture>;
+    using texture_vector_type = std::vector<texture_type>;
+    
     explicit Marker(const std::filesystem::path& folder);
     opt_ref_tex at(Judgement state, sf::Time offset);
     ref_tex preview(Judgement state);
@@ -51,14 +55,15 @@ public:
     std::filesystem::path get_folder() {return folder;};
 private:
     unsigned int fps = 30;
-    std::vector<sf::Texture> approach;
-    std::vector<sf::Texture> perfect;
-    std::vector<sf::Texture> great;
-    std::vector<sf::Texture> good;
-    std::vector<sf::Texture> poor;
-    std::vector<sf::Texture> miss;
 
-    std::vector<sf::Texture>& texture_vector_of(Judgement state);
+    texture_vector_type approach;
+    texture_vector_type perfect;
+    texture_vector_type great;
+    texture_vector_type good;
+    texture_vector_type poor;
+    texture_vector_type miss;
+
+    texture_vector_type& texture_vector_of(Judgement state);
     std::filesystem::path folder;
 };
 

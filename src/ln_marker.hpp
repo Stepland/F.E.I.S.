@@ -13,7 +13,7 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Time.hpp>
 
-#include "utf8_strings.hpp"
+#include "utf8_sfml.hpp"
 
 using opt_tex_ref = std::optional<std::reference_wrapper<const sf::Texture>>;
 
@@ -66,8 +66,8 @@ std::array<sf::Texture, number> load_tex_with_prefix(
             fmt::arg("frame", frame)
         );
         std::filesystem::path texFile = folder / filename;
-        sf::Texture tex;
-        if (!tex.loadFromFile(to_sfml_string(texFile))) {
+        feis::LoadFromPathMixin<sf::Texture> tex;
+        if (not tex.load_from_path(texFile)) {
             throw std::runtime_error(fmt::format(
                 "Unable to load texture folder {}, failed on texture {}",
                 folder.string(),

@@ -8,7 +8,10 @@
 #include <list>
 #include <set>
 
+#include <nowide/fstream.hpp>
+
 #include "imgui_extras.hpp"
+#include "utf8_strings.hpp"
 
 const std::string recent_files_file = "recent files.txt";
 
@@ -45,7 +48,7 @@ void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::pat
 }
 
 std::vector<std::string> Toolbox::getRecentFiles(std::filesystem::path settings) {
-    std::ifstream readFile{settings / recent_files_file};
+    nowide::ifstream readFile{to_utf8_encoded_string(settings / recent_files_file)};
     std::vector<std::string> recent;
     for (std::string line; getline(readFile, line);) {
         recent.push_back(line);

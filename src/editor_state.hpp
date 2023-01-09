@@ -16,6 +16,7 @@
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "src/history_item.hpp"
+#include "utf8_sfml.hpp"
 #include "widgets/linear_view.hpp"
 #include "better_note.hpp"
 #include "better_song.hpp"
@@ -78,7 +79,7 @@ public:
     void speed_up();
     void speed_down();
 
-    std::optional<sf::Music> preview_audio;
+    std::optional<feis::HoldFileStreamMixin<sf::Music>> preview_audio;
 
     void play_music_preview();
     void stop_music_preview();
@@ -92,7 +93,7 @@ public:
 
     std::uint64_t snap = 1;
 
-    std::optional<sf::Texture> jacket;
+    std::optional<feis::LoadFromPathMixin<sf::Texture>> jacket;
 
     bool playing;
 

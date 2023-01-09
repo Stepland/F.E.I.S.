@@ -11,6 +11,7 @@
 #include <SFML/Audio/SoundStream.hpp>
 
 #include "precise_sound_stream.hpp"
+#include "utf8_file_input_stream.hpp"
 
 class OpenMusic : public PreciseSoundStream {
 public:
@@ -32,6 +33,7 @@ protected:
 private:
     void initialize();
 
+    feis::UTF8FileInputStream m_file_input_stream;
     sf::InputSoundFile m_file;     //!< The streamed music file
     std::vector<sf::Int16> m_samples;  //!< Temporary buffer of samples
     std::recursive_mutex m_mutex;    //!< Mutex protecting the data

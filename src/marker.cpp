@@ -4,6 +4,7 @@
 #include <fmt/core.h>
 #include <stdexcept>
 
+#include "utf8_sfml.hpp"
 #include "utf8_strings.hpp"
 
 Marker first_available_marker_in(const std::filesystem::path& assets_folder) {
@@ -19,10 +20,10 @@ Marker::Marker(const std::filesystem::path& folder_):
     fps(30),
     folder(folder_)
 {
-    const auto emplace_back = [&](std::vector<sf::Texture>& vec, const std::string& file){
+    const auto emplace_back = [&](Marker::texture_vector_type& vec, const std::string& file){
         auto& tex = vec.emplace_back();
         const auto path = folder / file;
-        if (not tex.loadFromFile(to_sfml_string(path))) {
+        if (not tex.load_from_path(path)) {
             throw std::runtime_error(fmt::format(
                 "Unable to load marker {} - failed on image {}",
                 folder.string(),
@@ -82,7 +83,7 @@ ref_tex Marker::preview(Judgement state) {
     return texture_vector_of(state).at(2);
 }
 
-std::vector<sf::Texture>& Marker::texture_vector_of(Judgement state) {
+Marker::texture_vector_type& Marker::texture_vector_of(Judgement state) {
     switch (state) {
         case Judgement::Perfect:
             return perfect;

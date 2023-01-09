@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 #include <SFML/Audio/SoundBuffer.hpp>
 
+#include "utf8_sfml.hpp"
 #include "utf8_strings.hpp"
 
 FakePitchedSoundStream::FakePitchedSoundStream(
@@ -12,16 +13,16 @@ FakePitchedSoundStream::FakePitchedSoundStream(
     float pitch_
 ) :
     pitch(pitch_),
-    sample(std::make_shared<sf::SoundBuffer>())
+    sample(std::make_shared<sound_buffer_type>())
 {
-    if (not sample->loadFromFile(to_sfml_string(path_to_sample))) {
+    if (not sample->load_from_path(path_to_sample)) {
         throw std::runtime_error(fmt::format("Could not load audio sample : {}", path_to_sample.string()));
     }
     finish_initializing_the_sample();
 }
 
 FakePitchedSoundStream::FakePitchedSoundStream(
-    std::shared_ptr<sf::SoundBuffer> sample_,
+    std::shared_ptr<sound_buffer_type> sample_,
     float pitch_
 ) :
     pitch(pitch_),

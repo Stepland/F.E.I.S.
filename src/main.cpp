@@ -15,6 +15,8 @@
 #include <tinyfiledialogs.h>
 #include <whereami++.hpp>
 
+#include "src/custom_sfml_audio/synced_sound_streams.hpp"
+#include "widgets/blank_screen.hpp"
 #include "chart_state.hpp"
 #include "config.hpp"
 #include "editor_state.hpp"
@@ -23,9 +25,7 @@
 #include "marker.hpp"
 #include "mp3_reader.hpp"
 #include "notifications_queue.hpp"
-#include "sound_effect.hpp"
-#include "src/custom_sfml_audio/synced_sound_streams.hpp"
-#include "widgets/blank_screen.hpp"
+#include "utf8_sfml.hpp"
 #include "utf8_strings.hpp"
 
 int main() {
@@ -76,8 +76,8 @@ int main() {
     for (const auto& folder :
          std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         if (folder.is_directory()) {
-            sf::Texture markerPreview;
-            markerPreview.loadFromFile(to_sfml_string(folder.path() / "ma15.png"));
+            feis::LoadFromPathMixin<sf::Texture> markerPreview;
+            markerPreview.load_from_path(folder.path() / "ma15.png");
             markerPreview.setSmooth(true);
             markerPreviews.insert({folder, markerPreview});
         }

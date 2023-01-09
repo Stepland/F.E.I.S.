@@ -29,9 +29,9 @@ sources += files(
     'notification.cpp',
     'notifications_queue.cpp',
     'playfield.cpp',
-    'sound_effect.cpp',
     'special_numeric_types.cpp',
     'toolbox.cpp',
+    'utf8_file_input_stream.cpp',
     'utf8_strings.cpp',
 )
 

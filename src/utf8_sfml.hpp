@@ -2,37 +2,40 @@
 uses nowide under the hood */
 #pragma once
 
+#include <SFML/System/FileInputStream.hpp>
 #include <filesystem>
 #include <optional>
 
 #include <nowide/fstream.hpp>
 #include <SFML/Audio/Music.hpp>
 #include <SFML/Graphics/Texture.hpp>
-#include <SFML/System/InputStream.hpp>
+#include <SFML/System/FileInputStream.hpp>
+
+#include "utf8_file_input_stream.hpp"
 
 namespace feis {
-    class UTF8FileStream : public sf::InputStream {
+    template<class T>
+    class LoadFromPathMixin : public T {
     public:
-        UTF8FileStream(const std::filesystem::path& file);
-        sf::Int64 read(void* data, sf::Int64 size) override;
-        sf::Int64 seek(sf::Int64 position) override;
-        sf::Int64 tell() override;
-        sf::Int64 getSize() override;
-    private:
-        nowide::ifstream nowide_stream;
-        std::filesystem::path path;
+        bool load_from_path(const std::filesystem::path& file) {
+            UTF8FileInputStream f;
+            if (not f.open(file)) {
+                return false;
+            }
+            return this->loadFromStream(f);
+        }
     };
 
     template<class T>
-    bool load_from_file(T& object, const std::filesystem::path& file) {
-        UTF8FileStream f{file};
-        return object.loadFromStream(f);
-    }
-
-    class Music : public sf::Music {
+    class HoldFileStreamMixin : public T {
     public:
-        bool open_from_file(const std::filesystem::path& file);
+        bool open_from_path(const std::filesystem::path& file) {
+            if (not file_stream.open(file)) {
+                return false;
+            };
+            return this->openFromStream(file_stream);
+        }
     protected:
-        std::optional<UTF8FileStream> file_stream;
+        UTF8FileInputStream file_stream;
     };
 }

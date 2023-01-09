@@ -18,7 +18,7 @@ public:
 
     BeatTicks(
         const std::shared_ptr<better::Timing>& timing_,
-        std::shared_ptr<sf::SoundBuffer> beat_tick_,
+        std::shared_ptr<FakePitchedSoundStream::sound_buffer_type> beat_tick_,
         float pitch_
     );
     

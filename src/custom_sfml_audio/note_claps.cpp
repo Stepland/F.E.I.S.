@@ -30,7 +30,7 @@ NoteClaps::NoteClaps(
 NoteClaps::NoteClaps(
     const std::shared_ptr<better::Notes>& notes_,
     const std::shared_ptr<better::Timing>& timing_,
-    std::shared_ptr<sf::SoundBuffer> note_clap,
+    std::shared_ptr<FakePitchedSoundStream::sound_buffer_type> note_clap,
     float pitch,
     bool play_chords_,
     bool play_long_note_ends_

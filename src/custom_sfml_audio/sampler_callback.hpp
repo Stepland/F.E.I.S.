@@ -9,8 +9,10 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Config.hpp>
 
+#include "fake_pitched_sound_stream.hpp"
+
 void copy_sample_at_points(
-    const std::shared_ptr<sf::SoundBuffer>& sample,
+    const std::shared_ptr<FakePitchedSoundStream::sound_buffer_type>& sample,
     std::span<sf::Int16> output_buffer,
     std::set<std::int64_t>& starting_points,
     std::int64_t absolute_buffer_start
@@ -18,7 +20,7 @@ void copy_sample_at_points(
 
 template<class T>
 void copy_sample_at_points(
-    const std::shared_ptr<sf::SoundBuffer>& sample,
+    const std::shared_ptr<FakePitchedSoundStream::sound_buffer_type>& sample,
     std::span<sf::Int16> output_buffer,
     std::map<std::int64_t, T>& starting_points,
     std::int64_t absolute_buffer_start

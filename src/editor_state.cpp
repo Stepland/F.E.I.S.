@@ -40,7 +40,6 @@
 #include "src/better_timing.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
-#include "utf8_strings.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
     config(config_),
@@ -1398,7 +1397,7 @@ void EditorState::reload_jacket() {
 
     if (
         not std::filesystem::exists(jacket_path)
-        or not jacket->loadFromFile(to_sfml_string(jacket_path))
+        or not jacket->load_from_path(jacket_path)
     ) {
         jacket.reset();
     } else {
@@ -1460,7 +1459,7 @@ void EditorState::reload_preview_audio() {
 
     const auto path = song_path->parent_path() / song.metadata.preview_file;
     preview_audio.emplace();
-    if (not preview_audio->openFromFile(to_sfml_string(path))) {
+    if (not preview_audio->open_from_path(path)) {
         preview_audio.reset();
     }
 };
