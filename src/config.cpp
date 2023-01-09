@@ -10,6 +10,7 @@
 
 #include "linear_view_colors.hpp"
 #include "marker.hpp"
+#include "nowide/fstream.hpp"
 #include "variant_visitor.hpp"
 #include "widgets/lane_order.hpp"
 
@@ -99,12 +100,13 @@ config::Config::Config(const std::filesystem::path& settings) :
     }
     
     toml::table tbl;
+    nowide::ifstream config_stream{settings};
     try {
-        tbl = toml::parse_file(config_path.c_str());
+        tbl = toml::parse(config_stream);
     } catch (const toml::parse_error& err) {
         fmt::print(
             "Error while parsing {} :\n{}",
-            config_path.string(),
+            settings.string(),
             err.what()
         );
         return;
@@ -133,7 +135,7 @@ toml::table config::Config::dump_as_v1_0_0() {
 config::Config::~Config() {
     std::filesystem::create_directories(config_path.parent_path());
     const auto tbl = dump_as_v1_0_0();
-    std::ofstream config_file_stream{config_path};
+    nowide::ofstream config_file_stream{config_path};
     const auto flags = (
         toml::toml_formatter::default_flags
         & ~toml::format_flags::allow_literal_strings
