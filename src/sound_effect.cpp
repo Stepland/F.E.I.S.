@@ -9,7 +9,7 @@ SoundEffect::SoundEffect(std::filesystem::path path) :
     shouldPlay(false),
     buffer(),
     volume(10) {
-    if (!buffer.loadFromFile(to_native_encoding(path))) {
+    if (!buffer.loadFromFile(to_sfml_string(path))) {
         throw std::runtime_error("Unable to load sound : " + path.string());
     }
 

@@ -22,7 +22,7 @@ Marker::Marker(const std::filesystem::path& folder_):
     const auto emplace_back = [&](std::vector<sf::Texture>& vec, const std::string& file){
         auto& tex = vec.emplace_back();
         const auto path = folder / file;
-        if (not tex.loadFromFile(to_native_encoding(path))) {
+        if (not tex.loadFromFile(to_sfml_string(path))) {
             throw std::runtime_error(fmt::format(
                 "Unable to load marker {} - failed on image {}",
                 folder.string(),

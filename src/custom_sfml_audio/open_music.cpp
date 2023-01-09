@@ -25,7 +25,7 @@ OpenMusic::OpenMusic(const std::filesystem::path& filename) :
     m_file(),
     m_loopSpan(0, 0)
 {
-    if (not openFromFile(to_native_encoding(filename))) {
+    if (not openFromFile(to_sfml_string(filename))) {
         throw std::runtime_error("Could not open "+filename.string());
     }
 }
@@ -42,7 +42,7 @@ bool OpenMusic::openFromFile(const std::filesystem::path& filename) {
     stop();
 
     // Open the underlying sound file
-    if (!m_file.openFromFile(to_native_encoding(filename))) {
+    if (!m_file.openFromFile(to_sfml_string(filename))) {
         return false;
     }
 

@@ -1398,7 +1398,7 @@ void EditorState::reload_jacket() {
 
     if (
         not std::filesystem::exists(jacket_path)
-        or not jacket->loadFromFile(to_native_encoding(jacket_path))
+        or not jacket->loadFromFile(to_sfml_string(jacket_path))
     ) {
         jacket.reset();
     } else {
@@ -1460,7 +1460,7 @@ void EditorState::reload_preview_audio() {
 
     const auto path = song_path->parent_path() / song.metadata.preview_file;
     preview_audio.emplace();
-    if (not preview_audio->openFromFile(to_native_encoding(path))) {
+    if (not preview_audio->openFromFile(to_sfml_string(path))) {
         preview_audio.reset();
     }
 };

@@ -10,7 +10,7 @@ DensityGraph::DensityGraph(std::filesystem::path assets, const config::Config& c
     texture_path(assets / texture_file),
     collision_zone(config.editor.collision_zone)
 {
-    if (!base_texture.loadFromFile(to_native_encoding(texture_path))) {
+    if (!base_texture.loadFromFile(to_sfml_string(texture_path))) {
         std::cerr << "Unable to load texture " << texture_path;
         throw std::runtime_error("Unable to load texture " + texture_path.string());
     }
