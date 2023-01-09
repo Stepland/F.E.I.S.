@@ -10,18 +10,8 @@
 #include <whereami++.hpp>
 #include <fmt/core.h>
 
-
-void print_each_char_fmt(const std::string& text) {
-    fmt::print("full string : {}\n", text);
-    fmt::print("one char at a time : \n");
-    for (const auto& c : text) {
-        const int char_value = static_cast<int>(c);
-        fmt::print("{} (int) {:x} (hex)\n", char_value, char_value);
-    }
-}
-
-void print_each_char_nowide(const std::string& text) {
-    nowide::cout << "full string : " << text << std::endl;
+void print_each_char(const std::u8string& text) {
+    nowide::cout << "full string : " << reinterpret_cast<const char*>(text.c_str()) << std::endl;
     nowide::cout << "one char at a time :" << std::endl;
     for (const auto& c : text) {
         const int char_value = static_cast<int>(c);
@@ -30,11 +20,9 @@ void print_each_char_nowide(const std::string& text) {
 }
 
 int main() {
-    std::string executable_folder = whereami::executable_dir();
-    fmt::print("whereami::executable_dir() (throught fmt::print)\n");
-    print_each_char_fmt(executable_folder);
-
-    fmt::print("whereami::executable_dir() (throught nowide::cout)\n");
-    print_each_char_nowide(executable_folder);
+    std::string exec_dir = whereami::executable_dir();
+    std::u8string exec_dir_u8{exec_dir.begin(), exec_dir.end()};
+    nowide::cout << "exec dir converted to u8string : " << std::endl;
+    print_each_char(exec_dir_u8);
     return 0;
 }
