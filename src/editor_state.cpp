@@ -40,6 +40,7 @@
 #include "src/better_timing.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
+#include "utf8_strings.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
     config(config_),
@@ -1554,7 +1555,7 @@ TimingOrigin EditorState::timing_origin() {
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();
-    nowide::ofstream file{path.string()};
+    nowide::ofstream file{to_utf8_encoded_string(path.string())};
     if (not file) {
         throw std::runtime_error(
             fmt::format("Cannot write to file {}", path.string())
@@ -1622,8 +1623,7 @@ void feis::open_from_file(
     config::Config& config
 ) {
     try {
-        // force utf-8 song path on windows 
-        nowide::ifstream f{song_path.string()};
+        nowide::ifstream f{to_utf8_encoded_string(song_path)};
         if (not f) {
             tinyfd_messageBox(
                 "Error",

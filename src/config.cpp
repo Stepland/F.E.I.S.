@@ -13,6 +13,7 @@
 #include "nowide/fstream.hpp"
 #include "variant_visitor.hpp"
 #include "widgets/lane_order.hpp"
+#include "utf8_strings.hpp"
 
 void config::Marker::load_from_v1_0_0_table(const toml::table &tbl) {
     const auto marker_node = tbl["marker"];
@@ -100,7 +101,7 @@ config::Config::Config(const std::filesystem::path& settings) :
     }
     
     toml::table tbl;
-    nowide::ifstream config_stream{settings};
+    nowide::ifstream config_stream{to_utf8_encoded_string(settings)};
     try {
         tbl = toml::parse(config_stream);
     } catch (const toml::parse_error& err) {
@@ -135,7 +136,7 @@ toml::table config::Config::dump_as_v1_0_0() {
 config::Config::~Config() {
     std::filesystem::create_directories(config_path.parent_path());
     const auto tbl = dump_as_v1_0_0();
-    nowide::ofstream config_file_stream{config_path};
+    nowide::ofstream config_file_stream{to_utf8_encoded_string(config_path)};
     const auto flags = (
         toml::toml_formatter::default_flags
         & ~toml::format_flags::allow_literal_strings
