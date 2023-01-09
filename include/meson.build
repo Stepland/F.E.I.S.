@@ -6,3 +6,4 @@ include_sources += {'whereami': files('whereami.cpp', 'whereami++.cpp')}
 subdir('fmt')
 subdir('hsluv')
 subdir('imgui')
+subdir('imgui_extras')

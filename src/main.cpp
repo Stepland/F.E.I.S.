@@ -1,4 +1,3 @@
-
 #include <SFML/Window/Keyboard.hpp>
 #include <exception>
 #include <string>
@@ -35,7 +34,7 @@ int main() {
     // extend SFML to be able to read mp3's
     sf::SoundFileFactory::registerReader<sf::priv::SoundFileReaderMp3>();
 
-    auto executable_folder = std::filesystem::u8path(whereami::executable_dir());
+    auto executable_folder = to_path(whereami::executable_dir());
     auto assets_folder = executable_folder / "assets";
     auto settings_folder = executable_folder / "settings";
 
