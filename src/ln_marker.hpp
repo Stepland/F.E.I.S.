@@ -67,7 +67,7 @@ std::array<sf::Texture, number> load_tex_with_prefix(
         );
         std::filesystem::path texFile = folder / filename;
         sf::Texture tex;
-        if (!tex.loadFromFile(to_utf8_encoded_string(texFile))) {
+        if (!tex.loadFromFile(to_native_encoding(texFile))) {
             throw std::runtime_error(fmt::format(
                 "Unable to load texture folder {}, failed on texture {}",
                 folder.string(),

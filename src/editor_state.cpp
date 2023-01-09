@@ -1398,7 +1398,7 @@ void EditorState::reload_jacket() {
 
     if (
         not std::filesystem::exists(jacket_path)
-        or not jacket->loadFromFile(to_utf8_encoded_string(jacket_path))
+        or not jacket->loadFromFile(to_native_encoding(jacket_path))
     ) {
         jacket.reset();
     } else {
@@ -1460,7 +1460,7 @@ void EditorState::reload_preview_audio() {
 
     const auto path = song_path->parent_path() / song.metadata.preview_file;
     preview_audio.emplace();
-    if (not preview_audio->openFromFile(to_utf8_encoded_string(path))) {
+    if (not preview_audio->openFromFile(to_native_encoding(path))) {
         preview_audio.reset();
     }
 };

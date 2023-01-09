@@ -17,3 +17,7 @@ std::u8string to_u8string(const std::string& utf8s) {
 std::filesystem::path to_path(const std::string& utf8s) {
     return std::filesystem::path{to_u8string(utf8s)};
 }
+
+std::string to_native_encoding(const std::filesystem::path& path) {
+    return path.string();
+}

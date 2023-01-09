@@ -9,7 +9,7 @@ Playfield::Playfield(std::filesystem::path assets_folder) :
     long_note(assets_folder / "textures" / "long"),
     texture_path(assets_folder / texture_file)
 {
-    if (!base_texture.loadFromFile(to_utf8_encoded_string(texture_path))) {
+    if (!base_texture.loadFromFile(to_native_encoding(texture_path))) {
         std::cerr << "Unable to load texture " << texture_path;
         throw std::runtime_error("Unable to load texture " + texture_path.string());
     }
