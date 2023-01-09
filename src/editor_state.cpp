@@ -1637,7 +1637,7 @@ void feis::open_from_file(
         const auto json = load_json_preserving_decimals(f);
         auto song = better::Song::load_from_memon(json);
         ed.emplace(song, assets, song_path, config);
-        Toolbox::pushNewRecentFile(std::filesystem::canonical(song_path), settings);
+        Toolbox::pushNewRecentFile(song_path, settings);
     } catch (const std::exception& e) {
         tinyfd_messageBox("Error", e.what(), "ok", "error", 1);
     }

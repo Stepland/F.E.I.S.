@@ -29,13 +29,13 @@ void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::pat
     }
     readFile.close();
 
-    recent.remove(std::filesystem::canonical(file).string());
+    recent.remove(to_utf8_encoded_string(file));
 
     while (recent.size() >= 10) {
         recent.pop_back();
     }
 
-    recent.push_front(std::filesystem::canonical(file).string());
+    recent.push_front(to_utf8_encoded_string(file));
 
     nowide::ofstream writeFile(
         to_utf8_encoded_string(recent_files_path),
