@@ -27,6 +27,7 @@
 #include "notifications_queue.hpp"
 #include "utf8_sfml.hpp"
 #include "utf8_strings.hpp"
+#include "widgets/waveform_view.hpp"
 
 int main() {
     // TODO : Make the playfield not appear when there's no chart selected
@@ -513,6 +514,9 @@ int main() {
             }
             if (editor_state->show_timing_menu) {
                 editor_state->display_timing_menu();
+            }
+            if (editor_state->waveform_view) {
+                editor_state->waveform_view->draw(editor_state->current_time());
             }
         } else {
             bg.render(window);

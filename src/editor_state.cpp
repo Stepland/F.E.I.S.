@@ -1421,8 +1421,10 @@ void EditorState::reload_music() {
     const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
     try {
         music.emplace(std::make_shared<OpenMusic>(absolute_music_path));
+        waveform_view.emplace(absolute_music_path);
     } catch (const std::exception& e) {
         clear_music();
+        waveform_view.reset();
     }
 
     reload_editable_range();

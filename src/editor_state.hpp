@@ -27,6 +27,7 @@
 #include "clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
+#include "widgets/waveform_view.hpp"
 
 
 const std::string music_stream = "music";
@@ -67,6 +68,8 @@ public:
     std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
     bool is_playing_preview_music_from_sss = false;
+
+    std::optional<WaveformView> waveform_view = {};
 
     int get_volume() const;
     void set_volume(int newMusicVolume);
