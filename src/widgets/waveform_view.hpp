@@ -28,10 +28,13 @@ class WaveformView {
 public:
     explicit WaveformView(const std::filesystem::path& file);
     void draw(const sf::Time current_time);
+    void draw_settings();
+    bool display = false;
 private:
     feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
     std::atomic<bool> data_is_ready = false;
     std::map<unsigned int, Channels> channels_per_chunk_size;
+    std::optional<std::map<unsigned int, Channels>::iterator> selected_size;
     std::jthread worker;
 
     void prepare_data();
