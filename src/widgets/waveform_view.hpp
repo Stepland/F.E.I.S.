@@ -30,12 +30,24 @@ public:
     void draw(const sf::Time current_time);
     void draw_settings();
     bool display = false;
+
+    void set_zoom(int zoom);
+    void zoom_in();
+    void zoom_out();
 private:
     feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
     std::atomic<bool> data_is_ready = false;
-    std::map<unsigned int, Channels> channels_per_chunk_size;
+    std::vector<std::pair<unsigned int, Channels>> channels_per_chunk_size;
     std::optional<std::map<unsigned int, Channels>::iterator> selected_size;
     std::jthread worker;
 
+    int zoom = 0;
+
     void prepare_data();
 };
+
+Channels load_initial_summary(
+    feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
+    const unsigned int window_size
+);
+Channels downsample_to_half(const Channels& summary);

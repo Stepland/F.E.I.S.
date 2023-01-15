@@ -5,6 +5,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <imgui.h>
 #include <imgui_extras.hpp>
@@ -27,14 +28,14 @@ void WaveformView::draw(const sf::Time current_time) {
             feis::CenteredText("Loading ...");
             return ImGui::End();
         }
-
-        const auto channels_it = channels_per_chunk_size.begin();
-        if (channels_it == channels_per_chunk_size.end()) {
+        if (channels_per_chunk_size.empty()) {
             feis::CenteredText("No data ???");
             return ImGui::End();
         }
 
-        const auto& [chunk_size, channels] = *channels_it;
+        zoom = std::clamp(zoom, 0, static_cast<int>(channels_per_chunk_size.size()) - 1);
+        const auto& channels_it = channels_per_chunk_size.at(channels_per_chunk_size.size() - zoom - 1);
+        const auto& [chunk_size, channels] = channels_it;
         const auto window = ImGui::GetCurrentWindow();
         const auto work_rect = window->WorkRect;
         auto draw_list = window->DrawList;
@@ -71,6 +72,19 @@ void WaveformView::draw(const sf::Time current_time) {
     }
     ImGui::End();
 }
+
+void WaveformView::set_zoom(int new_zoom) {
+    zoom = std::clamp(new_zoom, 0, 9);
+}
+
+void WaveformView::zoom_in() {
+    set_zoom(zoom + 1);
+}
+
+void WaveformView::zoom_out() {
+    set_zoom(zoom - 1);
+}
+
 
 Channels load_initial_summary(
     feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
@@ -109,16 +123,16 @@ Channels load_initial_summary(
 }
 
 Channels downsample_to_half(const Channels& summary) {
-    Channels downsample;
+    Channels downsampled_summary;
     for (const auto& channel : summary) {
-        std::vector<DataPoint> downsampled{(channel.size() / 2) + 1};
-        auto out = downsampled.begin();
+        auto& downsampled_channel = downsampled_summary.emplace_back((channel.size() / 2) + 1);
+        auto out = downsampled_channel.begin();
         auto in = channel.begin();
-        while (in != channel.end() and out != downsampled.end()) {
+        while (in != channel.end() and out != downsampled_channel.end()) {
             const auto next_in = std::next(in);
             if (next_in != channel.end()) {
                 out->max = std::max(in->max, next_in->max);
-                out->min = std::max(in->min, next_in->min);
+                out->min = std::min(in->min, next_in->min);
             } else {
                 *out = *in;
                 break;
@@ -127,14 +141,14 @@ Channels downsample_to_half(const Channels& summary) {
             std::advance(in, 2);
         }
     }
-    return downsample;
+    return downsampled_summary;
 };
 
 void WaveformView::prepare_data() {
     unsigned int size = 8;
-    channels_per_chunk_size[size] = load_initial_summary(sound_file, size);
+    channels_per_chunk_size.emplace_back(size, load_initial_summary(sound_file, size));
     while (channels_per_chunk_size.size() < 10) {
-        channels_per_chunk_size[size * 2] = downsample_to_half(channels_per_chunk_size[size]);
+        channels_per_chunk_size.emplace_back(size * 2, downsample_to_half(channels_per_chunk_size.rbegin()->second));
         size *= 2;
     }
     data_is_ready = true;

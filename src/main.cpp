@@ -346,12 +346,18 @@ int main() {
                         case sf::Keyboard::Add:
                             if (editor_state) {
                                 editor_state->linear_view.zoom_in();
+                                if (editor_state->waveform_view) {
+                                    editor_state->waveform_view->zoom_in();
+                                }
                                 notificationsQueue.push(std::make_shared<TextNotification>("Zoom in"));
                             }
                             break;
                         case sf::Keyboard::Subtract:
                             if (editor_state) {
                                 editor_state->linear_view.zoom_out();
+                                if (editor_state->waveform_view) {
+                                    editor_state->waveform_view->zoom_out();
+                                }
                                 notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
                             }
                             break;
