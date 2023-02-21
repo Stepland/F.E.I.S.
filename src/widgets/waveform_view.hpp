@@ -13,7 +13,8 @@
 #include <vector>
 
 #include "../custom_sfml_audio/open_music.hpp"
-#include "utf8_sfml.hpp"
+#include "../config.hpp"
+#include "../utf8_sfml.hpp"
 
 struct DataPoint {
     using value_type = std::int16_t;
@@ -26,7 +27,7 @@ using Channels = std::vector<DataFrame>;
 
 class WaveformView {
 public:
-    explicit WaveformView(const std::filesystem::path& file);
+    explicit WaveformView(const std::filesystem::path& audio, config::Config& config);
     void draw(const sf::Time current_time);
     void draw_settings();
     bool display = false;
@@ -38,10 +39,9 @@ private:
     feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
     std::atomic<bool> data_is_ready = false;
     std::vector<std::pair<unsigned int, Channels>> channels_per_chunk_size;
-    std::optional<std::map<unsigned int, Channels>::iterator> selected_size;
     std::jthread worker;
 
-    int zoom = 0;
+    int& zoom;
 
     void prepare_data();
 };

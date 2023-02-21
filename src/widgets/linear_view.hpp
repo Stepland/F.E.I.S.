@@ -17,6 +17,7 @@
 #include "../linear_view_colors.hpp"
 #include "quantization_colors.hpp"
 #include "lane_order.hpp"
+#include "widgets/waveform_view.hpp"
 
 struct SelectionRectangle {
     sf::Vector2f start = {-1, -1};
@@ -37,9 +38,25 @@ const std::map<unsigned int, sf::Color> reference_note_colors = {{
 }};
 const sf::Color reference_note_grey = {134, 110, 116};
 
-class LinearView {
+namespace vertical_view {
+    struct LinearView {};
+    class WaveformView {
+    public:
+        explicit WaveformView(const std::filesystem::path& audio, config::Config& config);
+        void draw(const sf::Time current_time);
+        void draw_settings();
+    private:
+        feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
+        std::atomic<bool> data_is_ready = false;
+        std::vector<std::pair<unsigned int, Channels>> channels_per_chunk_size;
+        std::jthread worker;
+        void prepare_data();
+    };
+}
+
+class VerticalView {
 public:
-    LinearView(std::filesystem::path assets, config::Config& config);
+    VerticalView(std::filesystem::path assets, config::Config& config);
 
     void draw(
         ImDrawList* draw_list,
@@ -62,6 +79,7 @@ public:
     void display_settings();
 
 private:
+    std::variant<vertical_view::LinearView, vertical_view::WaveformView> status;
     linear_view::Colors& colors;
     linear_view::Sizes& sizes;
     const sf::Time& collision_zone;

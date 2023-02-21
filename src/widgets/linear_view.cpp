@@ -40,7 +40,7 @@ void SelectionRectangle::reset() {
     end = {-1, -1};
 }
 
-LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
+VerticalView::VerticalView(std::filesystem::path assets, config::Config& config_) :
     colors(config_.linear_view.colors),
     sizes(config_.linear_view.sizes),
     collision_zone(config_.editor.collision_zone),
@@ -53,7 +53,7 @@ LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
     set_zoom(config_.linear_view.zoom);
 }
 
-void LinearView::draw(
+void VerticalView::draw(
     ImDrawList* draw_list,
     ChartState& chart_state,
     const better::Timing& timing,
@@ -408,12 +408,12 @@ void LinearView::draw(
     }
 }
 
-void LinearView::set_zoom(int newZoom) {
+void VerticalView::set_zoom(int newZoom) {
     zoom = std::clamp(newZoom, -10, 10);
     reload_transforms();
 }
 
-void LinearView::display_settings() {
+void VerticalView::display_settings() {
     if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
         if (ImGui::SliderInt("Zoom##Linear View Settings", &zoom, -10, 10, "%d")) {
             set_zoom(zoom);
@@ -519,7 +519,7 @@ void LinearView::display_settings() {
     ImGui::End();
 }
 
-void LinearView::reload_transforms() {
+void VerticalView::reload_transforms() {
     beats_to_pixels_proportional = {
         Fraction{0},
         Fraction{1} / Fraction{time_factor()},
@@ -528,7 +528,7 @@ void LinearView::reload_transforms() {
     };
 }
 
-std::string LinearView::lane_order_name() {
+std::string VerticalView::lane_order_name() {
     const auto name = VariantVisitor {
         [](linear_view::lane_order::Default) { return "Default"; },
         [](linear_view::lane_order::Vertical) { return "Vertical"; },
@@ -537,7 +537,7 @@ std::string LinearView::lane_order_name() {
     return std::visit(name, lane_order);
 }
 
-std::optional<unsigned int> LinearView::button_to_lane(const better::Position& button) {
+std::optional<unsigned int> VerticalView::button_to_lane(const better::Position& button) {
     const auto _button_to_lane = VariantVisitor {
         [button](const linear_view::lane_order::Default&){
             return static_cast<std::optional<unsigned int>>(button.index());

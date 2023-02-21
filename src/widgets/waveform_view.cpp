@@ -17,8 +17,10 @@
 #include "utf8_file_input_stream.hpp"
 #include "utf8_sfml.hpp"
 
-WaveformView::WaveformView(const std::filesystem::path& file) {
-    sound_file.open_from_path(file);
+WaveformView::WaveformView(const std::filesystem::path& audio, config::Config& config_) :
+    zoom(config_.linear_view.zoom)
+{
+    sound_file.open_from_path(audio);
     worker = std::jthread{&WaveformView::prepare_data, this};
 }
 

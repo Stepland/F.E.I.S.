@@ -345,19 +345,13 @@ int main() {
                             break;
                         case sf::Keyboard::Add:
                             if (editor_state) {
-                                editor_state->linear_view.zoom_in();
-                                if (editor_state->waveform_view) {
-                                    editor_state->waveform_view->zoom_in();
-                                }
+                                std::visit([](auto& vv){vv.zoom_in();}, editor_state->vertical_view);
                                 notificationsQueue.push(std::make_shared<TextNotification>("Zoom in"));
                             }
                             break;
                         case sf::Keyboard::Subtract:
                             if (editor_state) {
-                                editor_state->linear_view.zoom_out();
-                                if (editor_state->waveform_view) {
-                                    editor_state->waveform_view->zoom_out();
-                                }
+                                std::visit([](auto& vv){vv.zoom_out();}, editor_state->vertical_view);
                                 notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
                             }
                             break;
@@ -479,8 +473,13 @@ int main() {
             if (editor_state->show_linear_view) {
                 editor_state->display_linear_view();
             }
-            if (editor_state->linear_view.shouldDisplaySettings) {
-                editor_state->linear_view.display_settings();
+            auto display_vertical_view_settings = VariantVisitor {
+                [](char) { return "char"; },
+                [](int) { return "int"; },
+                [](auto) { return "unknown type"; },
+            };
+            if (editor_state->vertical_view_.shouldDisplaySettings) {
+                editor_state->vertical_view_.display_settings();
             }
             if (editor_state->show_file_properties) {
                 editor_state->display_file_properties();
@@ -711,7 +710,7 @@ int main() {
                     editor_state->show_sound_settings = true;
                 }
                 if (ImGui::MenuItem("Linear View")) {
-                    editor_state->linear_view.shouldDisplaySettings = true;
+                    editor_state->vertical_view_.shouldDisplaySettings = true;
                 }
                 if (ImGui::MenuItem("Editor")) {
                     editor_state->show_editor_settings = true;

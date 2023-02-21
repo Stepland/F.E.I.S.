@@ -69,8 +69,6 @@ public:
     std::optional<std::shared_ptr<OpenMusic>> music = {};
     bool is_playing_preview_music_from_sss = false;
 
-    std::optional<WaveformView> waveform_view = {};
-
     int get_volume() const;
     void set_volume(int newMusicVolume);
     void volume_up();
@@ -92,7 +90,7 @@ public:
     void update_music_preview_status();
 
     Playfield playfield;
-    LinearView linear_view;
+    std::variant<VerticalView, WaveformView> vertical_view;
 
     std::uint64_t snap = 1;
 

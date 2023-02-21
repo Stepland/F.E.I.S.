@@ -41,6 +41,7 @@
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 #include "utf8_strings.hpp"
+#include "widgets/waveform_view.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
     config(config_),
@@ -48,7 +49,7 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    linear_view(assets_, config_),
+    vertical_view(VerticalView{assets_, config_}),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -69,7 +70,7 @@ EditorState::EditorState(
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    linear_view(assets_, config_),
+    vertical_view(VerticalView{assets_, config_}),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -979,16 +980,24 @@ void EditorState::display_linear_view() {
         if (chart_state) {
             auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, header_height});
-            linear_view.draw(
-                ImGui::GetWindowDrawList(),
-                *chart_state,
-                *applicable_timing,
-                current_exact_beats(),
-                beats_at(editable_range.end),
-                get_snap_step(),
-                ImGui::GetContentRegionMax(),
-                ImGui::GetCursorScreenPos()
-            );
+            auto draw_vertical_view = VariantVisitor {
+                [&](VerticalView& lv) {
+                    lv.draw(
+                        ImGui::GetWindowDrawList(),
+                        *chart_state,
+                        *applicable_timing,
+                        current_exact_beats(),
+                        beats_at(editable_range.end),
+                        get_snap_step(),
+                        ImGui::GetContentRegionMax(),
+                        ImGui::GetCursorScreenPos()
+                    );
+                },
+                [&](WaveformView& wv) {
+                    ;
+                },
+            };
+            std::visit(draw_vertical_view, vertical_view);
         } else {
             ImGui::TextDisabled("- no chart selected -");
         }
