@@ -41,7 +41,7 @@
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 #include "utf8_strings.hpp"
-#include "widgets/waveform_view.hpp"
+#include "widgets/linear_view.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
     config(config_),
@@ -49,7 +49,7 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    vertical_view(VerticalView{assets_, config_}),
+    linear_view(LinearView{assets_, config_}),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -70,7 +70,7 @@ EditorState::EditorState(
     chord_claps(std::make_shared<ChordClaps>(nullptr, nullptr, assets_, 1.f)),
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
-    vertical_view(VerticalView{assets_, config_}),
+    linear_view(LinearView{assets_, config_}),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -728,8 +728,8 @@ void EditorState::display_file_properties() {
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
                     ImGui::BeginTooltip();
                     ImGui::TextUnformatted(
-                        "You must define a time selection in the linear view first !\n"
-                        "Open up 'View' > 'Linear View' then use the Tab key to set the start, then the end"
+                        "You must define a time selection in the vertical view first !\n"
+                        "Open up 'View' > 'Vertical View' then use the Tab key to set the start, then the end"
                     );
                     ImGui::EndTooltip();
                 }
@@ -980,24 +980,16 @@ void EditorState::display_linear_view() {
         if (chart_state) {
             auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, header_height});
-            auto draw_vertical_view = VariantVisitor {
-                [&](VerticalView& lv) {
-                    lv.draw(
-                        ImGui::GetWindowDrawList(),
-                        *chart_state,
-                        *applicable_timing,
-                        current_exact_beats(),
-                        beats_at(editable_range.end),
-                        get_snap_step(),
-                        ImGui::GetContentRegionMax(),
-                        ImGui::GetCursorScreenPos()
-                    );
-                },
-                [&](WaveformView& wv) {
-                    ;
-                },
-            };
-            std::visit(draw_vertical_view, vertical_view);
+            linear_view.draw(
+                ImGui::GetWindowDrawList(),
+                *chart_state,
+                *applicable_timing,
+                current_exact_beats(),
+                beats_at(editable_range.end),
+                get_snap_step(),
+                ImGui::GetContentRegionMax(),
+                ImGui::GetCursorScreenPos()
+            );
         } else {
             ImGui::TextDisabled("- no chart selected -");
         }
@@ -1430,10 +1422,8 @@ void EditorState::reload_music() {
     const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
     try {
         music.emplace(std::make_shared<OpenMusic>(absolute_music_path));
-        waveform_view.emplace(absolute_music_path);
     } catch (const std::exception& e) {
         clear_music();
-        waveform_view.reset();
     }
 
     reload_editable_range();

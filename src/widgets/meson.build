@@ -3,5 +3,4 @@ sources += files([
     'density_graph.cpp',
     'lane_order.cpp',
     'linear_view.cpp',
-    'waveform_view.cpp',
 ])

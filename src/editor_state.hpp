@@ -27,7 +27,6 @@
 #include "clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
-#include "widgets/waveform_view.hpp"
 
 
 const std::string music_stream = "music";
@@ -90,7 +89,7 @@ public:
     void update_music_preview_status();
 
     Playfield playfield;
-    std::variant<VerticalView, WaveformView> vertical_view;
+    LinearView linear_view;
 
     std::uint64_t snap = 1;
 

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <thread>
 
 #include <imgui.h>
 #include <SFML/Graphics.hpp>
@@ -9,15 +10,16 @@
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
 
+#include "../custom_sfml_audio/open_music.hpp"
 #include "../better_timing.hpp"
 #include "../chart_state.hpp"
 #include "../toolbox.hpp"
 #include "../config.hpp"
 #include "../linear_view_sizes.hpp"
 #include "../linear_view_colors.hpp"
+#include "../utf8_sfml.hpp"
 #include "quantization_colors.hpp"
 #include "lane_order.hpp"
-#include "widgets/waveform_view.hpp"
 
 struct SelectionRectangle {
     sf::Vector2f start = {-1, -1};
@@ -38,25 +40,37 @@ const std::map<unsigned int, sf::Color> reference_note_colors = {{
 }};
 const sf::Color reference_note_grey = {134, 110, 116};
 
-namespace vertical_view {
-    struct LinearView {};
-    class WaveformView {
-    public:
-        explicit WaveformView(const std::filesystem::path& audio, config::Config& config);
-        void draw(const sf::Time current_time);
-        void draw_settings();
-    private:
-        feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
-        std::atomic<bool> data_is_ready = false;
-        std::vector<std::pair<unsigned int, Channels>> channels_per_chunk_size;
-        std::jthread worker;
-        void prepare_data();
-    };
+
+
+namespace linear_view {
+    namespace mode {
+        struct Beats {};
+        class Waveform {
+        public:
+            explicit Waveform(const std::filesystem::path& audio);
+            void draw_waveform(
+                ImDrawList* draw_list,
+                const sf::Time current_time,
+                int zoom
+            );
+        private:
+            feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
+            std::atomic<bool> data_is_ready = false;
+            std::vector<std::pair<unsigned int, Channels>> channels_per_chunk_size;
+            std::jthread worker;
+            void prepare_data();
+        };
+
+        namespace waveform {
+        }
+    }
+
+    using Mode = std::variant<mode::Beats, mode::Waveform>;
 }
 
-class VerticalView {
+class LinearView {
 public:
-    VerticalView(std::filesystem::path assets, config::Config& config);
+    LinearView(std::filesystem::path assets, config::Config& config);
 
     void draw(
         ImDrawList* draw_list,
@@ -79,7 +93,8 @@ public:
     void display_settings();
 
 private:
-    std::variant<vertical_view::LinearView, vertical_view::WaveformView> status;
+    linear_view::Mode mode;
+    std::string mode_name();
     linear_view::Colors& colors;
     linear_view::Sizes& sizes;
     const sf::Time& collision_zone;
@@ -98,7 +113,7 @@ private:
     bool any_bpm_button_hovered = false;
 
     linear_view::LaneOrder& lane_order;
-    std::string lane_order_name();
+    std::string lane_order_name() const;
     std::optional<unsigned int> button_to_lane(const better::Position& button);
 };
 
