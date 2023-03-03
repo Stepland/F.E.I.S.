@@ -3,11 +3,13 @@
 #include <filesystem>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <vector>
 
 #include <SFML/Audio/InputSoundFile.hpp>
 
 #include "../utf8_sfml.hpp"
+#include "cache.hpp"
 
 namespace linear_view::mode::waveform {
     struct DataPoint {
@@ -25,10 +27,5 @@ namespace linear_view::mode::waveform {
     );
     Channels downsample_to_half(const Channels& summary);
 
-    class WaveformCache {
-    public:
-        std::optional<const std::reference_wrapper<Channels>> load_waveforms(const std::filesystem::path& audio);
-    private:
-        std::map<std::filesystem::path, Channels> cache;
-    }
+    Toolkit::Cache<std::filesystem::path, Channels> waveform_cache;
 }
