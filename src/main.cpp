@@ -76,7 +76,7 @@ int main() {
     for (const auto& folder :
          std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         if (folder.is_directory()) {
-            feis::LoadFromPathMixin<sf::Texture> markerPreview;
+            feis::Texture markerPreview;
             markerPreview.load_from_path(folder.path() / "ma15.png");
             markerPreview.setSmooth(true);
             markerPreviews.insert({folder, markerPreview});

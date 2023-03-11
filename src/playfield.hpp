@@ -11,12 +11,12 @@
 #include "better_timing.hpp"
 #include "ln_marker.hpp"
 #include "marker.hpp"
-#include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 
 class Playfield {
 public:
     Playfield(std::filesystem::path assets_folder);
-    feis::LoadFromPathMixin<sf::Texture> base_texture;
+    feis::Texture base_texture;
     sf::Sprite button;
     sf::Sprite button_pressed;
     sf::Sprite note_selected;

@@ -3,7 +3,7 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 
 #include "precise_sound_stream.hpp"
-#include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 
 /*
 SoundStream that doesn't pitch-shift but differenciates between the current
@@ -15,7 +15,7 @@ is.
 */
 class FakePitchedSoundStream : public PreciseSoundStream {
 public:
-    using sound_buffer_type = feis::LoadFromPathMixin<sf::SoundBuffer>;
+    using sound_buffer_type = feis::SoundBuffer;
     FakePitchedSoundStream(
         const std::filesystem::path& path_to_sample,
         float pitch_

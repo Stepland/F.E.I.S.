@@ -9,6 +9,7 @@
 #include <type_traits>
 
 
+#include "cache.hpp"
 #include "config.hpp"
 #include "custom_sfml_audio/beat_ticks.hpp"
 #include "custom_sfml_audio/chord_claps.hpp"
@@ -17,6 +18,8 @@
 #include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "src/history_item.hpp"
 #include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
+#include "waveform.hpp"
 #include "widgets/linear_view.hpp"
 #include "better_note.hpp"
 #include "better_song.hpp"
@@ -66,6 +69,7 @@ public:
     std::shared_ptr<ChordClaps> chord_claps;
     std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
+    Toolkit::Cache<std::filesystem::path, std::optional<waveform::Waveform>> waveform_cache = {waveform::compute_waveform};
     bool is_playing_preview_music_from_sss = false;
 
     int get_volume() const;
@@ -93,7 +97,7 @@ public:
 
     std::uint64_t snap = 1;
 
-    std::optional<feis::LoadFromPathMixin<sf::Texture>> jacket;
+    std::optional<feis::Texture> jacket;
 
     bool playing;
 

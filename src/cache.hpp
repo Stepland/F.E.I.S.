@@ -16,20 +16,8 @@ namespace Toolkit {
     public:
         Cache(std::function<Value(Key)> _load_resource): load_resource(_load_resource) {};
 
-        // Triggers async loading and returns empty if not already loaded
-        std::optional<Value> async_get(const Key& key) {
-            if (not has(key)) {
-                if (not is_loading(key)) {
-                    async_load(key);
-                }
-                return {};
-            } else {
-                return get(key);
-            }
-        }
-
         // Does not trigger loading
-        std::optional<Value> get(const Key& key)  {
+        std::optional<std::reference_wrapper<Value>> get(const Key& key) const {
             std::shared_lock lock{mapping_mutex};
             if (has(key)) {
                 return mapping.at(key);
@@ -38,17 +26,25 @@ namespace Toolkit {
             }
         }
 
-        // Blocks until loaded
-        Value blocking_get(const Key& key) {
-            std::shared_lock lock{mapping_mutex};
-            blocking_load(key);
-            while (is_loading(key)) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // Returns empty if not already loaded
+        std::optional<std::reference_wrapper<Value>> async_load(const Key& key) {
+            if (not has(key)) {
+                if (not is_loading(key)) {
+                    async_emplace(key);
+                }
+                return {};
+            } else {
+                return get(key);
             }
-            return mapping.at(key);
         }
 
-        void blocking_load(const Key& key) {
+        void async_emplace(const Key& key) {
+            std::thread t(&Cache::blocking_emplace, this, key);
+            t.detach();
+        }
+
+
+        void blocking_emplace(const Key& key) {
             if (has(key) or is_loading(key)) {
                 return;
             }
@@ -63,23 +59,24 @@ namespace Toolkit {
                 currently_loading.erase(key);
             }
         }
-        
-        void async_load(const Key& key) {
-            std::thread t(&Cache::blocking_load, this, key);
-            t.detach();
+
+        std::reference_wrapper<Value> blocking_load(const Key& key) {
+            std::shared_lock lock{mapping_mutex};
+            blocking_emplace(key);
+            return mapping.at(key);
         }
 
-        bool has(const Key& key) {
+        bool has(const Key& key) const {
             std::shared_lock lock{mapping_mutex};
             return mapping.find(key) != mapping.end();
         }
 
-        bool is_loading(const Key& key) {
+        bool is_loading(const Key& key) const {
             std::shared_lock lock{currently_loading_mutex};
             return currently_loading.find(key) != currently_loading.end();
         }
 
-        void reserve(const std::size_t& n) {
+        void reserve(const std::size_t& n) const {
             std::scoped_lock lock{mapping_mutex, currently_loading_mutex};
             mapping.reserve(n);
             currently_loading.reserve(n);
@@ -87,9 +84,9 @@ namespace Toolkit {
 
     private:
         std::map<Key, Value> mapping;
-        std::shared_mutex mapping_mutex;
+        mutable std::shared_mutex mapping_mutex;
         std::set<Key> currently_loading;
-        std::shared_mutex currently_loading_mutex;
+        mutable std::shared_mutex currently_loading_mutex;
         std::function<Value(Key)> load_resource;
     };
 }

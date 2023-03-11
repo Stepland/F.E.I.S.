@@ -14,6 +14,10 @@ uses nowide under the hood */
 #include "utf8_file_input_stream.hpp"
 
 namespace feis {
+    /* UTF8-aware wrapper around SFML resource classes that "load" files, i.e.
+    resource classes that read the whole file at once when calling
+    load_from_file() and thus don't need the file stream to remain available
+    after the call to load_from_file() */
     template<class T>
     class LoadFromPathMixin : public T {
     public:
@@ -26,6 +30,10 @@ namespace feis {
         }
     };
 
+    /* UTF8-aware wrapper around SFML resource classes that "open" files, i.e.
+    resource classes that just store the file stream when open_from_path() is
+    called and stream the file contents on demand and hence require the file
+    stream to remain available for the whole lifetime of the resource */
     template<class T>
     class HoldFileStreamMixin : public T {
     public:

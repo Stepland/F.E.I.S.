@@ -13,9 +13,7 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Time.hpp>
 
-#include "utf8_sfml.hpp"
-
-using opt_tex_ref = std::optional<std::reference_wrapper<const sf::Texture>>;
+#include "utf8_sfml_redefinitions.hpp"
 
 /*
 Allows storing and querying the textures that make up the tail of a long note
@@ -28,37 +26,42 @@ to make the code easier to adapt when I add support for markers that aren't
 */
 class LNMarker {
 public:
+    using texture_type = feis::Texture;
+    using texture_reference = std::reference_wrapper<const texture_type>;
+    using optional_texture_reference = std::optional<texture_reference>;
+
     explicit LNMarker(std::filesystem::path folder);
 
-    opt_tex_ref triangle_at(const sf::Time& offset) const;
-    opt_tex_ref highlight_at(const sf::Time& offset) const;
-    opt_tex_ref outline_at(const sf::Time& offset) const;
-    opt_tex_ref background_at(const sf::Time& offset) const;
-    opt_tex_ref tail_at(const sf::Time& offset) const;
+    optional_texture_reference triangle_at(const sf::Time& offset) const;
+    optional_texture_reference highlight_at(const sf::Time& offset) const;
+    optional_texture_reference outline_at(const sf::Time& offset) const;
+    optional_texture_reference background_at(const sf::Time& offset) const;
+    optional_texture_reference tail_at(const sf::Time& offset) const;
 
     bool triangle_cycle_displayed_at(const sf::Time& offset) const;
 
 private:
-    std::array<sf::Texture, 16> triangle_appearance;
-    std::array<sf::Texture, 8> triangle_begin_cycle;
-    std::array<sf::Texture, 16> triangle_cycle;
+    std::array<texture_type, 16> triangle_appearance;
+    std::array<texture_type, 8> triangle_begin_cycle;
+    std::array<texture_type, 16> triangle_cycle;
 
     // I suppose you just layer the next 3 ?
-    std::array<sf::Texture, 16> square_highlight;
-    std::array<sf::Texture, 16> square_outline;
-    std::array<sf::Texture, 16> square_background;
+    std::array<texture_type, 16> square_highlight;
+    std::array<texture_type, 16> square_outline;
+    std::array<texture_type, 16> square_background;
 
-    std::array<sf::Texture, 16> tail_cycle;
+    std::array<texture_type, 16> tail_cycle;
 };
 
 int frame_from_offset(const sf::Time& offset);
 
-template<std::size_t number, unsigned int first = 0>
-std::array<sf::Texture, number> load_tex_with_prefix(
+template<std::size_t number>
+std::array<texture_type, number> load_tex_with_prefix(
     const std::filesystem::path& folder,
-    const std::string& prefix
+    const std::string& prefix,
+    const unsigned int first = 0
 ) {
-    std::array<sf::Texture, number> res;
+    std::array<LNMarker::texture_type, number> res;
     for (unsigned int frame = first; frame <= first + number - 1; frame++) {
         auto filename = fmt::format(
             "{prefix}{frame:03}.png",
@@ -66,7 +69,7 @@ std::array<sf::Texture, number> load_tex_with_prefix(
             fmt::arg("frame", frame)
         );
         std::filesystem::path texFile = folder / filename;
-        feis::LoadFromPathMixin<sf::Texture> tex;
+        feis::Texture tex;
         if (not tex.load_from_path(texFile)) {
             throw std::runtime_error(fmt::format(
                 "Unable to load texture folder {}, failed on texture {}",

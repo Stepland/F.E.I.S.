@@ -59,7 +59,7 @@ Marker::Marker(const std::filesystem::path& folder_):
     }
 };
 
-opt_ref_tex Marker::at(Judgement state, sf::Time offset) {
+Marker::optional_texture_reference Marker::at(Judgement state, sf::Time offset) {
     const auto frame = static_cast<int>(std::floor(offset.asSeconds() * fps));
     if (frame < 0) {
         const auto approach_frames = static_cast<int>(approach.size());
@@ -79,7 +79,7 @@ opt_ref_tex Marker::at(Judgement state, sf::Time offset) {
     }
 }
 
-ref_tex Marker::preview(Judgement state) {
+Marker::texture_reference Marker::preview(Judgement state) {
     return texture_vector_of(state).at(2);
 }
 

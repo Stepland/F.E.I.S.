@@ -10,7 +10,7 @@
 #include <optional>
 #include <sstream>
 #include <unordered_map>
-#include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 
 enum class Judgement {
     Perfect,
@@ -36,21 +36,20 @@ const static std::unordered_map<std::string, Judgement> name_to_judgement = {
     {"MISS", Judgement::Miss}
 };
 
-using ref_tex = std::reference_wrapper<sf::Texture>;
-using opt_ref_tex = std::optional<ref_tex>;
-
 /*
  * Holds the textures associated with a given marker folder from the assets
  * folder
  */
 class Marker {
 public:
-    using texture_type = feis::LoadFromPathMixin<sf::Texture>;
+    using texture_type = feis::Texture;
     using texture_vector_type = std::vector<texture_type>;
+    using texture_reference = std::reference_wrapper<sf::Texture>;
+    using optional_texture_reference = std::optional<texture_reference>;
     
     explicit Marker(const std::filesystem::path& folder);
-    opt_ref_tex at(Judgement state, sf::Time offset);
-    ref_tex preview(Judgement state);
+    optional_texture_reference at(Judgement state, sf::Time offset);
+    texture_reference preview(Judgement state);
 
     std::filesystem::path get_folder() {return folder;};
 private:

@@ -8,10 +8,10 @@
 
 #include <SFML/Audio/InputSoundFile.hpp>
 
-#include "../utf8_sfml.hpp"
 #include "cache.hpp"
+#include "utf8_sfml.hpp"
 
-namespace linear_view::mode::waveform {
+namespace waveform {
     struct DataPoint {
         using value_type = std::int16_t;
         value_type min = 0;
@@ -20,12 +20,12 @@ namespace linear_view::mode::waveform {
 
     using DataFrame = std::vector<DataPoint>;
     using Channels = std::vector<DataFrame>;
+    using Waveform = std::map<unsigned int, Channels>;
 
     Channels load_initial_summary(
         feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
         const unsigned int window_size
     );
     Channels downsample_to_half(const Channels& summary);
-
-    Toolkit::Cache<std::filesystem::path, Channels> waveform_cache;
+    std::optional<Waveform> compute_waveform(const std::filesystem::path& audio);
 }

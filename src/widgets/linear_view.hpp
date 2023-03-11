@@ -45,26 +45,8 @@ const sf::Color reference_note_grey = {134, 110, 116};
 namespace linear_view {
     namespace mode {
         struct Beats {};
-        class Waveform {
-        public:
-            explicit Waveform(const std::filesystem::path& audio);
-            void draw_waveform(
-                ImDrawList* draw_list,
-                const sf::Time current_time,
-                int zoom
-            );
-        private:
-            feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
-            std::atomic<bool> data_is_ready = false;
-            std::vector<std::pair<unsigned int, Channels>> channels_per_chunk_size;
-            std::jthread worker;
-            void prepare_data();
-        };
-
-        namespace waveform {
-        }
+        struct Waveform {};
     }
-
     using Mode = std::variant<mode::Beats, mode::Waveform>;
 }
 

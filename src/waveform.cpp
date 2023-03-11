@@ -1,7 +1,9 @@
-#include "linear_view_waveform_mode.hpp"
+#include "waveform.hpp"
+#include <SFML/Audio/InputSoundFile.hpp>
+#include "utf8_sfml.hpp"
 
 
-namespace linear_view::mode::waveform {
+namespace waveform {
     Channels load_initial_summary(
         feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
         const unsigned int window_size
@@ -60,14 +62,20 @@ namespace linear_view::mode::waveform {
         return downsampled_summary;
     };
 
-    std::optional<std::reference_wrapper<Channels>>
-    WaveformCache::load_waveforms(const std::filesystem::path& audio) {
-        auto it =cache.find(audio);
-        if (it != cache.end()) {
-            return {it->second};
-        } else {
-            // fire off the loading thread
-            return {}
+    std::optional<Waveform> compute_waveform(const std::filesystem::path& audio) {
+        feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
+        try {
+            sound_file.open_from_path(audio);
+        } catch (const std::exception&) {
+            return {};
         }
-    };
+        Waveform waveform;
+        unsigned int size = 8;
+        waveform[size] = load_initial_summary(sound_file, size);
+        while (waveform.size() < 10) {
+            waveform[size * 2] = downsample_to_half(waveform.rbegin()->second);
+            size *= 2;
+        }
+        return waveform;
+    }
 }
