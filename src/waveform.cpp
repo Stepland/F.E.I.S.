@@ -78,4 +78,11 @@ namespace waveform {
         }
         return waveform;
     }
+
+    Cache::Cache()
+     : Toolkit::Cache<std::filesystem::path, std::optional<waveform::Waveform>>
+        (compute_waveform)
+    {
+        
+    }
 }

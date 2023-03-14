@@ -28,4 +28,8 @@ namespace waveform {
     );
     Channels downsample_to_half(const Channels& summary);
     std::optional<Waveform> compute_waveform(const std::filesystem::path& audio);
+
+    struct Cache : Toolkit::Cache<std::filesystem::path, std::optional<waveform::Waveform>> {
+        Cache();
+    };
 }

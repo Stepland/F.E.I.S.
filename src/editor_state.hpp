@@ -69,7 +69,7 @@ public:
     std::shared_ptr<ChordClaps> chord_claps;
     std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
-    Toolkit::Cache<std::filesystem::path, std::optional<waveform::Waveform>> waveform_cache = {waveform::compute_waveform};
+    waveform::Cache waveform_cache;
     bool is_playing_preview_music_from_sss = false;
 
     int get_volume() const;

@@ -20,6 +20,7 @@
 #include "../utf8_sfml.hpp"
 #include "quantization_colors.hpp"
 #include "lane_order.hpp"
+#include "waveform.hpp"
 
 struct SelectionRectangle {
     sf::Vector2f start = {-1, -1};
@@ -54,16 +55,19 @@ class LinearView {
 public:
     LinearView(std::filesystem::path assets, config::Config& config);
 
-    void draw(
-        ImDrawList* draw_list,
-        ChartState& chart_state,
-        const better::Timing& timing,
-        const Fraction& current_beat,
-        const Fraction& last_editable_beat,
-        const Fraction& snap,
-        const sf::Vector2f& size,
-        const sf::Vector2f& origin
-    );
+    struct draw_args_type {
+        ImDrawList* draw_list;
+        ChartState& chart_state;
+        const waveform::Cache& waveform_cache;
+        const better::Timing& timing;
+        const Fraction& current_beat;
+        const Fraction& last_editable_beat;
+        const Fraction& snap;
+        const sf::Vector2f& size;
+        const sf::Vector2f& origin;
+    };
+
+    void draw(draw_args_type& args);
 
     void set_zoom(int zoom);
     void zoom_in() { set_zoom(zoom + 1); };
@@ -75,6 +79,8 @@ public:
     void display_settings();
 
 private:
+    void draw_in_beats_mode(draw_args_type& args);
+    void draw_in_waveform_mode(draw_args_type& args);
     linear_view::Mode mode;
     std::string mode_name();
     linear_view::Colors& colors;
@@ -82,6 +88,7 @@ private:
     const sf::Time& collision_zone;
 
     AffineTransform<Fraction> beats_to_pixels_proportional;
+    AffineTransform<Fraction> seconds_to_pixels_proportional;
 
     void reload_transforms();
 
@@ -98,6 +105,32 @@ private:
     std::string lane_order_name() const;
     std::optional<unsigned int> button_to_lane(const better::Position& button);
 };
+
+namespace linear_view {
+    struct ComputedSizes {
+        int x;
+        int y;
+        float timeline_width;
+        float timeline_left;
+        float timeline_right;
+        float cursor_y;
+        float bpm_events_left;
+        float note_width;
+        float collizion_zone_width;
+        float long_note_rect_width;
+        sf::Vector2f note_size;
+        sf::Vector2f selected_note_size;
+        float cursor_width; 
+        float cursor_left;
+        sf::Vector2f cursor_size;
+        sf::Vector2f cursor_pos;
+    };
+
+    ComputedSizes compute_sizes(
+        const sf::Vector2f& window_size,
+        linear_view::Sizes& size_settings
+    );
+}
 
 void draw_rectangle(
     ImDrawList* draw_list,

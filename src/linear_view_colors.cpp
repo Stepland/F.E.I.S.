@@ -19,6 +19,7 @@ namespace linear_view {
         load_color(colors_node["measure_line"], measure_line);
         load_color(colors_node["measure_number"], measure_number);
         load_color(colors_node["beat_line"], beat_line);
+        load_color(colors_node["waveform"], waveform);
         load_color(colors_node["bpm_button"]["text"], bpm_button.text);
         load_color(colors_node["bpm_button"]["button"], bpm_button.button);
         load_color(colors_node["bpm_button"]["hover"], bpm_button.hover);
@@ -46,6 +47,7 @@ namespace linear_view {
             {"measure_line", dump_color(measure_line)},
             {"measure_number", dump_color(measure_number)},
             {"beat_line", dump_color(beat_line)},
+            {"waveform", dump_color(waveform)},
             {"bpm_button", toml::table{
                 {"text", dump_color(bpm_button.text)},
                 {"button", dump_color(bpm_button.button)},

@@ -34,6 +34,7 @@ namespace linear_view {
         sf::Color measure_line = sf::Color::White;
         sf::Color measure_number = sf::Color::White;
         sf::Color beat_line = {255, 255, 255, 127};
+        sf::Color waveform = sf::Color::White;
         ButtonColors bpm_button = {
             .text = {66, 150, 250},
             .button = sf::Color::Transparent,

@@ -56,7 +56,7 @@ private:
 int frame_from_offset(const sf::Time& offset);
 
 template<std::size_t number>
-std::array<texture_type, number> load_tex_with_prefix(
+std::array<LNMarker::texture_type, number> load_tex_with_prefix(
     const std::filesystem::path& folder,
     const std::string& prefix,
     const unsigned int first = 0
