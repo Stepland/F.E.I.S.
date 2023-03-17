@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <functional>
 #include <map>
@@ -20,7 +21,12 @@ namespace waveform {
 
     using DataFrame = std::vector<DataPoint>;
     using Channels = std::vector<DataFrame>;
-    using Waveform = std::map<unsigned int, Channels>;
+    struct Waveform {
+        std::map<unsigned int, Channels> channels_per_chunk_size;
+        std::vector<unsigned int> chunk_sizes; // for fast nth chunk size access
+        std::size_t sample_rate;
+        std::size_t channel_count;
+    };
 
     Channels load_initial_summary(
         feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,

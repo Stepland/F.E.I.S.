@@ -64,17 +64,22 @@ namespace waveform {
 
     std::optional<Waveform> compute_waveform(const std::filesystem::path& audio) {
         feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
-        try {
-            sound_file.open_from_path(audio);
-        } catch (const std::exception&) {
+        if (not sound_file.open_from_path(audio)) {
             return {};
         }
-        Waveform waveform;
+        Waveform waveform{
+            {},
+            {},
+            sound_file.getSampleRate(),
+            sound_file.getChannelCount()
+        };
         unsigned int size = 8;
-        waveform[size] = load_initial_summary(sound_file, size);
-        while (waveform.size() < 10) {
-            waveform[size * 2] = downsample_to_half(waveform.rbegin()->second);
+        waveform.channels_per_chunk_size[size] = load_initial_summary(sound_file, size);
+        waveform.chunk_sizes.push_back(size);
+        while (waveform.channels_per_chunk_size.size() < 10) {
             size *= 2;
+            waveform.channels_per_chunk_size[size] = downsample_to_half(waveform.channels_per_chunk_size.rbegin()->second);
+            waveform.chunk_sizes.push_back(size);
         }
         return waveform;
     }

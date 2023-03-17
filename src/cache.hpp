@@ -14,20 +14,24 @@ namespace Toolkit {
     template <class Key, class Value>
     class Cache {
     public:
+        using key_type = Key;
+        using value_type = Value;
+        using reference_type = std::reference_wrapper<Value>;
+        using const_reference_type = std::reference_wrapper<const Value>;
         Cache(std::function<Value(Key)> _load_resource): load_resource(_load_resource) {};
 
         // Does not trigger loading
-        std::optional<std::reference_wrapper<Value>> get(const Key& key) const {
+        std::optional<const_reference_type> get(const Key& key) const {
             std::shared_lock lock{mapping_mutex};
             if (has(key)) {
-                return mapping.at(key);
+                return std::cref(mapping.at(key));
             } else {
                 return {};
             }
         }
 
         // Returns empty if not already loaded
-        std::optional<std::reference_wrapper<Value>> async_load(const Key& key) {
+        std::optional<reference_type> async_load(const Key& key) {
             if (not has(key)) {
                 if (not is_loading(key)) {
                     async_emplace(key);
@@ -60,7 +64,7 @@ namespace Toolkit {
             }
         }
 
-        std::reference_wrapper<Value> blocking_load(const Key& key) {
+        reference_type blocking_load(const Key& key) {
             std::shared_lock lock{mapping_mutex};
             blocking_emplace(key);
             return mapping.at(key);

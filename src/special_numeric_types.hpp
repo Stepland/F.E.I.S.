@@ -29,6 +29,7 @@ public:
     explicit operator std::int64_t() const;
     explicit operator std::uint64_t() const;
     explicit operator double() const;
+    explicit operator float() const;
 
     const mpz_class& numerator() const;
     const mpz_class& denominator() const;

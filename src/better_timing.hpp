@@ -100,6 +100,15 @@ namespace better {
             const auto last_element = events_by_beats.upper_bound(bpm_event_type{last, 0, 1});
             std::for_each(first_element, last_element, [&](const bpm_event_type& ptr){cb(ptr);});
         }
+    
+        template<typename Callback>
+        void for_each_event_between(const sf::Time& start, const sf::Time& end, const Callback& cb) const {
+            for_each_event_between(
+                beats_at(start),
+                beats_at(end),
+                cb
+            );
+        }
 
         bool operator==(const Timing&) const = default;
 

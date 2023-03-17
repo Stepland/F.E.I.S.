@@ -7,6 +7,7 @@
 
 #include "quantization_colors.hpp"
 #include "linear_view_colors.hpp"
+#include "linear_view_mode.hpp"
 #include "linear_view_sizes.hpp"
 #include "marker.hpp"
 #include "widgets/lane_order.hpp"
@@ -22,6 +23,7 @@ namespace config {
     };
 
     struct LinearView {
+        linear_view::Mode mode;
         linear_view::Colors colors;
         linear_view::Sizes sizes;
         linear_view::LaneOrder lane_order;

@@ -30,6 +30,7 @@
 #include "../special_numeric_types.hpp"
 #include "../toolbox.hpp"
 #include "../variant_visitor.hpp"
+#include "linear_view_colors.hpp"
 #include "widgets/lane_order.hpp"
 
 
@@ -38,79 +39,6 @@ const std::string font_file = "fonts/NotoSans-Medium.ttf";
 void SelectionRectangle::reset() {
     start = {-1, -1};
     end = {-1, -1};
-}
-
-namespace linear_view::mode {
-
-    void Waveform::draw_waveform(
-        ImDrawList* draw_list,
-        const sf::Time current_time,
-        int zoom
-    ) {
-        if (ImGui::Begin("Waveform view")) {
-            if (not data_is_ready) {
-                feis::CenteredText("Loading ...");
-                return ImGui::End();
-            }
-            if (channels_per_chunk_size.empty()) {
-                feis::CenteredText("No data ???");
-                return ImGui::End();
-            }
-
-            zoom = std::clamp(zoom, 0, static_cast<int>(channels_per_chunk_size.size()) - 1);
-            const auto& channels_it = channels_per_chunk_size.at(channels_per_chunk_size.size() - zoom - 1);
-            const auto& [chunk_size, channels] = channels_it;
-            const auto window = ImGui::GetCurrentWindow();
-            const auto work_rect = window->WorkRect;
-            const float waveform_w_margin = 10.f;
-            const float waveform_bounding_width = work_rect.GetWidth() / channels.size();
-            const float waveform_width = waveform_bounding_width - waveform_w_margin;
-            const AffineTransform<float> value_to_pixel_offset_from_waveform_center{
-                std::numeric_limits<DataPoint::value_type>::min(),
-                std::numeric_limits<DataPoint::value_type>::max(),
-                -waveform_width / 2,
-                waveform_width / 2
-            };
-            const float cursor_y = 50.f;
-            for (std::size_t channel_index = 0; channel_index < channels.size(); channel_index++) {
-                const auto& data_points = channels[channel_index];
-                const std::int64_t sample_at_cursor = time_to_samples(current_time, sound_file.getSampleRate(), sound_file.getChannelCount());
-                const auto chunk_at_cursor = sample_at_cursor / chunk_size / sound_file.getChannelCount();
-                const auto first_chunk = chunk_at_cursor - static_cast<std::int64_t>(cursor_y);
-                const auto end_chunk = first_chunk + static_cast<std::int64_t>(work_rect.GetHeight());
-                const auto waveform_x_center = channel_index * waveform_bounding_width + waveform_bounding_width / 2;
-                for (std::int64_t data_point_index = first_chunk; data_point_index < end_chunk; data_point_index++) {
-                    if (data_point_index < 0 or static_cast<std::size_t>(data_point_index) >= data_points.size()) {
-                        continue;
-                    }
-                    const auto& data_point = data_points[data_point_index];
-                    const auto y = work_rect.Min.y + data_point_index - first_chunk;
-                    const auto x_offset_min = value_to_pixel_offset_from_waveform_center.transform(data_point.min);
-                    const auto x_offset_max = value_to_pixel_offset_from_waveform_center.transform(data_point.max);
-                    const auto x_min = work_rect.Min.x + waveform_x_center + x_offset_min;
-                    const auto x_max = work_rect.Min.x + waveform_x_center + x_offset_max;
-                    draw_list->AddLine({x_min, y}, {x_max, y}, ImColor(sf::Color::White));
-                }
-            }
-        }
-        ImGui::End();
-    }
-
-    void Waveform::prepare_data() {
-        unsigned int size = 8;
-        channels_per_chunk_size.emplace_back(
-            size,
-            waveform::load_initial_summary(sound_file, size)
-        );
-        while (channels_per_chunk_size.size() < 10) {
-            channels_per_chunk_size.emplace_back(
-                size * 2,
-                waveform::downsample_to_half(channels_per_chunk_size.rbegin()->second)
-            );
-            size *= 2;
-        }
-        data_is_ready = true;
-    }
 }
 
 LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
@@ -126,7 +54,7 @@ LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
     set_zoom(config_.linear_view.zoom);
 }
 
-void LinearView::draw(LinearView::draw_args_type& args) {
+void LinearView::draw(LinearView::DrawArgs& args) {
     const auto draw_function = VariantVisitor {
         [&](linear_view::mode::Beats) {this->draw_in_beats_mode(args);},
         [&](linear_view::mode::Waveform) {this->draw_in_waveform_mode(args);},
@@ -167,7 +95,7 @@ linear_view::ComputedSizes linear_view::compute_sizes(
     return result;
 }
 
-void LinearView::draw_in_beats_mode(LinearView::draw_args_type& args) {
+void LinearView::draw_in_beats_mode(LinearView::DrawArgs& args) {
     auto [
         draw_list,
         chart_state,
@@ -260,55 +188,15 @@ void LinearView::draw_in_beats_mode(LinearView::draw_args_type& args) {
             const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
             const auto last_colliding_beat = args.timing.beats_at(note_seconds + collision_zone * 0.5f);
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            const sf::Vector2f collision_zone_pos = {
-                note_x,
-                static_cast<float>(static_cast<double>(collision_zone_y))
-            };
-            const sf::Vector2f collizion_zone_size = {
-                computed_sizes.collizion_zone_width,
-                static_cast<float>(static_cast<double>(collision_zone_height))
-            };
-            const auto collision_zone_color = [&](){
-                if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
-                    return colors.conflicting_collision_zone;
-                } else {    
-                    return colors.normal_collision_zone;
-                }
-            }();
-            const auto tap_note_color = [&](){
-                if (use_quantization_colors) {
-                    return quantization_colors.color_at_beat(tap_note.get_time());
-                } else if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
-                    return colors.conflicting_tap_note;
-                } else {
-                    return colors.normal_tap_note;
-                }
-            }();
-            draw_rectangle(
-                args.draw_list,
-                args.origin + collision_zone_pos,
-                collizion_zone_size,
-                {0.5f, 0.f},
-                collision_zone_color
+            draw_tap_note(
+                args,
+                computed_sizes,
+                tap_note,
+                {note_x, note_y},
+                collision_zone,
+                static_cast<float>(collision_zone_y),
+                static_cast<float>(collision_zone_height)
             );
-            const sf::Vector2f note_pos = {note_x, note_y};
-            draw_rectangle(
-                args.draw_list,
-                args.origin + note_pos,
-                computed_sizes.note_size,
-                {0.5f, 0.5f},
-                tap_note_color
-            );
-            if (args.chart_state.selected_stuff.notes.contains(tap_note)) {
-                draw_rectangle(
-                    args.draw_list,
-                    args.origin + note_pos,
-                    computed_sizes.selected_note_size,
-                    {0.5f, 0.5f},
-                    colors.selected_note_fill,
-                    colors.selected_note_outline
-                );
-            }
         },
         [&](const better::LongNote& long_note){
             const auto opt_lane = button_to_lane(long_note.get_position());
@@ -324,92 +212,411 @@ void LinearView::draw_in_beats_mode(LinearView::draw_args_type& args) {
             const auto note_end_seconds = args.timing.time_at(long_note.get_end());
             const auto last_colliding_beat = args.timing.beats_at(note_end_seconds + collision_zone * 0.5f);
             const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            const sf::Vector2f collision_zone_pos = {
-                note_x,
-                static_cast<float>(static_cast<double>(collision_zone_y))
-            };
-            const sf::Vector2f collision_zone_size = {
-                computed_sizes.collizion_zone_width,
-                static_cast<float>(static_cast<double>(collision_zone_height))
-            };
-            auto collision_zone_color = colors.normal_collision_zone;
-            auto tap_note_color = [&](){
-                if (use_quantization_colors) {
-                    return quantization_colors.color_at_beat(long_note.get_time());
-                } else {
-                    return colors.normal_tap_note;
-                }
-            }();
-            auto long_note_color = colors.normal_long_note;
-            if (args.chart_state.chart.notes->is_colliding(long_note, args.timing, collision_zone)) {
-                collision_zone_color = colors.conflicting_collision_zone;
-                if (not use_quantization_colors) {
-                    tap_note_color = colors.conflicting_tap_note;
-                }
-                long_note_color = colors.conflicting_long_note;
-            }
-            draw_rectangle(
-                args.draw_list,
-                args.origin + collision_zone_pos,
-                collision_zone_size,
-                {0.5f, 0.f},
-                collision_zone_color
-            );
             const auto long_note_rect_height = beats_to_pixels_proportional.transform(long_note.get_duration());
-            const sf::Vector2f long_note_size = {
-                computed_sizes.long_note_rect_width,
-                static_cast<float>(static_cast<double>(long_note_rect_height))
-            };
-            const sf::Vector2f note_pos = {note_x, note_y};
-            draw_rectangle(
-                args.draw_list,
-                args.origin + note_pos,
-                long_note_size,
-                {0.5f, 0.f},
-                long_note_color
+            draw_long_note(
+                args,
+                computed_sizes,
+                long_note,
+                {note_x, note_y},
+                static_cast<float>(long_note_rect_height),
+                collision_zone,
+                static_cast<float>(collision_zone_y),
+                static_cast<float>(collision_zone_height)
             );
-            draw_rectangle(
-                args.draw_list,
-                args.origin + note_pos,
-                computed_sizes.note_size,
-                {0.5f, 0.5f},
-                tap_note_color
-            );
-            if (args.chart_state.selected_stuff.notes.contains(long_note)) {
-                draw_rectangle(
-                    args.draw_list,
-                    args.origin + note_pos,
-                    computed_sizes.selected_note_size,
-                    {0.5f, 0.5f},
-                    colors.selected_note_fill,
-                    colors.selected_note_outline
-                );
-            }
         },
     };
 
     const auto first_visible_second = timing.time_at(first_beat_in_frame);
-    const auto first_visible_collision_zone = timing.beats_at(first_visible_second - sf::milliseconds(500));
     const auto last_visible_second = timing.time_at(last_beat_in_frame);
-    const auto last_visible_collision_zone = timing.beats_at(last_visible_second + sf::milliseconds(500));
-    chart_state.chart.notes->in(
-        first_visible_collision_zone,
-        last_visible_collision_zone,
-        [&](const better::Notes::iterator& it){
-            it->second.visit(draw_note);
+    draw_notes(
+        first_visible_second,
+        last_visible_second,
+        chart_state,
+        timing,
+        draw_note
+    );
+    draw_long_note_dummy(chart_state, snap, draw_note);
+    draw_cursor(draw_list, origin, computed_sizes);
+    draw_time_selection(
+        draw_list,
+        origin,
+        chart_state,
+        computed_sizes,
+        [&](const Fraction& beats) -> float {
+            return static_cast<float>(beats_to_pixels_absolute.transform(beats));
+        }
+    );
+    handle_mouse_selection(
+        draw_list,
+        origin,
+        chart_state,
+        timing,
+        computed_sizes,
+        [&](const float pixels){
+            return beats_to_pixels_absolute.backwards_transform(pixels);
+        }
+    );
+}
+
+
+void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
+    auto [
+        draw_list,
+        chart_state,
+        opt_ref_to_an_opt_waveform,
+        timing,
+        current_beat,
+        last_editable_beat,
+        snap,
+        window_size,
+        origin
+    ] = args;
+
+    const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
+    if (
+        not opt_ref_to_an_opt_waveform
+        or not opt_ref_to_an_opt_waveform.value().get()
+    ) {
+        feis::CenteredText("Loading ...");
+        return;
+    }
+    const auto waveform = opt_ref_to_an_opt_waveform.value().get().value();
+    if (waveform.channels_per_chunk_size.empty()) {
+        feis::CenteredText("No data ???");
+        return;
+    }
+
+    zoom = std::clamp(zoom, 0, static_cast<int>(waveform.channels_per_chunk_size.size()) - 1);
+    const auto chunk_size = waveform.chunk_sizes.at(waveform.chunk_sizes.size() - zoom - 1);
+    const auto& channels = waveform.channels_per_chunk_size.at(chunk_size);
+    const auto window = ImGui::GetCurrentWindow();
+    const auto work_rect = window->WorkRect;
+    const float waveform_w_margin = 10.f;
+    const float waveform_bounding_width = work_rect.GetWidth() / channels.size();
+    const float waveform_width = waveform_bounding_width - waveform_w_margin;
+    const AffineTransform<float> value_to_pixel_offset_from_waveform_center{
+        std::numeric_limits<waveform::DataPoint::value_type>::min(),
+        std::numeric_limits<waveform::DataPoint::value_type>::max(),
+        -waveform_width / 2,
+        waveform_width / 2
+    };
+    const auto current_time = timing.time_at(current_beat);
+    const std::int64_t sample_at_cursor = time_to_samples(current_time, waveform.sample_rate, waveform.channel_count);
+    const std::int64_t chunk_at_cursor = sample_at_cursor / chunk_size / waveform.channel_count;
+    const auto first_chunk = chunk_at_cursor - static_cast<std::int64_t>(sizes.cursor_height);
+    const auto end_chunk = first_chunk + static_cast<std::int64_t>(work_rect.GetHeight());
+    const AffineTransform<float> seconds_to_pixels_proportional {
+        0,
+        1,
+        0,
+        static_cast<float>(waveform.sample_rate) / chunk_size
+    };
+    for (std::size_t channel_index = 0; channel_index < channels.size(); channel_index++) {
+        const auto& data_points = channels[channel_index];
+        const auto waveform_x_center = channel_index * waveform_bounding_width + waveform_bounding_width / 2;
+        for (std::int64_t data_point_index = first_chunk; data_point_index < end_chunk; data_point_index++) {
+            if (data_point_index < 0 or static_cast<std::size_t>(data_point_index) >= data_points.size()) {
+                continue;
+            }
+            const auto& data_point = data_points[data_point_index];
+            const auto y = work_rect.Min.y + data_point_index - first_chunk;
+            const auto x_offset_min = value_to_pixel_offset_from_waveform_center.transform(data_point.min);
+            const auto x_offset_max = value_to_pixel_offset_from_waveform_center.transform(data_point.max);
+            const auto x_min = work_rect.Min.x + waveform_x_center + x_offset_min;
+            const auto x_max = work_rect.Min.x + waveform_x_center + x_offset_max;
+            draw_list->AddLine({x_min, y}, {x_max, y}, ImColor(colors.waveform));
+        }
+    }
+
+    const auto seconds_before_cursor = seconds_to_pixels_proportional.backwards_transform(computed_sizes.cursor_y);
+    const auto seconds_after_cursor = seconds_to_pixels_proportional.backwards_transform(static_cast<float>(computed_sizes.y) - computed_sizes.cursor_y);
+    const sf::Time first_visible_second = current_time - sf::seconds(seconds_before_cursor);
+    const sf::Time last_visible_second = current_time + sf::seconds(seconds_after_cursor);
+    const AffineTransform<float> seconds_to_pixels_absolute{
+        first_visible_second.asSeconds(),
+        last_visible_second.asSeconds(),
+        0,
+        static_cast<float>(computed_sizes.y)
+    };
+    const auto beats_to_absolute_pixels = [&](const Fraction& beat){
+        return seconds_to_pixels_absolute.transform(args.timing.seconds_at(beat));
+    };
+
+    const Fraction first_visible_beat = std::max(Fraction{0}, timing.beats_at(first_visible_second));
+    auto next_beat = [](const auto& first_beat) -> Fraction {
+        if (first_beat % 1 == 0) {
+            return first_beat;
+        } else {
+            return floor_fraction(first_beat) + 1;
+        }
+    }(first_visible_beat);
+
+    // Draw the beat lines and numbers
+    {
+        Fraction next_beat_line_y = beats_to_absolute_pixels(next_beat);
+        while (next_beat_line_y < computed_sizes.y and next_beat < last_editable_beat) {
+            const sf::Vector2f beat_line_start = {computed_sizes.timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))};
+            const sf::Vector2f beat_line_end = beat_line_start + sf::Vector2f{computed_sizes.timeline_width, 0};
+            if (next_beat % 4 == 0) {
+                draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(colors.measure_line));
+                const Fraction measure = next_beat / 4;
+                const auto measure_string = fmt::format("{}", static_cast<std::int64_t>(measure));
+                const sf::Vector2f text_size = ImGui::CalcTextSize(measure_string.c_str(), measure_string.c_str()+measure_string.size());
+                const sf::Vector2f measure_text_pos = {computed_sizes.timeline_left - 10, static_cast<float>(static_cast<double>(next_beat_line_y))};
+                draw_list->AddText(
+                    origin + measure_text_pos - sf::Vector2f{text_size.x, text_size.y * 0.5f},
+                    ImColor(colors.measure_number),
+                    measure_string.c_str(),
+                    measure_string.c_str() + measure_string.size()
+                );
+            } else {
+                draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(colors.beat_line));
+            }
+            next_beat += 1;
+            next_beat_line_y = beats_to_absolute_pixels(next_beat);
+        }
+    }
+
+    // Draw the bpm changes
+    timing.for_each_event_between(
+        first_visible_second,
+        last_visible_second,
+        [&](const auto& event){
+            const auto bpm_change_y = beats_to_absolute_pixels(event.get_beats());
+            if (bpm_change_y >= 0 and bpm_change_y <= computed_sizes.y) {
+                const sf::Vector2f bpm_text_raw_pos = {computed_sizes.bpm_events_left, static_cast<float>(static_cast<double>(bpm_change_y))};
+                const auto bpm_at_beat = better::BPMAtBeat{event.get_bpm(), event.get_beats()};
+                const auto selected = args.chart_state.selected_stuff.bpm_events.contains(bpm_at_beat);
+                if (BPMButton(event, selected, bpm_text_raw_pos, colors.bpm_button)) {
+                    if (selected) {
+                        args.chart_state.selected_stuff.bpm_events.erase(bpm_at_beat);
+                    } else {
+                        args.chart_state.selected_stuff.bpm_events.insert(bpm_at_beat);
+                    }
+                }
+            }
         }
     );
 
-    if (chart_state.long_note_being_created.has_value()) {
-        draw_note(
-            make_long_note_dummy_for_linear_view(
-                *chart_state.long_note_being_created,
-                snap
-            )
+    // Draw the notes
+    auto draw_note = VariantVisitor {
+        [&](const better::TapNote& tap_note){
+            const auto opt_lane = button_to_lane(tap_note.get_position());
+            if (not opt_lane) {
+                return;
+            }
+            const auto lane = *opt_lane;
+            const float note_x = computed_sizes.timeline_left + computed_sizes.note_width * (lane + 0.5f);
+            const float note_y = beats_to_absolute_pixels(tap_note.get_time());
+            const auto note_seconds = args.timing.time_at(tap_note.get_time());
+            const auto collision_start_time = note_seconds - collision_zone * 0.5f;
+            const auto collision_zone_y = seconds_to_pixels_absolute.transform(collision_start_time.asSeconds());
+            const auto collision_end_time = note_seconds + collision_zone * 0.5f;
+            const auto collision_zone_height = seconds_to_pixels_proportional.transform(
+                (collision_end_time - collision_start_time).asSeconds()
+            );
+            draw_tap_note(
+                args,
+                computed_sizes,
+                tap_note,
+                {note_x, note_y},
+                collision_zone,
+                collision_zone_y,
+                collision_zone_height
+            );
+        },
+        [&](const better::LongNote& long_note){
+            const auto opt_lane = button_to_lane(long_note.get_position());
+            if (not opt_lane) {
+                return;
+            }
+            const auto lane = *opt_lane;
+            const float note_x = computed_sizes.timeline_left + computed_sizes.note_width * (lane + 0.5f);
+            const float note_y = beats_to_absolute_pixels(long_note.get_time());
+            const auto note_start_seconds = args.timing.time_at(long_note.get_time());
+            const auto collision_start_time = note_start_seconds - collision_zone * 0.5f;
+            const auto collision_zone_y = seconds_to_pixels_absolute.transform(collision_start_time.asSeconds());
+            const auto note_end_seconds = args.timing.time_at(long_note.get_end());
+            const auto collision_end_time = note_end_seconds + collision_zone * 0.5f;
+            const auto collision_zone_height = seconds_to_pixels_proportional.transform(
+                (collision_end_time - collision_start_time).asSeconds()
+            );
+            const auto long_note_rect_height = seconds_to_pixels_proportional.transform(
+                (note_end_seconds - note_start_seconds).asSeconds()
+            );
+            draw_long_note(
+                args,
+                computed_sizes,
+                long_note,
+                {note_x, note_y},
+                long_note_rect_height,
+                collision_zone,
+                collision_zone_y,
+                collision_zone_height
+            );
+        },
+    };
+
+    draw_notes(
+        first_visible_second,
+        last_visible_second,
+        chart_state,
+        timing,
+        draw_note
+    );
+    draw_long_note_dummy(chart_state, snap, draw_note);
+    draw_cursor(draw_list, origin, computed_sizes);
+    draw_time_selection(draw_list, origin, chart_state, computed_sizes, beats_to_absolute_pixels);
+    handle_mouse_selection(
+        draw_list,
+        origin,
+        chart_state,
+        timing,
+        computed_sizes,
+        [&](const float pixels){
+            return args.timing.beats_at(
+                seconds_to_pixels_absolute.backwards_transform(pixels)
+            );
+        }
+    );
+}
+
+
+void LinearView::draw_tap_note(
+    LinearView::DrawArgs& args,
+    const linear_view::ComputedSizes& computed_sizes,
+    const better::TapNote& tap_note,
+    const sf::Vector2f note_pos,
+    const sf::Time collision_zone,
+    const float collision_zone_y,
+    const float collision_zone_height
+) {
+    const sf::Vector2f collision_zone_pos = {
+        note_pos.x,
+        collision_zone_y
+    };
+    const sf::Vector2f collizion_zone_size = {
+        computed_sizes.collizion_zone_width,
+        collision_zone_height
+    };
+    const auto collision_zone_color = [&](){
+        if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
+            return colors.conflicting_collision_zone;
+        } else {    
+            return colors.normal_collision_zone;
+        }
+    }();
+    const auto tap_note_color = [&](){
+        if (use_quantization_colors) {
+            return quantization_colors.color_at_beat(tap_note.get_time());
+        } else if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
+            return colors.conflicting_tap_note;
+        } else {
+            return colors.normal_tap_note;
+        }
+    }();
+    draw_rectangle(
+        args.draw_list,
+        args.origin + collision_zone_pos,
+        collizion_zone_size,
+        {0.5f, 0.f},
+        collision_zone_color
+    );
+    draw_rectangle(
+        args.draw_list,
+        args.origin + note_pos,
+        computed_sizes.note_size,
+        {0.5f, 0.5f},
+        tap_note_color
+    );
+    if (args.chart_state.selected_stuff.notes.contains(tap_note)) {
+        draw_rectangle(
+            args.draw_list,
+            args.origin + note_pos,
+            computed_sizes.selected_note_size,
+            {0.5f, 0.5f},
+            colors.selected_note_fill,
+            colors.selected_note_outline
         );
     }
+}
 
-    // Draw the cursor
+void LinearView::draw_long_note(
+    LinearView::DrawArgs& args,
+    const linear_view::ComputedSizes& computed_sizes,
+    const better::LongNote& long_note,
+    const sf::Vector2f note_pos,
+    const float long_note_rect_height,
+    const sf::Time collision_zone,
+    const float collision_zone_y,
+    const float collision_zone_height
+) {
+    const sf::Vector2f collision_zone_pos = {
+        note_pos.x,
+        static_cast<float>(static_cast<double>(collision_zone_y))
+    };
+    const sf::Vector2f collision_zone_size = {
+        computed_sizes.collizion_zone_width,
+        static_cast<float>(static_cast<double>(collision_zone_height))
+    };
+    auto collision_zone_color = colors.normal_collision_zone;
+    auto tap_note_color = [&](){
+        if (use_quantization_colors) {
+            return quantization_colors.color_at_beat(long_note.get_time());
+        } else {
+            return colors.normal_tap_note;
+        }
+    }();
+    auto long_note_color = colors.normal_long_note;
+    if (args.chart_state.chart.notes->is_colliding(long_note, args.timing, collision_zone)) {
+        collision_zone_color = colors.conflicting_collision_zone;
+        if (not use_quantization_colors) {
+            tap_note_color = colors.conflicting_tap_note;
+        }
+        long_note_color = colors.conflicting_long_note;
+    }
+    draw_rectangle(
+        args.draw_list,
+        args.origin + collision_zone_pos,
+        collision_zone_size,
+        {0.5f, 0.f},
+        collision_zone_color
+    );
+    const sf::Vector2f long_note_size = {
+        computed_sizes.long_note_rect_width,
+        long_note_rect_height
+    };
+    draw_rectangle(
+        args.draw_list,
+        args.origin + note_pos,
+        long_note_size,
+        {0.5f, 0.f},
+        long_note_color
+    );
+    draw_rectangle(
+        args.draw_list,
+        args.origin + note_pos,
+        computed_sizes.note_size,
+        {0.5f, 0.5f},
+        tap_note_color
+    );
+    if (args.chart_state.selected_stuff.notes.contains(long_note)) {
+        draw_rectangle(
+            args.draw_list,
+            args.origin + note_pos,
+            computed_sizes.selected_note_size,
+            {0.5f, 0.5f},
+            colors.selected_note_fill,
+            colors.selected_note_outline
+        );
+    }
+}
+
+void LinearView::draw_cursor(
+    ImDrawList* draw_list,
+    const sf::Vector2f& origin,
+    const linear_view::ComputedSizes& computed_sizes
+) {
     draw_rectangle(
         draw_list,
         origin + computed_sizes.cursor_pos,
@@ -417,22 +624,29 @@ void LinearView::draw_in_beats_mode(LinearView::draw_args_type& args) {
         {0, 0.5},
         colors.cursor
     );
+}
 
-    // Draw the time selection
+void LinearView::draw_time_selection(
+    ImDrawList* draw_list,
+    const sf::Vector2f& origin,
+    const ChartState& chart_state,
+    const linear_view::ComputedSizes& computed_sizes,
+    const std::function<float(const Fraction&)> beats_to_absolute_pixels
+) {
     const float selection_width = computed_sizes.timeline_width;
     if (chart_state.time_selection.has_value()) {
         const auto pixel_interval = Interval{
-            beats_to_pixels_absolute.transform(chart_state.time_selection->start),
-            beats_to_pixels_absolute.transform(chart_state.time_selection->end)
+            beats_to_absolute_pixels(chart_state.time_selection->start),
+            beats_to_absolute_pixels(chart_state.time_selection->end)
         };
-        if (pixel_interval.intersects({0, computed_sizes.y})) {
+        if (pixel_interval.intersects({0, static_cast<float>(computed_sizes.y)})) {
             const sf::Vector2f selection_size = {
                 selection_width,
-                static_cast<float>(static_cast<double>(pixel_interval.width()))
+                static_cast<float>(pixel_interval.width())
             };
             const sf::Vector2f selection_pos = {
                 computed_sizes.timeline_left,
-                static_cast<float>(static_cast<double>(pixel_interval.start))
+                static_cast<float>(pixel_interval.start)
             };
             draw_rectangle(
                 draw_list,
@@ -442,345 +656,18 @@ void LinearView::draw_in_beats_mode(LinearView::draw_args_type& args) {
                 colors.tab_selection.fill,
                 colors.tab_selection.border
             );
-        }
-    }
-
-    
-    const auto current_window = ImGui::GetCurrentWindow();
-
-    // Don't start the selection rect if we start :
-    //  - outside the contents of the window
-    //  - over anything
-    if (
-        ImGui::IsMouseClicked(ImGuiMouseButton_Left)
-        and current_window->InnerClipRect.Contains(ImGui::GetMousePos())
-        and not ImGui::IsAnyItemHovered()
-        and ImGui::IsWindowFocused()
-    ) {
-        started_selection_inside_window = true;
-    }
-
-    if (started_selection_inside_window) {
-        if (
-            draw_selection_rect(
-                draw_list,
-                selection_rectangle.start,
-                selection_rectangle.end,
-                colors.selection_rect
-            )
-        ) {
-            chart_state.selected_stuff.clear();
-            // Select everything inside the selection rectangle
-            const sf::Vector2f upper_left = {
-                std::min(selection_rectangle.start.x, selection_rectangle.end.x),
-                std::min(selection_rectangle.start.y, selection_rectangle.end.y),
-            };
-            const sf::Vector2f lower_right = {
-                std::max(selection_rectangle.start.x, selection_rectangle.end.x),
-                std::max(selection_rectangle.start.y, selection_rectangle.end.y),
-            };
-            const ImRect full_selection = {upper_left, lower_right};
-            ImRect bpm_zone = {origin.x + computed_sizes.bpm_events_left, -INFINITY, INFINITY, INFINITY};
-            bpm_zone.ClipWith(current_window->InnerRect);
-            if (full_selection.Overlaps(bpm_zone)) {
-                const auto first_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Min.y - origin.y);
-                const auto last_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Max.y - origin.y);
-                timing.for_each_event_between(
-                    first_selected_beat,
-                    last_selected_beat,
-                    [&](const auto& event){
-                        args.chart_state.selected_stuff.bpm_events.insert(
-                            {event.get_bpm(), event.get_beats()}
-                        );
-                    }
-                );
-            }
-            selection_rectangle.reset();
-            started_selection_inside_window = false;
         }
     }
 }
 
-
-void LinearView::draw_in_waveform_mode(LinearView::draw_args_type& args) {
-    auto [
-        draw_list,
-        chart_state,
-        waveform_cache,
-        timing,
-        current_beat,
-        last_editable_beat,
-        snap,
-        window_size,
-        origin
-    ] = args;
-    const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
-
-    // Here we compute the range of visible beats from the size of the window
-    // in pixels, we know by definition that the current beat is exactly at
-    // cursor_y pixels and we use this fact to compute the rest
-    const auto beats_before_cursor = beats_to_pixels_proportional.backwards_transform(computed_sizes.cursor_y);
-    const auto beats_after_cursor = beats_to_pixels_proportional.backwards_transform(static_cast<float>(computed_sizes.y) - computed_sizes.cursor_y);
-    const Fraction first_beat_in_frame = current_beat - beats_before_cursor;
-    const Fraction last_beat_in_frame = current_beat + beats_after_cursor;
-    AffineTransform<Fraction> beats_to_pixels_absolute{first_beat_in_frame, last_beat_in_frame, 0, computed_sizes.y};
-
-    const Fraction first_visible_beat = std::max(Fraction{0}, first_beat_in_frame);
-    auto next_beat = [](const auto& first_beat) -> Fraction {
-        if (first_beat % 1 == 0) {
-            return first_beat;
-        } else {
-            return floor_fraction(first_beat) + 1;
-        }
-    }(first_visible_beat);
-
-    // Draw the beat lines and numbers
-    for (
-        Fraction next_beat_line_y = beats_to_pixels_absolute.transform(next_beat);
-        next_beat_line_y < computed_sizes.y and next_beat < last_editable_beat;
-        next_beat_line_y = beats_to_pixels_absolute.transform(next_beat += 1)
-    ) {
-        const sf::Vector2f beat_line_start = {computed_sizes.timeline_left, static_cast<float>(static_cast<double>(next_beat_line_y))};
-        const sf::Vector2f beat_line_end = beat_line_start + sf::Vector2f{computed_sizes.timeline_width, 0};
-        if (next_beat % 4 == 0) {
-            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(colors.measure_line));
-            const Fraction measure = next_beat / 4;
-            const auto measure_string = fmt::format("{}", static_cast<std::int64_t>(measure));
-            const sf::Vector2f text_size = ImGui::CalcTextSize(measure_string.c_str(), measure_string.c_str()+measure_string.size());
-            const sf::Vector2f measure_text_pos = {computed_sizes.timeline_left - 10, static_cast<float>(static_cast<double>(next_beat_line_y))};
-            draw_list->AddText(
-                origin + measure_text_pos - sf::Vector2f{text_size.x, text_size.y * 0.5f},
-                ImColor(colors.measure_number),
-                measure_string.c_str(),
-                measure_string.c_str() + measure_string.size()
-            );
-        } else {
-            draw_list->AddLine(beat_line_start + origin, beat_line_end + origin, ImColor(colors.beat_line));
-        }
-    }
-
-    // Draw the bpm changes
-    timing.for_each_event_between(
-        first_beat_in_frame,
-        last_beat_in_frame,
-        [&](const auto& event){
-            const auto bpm_change_y = beats_to_pixels_absolute.transform(event.get_beats());
-            if (bpm_change_y >= 0 and bpm_change_y <= computed_sizes.y) {
-                const sf::Vector2f bpm_text_raw_pos = {computed_sizes.bpm_events_left, static_cast<float>(static_cast<double>(bpm_change_y))};
-                const auto bpm_at_beat = better::BPMAtBeat{event.get_bpm(), event.get_beats()};
-                const auto selected = args.chart_state.selected_stuff.bpm_events.contains(bpm_at_beat);
-                if (BPMButton(event, selected, bpm_text_raw_pos, colors.bpm_button)) {
-                    if (selected) {
-                        args.chart_state.selected_stuff.bpm_events.erase(bpm_at_beat);
-                    } else {
-                        args.chart_state.selected_stuff.bpm_events.insert(bpm_at_beat);
-                    }
-                }
-            }
-        }
-    );
-
-    // Draw the notes
-    auto draw_note = VariantVisitor {
-        [&](const better::TapNote& tap_note){
-            const auto opt_lane = button_to_lane(tap_note.get_position());
-            if (not opt_lane) {
-                return;
-            }
-            const auto lane = *opt_lane;
-            const float note_x = computed_sizes.timeline_left + computed_sizes.note_width * (lane + 0.5f);
-            const float note_y = static_cast<double>(beats_to_pixels_absolute.transform(tap_note.get_time()));
-            const auto note_seconds = args.timing.time_at(tap_note.get_time());
-            const auto first_colliding_beat = args.timing.beats_at(note_seconds - collision_zone * 0.5f);
-            const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
-            const auto last_colliding_beat = args.timing.beats_at(note_seconds + collision_zone * 0.5f);
-            const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            const sf::Vector2f collision_zone_pos = {
-                note_x,
-                static_cast<float>(static_cast<double>(collision_zone_y))
-            };
-            const sf::Vector2f collizion_zone_size = {
-                computed_sizes.collizion_zone_width,
-                static_cast<float>(static_cast<double>(collision_zone_height))
-            };
-            const auto collision_zone_color = [&](){
-                if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
-                    return colors.conflicting_collision_zone;
-                } else {    
-                    return colors.normal_collision_zone;
-                }
-            }();
-            const auto tap_note_color = [&](){
-                if (use_quantization_colors) {
-                    return quantization_colors.color_at_beat(tap_note.get_time());
-                } else if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
-                    return colors.conflicting_tap_note;
-                } else {
-                    return colors.normal_tap_note;
-                }
-            }();
-            draw_rectangle(
-                args.draw_list,
-                args.origin + collision_zone_pos,
-                collizion_zone_size,
-                {0.5f, 0.f},
-                collision_zone_color
-            );
-            const sf::Vector2f note_pos = {note_x, note_y};
-            draw_rectangle(
-                args.draw_list,
-                args.origin + note_pos,
-                computed_sizes.note_size,
-                {0.5f, 0.5f},
-                tap_note_color
-            );
-            if (args.chart_state.selected_stuff.notes.contains(tap_note)) {
-                draw_rectangle(
-                    args.draw_list,
-                    args.origin + note_pos,
-                    computed_sizes.selected_note_size,
-                    {0.5f, 0.5f},
-                    colors.selected_note_fill,
-                    colors.selected_note_outline
-                );
-            }
-        },
-        [&](const better::LongNote& long_note){
-            const auto opt_lane = button_to_lane(long_note.get_position());
-            if (not opt_lane) {
-                return;
-            }
-            const auto lane = *opt_lane;
-            float note_x = computed_sizes.timeline_left + computed_sizes.note_width * (lane + 0.5f);
-            float note_y = static_cast<double>(beats_to_pixels_absolute.transform(long_note.get_time()));
-            const auto note_start_seconds = args.timing.time_at(long_note.get_time());
-            const auto first_colliding_beat = args.timing.beats_at(note_start_seconds - collision_zone * 0.5f);
-            const auto collision_zone_y = beats_to_pixels_absolute.transform(first_colliding_beat);
-            const auto note_end_seconds = args.timing.time_at(long_note.get_end());
-            const auto last_colliding_beat = args.timing.beats_at(note_end_seconds + collision_zone * 0.5f);
-            const auto collision_zone_height = beats_to_pixels_proportional.transform(last_colliding_beat - first_colliding_beat);
-            const sf::Vector2f collision_zone_pos = {
-                note_x,
-                static_cast<float>(static_cast<double>(collision_zone_y))
-            };
-            const sf::Vector2f collision_zone_size = {
-                computed_sizes.collizion_zone_width,
-                static_cast<float>(static_cast<double>(collision_zone_height))
-            };
-            auto collision_zone_color = colors.normal_collision_zone;
-            auto tap_note_color = [&](){
-                if (use_quantization_colors) {
-                    return quantization_colors.color_at_beat(long_note.get_time());
-                } else {
-                    return colors.normal_tap_note;
-                }
-            }();
-            auto long_note_color = colors.normal_long_note;
-            if (args.chart_state.chart.notes->is_colliding(long_note, args.timing, collision_zone)) {
-                collision_zone_color = colors.conflicting_collision_zone;
-                if (not use_quantization_colors) {
-                    tap_note_color = colors.conflicting_tap_note;
-                }
-                long_note_color = colors.conflicting_long_note;
-            }
-            draw_rectangle(
-                args.draw_list,
-                args.origin + collision_zone_pos,
-                collision_zone_size,
-                {0.5f, 0.f},
-                collision_zone_color
-            );
-            const auto long_note_rect_height = beats_to_pixels_proportional.transform(long_note.get_duration());
-            const sf::Vector2f long_note_size = {
-                computed_sizes.long_note_rect_width,
-                static_cast<float>(static_cast<double>(long_note_rect_height))
-            };
-            const sf::Vector2f note_pos = {note_x, note_y};
-            draw_rectangle(
-                args.draw_list,
-                args.origin + note_pos,
-                long_note_size,
-                {0.5f, 0.f},
-                long_note_color
-            );
-            draw_rectangle(
-                args.draw_list,
-                args.origin + note_pos,
-                computed_sizes.note_size,
-                {0.5f, 0.5f},
-                tap_note_color
-            );
-            if (args.chart_state.selected_stuff.notes.contains(long_note)) {
-                draw_rectangle(
-                    args.draw_list,
-                    args.origin + note_pos,
-                    computed_sizes.selected_note_size,
-                    {0.5f, 0.5f},
-                    colors.selected_note_fill,
-                    colors.selected_note_outline
-                );
-            }
-        },
-    };
-
-    const auto first_visible_second = timing.time_at(first_beat_in_frame);
-    const auto first_visible_collision_zone = timing.beats_at(first_visible_second - sf::milliseconds(500));
-    const auto last_visible_second = timing.time_at(last_beat_in_frame);
-    const auto last_visible_collision_zone = timing.beats_at(last_visible_second + sf::milliseconds(500));
-    chart_state.chart.notes->in(
-        first_visible_collision_zone,
-        last_visible_collision_zone,
-        [&](const better::Notes::iterator& it){
-            it->second.visit(draw_note);
-        }
-    );
-
-    if (chart_state.long_note_being_created.has_value()) {
-        draw_note(
-            make_long_note_dummy_for_linear_view(
-                *chart_state.long_note_being_created,
-                snap
-            )
-        );
-    }
-
-    // Draw the cursor
-    draw_rectangle(
-        draw_list,
-        origin + computed_sizes.cursor_pos,
-        computed_sizes.cursor_size,
-        {0, 0.5},
-        colors.cursor
-    );
-
-    // Draw the time selection
-    const float selection_width = computed_sizes.timeline_width;
-    if (chart_state.time_selection.has_value()) {
-        const auto pixel_interval = Interval{
-            beats_to_pixels_absolute.transform(chart_state.time_selection->start),
-            beats_to_pixels_absolute.transform(chart_state.time_selection->end)
-        };
-        if (pixel_interval.intersects({0, computed_sizes.y})) {
-            const sf::Vector2f selection_size = {
-                selection_width,
-                static_cast<float>(static_cast<double>(pixel_interval.width()))
-            };
-            const sf::Vector2f selection_pos = {
-                computed_sizes.timeline_left,
-                static_cast<float>(static_cast<double>(pixel_interval.start))
-            };
-            draw_rectangle(
-                draw_list,
-                origin + selection_pos,
-                selection_size,
-                {0, 0},
-                colors.tab_selection.fill,
-                colors.tab_selection.border
-            );
-        }
-    }
-
-    
+void LinearView::handle_mouse_selection(
+    ImDrawList* draw_list,
+    const sf::Vector2f& origin,
+    ChartState& chart_state,
+    const better::Timing& timing,
+    const linear_view::ComputedSizes& computed_sizes,
+    const std::function<Fraction(float)> absolute_pixels_to_beats
+) {
     const auto current_window = ImGui::GetCurrentWindow();
 
     // Don't start the selection rect if we start :
@@ -818,13 +705,13 @@ void LinearView::draw_in_waveform_mode(LinearView::draw_args_type& args) {
             ImRect bpm_zone = {origin.x + computed_sizes.bpm_events_left, -INFINITY, INFINITY, INFINITY};
             bpm_zone.ClipWith(current_window->InnerRect);
             if (full_selection.Overlaps(bpm_zone)) {
-                const auto first_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Min.y - origin.y);
-                const auto last_selected_beat = beats_to_pixels_absolute.backwards_transform(full_selection.Max.y - origin.y);
+                const auto first_selected_beat = absolute_pixels_to_beats(full_selection.Min.y - origin.y);
+                const auto last_selected_beat = absolute_pixels_to_beats(full_selection.Max.y - origin.y);
                 timing.for_each_event_between(
                     first_selected_beat,
                     last_selected_beat,
                     [&](const auto& event){
-                        args.chart_state.selected_stuff.bpm_events.insert(
+                        chart_state.selected_stuff.bpm_events.insert(
                             {event.get_bpm(), event.get_beats()}
                         );
                     }
@@ -857,6 +744,7 @@ void LinearView::display_settings() {
                 "Waveform",
                 std::holds_alternative<linear_view::mode::Waveform>(mode)
             )) {
+                mode = linear_view::mode::Waveform{};
             }
             ImGui::EndCombo();
         }
@@ -920,6 +808,7 @@ void LinearView::display_settings() {
             feis::ColorEdit4("Measure Lines", colors.measure_line);
             feis::ColorEdit4("Measure Numbers", colors.measure_number);
             feis::ColorEdit4("Beat Lines", colors.beat_line);
+            feis::ColorEdit4("Waveform", colors.waveform);
             if (ImGui::TreeNode("Selection Rectangle")) {
                 feis::ColorEdit4("Fill##Selection Rectangle Colors", colors.selection_rect.fill);
                 feis::ColorEdit4("Border##Selection Rectangle Colors", colors.selection_rect.border);

@@ -44,69 +44,6 @@ const sf::Color reference_note_grey = {134, 110, 116};
 
 
 namespace linear_view {
-    namespace mode {
-        struct Beats {};
-        struct Waveform {};
-    }
-    using Mode = std::variant<mode::Beats, mode::Waveform>;
-}
-
-class LinearView {
-public:
-    LinearView(std::filesystem::path assets, config::Config& config);
-
-    struct draw_args_type {
-        ImDrawList* draw_list;
-        ChartState& chart_state;
-        const waveform::Cache& waveform_cache;
-        const better::Timing& timing;
-        const Fraction& current_beat;
-        const Fraction& last_editable_beat;
-        const Fraction& snap;
-        const sf::Vector2f& size;
-        const sf::Vector2f& origin;
-    };
-
-    void draw(draw_args_type& args);
-
-    void set_zoom(int zoom);
-    void zoom_in() { set_zoom(zoom + 1); };
-    void zoom_out() { set_zoom(zoom - 1); };
-    float time_factor() { return std::pow(1.25, static_cast<double>(zoom)); };
-
-    bool shouldDisplaySettings;
-
-    void display_settings();
-
-private:
-    void draw_in_beats_mode(draw_args_type& args);
-    void draw_in_waveform_mode(draw_args_type& args);
-    linear_view::Mode mode;
-    std::string mode_name();
-    linear_view::Colors& colors;
-    linear_view::Sizes& sizes;
-    const sf::Time& collision_zone;
-
-    AffineTransform<Fraction> beats_to_pixels_proportional;
-    AffineTransform<Fraction> seconds_to_pixels_proportional;
-
-    void reload_transforms();
-
-    int& zoom;
-
-    bool& use_quantization_colors;
-    linear_view::QuantizationColors& quantization_colors;
-
-    SelectionRectangle selection_rectangle;
-    bool started_selection_inside_window = false;
-    bool any_bpm_button_hovered = false;
-
-    linear_view::LaneOrder& lane_order;
-    std::string lane_order_name() const;
-    std::optional<unsigned int> button_to_lane(const better::Position& button);
-};
-
-namespace linear_view {
     struct ComputedSizes {
         int x;
         int y;
@@ -131,6 +68,136 @@ namespace linear_view {
         linear_view::Sizes& size_settings
     );
 }
+
+class LinearView {
+public:
+    LinearView(std::filesystem::path assets, config::Config& config);
+
+    struct DrawArgs {
+        ImDrawList* draw_list;
+        ChartState& chart_state;
+        const std::optional<waveform::Cache::const_reference_type> waveform;
+        const better::Timing& timing;
+        const Fraction& current_beat;
+        const Fraction& last_editable_beat;
+        const Fraction& snap;
+        const sf::Vector2f& size;
+        const sf::Vector2f& origin;
+    };
+
+    void draw(DrawArgs& args);
+
+    void set_zoom(int zoom);
+    void zoom_in() { set_zoom(zoom + 1); };
+    void zoom_out() { set_zoom(zoom - 1); };
+    float time_factor() { return std::pow(1.25, static_cast<double>(zoom)); };
+
+    bool shouldDisplaySettings;
+
+    void display_settings();
+
+private:
+    void draw_in_beats_mode(DrawArgs& args);
+    void draw_in_waveform_mode(DrawArgs& args);
+    void draw_tap_note(
+        LinearView::DrawArgs& args,
+        const linear_view::ComputedSizes& computed_sizes,
+        const better::TapNote& tap_note,
+        const sf::Vector2f note_pos,
+        const sf::Time collision_zone,
+        const float collision_zone_y,
+        const float collision_zone_height
+    );
+    void draw_long_note(
+        LinearView::DrawArgs& args,
+        const linear_view::ComputedSizes& computed_sizes,
+        const better::LongNote& long_note,
+        const sf::Vector2f note_pos,
+        const float long_note_rect_height,
+        const sf::Time collision_zone,
+        const float collision_zone_y,
+        const float collision_zone_height
+    );
+
+    template<class T>
+    void draw_notes(
+        const sf::Time first_visible_second,
+        const sf::Time last_visible_second,
+        const ChartState& chart_state,
+        const better::Timing& timing,
+        const T& draw_one_note
+    ) {
+        const auto first_visible_collision_zone = timing.beats_at(first_visible_second - collision_zone * 0.5f);
+        const auto last_visible_collision_zone = timing.beats_at(last_visible_second + collision_zone * 0.5f);
+        chart_state.chart.notes->in(
+            first_visible_collision_zone,
+            last_visible_collision_zone,
+            [&](const better::Notes::iterator& it){
+                it->second.visit(draw_one_note);
+            }
+        );
+    };
+
+    template<class T>
+    void draw_long_note_dummy(
+        const ChartState& chart_state,
+        const Fraction& snap,
+        const T& draw_one_note
+    ) {
+        if (chart_state.long_note_being_created.has_value()) {
+            draw_one_note(
+                make_long_note_dummy_for_linear_view(
+                    *chart_state.long_note_being_created,
+                    snap
+                )
+            );
+        }
+    };
+
+    void draw_cursor(
+        ImDrawList* draw_list,
+        const sf::Vector2f& origin,
+        const linear_view::ComputedSizes& computed_sizes
+    );
+    void draw_time_selection(
+        ImDrawList* draw_list,
+        const sf::Vector2f& origin,
+        const ChartState& chart_state,
+        const linear_view::ComputedSizes& computed_sizes,
+        const std::function<float(const Fraction&)> beats_to_absolute_pixels
+    );
+    void handle_mouse_selection(
+        ImDrawList* draw_list,
+        const sf::Vector2f& origin,
+        ChartState& chart_state,
+        const better::Timing& timing,
+        const linear_view::ComputedSizes& computed_sizes,
+        const std::function<Fraction(float)> absolute_pixels_to_beats
+    );
+
+    linear_view::Mode& mode;
+    std::string mode_name();
+    linear_view::Colors& colors;
+    linear_view::Sizes& sizes;
+    const sf::Time& collision_zone;
+
+    AffineTransform<Fraction> beats_to_pixels_proportional;
+
+    void reload_transforms();
+
+    int& zoom;
+
+    bool& use_quantization_colors;
+    linear_view::QuantizationColors& quantization_colors;
+
+    SelectionRectangle selection_rectangle;
+    bool started_selection_inside_window = false;
+    bool any_bpm_button_hovered = false;
+
+    linear_view::LaneOrder& lane_order;
+    std::string lane_order_name() const;
+    std::optional<unsigned int> button_to_lane(const better::Position& button);
+};
 
 void draw_rectangle(
     ImDrawList* draw_list,

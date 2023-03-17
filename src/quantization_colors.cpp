@@ -4,7 +4,7 @@
 #include "variant_visitor.hpp"
 
 namespace linear_view {
-    sf::Color QuantizationColors::color_at_beat(const Fraction& time) {
+    sf::Color QuantizationColors::color_at_beat(const Fraction& time) const {
         const auto denominator = time.denominator();
         if (denominator > palette.rbegin()->first) {
             return default_;

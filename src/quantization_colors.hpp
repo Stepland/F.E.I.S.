@@ -20,7 +20,7 @@ namespace linear_view {
             {16, {68, 254, 0}}
         }};
         sf::Color default_ = {156, 156, 156};
-        sf::Color color_at_beat(const Fraction& time);
+        sf::Color color_at_beat(const Fraction& time) const;
 
         void load_from_v1_0_0_table(const toml::table& linear_view_table);
         void dump_as_v1_0_0(toml::table& linear_view_table);

@@ -59,6 +59,10 @@ Fraction::operator double() const {
     return value.get_d();
 };
 
+Fraction::operator float() const {
+    return static_cast<float>(value.get_d());
+};
+
 const mpz_class& Fraction::numerator() const {
     return value.get_num();
 }

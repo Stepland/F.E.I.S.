@@ -9,6 +9,7 @@
 #include <variant>
 
 #include "linear_view_colors.hpp"
+#include "linear_view_mode.hpp"
 #include "marker.hpp"
 #include "nowide/fstream.hpp"
 #include "variant_visitor.hpp"
@@ -47,6 +48,7 @@ void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
         return;
     }
     const auto linear_view_table = tbl["linear_view"].ref<toml::table>();
+    mode = linear_view::mode::load_from_v1_0_0_table(linear_view_table);
     colors.load_from_v1_0_0_table(linear_view_table);
     sizes.load_from_v1_0_0_table(linear_view_table);
     lane_order = linear_view::lane_order::load_from_v1_0_0_table(linear_view_table);
@@ -61,6 +63,7 @@ void config::LinearView::load_from_v1_0_0_table(const toml::table& tbl) {
 
 void config::LinearView::dump_as_v1_0_0(toml::table& tbl) {
     toml::table linear_view_table;
+    linear_view::mode::dump_as_v1_0_0(mode, linear_view_table);
     colors.dump_as_v1_0_0(linear_view_table);
     sizes.dump_as_v1_0_0(linear_view_table);
     linear_view::lane_order::dump_as_v1_0_0(lane_order, linear_view_table);

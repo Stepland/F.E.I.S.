@@ -980,16 +980,18 @@ void EditorState::display_linear_view() {
         if (chart_state) {
             auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, header_height});
-            linear_view.draw(
+            LinearView::DrawArgs draw_args {
                 ImGui::GetWindowDrawList(),
                 *chart_state,
+                waveform_cache.get(song.metadata.audio),
                 *applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
                 get_snap_step(),
                 ImGui::GetContentRegionMax(),
                 ImGui::GetCursorScreenPos()
-            );
+            };
+            linear_view.draw(draw_args);
         } else {
             ImGui::TextDisabled("- no chart selected -");
         }
@@ -1422,7 +1424,7 @@ void EditorState::reload_music() {
     const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
     try {
         music.emplace(std::make_shared<OpenMusic>(absolute_music_path));
-        waveform_cache.async_emplace(absolute_music_path);
+        waveform_cache.async_emplace(song.metadata.audio);
     } catch (const std::exception& e) {
         clear_music();
     }
