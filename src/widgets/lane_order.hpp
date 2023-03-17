@@ -41,8 +41,8 @@ namespace linear_view {
     using LaneOrder = std::variant<lane_order::Default, lane_order::Vertical, lane_order::Custom>;
 
     namespace lane_order {
-        linear_view::LaneOrder load_from_v1_0_0_table(const toml::table& linear_view);
-        void dump_as_v1_0_0(const linear_view::LaneOrder& lane_order, toml::table& linear_view);
+        LaneOrder load_from_v1_0_0_table(const toml::table& linear_view);
+        void dump_as_v1_0_0(const LaneOrder& lane_order, toml::table& linear_view);
     }
 
     const LaneOrder default_lane_order = lane_order::Default{};

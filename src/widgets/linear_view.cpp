@@ -42,6 +42,7 @@ void SelectionRectangle::reset() {
 }
 
 LinearView::LinearView(std::filesystem::path assets, config::Config& config_) :
+    mode(config_.linear_view.mode),
     colors(config_.linear_view.colors),
     sizes(config_.linear_view.sizes),
     collision_zone(config_.editor.collision_zone),
@@ -273,13 +274,14 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     ] = args;
 
     const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
-    if (
-        not opt_ref_to_an_opt_waveform
-        or not opt_ref_to_an_opt_waveform.value().get()
-    ) {
+    if (not opt_ref_to_an_opt_waveform) {
         feis::CenteredText("Loading ...");
         return;
     }
+    if (not opt_ref_to_an_opt_waveform.value().get()) {
+        feis::CenteredText("Error while loading waveform");
+    }
+
     const auto waveform = opt_ref_to_an_opt_waveform.value().get().value();
     if (waveform.channels_per_chunk_size.empty()) {
         feis::CenteredText("No data ???");
@@ -729,11 +731,11 @@ void LinearView::set_zoom(int newZoom) {
 }
 
 void LinearView::display_settings() {
-    if (ImGui::Begin("Vertical View Settings", &shouldDisplaySettings)) {
-        if (ImGui::SliderInt("Zoom##Vertical View Settings", &zoom, -10, 10, "%d")) {
+    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
+        if (ImGui::SliderInt("Zoom##Linear View Settings", &zoom, -10, 10, "%d")) {
             set_zoom(zoom);
         }
-        if (ImGui::BeginCombo("Mode##Vertical View Settings", mode_name().c_str())) {
+        if (ImGui::BeginCombo("Mode##Linear View Settings", mode_name().c_str())) {
             if (ImGui::Selectable(
                 "Beats",
                 std::holds_alternative<linear_view::mode::Beats>(mode)
@@ -748,7 +750,7 @@ void LinearView::display_settings() {
             }
             ImGui::EndCombo();
         }
-        if (ImGui::CollapsingHeader("Notes##Vertical View Settings")) {
+        if (ImGui::CollapsingHeader("Notes##Linear View Settings")) {
             ImGui::Checkbox("Colored Quantization", &use_quantization_colors);
             if (use_quantization_colors) {
                 for (auto& [quant, color] : quantization_colors.palette) {
@@ -766,7 +768,7 @@ void LinearView::display_settings() {
                 }
             }
         }
-        if (ImGui::CollapsingHeader("Lanes##Vertical View Settings")) {
+        if (ImGui::CollapsingHeader("Lanes##Linear View Settings")) {
             if (ImGui::BeginCombo("Order", lane_order_name().c_str())) {
                 if (ImGui::Selectable(
                     "Default",
@@ -800,8 +802,8 @@ void LinearView::display_settings() {
                 LaneOrderPreview(order.lane_to_button);
             }
         }
-        if (ImGui::CollapsingHeader("Colors##Vertical View Settings")) {
-            if (ImGui::Button("Reset##Colors##Vertical View Settings")) {
+        if (ImGui::CollapsingHeader("Colors##Linear View Settings")) {
+            if (ImGui::Button("Reset##Colors##Linear View Settings")) {
                 colors = linear_view::default_colors;
             }
             feis::ColorEdit4("Cursor", colors.cursor);
@@ -839,8 +841,8 @@ void LinearView::display_settings() {
                 ImGui::TreePop();
             }
         }
-        if (ImGui::CollapsingHeader("Metrics##Vertical View Settings")) {
-            if (ImGui::Button("Reset##Metrics##Vertical View Settings")) {
+        if (ImGui::CollapsingHeader("Metrics##Linear View Settings")) {
+            if (ImGui::Button("Reset##Metrics##Linear View Settings")) {
                 sizes = linear_view::default_sizes;
             }
             ImGui::DragInt("Cursor Height", &sizes.cursor_height);

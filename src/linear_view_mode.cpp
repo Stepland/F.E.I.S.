@@ -2,7 +2,7 @@
 
 #include "variant_visitor.hpp"
 
-namespace linear_view {
+namespace linear_view::mode {
     Mode load_from_v1_0_0_table(const toml::table& linear_view) {
         const auto mode_string = linear_view["mode"].value<std::string>();
         if (not mode_string) {

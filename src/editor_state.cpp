@@ -728,8 +728,8 @@ void EditorState::display_file_properties() {
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
                     ImGui::BeginTooltip();
                     ImGui::TextUnformatted(
-                        "You must define a time selection in the vertical view first !\n"
-                        "Open up 'View' > 'Vertical View' then use the Tab key to set the start, then the end"
+                        "You must define a time selection in the linear view first !\n"
+                        "Open up 'View' > 'Linear View' then use the Tab key to set the start, then the end"
                     );
                     ImGui::EndTooltip();
                 }
@@ -980,10 +980,18 @@ void EditorState::display_linear_view() {
         if (chart_state) {
             auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, header_height});
+            const auto waveform = [&, this]() -> std::optional<waveform::Cache::const_reference_type> {
+                const auto full_path = this->full_audio_path();
+                if (not full_path) {
+                    return {};
+                } else {
+                    return waveform_cache.get(*full_path);
+                }
+            }();
             LinearView::DrawArgs draw_args {
                 ImGui::GetWindowDrawList(),
                 *chart_state,
-                waveform_cache.get(song.metadata.audio),
+                waveform,
                 *applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
@@ -1409,6 +1417,14 @@ void EditorState::reload_jacket() {
     }
 };
 
+std::optional<std::filesystem::path> EditorState::full_audio_path() {
+    if (not song_path.has_value() or song.metadata.audio.empty()) {
+        return {};
+    } else {
+        return song_path->parent_path() / song.metadata.audio;
+    }     
+}
+
 /*
  * Reloads music from what's indicated in the "music path" field of the song
  * Resets the music state in case anything fails
@@ -1416,15 +1432,14 @@ void EditorState::reload_jacket() {
  */
 void EditorState::reload_music() {
     const auto status_before = get_status();
-    if (not song_path.has_value() or song.metadata.audio.empty()) {
+    const auto absolute_music_path = full_audio_path();
+    if (not absolute_music_path) {
         clear_music();
         return;
     }
-
-    const auto absolute_music_path = song_path->parent_path() / song.metadata.audio;
     try {
-        music.emplace(std::make_shared<OpenMusic>(absolute_music_path));
-        waveform_cache.async_emplace(song.metadata.audio);
+        music.emplace(std::make_shared<OpenMusic>(*absolute_music_path));
+        waveform_cache.async_emplace(*absolute_music_path);
     } catch (const std::exception& e) {
         clear_music();
     }

@@ -9,7 +9,6 @@
 #include <variant>
 
 #include "linear_view_colors.hpp"
-#include "linear_view_mode.hpp"
 #include "marker.hpp"
 #include "nowide/fstream.hpp"
 #include "variant_visitor.hpp"

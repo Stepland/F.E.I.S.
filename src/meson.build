@@ -19,6 +19,7 @@ sources += files(
     'imgui_extras.cpp',
     'json_decimal_handling.cpp',
     'linear_view_colors.cpp',
+    'linear_view_mode.cpp',
     'linear_view_sizes.cpp',
     'ln_marker.cpp',
     'long_note_dummy.cpp',

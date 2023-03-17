@@ -41,8 +41,6 @@ const std::map<unsigned int, sf::Color> reference_note_colors = {{
 }};
 const sf::Color reference_note_grey = {134, 110, 116};
 
-
-
 namespace linear_view {
     struct ComputedSizes {
         int x;

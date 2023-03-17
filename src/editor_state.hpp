@@ -259,6 +259,8 @@ private:
     TimingOrigin timing_origin();
 
     std::filesystem::path assets;
+
+    std::optional<std::filesystem::path> full_audio_path();
 };
 
 namespace feis {
