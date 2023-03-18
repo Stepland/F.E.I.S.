@@ -69,4 +69,4 @@ $ pacman -S \
 ```
 
 Once this is done, open a new `MSYS2 MinGW x64` terminal and follow the
-[compilation instructions](docs/Compiling.md)
+[compilation instructions](Compiling.md)
