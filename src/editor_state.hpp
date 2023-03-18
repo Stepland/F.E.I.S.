@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <optional>
 
@@ -69,8 +70,11 @@ public:
     std::shared_ptr<ChordClaps> chord_claps;
     std::shared_ptr<BeatTicks> beat_ticks;
     std::optional<std::shared_ptr<OpenMusic>> music = {};
-    waveform::Cache waveform_cache;
     bool is_playing_preview_music_from_sss = false;
+
+    std::future<std::optional<waveform::Waveform>> waveform_loader;
+    std::optional<waveform::Waveform> waveform;
+    waveform::Status waveform_status();
 
     int get_volume() const;
     void set_volume(int newMusicVolume);

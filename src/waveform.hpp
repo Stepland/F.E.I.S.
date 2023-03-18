@@ -5,12 +5,14 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <variant>
 #include <vector>
 
 #include <SFML/Audio/InputSoundFile.hpp>
 
 #include "cache.hpp"
 #include "utf8_sfml.hpp"
+#include "variant_visitor.hpp"
 
 namespace waveform {
     struct DataPoint {
@@ -35,7 +37,26 @@ namespace waveform {
     Channels downsample_to_half(const Channels& summary);
     std::optional<Waveform> compute_waveform(const std::filesystem::path& audio);
 
-    struct Cache : Toolkit::Cache<std::filesystem::path, std::optional<waveform::Waveform>> {
-        Cache();
+    namespace status {
+        struct NoAudioFile {};
+        struct Loading {};
+        struct ErrorDuringLoading {};
+        struct Loaded {
+            Waveform& waveform;
+        };
+    }
+
+    using Status = std::variant<
+        status::NoAudioFile,
+        status::Loading,
+        status::ErrorDuringLoading,
+        status::Loaded
+    >;
+
+    const auto status_message = VariantVisitor {
+        [](status::NoAudioFile) -> std::optional<std::string> {return "No Audio File";},
+        [](status::Loading) -> std::optional<std::string> {return "Loading ...";},
+        [](status::ErrorDuringLoading) -> std::optional<std::string> {return "Error while loading waveform";},
+        [](status::Loaded) -> std::optional<std::string> {return {};},
     };
 }

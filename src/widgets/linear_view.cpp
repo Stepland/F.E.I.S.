@@ -31,6 +31,7 @@
 #include "../toolbox.hpp"
 #include "../variant_visitor.hpp"
 #include "linear_view_colors.hpp"
+#include "waveform.hpp"
 #include "widgets/lane_order.hpp"
 
 
@@ -264,7 +265,7 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     auto [
         draw_list,
         chart_state,
-        opt_ref_to_an_opt_waveform,
+        waveform_status,
         timing,
         current_beat,
         last_editable_beat,
@@ -273,21 +274,21 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
         origin
     ] = args;
 
-    const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
-    if (not opt_ref_to_an_opt_waveform) {
-        feis::CenteredText("Loading ...");
+    if (const auto message = std::visit(waveform::status_message, waveform_status)) {
+        feis::CenteredText(*message);
         return;
     }
-    if (not opt_ref_to_an_opt_waveform.value().get()) {
-        feis::CenteredText("Error while loading waveform");
+    if (not std::holds_alternative<waveform::status::Loaded>(waveform_status)) {
+        feis::CenteredText("No waveform data ???");
+        return;
     }
-
-    const auto waveform = opt_ref_to_an_opt_waveform.value().get().value();
+    const auto& waveform = std::get<waveform::status::Loaded>(waveform_status).waveform;
     if (waveform.channels_per_chunk_size.empty()) {
         feis::CenteredText("No data ???");
         return;
     }
 
+    const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
     zoom = std::clamp(zoom, 0, static_cast<int>(waveform.channels_per_chunk_size.size()) - 1);
     const auto chunk_size = waveform.chunk_sizes.at(waveform.chunk_sizes.size() - zoom - 1);
     const auto& channels = waveform.channels_per_chunk_size.at(chunk_size);

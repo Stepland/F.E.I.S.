@@ -74,7 +74,7 @@ public:
     struct DrawArgs {
         ImDrawList* draw_list;
         ChartState& chart_state;
-        const std::optional<waveform::Cache::const_reference_type> waveform;
+        const waveform::Status& waveform_status;
         const better::Timing& timing;
         const Fraction& current_beat;
         const Fraction& last_editable_beat;

@@ -41,6 +41,7 @@
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "variant_visitor.hpp"
 #include "utf8_strings.hpp"
+#include "waveform.hpp"
 #include "widgets/linear_view.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
@@ -83,6 +84,30 @@ EditorState::EditorState(
     reload_jacket();
     reload_preview_audio();
 };
+
+waveform::Status EditorState::waveform_status() {
+    if (not music) {
+        return waveform::status::NoAudioFile{};
+    }
+    if (not waveform_loader.valid()) {
+        if (waveform) {
+            return waveform::status::Loaded{*waveform};
+        } else {
+            return waveform::status::ErrorDuringLoading{};
+        }
+    }
+    
+    if (waveform_loader.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+        return waveform::status::Loading{};
+    }
+    
+    waveform = waveform_loader.get();
+    if (waveform) {
+        return waveform::status::Loaded{*waveform}; 
+    } else {
+        return waveform::status::ErrorDuringLoading{};
+    }
+}
 
 int EditorState::get_volume() const {
     return volume;
@@ -980,18 +1005,10 @@ void EditorState::display_linear_view() {
         if (chart_state) {
             auto header_height = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImGui::SetCursorPos({0, header_height});
-            const auto waveform = [&, this]() -> std::optional<waveform::Cache::const_reference_type> {
-                const auto full_path = this->full_audio_path();
-                if (not full_path) {
-                    return {};
-                } else {
-                    return waveform_cache.get(*full_path);
-                }
-            }();
             LinearView::DrawArgs draw_args {
                 ImGui::GetWindowDrawList(),
                 *chart_state,
-                waveform,
+                waveform_status(),
                 *applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
@@ -1439,17 +1456,16 @@ void EditorState::reload_music() {
     }
     try {
         music.emplace(std::make_shared<OpenMusic>(*absolute_music_path));
-        waveform_cache.async_emplace(*absolute_music_path);
+        waveform_loader = std::async(std::launch::async, waveform::compute_waveform, *absolute_music_path);
     } catch (const std::exception& e) {
         clear_music();
     }
 
     reload_editable_range();
     set_speed(speed);
+    audio.remove_stream(music_stream);
     if (music.has_value()) {
         audio.add_stream(music_stream, {*music, false});
-    } else {
-        audio.remove_stream(music_stream);
     }
     pause();
     set_playback_position(current_time());
