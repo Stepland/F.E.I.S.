@@ -2,6 +2,7 @@
 *(+ 2.0.0-rc.1)*
 ## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
 - BPM Changes
+- Waveform mode for the Linear View
 - memon 1.0 + 0.3 + 0.2 support
 - MP3 support
 
