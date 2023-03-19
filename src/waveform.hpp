@@ -23,11 +23,19 @@ namespace waveform {
 
     using DataFrame = std::vector<DataPoint>;
     using Channels = std::vector<DataFrame>;
+
+    struct ZoomParameters {
+        unsigned int chunk_size;
+        float relative_step_size;
+    };
+
     struct Waveform {
         std::map<unsigned int, Channels> channels_per_chunk_size;
         std::vector<unsigned int> chunk_sizes; // for fast nth chunk size access
         std::size_t sample_rate;
         std::size_t channel_count;
+
+        ZoomParameters zoom_to_params(int zoom) const;
     };
 
     Channels load_initial_summary(

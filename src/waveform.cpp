@@ -1,9 +1,34 @@
 #include "waveform.hpp"
 #include <SFML/Audio/InputSoundFile.hpp>
+#include <cmath>
+#include <cstddef>
+#include "toolbox.hpp"
 #include "utf8_sfml.hpp"
 
 
 namespace waveform {
+    ZoomParameters Waveform::zoom_to_params(int zoom) const {
+        const AffineTransform<float> zoom_to_index = {
+            -10,
+            10,
+            static_cast<float>(chunk_sizes.size() - 1),
+            0
+        };
+        const auto float_index = zoom_to_index.clampedTransform(zoom);
+        const unsigned int chunk_size = chunk_sizes.at(
+            std::clamp<std::size_t>(
+                std::floor(float_index),
+                0,
+                chunk_sizes.size() - 1
+            )
+        );
+        const float fractional_chunk_size = std::pow(2, float_index + std::log2(chunk_sizes.at(0)));
+        return {
+            chunk_size,
+            fractional_chunk_size/chunk_size
+        };
+    }
+
     Channels load_initial_summary(
         feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
         const unsigned int window_size

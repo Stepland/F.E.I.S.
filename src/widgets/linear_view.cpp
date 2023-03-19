@@ -289,9 +289,8 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     }
 
     const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
-    zoom = std::clamp(zoom, 0, static_cast<int>(waveform.channels_per_chunk_size.size()) - 1);
-    const auto chunk_size = waveform.chunk_sizes.at(waveform.chunk_sizes.size() - zoom - 1);
-    const auto& channels = waveform.channels_per_chunk_size.at(chunk_size);
+    const auto zoom_params = waveform.zoom_to_params(zoom);
+    const auto& channels = waveform.channels_per_chunk_size.at(zoom_params.chunk_size);
     const auto window = ImGui::GetCurrentWindow();
     const auto work_rect = window->WorkRect;
     const float waveform_w_margin = 10.f;
