@@ -313,7 +313,7 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
         0,
         1,
         0,
-        static_cast<float>(waveform.sample_rate) / chunk_sizes.reference
+        static_cast<float>(waveform.sample_rate) / chunk_sizes.fractional
     };
     for (std::size_t channel_index = 0; channel_index < channels.size(); channel_index++) {
         const auto& data_points = channels[channel_index];
