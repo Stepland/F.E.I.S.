@@ -289,8 +289,8 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     }
 
     const auto computed_sizes = linear_view::compute_sizes(window_size, sizes);
-    const auto zoom_params = waveform.zoom_to_params(zoom);
-    const auto& channels = waveform.channels_per_chunk_size.at(zoom_params.chunk_size);
+    const auto chunk_sizes = waveform.zoom_to_params(zoom);
+    const auto& channels = waveform.channels_per_chunk_size.at(chunk_sizes.reference);
     const auto window = ImGui::GetCurrentWindow();
     const auto work_rect = window->WorkRect;
     const float waveform_w_margin = 10.f;
@@ -304,14 +304,16 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     };
     const auto current_time = timing.time_at(current_beat);
     const std::int64_t sample_at_cursor = time_to_samples(current_time, waveform.sample_rate, waveform.channel_count);
-    const std::int64_t chunk_at_cursor = sample_at_cursor / chunk_size / waveform.channel_count;
-    const auto first_chunk = chunk_at_cursor - static_cast<std::int64_t>(sizes.cursor_height);
+    const auto frac_chunk_at_cursor = static_cast<std::int64_t>(std::floor(
+        static_cast<double>(sample_at_cursor) / waveform.channel_count / chunk_sizes.fractional
+    ));
+    const auto first_chunk = frac_chunk_at_cursor - static_cast<std::int64_t>(sizes.cursor_height);
     const auto end_chunk = first_chunk + static_cast<std::int64_t>(work_rect.GetHeight());
     const AffineTransform<float> seconds_to_pixels_proportional {
         0,
         1,
         0,
-        static_cast<float>(waveform.sample_rate) / chunk_size
+        static_cast<float>(waveform.sample_rate) / chunk_sizes.reference
     };
     for (std::size_t channel_index = 0; channel_index < channels.size(); channel_index++) {
         const auto& data_points = channels[channel_index];
@@ -320,10 +322,25 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
             if (data_point_index < 0 or static_cast<std::size_t>(data_point_index) >= data_points.size()) {
                 continue;
             }
-            const auto& data_point = data_points[data_point_index];
+            const float float_reference_chunk = data_point_index * chunk_sizes.frac_to_ref_ratio;
+            const auto reference_chunk_before = std::clamp<std::int64_t>(
+                std::floor(float_reference_chunk),
+                0,
+                data_points.size()
+            );
+            const auto reference_chunk_after = std::clamp<std::int64_t>(
+                std::ceil(float_reference_chunk),
+                0,
+                data_points.size()
+            );
+            const float lerp_t = std::clamp<float>(float_reference_chunk - reference_chunk_before, 0, 1);
+            const auto& data_point_before = data_points[reference_chunk_before];
+            const auto& data_point_after = data_points[reference_chunk_after];
+            const auto lerped_min = std::lerp(data_point_before.min, data_point_after.min, lerp_t);
+            const auto lerped_max = std::lerp(data_point_before.max, data_point_after.max, lerp_t);
             const auto y = work_rect.Min.y + data_point_index - first_chunk;
-            const auto x_offset_min = value_to_pixel_offset_from_waveform_center.transform(data_point.min);
-            const auto x_offset_max = value_to_pixel_offset_from_waveform_center.transform(data_point.max);
+            const auto x_offset_min = value_to_pixel_offset_from_waveform_center.transform(lerped_min);
+            const auto x_offset_max = value_to_pixel_offset_from_waveform_center.transform(lerped_max);
             const auto x_min = work_rect.Min.x + waveform_x_center + x_offset_min;
             const auto x_max = work_rect.Min.x + waveform_x_center + x_offset_max;
             draw_list->AddLine({x_min, y}, {x_max, y}, ImColor(colors.waveform));

@@ -7,7 +7,7 @@
 
 
 namespace waveform {
-    ZoomParameters Waveform::zoom_to_params(int zoom) const {
+    ChunkSizes Waveform::zoom_to_params(int zoom) const {
         const AffineTransform<float> zoom_to_index = {
             -10,
             10,
@@ -25,6 +25,7 @@ namespace waveform {
         const float fractional_chunk_size = std::pow(2, float_index + std::log2(chunk_sizes.at(0)));
         return {
             chunk_size,
+            fractional_chunk_size,
             fractional_chunk_size/chunk_size
         };
     }
