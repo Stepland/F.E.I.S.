@@ -1,5 +1,6 @@
 #include "open_music.hpp"
 
+#include <cstdint>
 #include <fstream>
 #include <algorithm>
 #include <mutex>
@@ -11,6 +12,7 @@
 #include <stdexcept>
 
 #include "al_check.hpp"
+#include "custom_sfml_audio/precise_sound_stream.hpp"
 #include "utf8_strings.hpp"
 
 #if defined(__APPLE__)
@@ -124,9 +126,15 @@ void OpenMusic::setLoopPoints(TimeSpan timePoints) {
 bool OpenMusic::onGetData(SoundStream::Chunk& data) {
     std::scoped_lock lock(m_mutex);
 
-    std::size_t toFill = m_samples.size();
-    sf::Uint64 currentOffset = m_file.getSampleOffset();
-    sf::Uint64 loopEnd = m_loopSpan.offset + m_loopSpan.length;
+    std::int64_t to_fill = m_samples.size();
+    auto current_offset = [&](){
+        if (lead_in < 0) {
+            return lead_in;
+        } else {
+            return static_cast<std::int64_t>(m_file.getSampleOffset());
+        }
+    }();
+    const std::int64_t loopEnd = m_loopSpan.offset + m_loopSpan.length;
 
     // If the loop end is enabled and imminent, request less data.
     // This will trip an "onLoop()" call from the underlying SoundStream,
@@ -134,26 +142,43 @@ bool OpenMusic::onGetData(SoundStream::Chunk& data) {
     if (
         getLoop()
         and (m_loopSpan.length != 0)
-        and (currentOffset <= loopEnd)
-        and (currentOffset + toFill > loopEnd)
+        and (current_offset <= loopEnd)
+        and (current_offset + to_fill > loopEnd)
     ) {
-        toFill = static_cast<std::size_t>(loopEnd - currentOffset);
+        to_fill = loopEnd - current_offset;
     }
 
     // Fill the chunk parameters
     data.samples = m_samples.data();
-    data.sampleCount = static_cast<std::size_t>(m_file.read(m_samples.data(), toFill));
-    currentOffset += data.sampleCount;
+    if (lead_in < 0) {
+        std::fill(m_samples.data(), m_samples.data() + to_fill, 0);
+        const auto to_read = std::max<std::int64_t>(to_fill - lead_in, 0);
+        if (to_read <= 0) {
+            data.sampleCount = to_fill;
+        } else {
+            const auto actually_read = m_file.read(m_samples.data() - lead_in, to_read);
+            data.sampleCount = std::abs(lead_in) + actually_read;
+        }
+        lead_in += data.sampleCount;
+    } else {
+
+    }
+    current_offset += data.sampleCount;
 
     // Check if we have stopped obtaining samples or reached either the EOF or the loop end point
-    return (data.sampleCount != 0) && (currentOffset < m_file.getSampleCount()) && !(currentOffset == loopEnd && m_loopSpan.length != 0);
+    return (data.sampleCount != 0) && (current_offset < m_file.getSampleCount()) && !(current_offset == loopEnd && m_loopSpan.length != 0);
 }
 
 
 
 void OpenMusic::onSeek(sf::Time timeOffset) {
     std::scoped_lock lock(m_mutex);
-    m_file.seek(timeOffset);
+    if (timeOffset < sf::Time::Zero) {
+        lead_in = timeToSamples(timeOffset);
+        m_file.seek(sf::Time::Zero);
+    } else {
+        m_file.seek(timeOffset);
+    }
 }
 
 
@@ -191,22 +216,22 @@ void OpenMusic::initialize() {
 }
 
 
-sf::Uint64 OpenMusic::timeToSamples(sf::Time position) const {
+std::int64_t OpenMusic::timeToSamples(sf::Time position) const {
     // Always ROUND, no unchecked truncation, hence the addition in the numerator.
     // This avoids most precision errors arising from "samples => Time => samples" conversions
     // Original rounding calculation is ((Micros * Freq * Channels) / 1000000) + 0.5
     // We refactor it to keep Int64 as the data type throughout the whole operation.
-    return ((static_cast<sf::Uint64>(position.asMicroseconds()) * getSampleRate() * getChannelCount()) + 500000) / 1000000;
+    return ((static_cast<std::int64_t>(position.asMicroseconds()) * getSampleRate() * getChannelCount()) + 500000) / 1000000;
 }
 
 
 
-sf::Time OpenMusic::samplesToTime(sf::Uint64 samples) const {
+sf::Time OpenMusic::samplesToTime(std::int64_t samples) const {
     sf::Time position = sf::Time::Zero;
 
     // Make sure we don't divide by 0
     if (getSampleRate() != 0 && getChannelCount() != 0) {
-        position = sf::microseconds(static_cast<sf::Int64>((samples * 1000000) / (getChannelCount() * getSampleRate())));
+        position = sf::microseconds(static_cast<std::int64_t>((samples * 1000000) / (getChannelCount() * getSampleRate())));
     }
 
     return position;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -22,8 +23,8 @@ public:
     sf::Time getDuration() const;
     TimeSpan getLoopPoints() const;
     void setLoopPoints(TimeSpan timePoints);
-    sf::Uint64 timeToSamples(sf::Time position) const;
-    sf::Time samplesToTime(sf::Uint64 samples) const;
+    std::int64_t timeToSamples(sf::Time position) const;
+    sf::Time samplesToTime(std::int64_t samples) const;
 
 protected:
     [[nodiscard]] bool onGetData(Chunk& data) override;
@@ -34,6 +35,7 @@ private:
     void initialize();
 
     feis::UTF8FileInputStream m_file_input_stream;
+    std::int64_t lead_in = 0;
     sf::InputSoundFile m_file;     //!< The streamed music file
     std::vector<sf::Int16> m_samples;  //!< Temporary buffer of samples
     std::recursive_mutex m_mutex;    //!< Mutex protecting the data
