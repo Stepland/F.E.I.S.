@@ -11,7 +11,7 @@ Playfield::Playfield(std::filesystem::path assets_folder) :
 {
     if (!base_texture.load_from_path(texture_path)) {
         std::cerr << "Unable to load texture " << texture_path;
-        throw std::runtime_error("Unable to load texture " + path_to_utf8_encoded_string(texture_path);
+        throw std::runtime_error("Unable to load texture " + path_to_utf8_encoded_string(texture_path));
     }
     base_texture.setSmooth(true);
 

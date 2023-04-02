@@ -14,6 +14,7 @@
 #include <SFML/System/Time.hpp>
 
 #include "utf8_sfml_redefinitions.hpp"
+#include "utf8_strings.hpp"
 
 /*
 Allows storing and querying the textures that make up the tail of a long note

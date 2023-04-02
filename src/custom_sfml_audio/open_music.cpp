@@ -161,7 +161,7 @@ bool OpenMusic::onGetData(SoundStream::Chunk& data) {
         }
         lead_in += data.sampleCount;
     } else {
-
+        data.sampleCount = static_cast<std::size_t>(m_file.read(m_samples.data(), to_fill));
     }
     current_offset += data.sampleCount;
 
