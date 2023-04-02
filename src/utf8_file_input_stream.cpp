@@ -15,7 +15,7 @@ void feis::UTF8FileInputStream::FileCloser::operator()(std::FILE* file) {
 }
 
 bool feis::UTF8FileInputStream::open(const std::filesystem::path& filename) {
-    m_file.reset(nowide::fopen(to_utf8_encoded_string(filename).c_str(), "rb"));
+    m_file.reset(nowide::fopen(path_to_utf8_encoded_string(filename).c_str(), "rb"));
     return m_file != nullptr;
 }
 

@@ -26,7 +26,7 @@ Marker::Marker(const std::filesystem::path& folder_):
         if (not tex.load_from_path(path)) {
             throw std::runtime_error(fmt::format(
                 "Unable to load marker {} - failed on image {}",
-                folder.string(),
+                path_to_utf8_encoded_string(folder),
                 file
             ));
         } else {

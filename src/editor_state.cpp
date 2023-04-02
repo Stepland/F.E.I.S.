@@ -1590,17 +1590,23 @@ TimingOrigin EditorState::timing_origin() {
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();
-    nowide::ofstream file{to_utf8_encoded_string(path.string())};
+    nowide::ofstream file{path_to_utf8_encoded_string(path)};
     if (not file) {
         throw std::runtime_error(
-            fmt::format("Cannot write to file {}", path.string())
+            fmt::format(
+                "Cannot write to file {}",
+                path_to_utf8_encoded_string(path)
+            )
         );
     }
     file << memon.dump(4) << std::endl;
     file.close();
     if (not file) {
         throw std::runtime_error(
-            fmt::format("Error while closing file {}", path.string())
+            fmt::format(
+                "Error while closing file {}",
+                path_to_utf8_encoded_string(path)
+            )
         );
     }
     song_path = path;
@@ -1658,11 +1664,14 @@ void feis::open_from_file(
     config::Config& config
 ) {
     try {
-        nowide::ifstream f{to_utf8_encoded_string(song_path)};
+        nowide::ifstream f{path_to_utf8_encoded_string(song_path)};
         if (not f) {
             tinyfd_messageBox(
                 "Error",
-                fmt::format("Could not open file {}", song_path.string()).c_str(),
+                fmt::format(
+                    "Could not open file {}",
+                    path_to_utf8_encoded_string(song_path)
+                ).c_str(),
                 "ok",
                 "error",
                 1

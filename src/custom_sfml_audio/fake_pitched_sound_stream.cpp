@@ -16,7 +16,10 @@ FakePitchedSoundStream::FakePitchedSoundStream(
     sample(std::make_shared<sound_buffer_type>())
 {
     if (not sample->load_from_path(path_to_sample)) {
-        throw std::runtime_error(fmt::format("Could not load audio sample : {}", path_to_sample.string()));
+        throw std::runtime_error(fmt::format(
+            "Could not load audio sample : {}",
+            path_to_utf8_encoded_string(path_to_sample)
+        ));
     }
     finish_initializing_the_sample();
 }

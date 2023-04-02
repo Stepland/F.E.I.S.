@@ -18,7 +18,7 @@ const std::string recent_files_file = "recent files.txt";
 void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::path settings) {
     std::filesystem::create_directory(settings);
     auto recent_files_path = settings / recent_files_file;
-    nowide::ifstream readFile(to_utf8_encoded_string(recent_files_path));
+    nowide::ifstream readFile(path_to_utf8_encoded_string(recent_files_path));
     std::list<std::string> recent;
     std::set<std::string> recent_set;
     for (std::string line; getline(readFile, line);) {
@@ -29,16 +29,16 @@ void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::pat
     }
     readFile.close();
 
-    recent.remove(to_utf8_encoded_string(file));
+    recent.remove(path_to_utf8_encoded_string(file));
 
     while (recent.size() >= 10) {
         recent.pop_back();
     }
 
-    recent.push_front(to_utf8_encoded_string(file));
+    recent.push_front(path_to_utf8_encoded_string(file));
 
     nowide::ofstream writeFile(
-        to_utf8_encoded_string(recent_files_path),
+        path_to_utf8_encoded_string(recent_files_path),
         std::ofstream::out | std::ofstream::trunc
     );
     for (const auto& line : recent) {
@@ -48,7 +48,7 @@ void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::pat
 }
 
 std::vector<std::string> Toolbox::getRecentFiles(std::filesystem::path settings) {
-    nowide::ifstream readFile{to_utf8_encoded_string(settings / recent_files_file)};
+    nowide::ifstream readFile{path_to_utf8_encoded_string(settings / recent_files_file)};
     std::vector<std::string> recent;
     for (std::string line; getline(readFile, line);) {
         recent.push_back(line);

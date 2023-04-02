@@ -73,7 +73,7 @@ std::array<LNMarker::texture_type, number> load_tex_with_prefix(
         if (not tex.load_from_path(texFile)) {
             throw std::runtime_error(fmt::format(
                 "Unable to load texture folder {}, failed on texture {}",
-                folder.string(),
+                path_to_utf8_encoded_string(folder),
                 filename
             ));
         }

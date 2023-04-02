@@ -44,7 +44,7 @@ const std::string beat_tick_stream = "beat_tick";
  */
 class EditorState {
 public:
-    explicit EditorState(
+    EditorState(
         const std::filesystem::path& assets,
         config::Config& config
     );

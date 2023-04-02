@@ -103,13 +103,13 @@ config::Config::Config(const std::filesystem::path& settings) :
     }
     
     toml::table tbl;
-    nowide::ifstream config_stream{to_utf8_encoded_string(config_path)};
+    nowide::ifstream config_stream{path_to_utf8_encoded_string(config_path)};
     try {
         tbl = toml::parse(config_stream);
     } catch (const toml::parse_error& err) {
         fmt::print(
             "Error while parsing {} :\n{}",
-            settings.string(),
+            path_to_utf8_encoded_string(settings),
             err.what()
         );
         return;
@@ -138,7 +138,7 @@ toml::table config::Config::dump_as_v1_0_0() {
 config::Config::~Config() {
     std::filesystem::create_directories(config_path.parent_path());
     const auto tbl = dump_as_v1_0_0();
-    nowide::ofstream config_file_stream{to_utf8_encoded_string(config_path)};
+    nowide::ofstream config_file_stream{path_to_utf8_encoded_string(config_path)};
     const auto flags = (
         toml::toml_formatter::default_flags
         & ~toml::format_flags::allow_literal_strings

@@ -54,7 +54,7 @@ int main() {
     if (not std::filesystem::exists(font_path)) {
         tinyfd_messageBox(
             "Error",
-            ("Could not open "+to_utf8_encoded_string(font_path)).c_str(),
+            ("Could not open "+path_to_utf8_encoded_string(font_path)).c_str(),
             "ok",
             "error",
             1
@@ -64,7 +64,7 @@ int main() {
     ImGuiIO& IO = ImGui::GetIO();
     IO.Fonts->Clear();
     IO.Fonts->AddFontFromFileTTF(
-        to_utf8_encoded_string(assets_folder / "fonts" / "NotoSans-Medium.ttf").c_str(),
+        path_to_utf8_encoded_string(assets_folder / "fonts" / "NotoSans-Medium.ttf").c_str(),
         16.f
     );
     ImGui::SFML::UpdateFontTexture();

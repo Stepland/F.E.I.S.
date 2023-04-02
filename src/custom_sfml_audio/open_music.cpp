@@ -28,7 +28,7 @@ OpenMusic::OpenMusic(const std::filesystem::path& filename) :
     m_loopSpan(0, 0)
 {
     if (not openFromFile(filename)) {
-        throw std::runtime_error("Could not open "+filename.string());
+        throw std::runtime_error("Could not open " + path_to_utf8_encoded_string(filename));
     }
 }
 
