@@ -19,7 +19,7 @@
  */
 namespace Toolbox {
     void pushNewRecentFile(std::filesystem::path file, std::filesystem::path settings);
-    std::vector<std::string> getRecentFiles(std::filesystem::path settings);
+    std::vector<std::filesystem::path> getRecentFiles(std::filesystem::path settings);
 
     struct CustomConstraints {
         static void ContentSquare(ImGuiSizeCallbackData* data) {

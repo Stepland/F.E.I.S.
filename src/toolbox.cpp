@@ -47,11 +47,11 @@ void Toolbox::pushNewRecentFile(std::filesystem::path file, std::filesystem::pat
     writeFile.close();
 }
 
-std::vector<std::string> Toolbox::getRecentFiles(std::filesystem::path settings) {
+std::vector<std::filesystem::path> Toolbox::getRecentFiles(std::filesystem::path settings) {
     nowide::ifstream readFile{path_to_utf8_encoded_string(settings / recent_files_file)};
-    std::vector<std::string> recent;
+    std::vector<std::filesystem::path> recent;
     for (std::string line; getline(readFile, line);) {
-        recent.push_back(line);
+        recent.push_back(to_path(line));
     }
     readFile.close();
     return recent;
