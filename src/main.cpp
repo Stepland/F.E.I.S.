@@ -548,7 +548,7 @@ int main() {
                     int i = 0;
                     for (const auto& file : Toolbox::getRecentFiles(settings_folder)) {
                         ImGui::PushID(i);
-                        if (ImGui::MenuItem(file.c_str())) {
+                        if (ImGui::MenuItem(path_to_utf8_encoded_string(file).c_str())) {
                             feis::save_open(editor_state, file, assets_folder, settings_folder, config);
                         }
                         ImGui::PopID();
