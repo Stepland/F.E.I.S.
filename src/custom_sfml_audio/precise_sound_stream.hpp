@@ -20,8 +20,10 @@ struct PreciseSoundStream : public OpenSoundStream {
 };
 
 template<class T>
-sf::Uint64 time_to_samples(sf::Time position, T sample_rate, T channel_count) {
-    return ((static_cast<sf::Uint64>(position.asMicroseconds()) * sample_rate * channel_count) + 500000) / 1000000;
+std::int64_t time_to_samples(sf::Time position, T sample_rate, T channel_count) {
+    const auto signed_sample_rate = static_cast<std::int64_t>(sample_rate);
+    const auto signed_channel_count = static_cast<std::int64_t>(channel_count);
+    return ((static_cast<std::int64_t>(position.asMicroseconds()) * signed_sample_rate * signed_channel_count) + 500000) / 1000000;
 };
 
 template<class T>

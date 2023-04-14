@@ -21,18 +21,6 @@
 #include "imgui.h"
 #include "precise_sound_stream.hpp"
 
-#ifdef _MSC_VER
-    #pragma warning(disable: 4355) // 'this' used in base member initializer list
-#endif
-
-#if defined(__APPLE__)
-    #if defined(__clang__)
-        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    #elif defined(__GNUC__)
-        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    #endif
-#endif
-
 
 void InternalStream::clear_queue() {
     // Get the number of buffers still in the queue

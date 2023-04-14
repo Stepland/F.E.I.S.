@@ -1,5 +1,6 @@
 #include "open_music.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <algorithm>
@@ -166,7 +167,7 @@ bool OpenMusic::onGetData(SoundStream::Chunk& data) {
     current_offset += data.sampleCount;
 
     // Check if we have stopped obtaining samples or reached either the EOF or the loop end point
-    return (data.sampleCount != 0) && (current_offset < m_file.getSampleCount()) && !(current_offset == loopEnd && m_loopSpan.length != 0);
+    return (data.sampleCount != 0) && (static_cast<std::size_t>(current_offset) < m_file.getSampleCount()) && !(current_offset == loopEnd && m_loopSpan.length != 0);
 }
 
 

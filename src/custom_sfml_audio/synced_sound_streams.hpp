@@ -34,7 +34,7 @@ struct Buffers {
     // Format of the internal sound buffers
     sf::Int32 m_format = 0;
     // Number of samples processed since beginning of the stream
-    sf::Uint64 m_samplesProcessed = 0;
+    std::int64_t m_samplesProcessed = 0;
     // If buffer is an "end buffer", holds next seek position, else NoLoop. For play offset calculation.
     std::array<sf::Int64, BufferCount> m_bufferSeeks = {0, 0, 0};
 };

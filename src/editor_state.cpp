@@ -370,11 +370,7 @@ void EditorState::set_playback_position(std::variant<sf::Time, Fraction> newPosi
     previous_playback_position = playback_position;
     playback_position = newPosition;
     const auto now = current_time();
-    if (now >= sf::Time::Zero and now < editable_range.end) {
-        audio.setPlayingOffset(now);
-    } else {
-        stop();
-    }
+    audio.setPlayingOffset(now);
 };
 
 sf::Time EditorState::get_precise_playback_position() {
@@ -1170,6 +1166,7 @@ void EditorState::display_timing_menu() {
             if (chart_state) {
                 chart_state->density_graph.should_recompute = true;
             }
+            reload_editable_range();
         }
     }
     ImGui::End();
@@ -1394,8 +1391,10 @@ void EditorState::reload_editable_range() {
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
     if (music.has_value()) {
-        // If there is music, allow editing up to the end, but no further
+        // If there is music, allow editing from beat zero (which might be at
+        // a negative time in seconds) and up to the end, but no further
         // You've put notes *after* the end of the music ? fuck 'em.
+        new_range += applicable_timing->time_at(0);
         new_range += (**music).getDuration();
         return new_range;
     } else {

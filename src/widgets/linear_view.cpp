@@ -307,8 +307,8 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     const auto frac_chunk_at_cursor = static_cast<std::int64_t>(std::floor(
         static_cast<double>(sample_at_cursor) / waveform.channel_count / chunk_sizes.fractional
     ));
-    const auto first_chunk = frac_chunk_at_cursor - static_cast<std::int64_t>(sizes.cursor_height);
-    const auto end_chunk = first_chunk + static_cast<std::int64_t>(work_rect.GetHeight());
+    const std::int64_t first_chunk = frac_chunk_at_cursor - static_cast<std::int64_t>(sizes.cursor_height);
+    const std::int64_t end_chunk = first_chunk + static_cast<std::int64_t>(work_rect.GetHeight());
     const AffineTransform<float> seconds_to_pixels_proportional {
         0,
         1,
