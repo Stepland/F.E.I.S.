@@ -27,6 +27,8 @@
     - Change the timing (either BPMs or offset)
 - New Keyboard Shortcuts help dialog
 - New "Notes" menu with options to mirror or rotate the selected notes
+- WAY better support for paths with non-ascii characters on Windows (C++ is comically bad at this)
+- Support for negative time playback (lead in before the song starts)
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable
