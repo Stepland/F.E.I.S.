@@ -153,7 +153,7 @@ bool OpenMusic::onGetData(SoundStream::Chunk& data) {
     data.samples = m_samples.data();
     if (lead_in < 0) {
         std::fill(m_samples.data(), m_samples.data() + to_fill, 0);
-        const auto to_read = std::max<std::int64_t>(to_fill - lead_in, 0);
+        const auto to_read = to_fill + lead_in;
         if (to_read <= 0) {
             data.sampleCount = to_fill;
         } else {
@@ -176,7 +176,7 @@ void OpenMusic::onSeek(sf::Time timeOffset) {
     std::scoped_lock lock(m_mutex);
     if (timeOffset < sf::Time::Zero) {
         lead_in = timeToSamples(timeOffset);
-        m_file.seek(sf::Time::Zero);
+        m_file.seek(0);
     } else {
         m_file.seek(timeOffset);
     }
