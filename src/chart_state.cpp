@@ -173,11 +173,17 @@ void ChartState::transform_selected_notes(
         for (const auto& [_, note] : selected_stuff.notes) {
             chart.notes->erase(note);
         }
-        // overwriting insert of the transformed notes
+        // create the set of transformed notes independently first :
+        // if two transformed notes overwrite each other, better not keep them
+        // separate
         better::Notes transformed;
         for (const auto& [_, note] : selected_stuff.notes) {
             const auto transformed_note = transform(note);
             transformed.insert(transformed_note);
+        }
+
+        // overwriting insert of the whole set of transformed notes
+        for (const auto& [_, transformed_note] : transformed) {
             auto&& erased = chart.notes->overwriting_insert(transformed_note);
             removed.merge(std::move(erased));
         }
@@ -187,7 +193,7 @@ void ChartState::transform_selected_notes(
     }
 }
 
-void ChartState::mirror_selected_horizontally(NotificationsQueue& nq) {
+void ChartState::mirror_selection_horizontally(NotificationsQueue& nq) {
     if (not selected_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Mirrored {} note{}",
@@ -199,7 +205,7 @@ void ChartState::mirror_selected_horizontally(NotificationsQueue& nq) {
     }
 }
 
-void ChartState::mirror_selected_vertically(NotificationsQueue& nq) {
+void ChartState::mirror_selection_vertically(NotificationsQueue& nq) {
     if (not selected_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Mirrored {} note{}",
@@ -211,7 +217,7 @@ void ChartState::mirror_selected_vertically(NotificationsQueue& nq) {
     }
 }
 
-void ChartState::rotate_selected_90_clockwise(NotificationsQueue& nq) {
+void ChartState::rotate_selection_90_clockwise(NotificationsQueue& nq) {
     if (not selected_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Rotated {} note{}",
@@ -223,7 +229,7 @@ void ChartState::rotate_selected_90_clockwise(NotificationsQueue& nq) {
     }
 }
 
-void ChartState::rotate_selected_90_counter_clockwise(NotificationsQueue& nq) {
+void ChartState::rotate_selection_90_counter_clockwise(NotificationsQueue& nq) {
     if (not selected_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Rotated {} note{}",
@@ -235,7 +241,7 @@ void ChartState::rotate_selected_90_counter_clockwise(NotificationsQueue& nq) {
     }
 }
 
-void ChartState::rotate_selected_180(NotificationsQueue& nq) {
+void ChartState::rotate_selection_180(NotificationsQueue& nq) {
     if (not selected_stuff.notes.empty()) {
         const auto message = fmt::format(
             "Rotated {} note{}",
@@ -245,6 +251,19 @@ void ChartState::rotate_selected_180(NotificationsQueue& nq) {
         nq.push(std::make_shared<TextNotification>(message));
         transform_selected_notes([](const better::Note& n){return n.rotate_180();});
     }
+}
+
+void ChartState::quantize_selection(unsigned int snap, NotificationsQueue& nq) {
+    if (selected_stuff.notes.empty()) {
+        return;
+    }
+    const auto message = fmt::format(
+        "Quantized {} note{}",
+        selected_stuff.notes.size(),
+        selected_stuff.notes.size() > 1 ? "s" : ""
+    );
+    nq.push(std::make_shared<TextNotification>(message));
+    transform_selected_notes([=](const better::Note& n){return n.quantize(snap);});
 }
 
 

@@ -61,6 +61,7 @@ namespace better {
         TapNote rotate_90_clockwise() const;
         TapNote rotate_90_counter_clockwise() const;
         TapNote rotate_180() const;
+        TapNote quantize(unsigned int snap) const;
     private:
         Fraction time;
         Position position;
@@ -89,6 +90,7 @@ namespace better {
         LongNote rotate_90_clockwise() const;
         LongNote rotate_90_counter_clockwise() const;
         LongNote rotate_180() const;
+        LongNote quantize(unsigned int snap) const;
     private:
         Fraction time;
         Position position;
@@ -131,6 +133,7 @@ namespace better {
         Note rotate_90_clockwise() const;
         Note rotate_90_counter_clockwise() const;
         Note rotate_180() const;
+        Note quantize(unsigned int snap) const;
     private:
         std::variant<TapNote, LongNote> note;
     };

@@ -75,8 +75,8 @@ Fraction round_fraction(const Fraction& f);
 Fraction convert_to_fraction(const Decimal& d);
 
 // Rounds a given beat to the nearest given division (defaults to nearest 1/240th)
-Fraction round_beats(Fraction beats, std::uint64_t denominator = 240);
-Fraction floor_beats(Fraction beats, std::uint64_t denominator = 240);
+Fraction round_beats(const Fraction& beats, const std::uint64_t denominator = 240);
+Fraction floor_beats(const Fraction& beats, const std::uint64_t denominator = 240);
 
 Decimal convert_to_decimal(const Fraction& f, unsigned int decimal_places);
 

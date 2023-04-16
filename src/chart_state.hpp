@@ -48,11 +48,12 @@ struct ChartState {
     );
 
     void transform_selected_notes(std::function<better::Note(const better::Note&)> transform);
-    void mirror_selected_horizontally(NotificationsQueue& nq);
-    void mirror_selected_vertically(NotificationsQueue& nq);
-    void rotate_selected_90_clockwise(NotificationsQueue& nq);
-    void rotate_selected_90_counter_clockwise(NotificationsQueue& nq);
-    void rotate_selected_180(NotificationsQueue& nq);
+    void mirror_selection_horizontally(NotificationsQueue& nq);
+    void mirror_selection_vertically(NotificationsQueue& nq);
+    void rotate_selection_90_clockwise(NotificationsQueue& nq);
+    void rotate_selection_90_counter_clockwise(NotificationsQueue& nq);
+    void rotate_selection_180(NotificationsQueue& nq);
+    void quantize_selection(unsigned int snap, NotificationsQueue& nq);
 
     Interval<Fraction> visible_beats(const sf::Time& playback_position, const better::Timing& timing);
     void update_visible_notes(const sf::Time& playback_position, const better::Timing& timing);

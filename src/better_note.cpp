@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 
 #include "better_beats.hpp"
+#include "special_numeric_types.hpp"
 
 namespace better {
     Position::Position(std::uint64_t index) : x(index % 4), y (index / 4) {
@@ -102,6 +103,10 @@ namespace better {
 
     TapNote TapNote::rotate_180() const {
         return {time, position.rotate_180()};
+    }
+
+    TapNote TapNote::quantize(unsigned int snap) const {
+        return {round_beats(time, snap), position};
     }
 
 
@@ -254,6 +259,15 @@ namespace better {
         };
     }
 
+    LongNote LongNote::quantize(unsigned int snap) const {
+        return {
+            round_beats(time, snap),
+            position,
+            round_beats(duration, snap),
+            tail_tip
+        };
+    };
+
 
     /*
      *  legacy long note tail index is given relative to the note position :
@@ -393,6 +407,10 @@ namespace better {
 
     Note Note::rotate_180() const {
         return std::visit([](const auto& n) -> Note {return n.rotate_180();}, this->note);
+    }
+
+    Note Note::quantize(unsigned int snap) const {
+        return std::visit([=](const auto& n) -> Note {return n.quantize(snap);}, this->note);
     }
 }
 

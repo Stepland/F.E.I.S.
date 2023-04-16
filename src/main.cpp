@@ -1,5 +1,6 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <exception>
+#include <limits>
 #include <string>
 #include <filesystem>
 #include <variant>
@@ -645,12 +646,12 @@ int main() {
                 if (ImGui::BeginMenu("Mirror")) {
                     if (ImGui::MenuItem("Horizontally")) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->mirror_selected_horizontally(notificationsQueue);
+                            editor_state->chart_state->mirror_selection_horizontally(notificationsQueue);
                         }
                     }
                     if (ImGui::MenuItem("Vertically")) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->mirror_selected_vertically(notificationsQueue);
+                            editor_state->chart_state->mirror_selection_vertically(notificationsQueue);
                         }
                     }
                     ImGui::EndMenu();
@@ -658,18 +659,36 @@ int main() {
                 if (ImGui::BeginMenu("Rotate")) {
                     if (ImGui::MenuItem("90° Clockwise")) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->rotate_selected_90_clockwise(notificationsQueue);
+                            editor_state->chart_state->rotate_selection_90_clockwise(notificationsQueue);
                         }
                     }
                     if (ImGui::MenuItem("90° Counter-Clockwise")) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->rotate_selected_90_counter_clockwise(notificationsQueue);
+                            editor_state->chart_state->rotate_selection_90_counter_clockwise(notificationsQueue);
                         }
                     }
                     if (ImGui::MenuItem("180°")) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->rotate_selected_180(notificationsQueue);
+                            editor_state->chart_state->rotate_selection_180(notificationsQueue);
                         }
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Quantize")) {
+                    if (ImGui::MenuItem(fmt::format("To snap ({})", Toolbox::toOrdinal(4 * editor_state->snap)).c_str())) {
+                        if (editor_state->chart_state.has_value()) {
+                            editor_state->chart_state->quantize_selection(editor_state->snap, notificationsQueue);
+                        }
+                    }
+                    if (ImGui::BeginMenu("Other")) {
+                        static int custom_snap = 1;
+                        if (ImGui::InputInt("Snap", &custom_snap)) {
+                            custom_snap = std::max(custom_snap, 1);
+                        }
+                        if (ImGui::Button("Quantize")) {
+                            editor_state->chart_state->quantize_selection(custom_snap, notificationsQueue);
+                        }
+                        ImGui::EndMenu();
                     }
                     ImGui::EndMenu();
                 }
