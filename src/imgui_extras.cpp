@@ -109,3 +109,15 @@ void feis::CenteredText(const std::string& text) {
     ImGui::SetCursorPosX((window_width - text_width) / 2);
     ImGui::TextUnformatted(c_str);
 }
+
+bool feis::SquareButton(const char* text) {
+    const auto button_size = ImGui::GetFrameHeight();
+    return ImGui::ButtonEx(text, ImVec2(button_size, button_size));
+}
+
+void feis::ColorSquare(const sf::Color& color) {
+    ImVec2 p = ImGui::GetCursorScreenPos();
+    const float sz = ImGui::GetTextLineHeight();
+    ImGui::GetWindowDrawList()->AddRectFilled(p, ImVec2(p.x + sz, p.y + sz), ImColor(color));
+    ImGui::Dummy(ImVec2(sz, sz));
+}

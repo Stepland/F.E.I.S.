@@ -16,6 +16,7 @@
 #include <tinyfiledialogs.h>
 #include <whereami++.hpp>
 
+#include "imgui_extras.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/blank_screen.hpp"
 #include "chart_state.hpp"
@@ -680,13 +681,28 @@ int main() {
                             editor_state->chart_state->quantize_selection(editor_state->snap, notificationsQueue);
                         }
                     }
+                    for (const auto& [snap, color]: config.linear_view.quantization_colors.palette) {
+                        feis::ColorSquare(color);
+                        ImGui::SameLine();
+                        if (ImGui::MenuItem(fmt::format("To {}##Notes Quantize", Toolbox::toOrdinal(4 * snap)).c_str())) {
+                            if (editor_state->chart_state.has_value()) {
+                                editor_state->chart_state->quantize_selection(snap, notificationsQueue);
+                            }
+                        }
+                    }
                     if (ImGui::BeginMenu("Other")) {
-                        static int custom_snap = 1;
-                        if (ImGui::InputInt("Snap", &custom_snap)) {
-                            custom_snap = std::max(custom_snap, 1);
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("1 /");
+                        ImGui::SameLine();
+                        static int other_snap = 1;
+                        ImGui::SetNextItemWidth(150.f);
+                        if (ImGui::InputInt("Beats", &other_snap)) {
+                            other_snap = std::max(other_snap, 1);
                         }
                         if (ImGui::Button("Quantize")) {
-                            editor_state->chart_state->quantize_selection(custom_snap, notificationsQueue);
+                            if (editor_state->chart_state.has_value()) {
+                                editor_state->chart_state->quantize_selection(other_snap, notificationsQueue);
+                            }
                         }
                         ImGui::EndMenu();
                     }

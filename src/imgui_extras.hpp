@@ -65,6 +65,9 @@ namespace feis {
     }
 
     void CenteredText(const std::string& text);
+
+    bool SquareButton(const char* text);
+    void ColorSquare(const sf::Color& color);
 }
 
 namespace colors {
