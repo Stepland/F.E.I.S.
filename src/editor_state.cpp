@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #include <fmt/core.h>
+#include <future>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -1169,6 +1170,17 @@ void EditorState::display_timing_menu() {
                 chart_state->density_graph.should_recompute = true;
             }
             reload_editable_range();
+        }
+        ImGui::Separator();
+        feis::CenteredText("Automatic BPM Detection");
+        if (not music.has_value()) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Find BPM")) {
+            std::async(std::launch::async, )
+        }
+        if (not music.has_value()) {
+            ImGui::EndDisabled();
         }
     }
     ImGui::End();
