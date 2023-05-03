@@ -520,10 +520,11 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                             *applicable_timing
                         );
                         reload_sounds_that_depend_on_notes();
+                        reload_editable_range();
                     }
                 }
+                // Deal with long note creation stuff
                 if (ImGui::IsItemHovered() and chart_state and chart_state->creating_long_note) {
-                    // Deal with long note creation stuff
                     if (not chart_state->long_note_being_created) {
                         better::TapNote current_note{current_snaped_beats(), {x, y}};
                         chart_state->long_note_being_created.emplace(current_note, current_note);
@@ -532,6 +533,7 @@ void EditorState::display_playfield(Marker& marker, Judgement markerEndingState)
                             current_snaped_beats(), {x, y}
                         };
                     }
+                    reload_editable_range();
                 }
                 ImGui::PopStyleColor(3);
                 ImGui::PopID();
@@ -1248,6 +1250,7 @@ void EditorState::insert_long_note_just_created() {
     }
     chart_state->insert_long_note_just_created(snap);
     reload_sounds_that_depend_on_notes();
+    reload_editable_range();
 }
 
 void EditorState::move_backwards_in_time() {
@@ -1390,19 +1393,26 @@ void EditorState::reload_editable_range() {
 
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
+    // In all cases, allow editing from beat zero (which might be at a negative
+    // time in seconds)
+    new_range += time_at(0);
     if (music.has_value()) {
-        // If there is music, allow editing from beat zero (which might be at
-        // a negative time in seconds) and up to the end, but no further
+        // If there is music, allow editing up to the end, but no further
         // You've put notes *after* the end of the music ? fuck 'em.
-        new_range += applicable_timing->time_at(0);
         new_range += (**music).getDuration();
         return new_range;
     } else {
-        // If there is no music :
-        // make sure we can edit 10 seconds after the end of the current chart
-        if (chart_state and not chart_state->chart.notes->empty()) {
-            const auto beat_of_last_event = chart_state->chart.notes->crbegin()->second.get_end();
-            new_range += time_at(beat_of_last_event) + sf::seconds(10);
+        // If there is no music, make sure we can edit 10 seconds after the end
+        // of the notes, including the long note currently being created, if any
+        if (chart_state) {
+            if (not chart_state->chart.notes->empty()) {
+                const auto beat_of_last_chart_note = chart_state->chart.notes->crbegin()->second.get_end();
+                new_range += time_at(beat_of_last_chart_note) + sf::seconds(10);
+            }
+            if (chart_state->long_note_being_created) {
+                const auto& [a, b] = chart_state->long_note_being_created.value();
+                new_range += time_at(std::max(a.get_time(), b.get_time())) + sf::seconds(10);
+            }
         }
         // and at at least the first whole minute in any case
         new_range += sf::seconds(60);

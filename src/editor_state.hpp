@@ -237,6 +237,7 @@ public:
     void reload_sounds_that_depend_on_notes();
     void reload_sounds_that_depend_on_timing();
     void reload_all_sounds();
+    void reload_editable_range();
 
 private:
 
@@ -255,7 +256,6 @@ private:
     the audio file
     */
     Interval<sf::Time> editable_range;
-    void reload_editable_range();
     Interval<sf::Time> choose_editable_range();
     void clear_music();
 
