@@ -11,7 +11,7 @@
 #include <SFML/Audio/InputSoundFile.hpp>
 
 #include "cache.hpp"
-#include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 #include "variant_visitor.hpp"
 
 namespace waveform {
@@ -40,7 +40,7 @@ namespace waveform {
     };
 
     Channels load_initial_summary(
-        feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
+        feis::InputSoundFile& sound_file,
         const unsigned int window_size
     );
     Channels downsample_to_half(const Channels& summary);

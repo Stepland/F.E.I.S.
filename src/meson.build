@@ -1,4 +1,5 @@
 sources += files(
+    'aubio_cpp.cpp',
     'better_beats.cpp',
     'better_chart.cpp',
     'better_hakus.cpp',
@@ -14,6 +15,7 @@ sources += files(
     'config.cpp',
     'editor_state.cpp',
     'file_dialogs.cpp',
+    'guess_tempo.cpp',
     'history.cpp',
     'history_item.cpp',
     'imgui_extras.cpp',

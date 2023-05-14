@@ -76,6 +76,11 @@ public:
     std::optional<waveform::Waveform> waveform;
     waveform::Status waveform_status();
 
+    std::future<std::set<sf::Time>> onsets_loader;
+    std::optional<std::set<sf::Time>> onsets;
+
+    
+
     int get_volume() const;
     void set_volume(int newMusicVolume);
     void volume_up();
@@ -87,7 +92,7 @@ public:
     void speed_up();
     void speed_down();
 
-    std::optional<feis::HoldFileStreamMixin<sf::Music>> preview_audio;
+    std::optional<feis::Music> preview_audio;
 
     void play_music_preview();
     void stop_music_preview();
@@ -238,6 +243,8 @@ public:
     void reload_sounds_that_depend_on_timing();
     void reload_all_sounds();
     void reload_editable_range();
+
+    void frame_hook();
 
 private:
 

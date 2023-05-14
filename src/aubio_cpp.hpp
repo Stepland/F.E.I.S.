@@ -20,6 +20,7 @@ namespace aubio {
     struct onset_detector : _aubio_onset_t_unique_ptr {
         template <typename... Args>
         onset_detector(Args&&... args) : _aubio_onset_t_unique_ptr(new_aubio_onset(std::forward<Args>(args)...)) {}
+        // takes in Mono samples
         std::optional<std::size_t> detect(const std::vector<sf::Int16>& samples);
     };
 }

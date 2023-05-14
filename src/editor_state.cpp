@@ -31,6 +31,7 @@
 #include "chart_state.hpp"
 #include "compile_time_info.hpp"
 #include "file_dialogs.hpp"
+#include "guess_tempo.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
 #include "json_decimal_handling.hpp"
@@ -40,6 +41,7 @@
 #include "src/better_metadata.hpp"
 #include "src/better_timing.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 #include "variant_visitor.hpp"
 #include "utf8_strings.hpp"
 #include "waveform.hpp"
@@ -1008,6 +1010,7 @@ void EditorState::display_linear_view() {
                 ImGui::GetWindowDrawList(),
                 *chart_state,
                 waveform_status(),
+                onsets,
                 *applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
@@ -1176,8 +1179,11 @@ void EditorState::display_timing_menu() {
         if (not music.has_value()) {
             ImGui::BeginDisabled();
         }
-        if (ImGui::Button("Find BPM")) {
-            std::async(std::launch::async, )
+        if (ImGui::Button("Detect Onsets")) {
+            const auto path = full_audio_path();
+            if (path.has_value()) {
+                onsets_loader = std::async(std::launch::async, guess_tempo, *path);
+            }
         }
         if (not music.has_value()) {
             ImGui::EndDisabled();
@@ -1402,6 +1408,14 @@ void EditorState::reload_editable_range() {
         chart_state->density_graph.should_recompute = true;
     }
 };
+
+void EditorState::frame_hook() {
+    if (onsets_loader.valid()) {
+        if (onsets_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            onsets = onsets_loader.get();
+        }
+    }
+}
 
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};

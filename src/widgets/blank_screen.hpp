@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 
 #include <filesystem>
-#include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 
 class BlankScreen {
 public:
@@ -12,6 +12,6 @@ public:
 
 private:
     sf::Color gris_de_fond;
-    feis::LoadFromPathMixin<sf::Texture> tex_FEIS_logo;
+    feis::Texture tex_FEIS_logo;
     sf::Sprite FEIS_logo;
 };

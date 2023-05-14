@@ -75,6 +75,7 @@ public:
         ImDrawList* draw_list;
         ChartState& chart_state;
         const waveform::Status& waveform_status;
+        const std::optional<std::set<sf::Time>> onsets;
         const better::Timing& timing;
         const Fraction& current_beat;
         const Fraction& last_editable_beat;

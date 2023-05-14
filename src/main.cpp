@@ -123,6 +123,9 @@ int main() {
 
     sf::Clock deltaClock;
     while (window.isOpen()) {
+        if (editor_state) {
+            editor_state->frame_hook();
+        }
         sf::Event event;
         while (window.pollEvent(event)) {
             ImGui::SFML::ProcessEvent(event);

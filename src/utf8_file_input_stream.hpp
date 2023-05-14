@@ -1,5 +1,5 @@
-/* copied from include/SFML/System/UTF8FileInputStream.hpp
-Custom version of UTF8FileInputStream that adds an .open() overload that works with
+/*
+Custom version of FileInputStream that adds an .open() overload that works with
 non-ascii paths
 */
 

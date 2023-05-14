@@ -4,6 +4,7 @@
 #include <cstddef>
 #include "toolbox.hpp"
 #include "utf8_sfml.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 
 
 namespace waveform {
@@ -31,7 +32,7 @@ namespace waveform {
     }
 
     Channels load_initial_summary(
-        feis::HoldFileStreamMixin<sf::InputSoundFile>& sound_file,
+        feis::InputSoundFile& sound_file,
         const unsigned int window_size
     ) {
         const std::size_t chunk_size = window_size * sound_file.getChannelCount();
@@ -89,7 +90,7 @@ namespace waveform {
     };
 
     std::optional<Waveform> compute_waveform(const std::filesystem::path& audio) {
-        feis::HoldFileStreamMixin<sf::InputSoundFile> sound_file;
+        feis::InputSoundFile sound_file;
         if (not sound_file.open_from_path(audio)) {
             return {};
         }

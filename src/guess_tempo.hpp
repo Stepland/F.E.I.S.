@@ -13,5 +13,8 @@ struct TempoEstimate {
     float fitness;
 };
 
-std::vector<TempoEstimate> guess_tempo(feis::InputSoundFile& music);
-std::vector<sf::Time> detect_onsets(feis::InputSoundFile& music);
+float evidence(const std::vector<std::size_t>& histogram, const std::size_t sample);
+float confidence(const std::vector<std::size_t>& histogram, const std::size_t onset_position, const std::size_t interval);
+
+std::vector<TempoEstimate> guess_tempo(const std::filesystem::path& audio);
+std::set<std::size_t> detect_onsets(feis::InputSoundFile& music);
