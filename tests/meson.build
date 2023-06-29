@@ -66,6 +66,6 @@ executable(
 executable(
     'more_precise_music',
     'more_precise_music.cpp',
-    dependencies: deps + [dependency('openal')],
+    dependencies: deps,
     include_directories: inc,
 )

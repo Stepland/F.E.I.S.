@@ -18,9 +18,9 @@
 #include "../linear_view_sizes.hpp"
 #include "../linear_view_colors.hpp"
 #include "../utf8_sfml.hpp"
-#include "quantization_colors.hpp"
+#include "../quantization_colors.hpp"
 #include "lane_order.hpp"
-#include "waveform.hpp"
+#include "../waveform.hpp"
 
 struct SelectionRectangle {
     sf::Vector2f start = {-1, -1};
@@ -75,7 +75,6 @@ public:
         ImDrawList* draw_list;
         ChartState& chart_state;
         const waveform::Status& waveform_status;
-        const std::optional<std::set<sf::Time>> onsets;
         const better::Timing& timing;
         const Fraction& current_beat;
         const Fraction& last_editable_beat;

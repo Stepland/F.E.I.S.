@@ -1010,7 +1010,6 @@ void EditorState::display_linear_view() {
                 ImGui::GetWindowDrawList(),
                 *chart_state,
                 waveform_status(),
-                onsets,
                 *applicable_timing,
                 current_exact_beats(),
                 beats_at(editable_range.end),
@@ -1025,6 +1024,13 @@ void EditorState::display_linear_view() {
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
+
+    if (fitness) {
+        if (ImGui::Begin("Fitness")) {
+            ImGui::PlotLines("Fitness Values", fitness->data(), fitness->size());
+        }
+        ImGui::End();
+    }
 };
 
 void EditorState::display_sound_settings() {
@@ -1182,7 +1188,7 @@ void EditorState::display_timing_menu() {
         if (ImGui::Button("Detect Onsets")) {
             const auto path = full_audio_path();
             if (path.has_value()) {
-                onsets_loader = std::async(std::launch::async, guess_tempo, *path);
+                fitness_loader = std::async(std::launch::async, guess_tempo, *path);
             }
         }
         if (not music.has_value()) {
@@ -1410,9 +1416,9 @@ void EditorState::reload_editable_range() {
 };
 
 void EditorState::frame_hook() {
-    if (onsets_loader.valid()) {
-        if (onsets_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            onsets = onsets_loader.get();
+    if (fitness_loader.valid()) {
+        if (fitness_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            fitness = fitness_loader.get();
         }
     }
 }

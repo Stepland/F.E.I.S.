@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 #include <aubio/aubio.h>
 #include <aubio/onset/onset.h>

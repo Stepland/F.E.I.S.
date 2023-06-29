@@ -102,7 +102,6 @@ void LinearView::draw_in_beats_mode(LinearView::DrawArgs& args) {
         draw_list,
         chart_state,
         waveform_cache,
-        _,
         timing,
         current_beat,
         last_editable_beat,
@@ -267,7 +266,6 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
         draw_list,
         chart_state,
         waveform_status,
-        onsets,
         timing,
         current_beat,
         last_editable_beat,
@@ -359,16 +357,6 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
         0,
         static_cast<float>(computed_sizes.y)
     };
-    if (onsets) {
-        const auto first_visible_onset_it = onsets->lower_bound(first_visible_second);
-        const auto last_visible_onset_it = onsets->upper_bound(last_visible_second);
-        std::for_each(first_visible_onset_it, last_visible_onset_it, [&](const auto& onset){
-            const auto onset_y = seconds_to_pixels_absolute.transform(onset.asSeconds());
-            const sf::Vector2f onset_line_start = {computed_sizes.timeline_left, static_cast<float>(static_cast<double>(onset_y))};
-            const sf::Vector2f onset_line_end = onset_line_start + sf::Vector2f{computed_sizes.timeline_width, 0};
-            draw_list->AddLine(onset_line_start + origin, onset_line_end + origin, ImColor(sf::Color::Blue));
-        });
-    }
 
     const auto beats_to_absolute_pixels = [&](const Fraction& beat){
         return seconds_to_pixels_absolute.transform(args.timing.seconds_at(beat));

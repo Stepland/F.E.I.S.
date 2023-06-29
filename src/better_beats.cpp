@@ -1,6 +1,5 @@
 #include "better_beats.hpp"
 
-#include <boost/multiprecision/gmp.hpp>
 #include <fmt/core.h>
 #include <json.hpp>
 #include <memory>

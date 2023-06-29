@@ -3,7 +3,7 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 
 #include "precise_sound_stream.hpp"
-#include "utf8_sfml_redefinitions.hpp"
+#include "../utf8_sfml_redefinitions.hpp"
 
 /*
 SoundStream that doesn't pitch-shift but differenciates between the current

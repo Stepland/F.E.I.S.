@@ -5,8 +5,8 @@
 
 #include "better_note.hpp"
 #include "better_notes.hpp"
+#include "better_timing.hpp"
 #include "special_numeric_types.hpp"
-#include "src/better_timing.hpp"
 #include "variant_visitor.hpp"
 
 struct NoteAndBPMSelection {

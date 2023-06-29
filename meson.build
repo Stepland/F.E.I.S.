@@ -33,6 +33,8 @@ aubio_dep = dependency('aubio')
 deps += [aubio_dep]
 fftw3_dep = dependency('fftw3')
 deps += [fftw3_dep]
+eigen_dep = dependency('eigen3')
+deps += [eigen_dep]
 
 # I chose to put the .cpp files of the libs I vendor directly in include/
 # I store the files in a (lib name -> files) dict so that tests can
@@ -55,6 +57,7 @@ executable(
     dependencies: deps,
     include_directories: [
         inc,
-        configuration_inc
-    ]
+        configuration_inc,
+    ],
+    cpp_args: ['-march=native'],
 )

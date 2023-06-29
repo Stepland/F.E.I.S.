@@ -12,7 +12,7 @@
 #include <SFML/Audio/SoundStream.hpp>
 
 #include "precise_sound_stream.hpp"
-#include "utf8_file_input_stream.hpp"
+#include "../utf8_file_input_stream.hpp"
 
 class OpenMusic : public PreciseSoundStream {
 public:

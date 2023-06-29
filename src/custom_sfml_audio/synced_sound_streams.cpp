@@ -1,6 +1,5 @@
 #include "synced_sound_streams.hpp"
 
-#include <boost/math/constants/constants.hpp>
 #include <cassert>
 #include <initializer_list>
 #include <iostream>

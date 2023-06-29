@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdlib>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -14,7 +16,6 @@
 
 #include "al_resource.hpp"
 #include "precise_sound_stream.hpp"
-#include "src/history_item.hpp"
 
 
 // Number of audio buffers used by the streaming loop

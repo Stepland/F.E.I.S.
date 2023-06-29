@@ -17,7 +17,6 @@
 #include "custom_sfml_audio/note_claps.hpp"
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
-#include "src/history_item.hpp"
 #include "utf8_sfml.hpp"
 #include "utf8_sfml_redefinitions.hpp"
 #include "waveform.hpp"
@@ -76,8 +75,8 @@ public:
     std::optional<waveform::Waveform> waveform;
     waveform::Status waveform_status();
 
-    std::future<std::set<sf::Time>> onsets_loader;
-    std::optional<std::set<sf::Time>> onsets;
+    std::future<std::vector<float>> fitness_loader;
+    std::optional<std::vector<float>> fitness;
 
     
 

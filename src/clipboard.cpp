@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "better_note.hpp"
-#include "src/better_timing.hpp"
+#include "better_timing.hpp"
 #include "variant_visitor.hpp"
 
 NoteAndBPMSelection NoteAndBPMSelection::shifted_by(Fraction offset) const {

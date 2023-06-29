@@ -1,20 +1,28 @@
 #pragma once
 
-#include <SFML/System/Time.hpp>
 #include <filesystem>
 #include <vector>
+#include <set>
 
-#include "special_numeric_types.hpp"
+#include <Eigen/Dense>
+#include <SFML/System/Time.hpp>
+
 #include "utf8_sfml_redefinitions.hpp"
 
+/*
 struct TempoEstimate {
     Decimal bpm;
     sf::Time offset;
     float fitness;
 };
+*/
 
-float evidence(const std::vector<std::size_t>& histogram, const std::size_t sample);
-float confidence(const std::vector<std::size_t>& histogram, const std::size_t onset_position, const std::size_t interval);
-
-std::vector<TempoEstimate> guess_tempo(const std::filesystem::path& audio);
+std::vector<float> guess_tempo(const std::filesystem::path& audio);
 std::set<std::size_t> detect_onsets(feis::InputSoundFile& music);
+std::vector<float> compute_fitness(const std::set<std::size_t>& onsets, const std::size_t sample_rate);
+std::vector<float> compute_fitness_at_intervals(
+    const std::set<std::size_t>& onsets,
+    const std::size_t start_interval,
+    const std::size_t count,
+    const std::size_t stride
+);

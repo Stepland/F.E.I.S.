@@ -27,10 +27,10 @@ install it ourselves :
 $ sudo apt install ninja-build
 ```
 
-Install SFML
+Install dependencies
 
 ```console
-sudo apt install libsfml-dev
+sudo apt install libsfml-dev libopenal-dev libgmp-dev libaubio-dev libfftw3-dev
 ```
 
 Then checkout [this page](Compiling.md) for instructions on how to compile
