@@ -20,6 +20,7 @@
 
 #include "Eigen/src/Core/Array.h"
 #include "aubio_cpp.hpp"
+#include "special_numeric_types.hpp"
 
 std::vector<float> guess_tempo(const std::filesystem::path& path) {
     feis::InputSoundFile music;
@@ -54,9 +55,36 @@ void estimate_bpm(const std::set<std::size_t>& onsets, const std::size_t sample_
     std::sort(
         candidates.begin(),
         candidates.end(),
-        [](const IntervalFitness& a, const IntervalFitness& b){return a.fitness > b.fitness;}
+        [](const IntervalFitness& a, const IntervalFitness& b){return a.fitness < b.fitness;}
     );
-    std::vector<IntervalFitness>
+    // remove multiples
+    std::vector<IntervalFitness> deduped_candidates;
+    while (not candidates.empty()) {
+        deduped_candidates.push_back(candidates.back());
+        candidates.pop_back();
+        const auto reference_interval = deduped_candidates.back().interval;
+        const Fraction reference_bpm = Fraction{60 * sample_rate} / Fraction{reference_interval};
+        std::erase_if(candidates, [&](const IntervalFitness& f){
+            const Fraction potential_multiple = round_fraction(Fraction(reference_interval, f.interval));
+            const Fraction candidate_bpm = Fraction{60 * sample_rate} / Fraction{f.interval};
+            Fraction diff = (reference_bpm * potential_multiple) - candidate_bpm;
+            if (diff < 0) {
+                diff *= -1;
+            } 
+            return diff < 0.1f;
+        });
+    }
+    for (const auto& candidate: deduped_candidates) {
+        const Fraction bpm = Fraction{60 * sample_rate} / Fraction{candidate.interval};
+        const Fraction rounded_bpm = round_fraction(bpm);
+        Fraction diff = bpm - rounded_bpm;
+        if (diff < 0) {
+            diff *= -1;
+        }
+        if (diff < 0.05f) {
+            
+        }
+    }
 }
 
 std::set<std::size_t> detect_onsets(feis::InputSoundFile& music) {
