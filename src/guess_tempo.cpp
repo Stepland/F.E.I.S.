@@ -24,12 +24,12 @@
 #include "aubio_cpp.hpp"
 #include "special_numeric_types.hpp"
 
-std::vector<BPMCandidate> guess_tempo(const std::filesystem::path& audio) {
+std::vector<TempoCandidate> guess_tempo(const std::filesystem::path& audio) {
     feis::InputSoundFile music;
     music.open_from_path(audio);
     const auto onsets = detect_onsets(music);
-    estimate_bpm(onsets, music.getSampleRate());
-    // estimate offsets
+    const auto bpm_candidates = estimate_bpm(onsets, music.getSampleRate());
+    return estimate_offset(bpm_candidates, music);
 }
 
 std::set<std::size_t> detect_onsets(feis::InputSoundFile& music) {
@@ -63,10 +63,11 @@ std::set<std::size_t> detect_onsets(feis::InputSoundFile& music) {
 }
 
 
-void estimate_bpm(const std::set<std::size_t>& onsets, const std::size_t sample_rate) {
+std::vector<BPMFitness> estimate_bpm(const std::set<std::size_t>& onsets, const std::size_t sample_rate) {
     const auto broad_fitness = broad_interval_test(onsets, sample_rate);
     const auto corrected_fitness = correct_bias(broad_fitness);
-    const auto interval_candidates = narrow_interval_test(broad_fitness, corrected_fitness, onsets, sample_rate);
+    auto interval_candidates = narrow_interval_test(broad_fitness, corrected_fitness, onsets, sample_rate);
+    return select_bpm_candidates(interval_candidates, onsets, sample_rate);
 }
 
 const float min_tested_bpm = 89.f;
@@ -130,7 +131,9 @@ std::vector<IntervalFitness> fitness_of_interval_range(const std::set<std::size_
         const auto second_half_interval = tested_interval - first_half_interval;
         confidence.head(first_half_interval) += evidence_cache.tail(first_half_interval) / 2;
         confidence.tail(second_half_interval) += evidence_cache.head(second_half_interval) / 2;
-        fitness_values.push_back({tested_interval, confidence.maxCoeff()});
+        Eigen::Index max_index;
+        const auto fitness = confidence.maxCoeff(&max_index);
+        fitness_values.push_back({tested_interval, fitness, static_cast<std::size_t>(max_index)});
     }
     return fitness_values;
 }
@@ -228,8 +231,8 @@ std::vector<IntervalFitness> narrow_interval_test(
 
 std::vector<BPMFitness> select_bpm_candidates(
     std::vector<IntervalFitness>& interval_candidates,
-    const std::size_t sample_rate,
-    const std::set<std::size_t>& onsets
+    const std::set<std::size_t>& onsets,
+    const std::size_t sample_rate
 ) {
     // Bram van de Wetering's original paper [BvdW] :
     // "BPM candidates that differ by less than 0.1 from a multiple of a
@@ -281,9 +284,10 @@ std::vector<BPMFitness> select_bpm_candidates(
         }
         if (diff < 0.05f) {
             const auto rounded_bpm_fitness  = fitness_of_bpm(onsets, sample_rate, rounded_bpm);
-            if (rounded_bpm_fitness > 0.99f * candidate.fitness) {
+            if (rounded_bpm_fitness.fitness > 0.99f * candidate.fitness) {
                 candidate.bpm = rounded_bpm;
-                candidate.fitness = rounded_bpm_fitness;
+                candidate.fitness = rounded_bpm_fitness.fitness;
+                candidate.max_onset = rounded_bpm_fitness.max_onset;
             }
         }
     }
@@ -305,7 +309,7 @@ std::vector<BPMFitness> select_bpm_candidates(
     return bpm_candidates;
 }
 
-float fitness_of_bpm(
+Fitness fitness_of_bpm(
     const std::set<std::size_t>& onsets,
     const std::size_t sample_rate,
     const Fraction BPM
@@ -330,5 +334,32 @@ float fitness_of_bpm(
     const auto second_half_interval = rounded_interval - first_half_interval;
     confidence.head(first_half_interval) += evidence_cache.tail(first_half_interval) / 2;
     confidence.tail(second_half_interval) += evidence_cache.head(second_half_interval) / 2;
-    return confidence.maxCoeff();
+    Eigen::Index max_index;
+    const auto fitness = confidence.maxCoeff(&max_index);
+    return {fitness, static_cast<std::size_t>(max_index)};
+}
+
+std::vector<TempoCandidate> estimate_offset(const std::vector<BPMFitness>& bpm_candidates, feis::InputSoundFile& music) {
+    std::vector<TempoCandidate> result;
+    result.reserve(bpm_candidates.size());
+    music.seek(0);
+    const std::size_t mono_samples = music.getSampleCount() / music.getChannelCount();
+    std::vector<float> amplitude(mono_samples);
+    const std::size_t chunk_size = 4096 * music.getChannelCount();
+    std::size_t read;
+    std::vector<sf::Int16> buffer(chunk_size);
+    do {
+        read = music.read(buffer.data(), chunk_size);
+        for (std::size_t i = 0; i < read / music.getChannelCount(); i++) {
+            float downmixed_sample = 0;
+            for (std::size_t channel = 0; channel < music.getChannelCount(); channel++) {
+                downmixed_sample += buffer[i * music.getChannelCount() + channel];
+            }
+            amplitude[i] = downmixed_sample / channel_count;
+        }
+    } while ( read == chunk_size );
+
+    for (const auto& bpm_candidate : bpm_candidates) {
+        const Fraction initial_offset_estimate = Fraction{bpm_candidate.max_onset, music.getSampleRate()};
+    }
 }
