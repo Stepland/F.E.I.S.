@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstddef>
 #include <deque>
+#include <fstream>
 #include <functional>
 #include <future>
 #include <iostream>
@@ -28,6 +29,13 @@ std::vector<TempoCandidate> guess_tempo(const std::filesystem::path& audio) {
     feis::InputSoundFile music;
     music.open_from_path(audio);
     const auto onsets = detect_onsets(music);
+    {
+        std::ofstream onsets_dump("onsets.csv");
+        onsets_dump << "sample\n";
+        for (const auto& onset : onsets) {
+            onsets_dump << onset << "\n";
+        }
+    }
     const auto bpm_candidates = estimate_bpm(onsets, music.getSampleRate());
     return estimate_offset(bpm_candidates, music);
 }
@@ -65,7 +73,21 @@ std::set<std::size_t> detect_onsets(feis::InputSoundFile& music) {
 
 std::vector<BPMFitness> estimate_bpm(const std::set<std::size_t>& onsets, const std::size_t sample_rate) {
     const auto broad_fitness = broad_interval_test(onsets, sample_rate);
+    {
+        std::ofstream broad_fitness_dump("broad_fitness.csv");
+        broad_fitness_dump << "interval,fitness\n";
+        for (const auto& [interval, fitness, max_onset] : broad_fitness) {
+            broad_fitness_dump << interval << "," << fitness << "\n";
+        }
+    }
     const auto corrected_fitness = correct_bias(broad_fitness);
+    {
+        std::ofstream corrected_fitness_dump("corrected_fitness.csv");
+        corrected_fitness_dump << "fitness\n";
+        for (const auto& fitness : corrected_fitness) {
+            corrected_fitness_dump << fitness << "\n";
+        }
+    }
     auto interval_candidates = narrow_interval_test(broad_fitness, corrected_fitness, onsets, sample_rate);
     return select_bpm_candidates(interval_candidates, onsets, sample_rate);
 }
@@ -191,13 +213,21 @@ Eigen::ArrayXf correct_bias(const std::vector<IntervalFitness>& fitness_results)
         [](const IntervalFitness& f){return f.fitness;}
     );
     const auto coeffs = polyfit(y_values, 3);
+    {
+        std::ofstream coeffs_dump("coeffs.csv");
+        coeffs_dump << "coeff\n";
+        for (const auto& coeff : coeffs) {
+            coeffs_dump << coeff << "\n";
+        }
+    }
     Eigen::ArrayXf fitness(y_values.size());
     std::copy(y_values.cbegin(), y_values.cend(), fitness.begin());
+    auto indicies = Eigen::ArrayXf::LinSpaced(y_values.size(), 0, y_values.size() - 1);
     return fitness - (
         coeffs[0]
-        + coeffs[1] * fitness
-        + coeffs[2] * fitness.pow(2)
-        + coeffs[3] * fitness.pow(3)
+        + coeffs[1] * indicies
+        + coeffs[2] * indicies.pow(2)
+        + coeffs[3] * indicies.pow(3)
     );
 }
 
@@ -342,24 +372,63 @@ Fitness fitness_of_bpm(
 std::vector<TempoCandidate> estimate_offset(const std::vector<BPMFitness>& bpm_candidates, feis::InputSoundFile& music) {
     std::vector<TempoCandidate> result;
     result.reserve(bpm_candidates.size());
+    const auto channel_count = music.getChannelCount();
     music.seek(0);
-    const std::size_t mono_samples = music.getSampleCount() / music.getChannelCount();
-    std::vector<float> amplitude(mono_samples);
-    const std::size_t chunk_size = 4096 * music.getChannelCount();
+    const std::size_t mono_sample_count = music.getSampleCount() / channel_count;
+    std::vector<float> absolute_amplitude(mono_sample_count);
+    const std::size_t mono_chunk_size = 4096;
+    const std::size_t chunk_size = mono_chunk_size * channel_count;
     std::size_t read;
     std::vector<sf::Int16> buffer(chunk_size);
+    std::size_t chunks = 0;
     do {
         read = music.read(buffer.data(), chunk_size);
-        for (std::size_t i = 0; i < read / music.getChannelCount(); i++) {
+        for (std::size_t i = 0; i < read / channel_count; i++) {
             float downmixed_sample = 0;
-            for (std::size_t channel = 0; channel < music.getChannelCount(); channel++) {
-                downmixed_sample += buffer[i * music.getChannelCount() + channel];
+            for (std::size_t channel = 0; channel < channel_count; channel++) {
+                downmixed_sample += buffer[i * channel_count + channel];
             }
-            amplitude[i] = downmixed_sample / channel_count;
+            absolute_amplitude[chunks*mono_chunk_size + i] = std::abs(downmixed_sample / channel_count);
         }
+        chunks++;
     } while ( read == chunk_size );
-
-    for (const auto& bpm_candidate : bpm_candidates) {
-        const Fraction initial_offset_estimate = Fraction{bpm_candidate.max_onset, music.getSampleRate()};
+    const auto sample_rate = music.getSampleRate();
+    const std::size_t window_size = 50 * sample_rate / 1000;
+    float rolling_sum_before = 0;
+    std::size_t upper_bound = std::min(mono_sample_count, window_size);
+    float rolling_sum_after = std::accumulate(absolute_amplitude.begin(), absolute_amplitude.begin()+upper_bound, 0);
+    std::vector<float> slope(mono_sample_count);
+    for (std::size_t i = 0; i < mono_sample_count; i++) {
+        if (i >= window_size) {
+            rolling_sum_before -= absolute_amplitude[i - window_size];
+        }
+        rolling_sum_before += absolute_amplitude[i];
+        rolling_sum_after -= absolute_amplitude[i];
+        if (i + window_size < mono_sample_count) {
+            rolling_sum_after += absolute_amplitude[i + window_size];
+        }
+        slope[i] = std::max<float>(0, rolling_sum_after - rolling_sum_before);
     }
+    for (const auto& bpm_candidate : bpm_candidates) {
+        const Fraction interval_in_seconds = Fraction{60} / bpm_candidate.bpm;
+        const Fraction on_beat_offset_estimate = Fraction{bpm_candidate.max_onset, sample_rate};
+        const Fraction off_beat_offset_estimate = on_beat_offset_estimate + interval_in_seconds / 2;
+        float average_onbeat_amplitude = 0;
+        float average_offbeat_amplitude = 0;
+        for (std::size_t i = 0; (off_beat_offset_estimate + i * interval_in_seconds) * sample_rate < mono_sample_count; i++) {
+            const auto on_beat_sample = static_cast<std::size_t>((on_beat_offset_estimate + i * interval_in_seconds) * sample_rate);
+            const auto off_beat_sample = static_cast<std::size_t>((on_beat_offset_estimate + i * interval_in_seconds) * sample_rate);
+            average_onbeat_amplitude += slope.at(on_beat_sample);
+            average_offbeat_amplitude += slope.at(off_beat_sample);
+        }
+        result.emplace_back(
+            bpm_candidate.bpm,
+            on_beat_offset_estimate,
+            bpm_candidate.fitness
+        );
+        if (average_offbeat_amplitude > average_onbeat_amplitude) {
+            result.back().offset_seconds = off_beat_offset_estimate;
+        }
+    }
+    return result;
 }

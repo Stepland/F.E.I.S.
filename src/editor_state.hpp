@@ -17,6 +17,7 @@
 #include "custom_sfml_audio/note_claps.hpp"
 #include "custom_sfml_audio/open_music.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
+#include "guess_tempo.hpp"
 #include "utf8_sfml.hpp"
 #include "utf8_sfml_redefinitions.hpp"
 #include "waveform.hpp"
@@ -75,8 +76,8 @@ public:
     std::optional<waveform::Waveform> waveform;
     waveform::Status waveform_status();
 
-    std::future<std::vector<float>> fitness_loader;
-    std::optional<std::vector<float>> fitness;
+    std::future<std::vector<TempoCandidate>> tempo_candidates_loader;
+    std::optional<std::vector<TempoCandidate>> tempo_candidates;
 
     
 

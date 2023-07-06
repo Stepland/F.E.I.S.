@@ -1024,13 +1024,6 @@ void EditorState::display_linear_view() {
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
-
-    if (fitness) {
-        if (ImGui::Begin("Fitness")) {
-            ImGui::PlotLines("Fitness Values", fitness->data(), fitness->size());
-        }
-        ImGui::End();
-    }
 };
 
 void EditorState::display_sound_settings() {
@@ -1188,7 +1181,16 @@ void EditorState::display_timing_menu() {
         if (ImGui::Button("Detect Onsets")) {
             const auto path = full_audio_path();
             if (path.has_value()) {
-                fitness_loader = std::async(std::launch::async, guess_tempo, *path);
+                tempo_candidates_loader = std::async(std::launch::async, guess_tempo, *path);
+            }
+        }
+        if (tempo_candidates) {
+            for (const auto& candidate: *tempo_candidates) {
+                ImGui::TextUnformatted(fmt::format(
+                    "{:.3f} BPM @ {:.2f}s",
+                    static_cast<float>(candidate.bpm),
+                    static_cast<float>(candidate.offset_seconds)
+                ).c_str());
             }
         }
         if (not music.has_value()) {
@@ -1416,9 +1418,9 @@ void EditorState::reload_editable_range() {
 };
 
 void EditorState::frame_hook() {
-    if (fitness_loader.valid()) {
-        if (fitness_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            fitness = fitness_loader.get();
+    if (tempo_candidates_loader.valid()) {
+        if (tempo_candidates_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            tempo_candidates = tempo_candidates_loader.get();
         }
     }
 }

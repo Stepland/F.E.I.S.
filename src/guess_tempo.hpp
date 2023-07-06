@@ -30,7 +30,7 @@ struct Fitness {
 
 struct TempoCandidate {
     Fraction bpm;
-    std::size_t offset;
+    Fraction offset_seconds;
     float fitness;
 };
 
