@@ -18,22 +18,20 @@ std::vector<T> polyfit(const std::vector<T> &yValues, const int degree) {
     int coeffs = degree + 1;
     size_t samples = yValues.size();
     
-    MatrixXf X(samples, coeffs);
-    MatrixXf Y(samples, 1);
+    MatrixXf A(samples, coeffs);
+    MatrixXf b(samples, 1);
     
-    // fill Y matrix
-    for (size_t i = 0; i < samples; i++) {
-        Y(i, 0) = yValues[i];
-    }
-    
-    // fill X matrix (Vandermonde matrix)
+    // fill b matrix
+    // fill A matrix (Vandermonde matrix)
     for (size_t row = 0; row < samples; row++) {
         for (int col = 0; col < coeffs; col++) {
-            X(row, col) = std::pow(row, col);
+            A(row, col) = std::pow(row, col);
         }
+        b(row) = yValues[row];
     }
     
+    // Solve Ax = b
     VectorXf coefficients;
-    coefficients = X.jacobiSvd(ComputeThinU | ComputeThinV).solve(Y);
+    coefficients = A.householderQr().solve(b);
     return std::vector<T>(coefficients.data(), coefficients.data() + coeffs);
 }

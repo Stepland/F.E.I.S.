@@ -69,3 +69,10 @@ executable(
     dependencies: deps,
     include_directories: inc,
 )
+
+executable(
+    'test_polyfit',
+    'test_polyfit.cpp',
+    dependencies: deps,
+    include_directories: inc,
+)

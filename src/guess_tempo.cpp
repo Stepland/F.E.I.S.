@@ -76,7 +76,7 @@ std::vector<BPMFitness> estimate_bpm(const std::set<std::size_t>& onsets, const 
     {
         std::ofstream broad_fitness_dump("broad_fitness.csv");
         broad_fitness_dump << "interval,fitness\n";
-        for (const auto& [interval, fitness, max_onset] : broad_fitness) {
+        for (const auto& [interval, fitness, _] : broad_fitness) {
             broad_fitness_dump << interval << "," << fitness << "\n";
         }
     }
@@ -212,6 +212,13 @@ Eigen::ArrayXf correct_bias(const std::vector<IntervalFitness>& fitness_results)
         y_values.begin(),
         [](const IntervalFitness& f){return f.fitness;}
     );
+    {
+        std::ofstream yvalues_dump("yvalues.csv");
+        yvalues_dump << "value\n";
+        for (const auto& value : y_values) {
+            yvalues_dump << value << "\n";
+        }     
+    }
     const auto coeffs = polyfit(y_values, 3);
     {
         std::ofstream coeffs_dump("coeffs.csv");
