@@ -29,13 +29,6 @@ std::vector<TempoCandidate> guess_tempo(const std::filesystem::path& audio) {
     feis::InputSoundFile music;
     music.open_from_path(audio);
     const auto onsets = detect_onsets(music);
-    {
-        std::ofstream onsets_dump("onsets.csv");
-        onsets_dump << "sample\n";
-        for (const auto& onset : onsets) {
-            onsets_dump << onset << "\n";
-        }
-    }
     const auto bpm_candidates = estimate_bpm(onsets, music.getSampleRate());
     return estimate_offset(bpm_candidates, music);
 }
@@ -73,21 +66,7 @@ std::set<std::size_t> detect_onsets(feis::InputSoundFile& music) {
 
 std::vector<BPMFitness> estimate_bpm(const std::set<std::size_t>& onsets, const std::size_t sample_rate) {
     const auto broad_fitness = broad_interval_test(onsets, sample_rate);
-    {
-        std::ofstream broad_fitness_dump("broad_fitness.csv");
-        broad_fitness_dump << "interval,fitness\n";
-        for (const auto& [interval, fitness, _] : broad_fitness) {
-            broad_fitness_dump << interval << "," << fitness << "\n";
-        }
-    }
     const auto corrected_fitness = correct_bias(broad_fitness);
-    {
-        std::ofstream corrected_fitness_dump("corrected_fitness.csv");
-        corrected_fitness_dump << "fitness\n";
-        for (const auto& fitness : corrected_fitness) {
-            corrected_fitness_dump << fitness << "\n";
-        }
-    }
     auto interval_candidates = narrow_interval_test(broad_fitness, corrected_fitness, onsets, sample_rate);
     return select_bpm_candidates(interval_candidates, onsets, sample_rate);
 }
@@ -212,21 +191,7 @@ Eigen::ArrayXf correct_bias(const std::vector<IntervalFitness>& fitness_results)
         y_values.begin(),
         [](const IntervalFitness& f){return f.fitness;}
     );
-    {
-        std::ofstream yvalues_dump("yvalues.csv");
-        yvalues_dump << "value\n";
-        for (const auto& value : y_values) {
-            yvalues_dump << value << "\n";
-        }     
-    }
     const auto coeffs = polyfit(y_values, 3);
-    {
-        std::ofstream coeffs_dump("coeffs.csv");
-        coeffs_dump << "coeff\n";
-        for (const auto& coeff : coeffs) {
-            coeffs_dump << coeff << "\n";
-        }
-    }
     Eigen::ArrayXf fitness(y_values.size());
     std::copy(y_values.cbegin(), y_values.cend(), fitness.begin());
     auto indicies = Eigen::ArrayXf::LinSpaced(y_values.size(), 0, y_values.size() - 1);

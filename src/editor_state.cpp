@@ -1178,11 +1178,24 @@ void EditorState::display_timing_menu() {
         if (not music.has_value()) {
             ImGui::BeginDisabled();
         }
-        if (ImGui::Button("Detect Onsets")) {
+        bool loading = tempo_candidates_loader.valid();
+        if (loading) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Guess BPM")) {
             const auto path = full_audio_path();
             if (path.has_value()) {
                 tempo_candidates_loader = std::async(std::launch::async, guess_tempo, *path);
             }
+        }
+        if (loading) {
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            static std::size_t frame_counter = 0;
+            frame_counter += 1;
+            frame_counter %= 4*5;
+            ImGui::TextUnformatted(fmt::format("Loading{:.>{}}", "", frame_counter / 5).c_str());
+            
         }
         if (tempo_candidates) {
             for (const auto& candidate: *tempo_candidates) {
