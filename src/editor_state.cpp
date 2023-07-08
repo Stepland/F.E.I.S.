@@ -1,30 +1,28 @@
 #include "editor_state.hpp"
 
-#include <SFML/Audio/Music.hpp>
-#include <SFML/Audio/SoundSource.hpp>
-#include <SFML/Audio/SoundStream.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-
-#include <fmt/core.h>
 #include <future>
-#include <imgui-SFML.h>
-#include <imgui.h>
-#include <imgui_internal.h>
-#include <imgui_stdlib.h>
 #include <initializer_list>
 #include <memory>
-#include <nowide/fstream.hpp>
-#include <sstream>
-#include <SFML/System/Time.hpp>
-#include <stdexcept>
-#include <string>
-#include <tinyfiledialogs.h>
 #include <variant>
+
+#include <fmt/core.h>
+#include <imgui.h>
+#include <imgui-SFML.h>
+#include <imgui_internal.h>
+#include <imgui_stdlib.h>
+#include <nowide/fstream.hpp>
+#include <SFML/Audio/Music.hpp>
+#include <SFML/Audio/SoundSource.hpp>
+#include <SFML/Audio/SoundStream.hpp>
+#include <SFML/System/Time.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <tinyfiledialogs.h>
 
 #include "better_note.hpp"
 #include "better_song.hpp"
@@ -38,9 +36,9 @@
 #include "long_note_dummy.hpp"
 #include "notifications_queue.hpp"
 #include "special_numeric_types.hpp"
-#include "src/better_metadata.hpp"
-#include "src/better_timing.hpp"
-#include "src/custom_sfml_audio/synced_sound_streams.hpp"
+#include "better_metadata.hpp"
+#include "better_timing.hpp"
+#include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "utf8_sfml_redefinitions.hpp"
 #include "variant_visitor.hpp"
 #include "utf8_strings.hpp"
@@ -1144,34 +1142,57 @@ void EditorState::display_history() {
     history.display(show_history);
 }
 
-void EditorState::display_timing_menu() {
-    if (ImGui::Begin("Adjust Timing", &show_timing_menu)) {
+void EditorState::display_sync_menu() {
+    if (ImGui::Begin("Adjust Sync", &show_sync_menu, ImGuiWindowFlags_AlwaysAutoResize)) {
         auto bpm = std::visit(
             [&](const auto& pos){return applicable_timing->bpm_at(pos);},
             playback_position
         );
-        if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        ImGui::PushItemWidth(-70.0f);
+        if (feis::InputDecimal("Initial BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
             if (bpm > 0) {
-                const auto before = *applicable_timing;
-                applicable_timing->insert(better::BPMAtBeat{bpm, current_snaped_beats()});
-                if (*applicable_timing != before) {
-                    reload_sounds_that_depend_on_timing();
-                    history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
-                }
-                if (chart_state) {
-                    chart_state->density_graph.should_recompute = true;
-                }
+                auto new_timing = *applicable_timing;
+                new_timing.insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+                replace_applicable_timing_with(new_timing);
             }
         }
         auto offset = applicable_timing->get_offset();
-        if (feis::InputDecimal("beat zero offset", &offset, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            applicable_timing->set_offset(offset);
-            reload_sounds_that_depend_on_timing();
+        if (feis::InputDecimal("Offset", &offset, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            auto new_timing = *applicable_timing;
+            new_timing.set_offset(offset);
+            replace_applicable_timing_with(new_timing);
             set_playback_position(current_exact_beats());
-            if (chart_state) {
-                chart_state->density_graph.should_recompute = true;
-            }
-            reload_editable_range();
+        }
+        ImGui::PopItemWidth();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Move first beat");
+        ImGui::SameLine();
+        const auto beat_duration = [](const better::Timing& t){return 60 / t.bpm_at(Fraction{0});};
+        if (ImGui::Button("-1")) {
+            auto new_timing = *applicable_timing;
+            new_timing.set_offset(new_timing.get_offset() - beat_duration(new_timing));
+            replace_applicable_timing_with(new_timing);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("-0.5")) {
+            auto new_timing = *applicable_timing;
+            const auto beat = 60 * new_timing.bpm_at(Fraction{0});
+            new_timing.set_offset(new_timing.get_offset() - beat_duration(new_timing) / 2);
+            replace_applicable_timing_with(new_timing);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+0.5")) {
+            auto new_timing = *applicable_timing;
+            const auto beat = 60 * new_timing.bpm_at(Fraction{0});
+            new_timing.set_offset(new_timing.get_offset() + beat_duration(new_timing) / 2);
+            replace_applicable_timing_with(new_timing);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("+1")) {
+            auto new_timing = *applicable_timing;
+            const auto beat = 60 * new_timing.bpm_at(Fraction{0});
+            new_timing.set_offset(new_timing.get_offset() + beat_duration(new_timing));
+            replace_applicable_timing_with(new_timing);
         }
         ImGui::Separator();
         feis::CenteredText("Automatic BPM Detection");
@@ -1179,32 +1200,73 @@ void EditorState::display_timing_menu() {
             ImGui::BeginDisabled();
         }
         bool loading = tempo_candidates_loader.valid();
-        if (loading) {
-            ImGui::BeginDisabled();
+        static std::optional<TempoCandidate> selected_tempo_candidate;
+        if (ImGui::BeginChild("Candidate Child Window", ImVec2(0, 100), true, ImGuiWindowFlags_NoScrollbar)) {
+            if (not tempo_candidates) {
+                if (loading) {
+                    static std::size_t frame_counter = 0;
+                    frame_counter += 1;
+                    frame_counter %= 4*5;
+                    feis::CenteredText("Loading");
+                    ImGui::SameLine();
+                    ImGui::TextUnformatted(fmt::format("{:.>{}}", "", frame_counter / 5).c_str());
+                }
+            } else {
+                if(
+                    ImGui::BeginTable(
+                        "Candidates",
+                        3,
+                        ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+                    )
+                ) {
+                    ImGui::TableSetupColumn("BPM");
+                    ImGui::TableSetupColumn("Offset");
+                    ImGui::TableSetupColumn("Fitness");
+                    ImGui::TableHeadersRow();
+                    std::for_each(tempo_candidates->crbegin(), tempo_candidates->crend(), [&](const auto& candidate){
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::PushID(&candidate);
+                        const auto label = fmt::format("{:.3f}##", static_cast<float>(candidate.bpm));
+                        const bool is_selected = selected_tempo_candidate.has_value() and *selected_tempo_candidate == candidate;
+                        if (ImGui::Selectable(label.c_str(), is_selected, ImGuiSelectableFlags_SpanAllColumns)) {
+                            selected_tempo_candidate = candidate;
+                        };
+                        ImGui::PopID();
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(fmt::format("{:.3f}s", static_cast<float>(candidate.offset_seconds)).c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(fmt::format("{:.2f}", candidate.fitness).c_str());
+                    });
+                    ImGui::EndTable();
+                }
+            }
+            ImGui::EndChild();
         }
-        if (ImGui::Button("Guess BPM")) {
+        if (ImGui::Button("Guess BPM", {ImGui::GetContentRegionAvail().x * 0.5f, 0.0f})) {
             const auto path = full_audio_path();
+            tempo_candidates.reset();
             if (path.has_value()) {
                 tempo_candidates_loader = std::async(std::launch::async, guess_tempo, *path);
             }
         }
-        if (loading) {
-            ImGui::EndDisabled();
-            ImGui::SameLine();
-            static std::size_t frame_counter = 0;
-            frame_counter += 1;
-            frame_counter %= 4*5;
-            ImGui::TextUnformatted(fmt::format("Loading{:.>{}}", "", frame_counter / 5).c_str());
-            
+        ImGui::SameLine();
+        const bool tempo_candidate_was_selected_before_pressing = selected_tempo_candidate.has_value();
+        if (not tempo_candidate_was_selected_before_pressing) {
+            ImGui::BeginDisabled();
         }
-        if (tempo_candidates) {
-            for (const auto& candidate: *tempo_candidates) {
-                ImGui::TextUnformatted(fmt::format(
-                    "{:.3f} BPM @ {:.2f}s",
-                    static_cast<float>(candidate.bpm),
-                    static_cast<float>(candidate.offset_seconds)
-                ).c_str());
+        if (ImGui::Button("Apply BPM", {-std::numeric_limits<float>::min(), 0.0f})) {
+            if (selected_tempo_candidate) {
+                const auto new_timing = better::Timing{
+                    {{convert_to_decimal(selected_tempo_candidate->bpm, 3), 0}},
+                    convert_to_decimal(selected_tempo_candidate->offset_seconds, 3)
+                };
+                replace_applicable_timing_with(new_timing);
+                selected_tempo_candidate.reset();
             }
+        }
+        if (not tempo_candidate_was_selected_before_pressing) {
+            ImGui::EndDisabled();
         }
         if (not music.has_value()) {
             ImGui::EndDisabled();
@@ -1435,6 +1497,19 @@ void EditorState::frame_hook() {
         if (tempo_candidates_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             tempo_candidates = tempo_candidates_loader.get();
         }
+    }
+}
+
+void EditorState::replace_applicable_timing_with(const better::Timing& new_timing) {
+    const auto before = *applicable_timing;
+    applicable_timing = std::make_shared<better::Timing>(new_timing);
+    if (*applicable_timing != before) {
+        reload_sounds_that_depend_on_timing();
+        reload_editable_range();
+        history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
+    }
+    if (chart_state) {
+        chart_state->density_graph.should_recompute = true;
     }
 }
 

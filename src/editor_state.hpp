@@ -176,8 +176,8 @@ public:
     bool show_new_chart_dialog = false;
     bool show_chart_properties = false;
     
-    bool show_timing_menu = false;
-    void display_timing_menu();
+    bool show_sync_menu = false;
+    void display_sync_menu();
 
     enum class SaveOutcome {
         UserSaved,
@@ -245,6 +245,8 @@ public:
     void reload_editable_range();
 
     void frame_hook();
+
+    void replace_applicable_timing_with(const better::Timing& new_timing);
 
 private:
 

@@ -32,6 +32,8 @@ struct TempoCandidate {
     Fraction bpm;
     Fraction offset_seconds;
     float fitness;
+
+    auto operator<=>(const TempoCandidate&) const = default;
 };
 
 std::vector<TempoCandidate> guess_tempo(const std::filesystem::path& audio);

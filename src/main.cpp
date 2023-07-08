@@ -516,8 +516,8 @@ int main() {
             if (editor_state->show_editor_settings) {
                 editor_state->display_editor_settings();
             }
-            if (editor_state->show_timing_menu) {
-                editor_state->display_timing_menu();
+            if (editor_state->show_sync_menu) {
+                editor_state->display_sync_menu();
             }
         } else {
             bg.render(window);
@@ -641,8 +641,8 @@ int main() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Timing", editor_state.has_value())) {
-                if (ImGui::MenuItem("Adjust Timing")) {
-                    editor_state->show_timing_menu = true;
+                if (ImGui::MenuItem("Adjust Sync")) {
+                    editor_state->show_sync_menu = true;
                 }
                 ImGui::EndMenu();
             }
