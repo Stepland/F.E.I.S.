@@ -5,6 +5,7 @@
 - Waveform mode for the Linear View
 - memon 1.0 + 0.3 + 0.2 support
 - MP3 support
+- BPM Autodetect
 
 ## 🍒 Small improvements 🍒
 - Claps and Beats ticks should now be perfectly synced !
