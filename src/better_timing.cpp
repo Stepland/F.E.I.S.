@@ -243,6 +243,14 @@ namespace better {
         return Timing{{{bpm, 0}}, -1 * offset};
     };
 
+    Timing::keys_by_beats_type::const_iterator Timing::cbegin() const {
+        return events_by_beats.cbegin();
+    }
+
+    Timing::keys_by_beats_type::const_iterator Timing::cend() const {
+        return events_by_beats.cend();
+    }
+
     void Timing::reconstruct(const std::vector<BPMAtBeat>& events, const Decimal& offset) {
         reload_events_from(events);
         set_offset(offset);

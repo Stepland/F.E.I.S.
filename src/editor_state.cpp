@@ -1144,15 +1144,12 @@ void EditorState::display_history() {
 
 void EditorState::display_sync_menu() {
     if (ImGui::Begin("Adjust Sync", &show_sync_menu, ImGuiWindowFlags_AlwaysAutoResize)) {
-        auto bpm = std::visit(
-            [&](const auto& pos){return applicable_timing->bpm_at(pos);},
-            playback_position
-        );
+        auto intial_bpm = applicable_timing->cbegin()->get_bpm();
         ImGui::PushItemWidth(-70.0f);
-        if (feis::InputDecimal("Initial BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            if (bpm > 0) {
+        if (feis::InputDecimal("Initial BPM", &intial_bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if (intial_bpm > 0) {
                 auto new_timing = *applicable_timing;
-                new_timing.insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+                new_timing.insert(better::BPMAtBeat{intial_bpm, new_timing.cbegin()->get_beats()});
                 replace_applicable_timing_with(new_timing);
             }
         }
@@ -1243,12 +1240,18 @@ void EditorState::display_sync_menu() {
             }
             ImGui::EndChild();
         }
+        if (loading) {
+            ImGui::BeginDisabled();
+        }
         if (ImGui::Button("Guess BPM", {ImGui::GetContentRegionAvail().x * 0.5f, 0.0f})) {
             const auto path = full_audio_path();
             tempo_candidates.reset();
             if (path.has_value()) {
                 tempo_candidates_loader = std::async(std::launch::async, guess_tempo, *path);
             }
+        }
+        if (loading) {
+            ImGui::EndDisabled();
         }
         ImGui::SameLine();
         const bool tempo_candidate_was_selected_before_pressing = selected_tempo_candidate.has_value();

@@ -93,6 +93,9 @@ namespace better {
 
         static Timing load_from_memon_1_0_0(const nlohmann::json& json);
         static Timing load_from_memon_legacy(const nlohmann::json& metadata);
+
+        keys_by_beats_type::const_iterator cbegin() const;
+        keys_by_beats_type::const_iterator cend() const;
         
         template<typename Callback>
         void for_each_event_between(const Fraction& first, const Fraction& last, const Callback& cb) const {
