@@ -7,20 +7,20 @@
 #include "utf8_sfml.hpp"
 #include "utf8_strings.hpp"
 
-Marker first_available_marker_in(const std::filesystem::path& assets_folder) {
+OldMarker first_available_marker_in(const std::filesystem::path& assets_folder) {
     for (auto& folder : std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
         try {
-            return Marker{folder};
+            return OldMarker{folder};
         } catch (const std::runtime_error&) {}
     }
     throw std::runtime_error("No valid marker found");
 }
 
-Marker::Marker(const std::filesystem::path& folder_):
+OldMarker::OldMarker(const std::filesystem::path& folder_):
     fps(30),
     folder(folder_)
 {
-    const auto emplace_back = [&](Marker::texture_vector_type& vec, const std::string& file){
+    const auto emplace_back = [&](OldMarker::texture_vector_type& vec, const std::string& file){
         auto& tex = vec.emplace_back();
         const auto path = folder / file;
         if (not tex.load_from_path(path)) {
@@ -59,7 +59,7 @@ Marker::Marker(const std::filesystem::path& folder_):
     }
 };
 
-Marker::optional_texture_reference Marker::at(Judgement state, sf::Time offset) {
+OldMarker::optional_texture_reference OldMarker::at(Judgement state, sf::Time offset) const {
     const auto frame = static_cast<int>(std::floor(offset.asSeconds() * fps));
     if (frame < 0) {
         const auto approach_frames = static_cast<int>(approach.size());
@@ -73,17 +73,21 @@ Marker::optional_texture_reference Marker::at(Judgement state, sf::Time offset) 
 
     auto& vec = texture_vector_of(state);
     if (frame < static_cast<int>(vec.size())) {
-        return vec.at(frame);
+        return std::ref(vec.at(frame));
     } else {
         return {};
     }
 }
 
-Marker::texture_reference Marker::preview(Judgement state) {
+OldMarker::texture_reference OldMarker::preview(Judgement state) const {
     return texture_vector_of(state).at(2);
 }
 
-Marker::texture_vector_type& Marker::texture_vector_of(Judgement state) {
+std::filesystem::path OldMarker::get_folder() const {
+    return folder;
+}
+
+const OldMarker::texture_vector_type& OldMarker::texture_vector_of(Judgement state) const {
     switch (state) {
         case Judgement::Perfect:
             return perfect;

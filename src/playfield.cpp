@@ -195,7 +195,7 @@ void Playfield::draw_long_note(
     const better::LongNote& note,
     const sf::Time& playback_position,
     const better::Timing& timing,
-    Marker& marker,
+    OldMarker& marker,
     Judgement& markerEndingState
 ) {
     draw_tail_and_receptor(note, playback_position, timing);

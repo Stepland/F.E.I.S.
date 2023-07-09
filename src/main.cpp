@@ -85,19 +85,19 @@ int main() {
         }
     }
 
-    std::optional<Marker> default_marker_opt;
+    std::optional<OldMarker> default_marker_opt;
     try {
         default_marker_opt = first_available_marker_in(assets_folder);
     } catch (const std::exception& e) {
         fmt::print("Couldn't load any marker folder, aborting");
         return -1;
     }
-    Marker& default_marker = *default_marker_opt;
+    OldMarker& default_marker = *default_marker_opt;
 
-    std::optional<Marker> marker_opt;
+    std::optional<OldMarker> marker_opt;
     if (config.marker.folder) {
         try {
-            marker_opt = Marker(*config.marker.folder);
+            marker_opt = OldMarker(*config.marker.folder);
         } catch (const std::exception& e) {
             fmt::print("Failed to load marker from preferences");
             marker_opt = default_marker_opt;
@@ -107,7 +107,7 @@ int main() {
         marker_opt = default_marker_opt;
         config.marker.folder = marker_opt->get_folder();
     }
-    Marker& marker = *marker_opt;
+    OldMarker& marker = *marker_opt;
     if (not config.marker.ending_state) {
         config.marker.ending_state = Judgement::Perfect;
     }
@@ -756,7 +756,7 @@ int main() {
                         ImGui::PushID(tuple.first.c_str());
                         if (ImGui::ImageButton(tuple.second, {100, 100})) {
                             try {
-                                marker = Marker(tuple.first);
+                                marker = OldMarker(tuple.first);
                                 config.marker.folder = marker.get_folder();
                             } catch (const std::exception& e) {
                                 tinyfd_messageBox(

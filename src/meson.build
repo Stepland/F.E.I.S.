@@ -33,6 +33,7 @@ sources += files(
     'notifications_queue.cpp',
     'playfield.cpp',
     'special_numeric_types.cpp',
+    'sprite_sheet.cpp',
     'toolbox.cpp',
     'utf8_file_input_stream.cpp',
     'utf8_strings.cpp',

@@ -427,7 +427,7 @@ Fraction EditorState::get_snap_step() const {
     return Fraction{1, snap};
 };
 
-void EditorState::display_playfield(Marker& marker, Judgement markerEndingState) {
+void EditorState::display_playfield(OldMarker& marker, Judgement markerEndingState) {
     ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),

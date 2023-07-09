@@ -52,7 +52,7 @@ public:
         const better::LongNote& note,
         const sf::Time& playbackPosition,
         const better::Timing& timing,
-        Marker& marker,
+        OldMarker& marker,
         Judgement& markerEndingState
     );
 
