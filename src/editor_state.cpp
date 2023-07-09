@@ -1278,6 +1278,24 @@ void EditorState::display_sync_menu() {
     ImGui::End();
 }
 
+void EditorState::display_bpm_change_menu() {
+    if (ImGui::Begin("Insert BPM Change", &show_bpm_change_menu)) {
+        auto bpm = std::visit(
+            [&](const auto& pos){return applicable_timing->bpm_at(pos);},
+            playback_position
+        );
+        ImGui::PushItemWidth(-70.0f);
+        if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if (bpm > 0) {
+                auto new_timing = *applicable_timing;
+                new_timing.insert(better::BPMAtBeat{bpm, current_snaped_beats()});
+                replace_applicable_timing_with(new_timing);
+            }
+        }
+    }
+    ImGui::End();
+}
+
 bool EditorState::needs_to_save() const {
     return not history.current_state_is_saved();
 };

@@ -179,6 +179,9 @@ public:
     bool show_sync_menu = false;
     void display_sync_menu();
 
+    bool show_bpm_change_menu = false;
+    void display_bpm_change_menu();
+
     enum class SaveOutcome {
         UserSaved,
         UserDeclindedSaving,
