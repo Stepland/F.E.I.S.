@@ -34,6 +34,7 @@
 - WAY better support for paths with non-ascii characters on Windows (C++ is comically bad at this)
 - Support for negative time playback (lead in before the song starts)
 - The editable time range of a chart now grows in a way that should interfere less with editing
+- Support for the jujube marker format
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable
