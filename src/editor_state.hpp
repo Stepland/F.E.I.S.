@@ -115,9 +115,13 @@ public:
 
     bool has_any_audio() const;
     void toggle_playback();
+    void play_note_claps(bool on);
     void toggle_note_claps();
+    void play_clap_on_long_note_ends(bool on);
     void toggle_clap_on_long_note_ends();
-    void toggle_distinct_chord_claps();
+    void play_chord_claps(bool on);
+    void toggle_chord_claps();
+    void play_beat_ticks(bool on);
     void toggle_beat_ticks();
     void play();
     void pause();

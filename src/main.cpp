@@ -298,38 +298,42 @@ int main() {
                             show_shortcuts_help = not show_shortcuts_help;
                             break;
                         case sf::Keyboard::F3:
-                            /*
-                            if (beatTick.toggle()) {
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Beat tick : on"));
-                            } else {
-                                notificationsQueue.push(std::make_shared<TextNotification>(
-                                    "Beat tick : off"));
-                            }
-                            */
+                            if (editor_state) {
+                                editor_state->toggle_beat_ticks();
+                                notificationsQueue.push(
+                                    std::make_shared<TextNotification>(
+                                        fmt::format(
+                                            "Beat tick : {}",
+                                            config.sound.beat_tick ? "on" : "off"
+                                        )
+                                    )
+                                );
+                            } 
                             break;
                         case sf::Keyboard::F4:
-                            /*
-                            if (event.key.shift) {
-                                if (chordTick.toggle()) {
-                                    noteTick.shouldPlay = true;
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note+Chord tick : on"));
+                            if (editor_state) {
+                                if (event.key.shift) {
+                                    editor_state->toggle_chord_claps();
+                                    notificationsQueue.push(
+                                        std::make_shared<TextNotification>(
+                                            fmt::format(
+                                                "Chord tick : {}",
+                                                config.sound.distinct_chord_clap ? "on" : "off"
+                                            )
+                                        )
+                                    );
                                 } else {
-                                    noteTick.shouldPlay = false;
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note+Chord tick : off"));
-                                }
-                            } else {
-                                if (noteTick.toggle()) {
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note tick : on"));
-                                } else {
-                                    notificationsQueue.push(std::make_shared<TextNotification>(
-                                        "Note tick : off"));
+                                    editor_state->toggle_note_claps();
+                                    notificationsQueue.push(
+                                        std::make_shared<TextNotification>(
+                                            fmt::format(
+                                                "Note clap : {}",
+                                                config.sound.note_clap ? "on" : "off"
+                                            )
+                                        )
+                                    );
                                 }
                             }
-                            */
                             break;
                         case sf::Keyboard::Space:
                             if (not ImGui::GetIO().WantTextInput) {
