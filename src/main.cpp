@@ -1,34 +1,34 @@
-#include <SFML/Window/Keyboard.hpp>
-#include <exception>
-#include <limits>
-#include <string>
-#include <filesystem>
-#include <variant>
-
-#include <fmt/core.h>
-#include <imgui-SFML.h>
-#include <imgui.h>
-#include <imgui_stdlib.h>
 #include <SFML/Audio/SoundFileFactory.hpp>
 #include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Time.hpp>
+#include <SFML/Window/Keyboard.hpp>
+#include <exception>
+#include <filesystem>
+#include <fmt/core.h>
+#include <imgui-SFML.h>
+#include <imgui.h>
+#include <imgui_stdlib.h>
+#include <limits>
+#include <memory>
+#include <string>
 #include <tinyfiledialogs.h>
+#include <variant>
 #include <whereami++.hpp>
 
-#include "imgui_extras.hpp"
-#include "src/custom_sfml_audio/synced_sound_streams.hpp"
-#include "widgets/blank_screen.hpp"
 #include "chart_state.hpp"
 #include "config.hpp"
 #include "editor_state.hpp"
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
+#include "imgui_extras.hpp"
 #include "marker.hpp"
 #include "mp3_reader.hpp"
 #include "notifications_queue.hpp"
+#include "src/custom_sfml_audio/synced_sound_streams.hpp"
 #include "utf8_sfml.hpp"
 #include "utf8_strings.hpp"
+#include "widgets/blank_screen.hpp"
 
 int main() {
     // TODO : Make the playfield not appear when there's no chart selected
@@ -40,7 +40,7 @@ int main() {
     auto assets_folder = executable_folder / "assets";
     auto settings_folder = executable_folder / "settings";
 
-    config::Config config{settings_folder};
+    config::Config config {settings_folder};
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
     window.setVerticalSyncEnabled(true);
@@ -56,64 +56,61 @@ int main() {
     if (not std::filesystem::exists(font_path)) {
         tinyfd_messageBox(
             "Error",
-            ("Could not open "+path_to_utf8_encoded_string(font_path)).c_str(),
+            ("Could not open " + path_to_utf8_encoded_string(font_path)).c_str(),
             "ok",
             "error",
-            1
-        );
+            1);
         return -1;
     }
     ImGuiIO& IO = ImGui::GetIO();
     IO.Fonts->Clear();
     IO.Fonts->AddFontFromFileTTF(
-        path_to_utf8_encoded_string(assets_folder / "fonts" / "NotoSans-Medium.ttf").c_str(),
-        16.f
-    );
+        path_to_utf8_encoded_string(assets_folder / "fonts" / "NotoSans-Medium.ttf")
+            .c_str(),
+        16.f);
     ImGui::SFML::UpdateFontTexture();
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
 
     // Loading markers preview
-    std::map<std::filesystem::path, sf::Texture> markerPreviews;
+    std::map<std::filesystem::path, std::shared_ptr<Marker>> markers;
     for (const auto& folder :
          std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
-        if (folder.is_directory()) {
-            feis::Texture markerPreview;
-            markerPreview.load_from_path(folder.path() / "ma15.png");
-            markerPreview.setSmooth(true);
-            markerPreviews.insert({folder, markerPreview});
+        try {
+            const auto marker = load_marker_from(folder);
+            markers.emplace(folder, marker);
+        } catch (const std::exception& e) {
         }
     }
 
-    std::optional<OldMarker> default_marker_opt;
-    try {
-        default_marker_opt = first_available_marker_in(assets_folder);
-    } catch (const std::exception& e) {
-        fmt::print("Couldn't load any marker folder, aborting");
+    if (markers.size() == 0) {
+        fmt::print("Couldn't load any markers, aborting");
         return -1;
     }
-    OldMarker& default_marker = *default_marker_opt;
 
-    std::optional<OldMarker> marker_opt;
+    auto marker = markers.begin()->second;
     if (config.marker.folder) {
-        try {
-            marker_opt = OldMarker(*config.marker.folder);
-        } catch (const std::exception& e) {
-            fmt::print("Failed to load marker from preferences");
-            marker_opt = default_marker_opt;
-            config.marker.folder = marker_opt->get_folder();
+        const auto folder = *config.marker.folder;
+        const auto it = markers.find(folder);
+        if (it != markers.end()) {
+            marker = it->second;
+        } else {
+            try {
+                const auto new_marker = load_marker_from(folder);
+                auto [it, _] = markers.emplace(folder, new_marker);
+                marker = it->second;
+            } catch (const std::exception& e) {
+                fmt::print("Failed to load marker from preferences");
+            }
         }
-    } else {
-        marker_opt = default_marker_opt;
-        config.marker.folder = marker_opt->get_folder();
     }
-    OldMarker& marker = *marker_opt;
+
     if (not config.marker.ending_state) {
         config.marker.ending_state = Judgement::Perfect;
     }
     Judgement& markerEndingState = *config.marker.ending_state;
 
-    BlankScreen bg{assets_folder};
+    BlankScreen bg {assets_folder};
     std::optional<EditorState> editor_state;
     NotificationsQueue notificationsQueue;
     feis::NewChartDialog newChartDialog;
@@ -132,7 +129,8 @@ int main() {
             switch (event.type) {
                 case sf::Event::Closed:
                     if (editor_state) {
-                        if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
+                        if (editor_state->save_if_needed_and_user_wants_to()
+                            != EditorState::SaveOutcome::UserCanceled) {
                             window.close();
                         }
                     } else {
@@ -205,8 +203,7 @@ int main() {
                         case sf::Keyboard::Tab:
                             if (editor_state and editor_state->chart_state) {
                                 editor_state->chart_state->handle_time_selection_tab(
-                                    editor_state->current_exact_beats()
-                                );
+                                    editor_state->current_exact_beats());
                             }
                             break;
 
@@ -226,9 +223,7 @@ int main() {
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(fmt::format(
                                             "Music Volume : {}%",
-                                            editor_state->get_volume() * 10
-                                        ))
-                                    );
+                                            editor_state->get_volume() * 10)));
                                 }
                             } else {
                                 if (editor_state) {
@@ -243,9 +238,7 @@ int main() {
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(fmt::format(
                                             "Music Volume : {}%",
-                                            editor_state->get_volume() * 10
-                                        ))
-                                    );
+                                            editor_state->get_volume() * 10)));
                                 }
                             } else {
                                 if (editor_state) {
@@ -258,20 +251,19 @@ int main() {
                                 if (event.key.shift) {
                                     if (editor_state) {
                                         editor_state->speed_down();
-                                        notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
-                                            "Speed : {}%",
-                                            editor_state->get_speed() * 10
-                                        )));
+                                        notificationsQueue.push(
+                                            std::make_shared<TextNotification>(fmt::format(
+                                                "Speed : {}%",
+                                                editor_state->get_speed() * 10)));
                                     }
                                 } else {
                                     if (editor_state and editor_state->chart_state) {
-                                        editor_state->snap = Toolbox::getPreviousDivisor(240, editor_state->snap);
-                                        notificationsQueue.push(
-                                            std::make_shared<TextNotification>(fmt::format(
-                                                "Snap : {}",
-                                                Toolbox::toOrdinal(4 * editor_state->snap)
-                                            ))
-                                        );
+                                        editor_state->snap = Toolbox::getPreviousDivisor(
+                                            240,
+                                            editor_state->snap);
+                                        notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
+                                            "Snap : {}",
+                                            Toolbox::toOrdinal(4 * editor_state->snap))));
                                     }
                                 }
                             }
@@ -281,20 +273,19 @@ int main() {
                                 if (event.key.shift) {
                                     if (editor_state) {
                                         editor_state->speed_up();
-                                        notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
-                                            "Speed : {}%",
-                                            editor_state->get_speed() * 10
-                                        )));
+                                        notificationsQueue.push(
+                                            std::make_shared<TextNotification>(fmt::format(
+                                                "Speed : {}%",
+                                                editor_state->get_speed() * 10)));
                                     }
                                 } else {
                                     if (editor_state and editor_state->chart_state) {
-                                        editor_state->snap = Toolbox::getNextDivisor(240, editor_state->snap);
-                                        notificationsQueue.push(
-                                            std::make_shared<TextNotification>(fmt::format(
-                                                "Snap : {}",
-                                                Toolbox::toOrdinal(4 * editor_state->snap)
-                                            ))
-                                        );
+                                        editor_state->snap = Toolbox::getNextDivisor(
+                                            240,
+                                            editor_state->snap);
+                                        notificationsQueue.push(std::make_shared<TextNotification>(fmt::format(
+                                            "Snap : {}",
+                                            Toolbox::toOrdinal(4 * editor_state->snap))));
                                     }
                                 }
                             }
@@ -350,13 +341,15 @@ int main() {
                         case sf::Keyboard::Add:
                             if (editor_state) {
                                 editor_state->linear_view.zoom_in();
-                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom in"));
+                                notificationsQueue.push(std::make_shared<TextNotification>(
+                                    "Zoom in"));
                             }
                             break;
                         case sf::Keyboard::Subtract:
                             if (editor_state) {
                                 editor_state->linear_view.zoom_out();
-                                notificationsQueue.push(std::make_shared<TextNotification>("Zoom out"));
+                                notificationsQueue.push(std::make_shared<TextNotification>(
+                                    "Zoom out"));
                             }
                             break;
                         /*
@@ -374,7 +367,8 @@ int main() {
                             break;
                         case sf::Keyboard::F:
                             if (editor_state) {
-                                config.editor.show_free_buttons = not config.editor.show_free_buttons;
+                                config.editor.show_free_buttons =
+                                    not config.editor.show_free_buttons;
                             }
                         case sf::Keyboard::O:
                             if (event.key.control) {
@@ -433,7 +427,8 @@ int main() {
                     switch (event.key.code) {
                         case sf::Keyboard::F:
                             if (editor_state) {
-                                config.editor.show_free_buttons = not config.editor.show_free_buttons;
+                                config.editor.show_free_buttons =
+                                    not config.editor.show_free_buttons;
                             }
                         default:
                             break;
@@ -454,11 +449,14 @@ int main() {
             if (editor_state->get_status() == sf::SoundSource::Playing) {
                 editor_state->previous_playback_position = editor_state->playback_position;
                 if (editor_state->has_any_audio()) {
-                    editor_state->playback_position = editor_state->get_precise_playback_position();
+                    editor_state->playback_position =
+                        editor_state->get_precise_playback_position();
                 } else {
-                    editor_state->playback_position = editor_state->current_time() + delta * editor_state->get_pitch();
+                    editor_state->playback_position = editor_state->current_time()
+                        + delta * editor_state->get_pitch();
                 }
-                if (editor_state->current_time() > editor_state->get_editable_range().end) {
+                if (editor_state->current_time()
+                    > editor_state->get_editable_range().end) {
                     editor_state->pause();
                 }
             }
@@ -472,7 +470,7 @@ int main() {
                 editor_state->display_history();
             }
             if (editor_state->show_playfield) {
-                editor_state->display_playfield(marker, markerEndingState);
+                editor_state->display_playfield(*marker, markerEndingState);
             }
             if (editor_state->show_linear_view) {
                 editor_state->display_linear_view();
@@ -543,7 +541,8 @@ int main() {
                     if (not editor_state) {
                         editor_state.emplace(assets_folder, config);
                     } else {
-                        if (editor_state->save_if_needed_and_user_wants_to() != EditorState::SaveOutcome::UserCanceled) {
+                        if (editor_state->save_if_needed_and_user_wants_to()
+                            != EditorState::SaveOutcome::UserCanceled) {
                             editor_state.emplace(assets_folder, config);
                         }
                     }
@@ -639,7 +638,8 @@ int main() {
                         nullptr,
                         false,
                         editor_state->chart_state.has_value())) {
-                    editor_state->erase_chart_and_push_history(editor_state->chart_state->difficulty_name);
+                    editor_state->erase_chart_and_push_history(
+                        editor_state->chart_state->difficulty_name);
                 }
                 ImGui::EndMenu();
             }
@@ -674,7 +674,8 @@ int main() {
                     }
                     if (ImGui::MenuItem("90° Counter-Clockwise")) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->rotate_selection_90_counter_clockwise(notificationsQueue);
+                            editor_state->chart_state->rotate_selection_90_counter_clockwise(
+                                notificationsQueue);
                         }
                     }
                     if (ImGui::MenuItem("180°")) {
@@ -685,15 +686,23 @@ int main() {
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Quantize")) {
-                    if (ImGui::MenuItem(fmt::format("To snap ({})", Toolbox::toOrdinal(4 * editor_state->snap)).c_str())) {
+                    if (ImGui::MenuItem(fmt::format(
+                                            "To snap ({})",
+                                            Toolbox::toOrdinal(4 * editor_state->snap))
+                                            .c_str())) {
                         if (editor_state->chart_state.has_value()) {
-                            editor_state->chart_state->quantize_selection(editor_state->snap, notificationsQueue);
+                            editor_state->chart_state->quantize_selection(
+                                editor_state->snap,
+                                notificationsQueue);
                         }
                     }
-                    for (const auto& [snap, color]: config.linear_view.quantization_colors.palette) {
+                    for (const auto& [snap, color] :
+                         config.linear_view.quantization_colors.palette) {
                         feis::ColorSquare(color);
                         ImGui::SameLine();
-                        if (ImGui::MenuItem(fmt::format("To {}##Notes Quantize", Toolbox::toOrdinal(4 * snap)).c_str())) {
+                        if (ImGui::MenuItem(
+                                fmt::format("To {}##Notes Quantize", Toolbox::toOrdinal(4 * snap))
+                                    .c_str())) {
                             if (editor_state->chart_state.has_value()) {
                                 editor_state->chart_state->quantize_selection(snap, notificationsQueue);
                             }
@@ -752,22 +761,12 @@ int main() {
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;
-                    for (auto& tuple : markerPreviews) {
-                        ImGui::PushID(tuple.first.c_str());
-                        if (ImGui::ImageButton(tuple.second, {100, 100})) {
-                            try {
-                                marker = OldMarker(tuple.first);
-                                config.marker.folder = marker.get_folder();
-                            } catch (const std::exception& e) {
-                                tinyfd_messageBox(
-                                    "Error",
-                                    e.what(),
-                                    "ok",
-                                    "error",
-                                    1);
-                                marker = default_marker;
-                                config.marker.folder = marker.get_folder();
-                            }
+                    for (const auto& [path, marker_ptr] : markers) {
+                        ImGui::PushID(path.c_str());
+                        const auto preview = marker_ptr->approach_preview();
+                        if (ImGui::ImageButton(preview, {100, 100})) {
+                            marker = marker_ptr;
+                            config.marker.folder = path;
                         }
                         ImGui::PopID();
                         i++;
@@ -779,7 +778,8 @@ int main() {
                 }
                 if (ImGui::BeginMenu("Marker Ending State")) {
                     for (const auto& [judgement, name] : judgement_to_name) {
-                        if (ImGui::ImageButton(marker.preview(judgement), {100, 100})) {
+                        const auto preview = marker->judgement_preview(judgement);
+                        if (ImGui::ImageButton(preview, {100, 100})) {
                             markerEndingState = judgement;
                         }
                         ImGui::SameLine();

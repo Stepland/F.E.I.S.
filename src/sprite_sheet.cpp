@@ -4,6 +4,8 @@
 
 #include "fmt/core.h"
 
+#include "utf8_strings.hpp"
+
 SpriteSheet::SpriteSheet(
     const std::filesystem::path& texture_path,
     std::size_t count,
@@ -61,17 +63,38 @@ SpriteSheet::SpriteSheet(
     }      
 }
 
-
+/*
+    {
+        "sprite_sheet": "approach.png",
+        "count": 16,
+        "columns": 4,
+        "rows": 4
+    }
+*/
 SpriteSheet SpriteSheet::load_from_json(
-    const nlohmann::json& dict,
+    const nlohmann::json& obj,
     const std::filesystem::path& parent_folder
 ) {
-    
+    auto texture_path = to_path(obj.at("sprite_sheet").get<std::string>());
+    if (texture_path.is_relative()) {
+        texture_path = parent_folder / texture_path;
+    }
+
+    const auto count = obj.at("count").get<std::size_t>();
+    const auto columns = obj.at("columns").get<std::size_t>();
+    const auto rows = obj.at("rows").get<std::size_t>();
+
+    return SpriteSheet{
+        texture_path,
+        count,
+        columns,
+        rows
+    };
 }
 
-std::optional<sf::Sprite> SpriteSheet::at(std::size_t frame) const {
+sf::Sprite SpriteSheet::at(std::size_t frame) const {
     if (frame >= count) {
-        return {};
+        throw std::out_of_range(fmt::format("frame {} is outside of the SpriteSheet range ({})", frame, count));
     }
 
     sf::Sprite sprite{tex};
@@ -84,4 +107,8 @@ std::optional<sf::Sprite> SpriteSheet::at(std::size_t frame) const {
     };
     sprite.setTextureRect(rect);
     return sprite;
+}
+
+std::size_t SpriteSheet::size() const {
+    return count;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 
@@ -23,7 +24,8 @@ public:
         const std::filesystem::path& parent_folder
     );
 
-    std::optional<sf::Sprite> at(std::size_t frame) const;
+    sf::Sprite at(std::size_t frame) const;
+    std::size_t size() const;
 
 private:
     feis::Texture tex;

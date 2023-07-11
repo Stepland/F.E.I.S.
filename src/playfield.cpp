@@ -195,8 +195,8 @@ void Playfield::draw_long_note(
     const better::LongNote& note,
     const sf::Time& playback_position,
     const better::Timing& timing,
-    OldMarker& marker,
-    Judgement& markerEndingState
+    const Marker& marker,
+    const Judgement& markerEndingState
 ) {
     draw_tail_and_receptor(note, playback_position, timing);
 
@@ -210,28 +210,28 @@ void Playfield::draw_long_note(
         // Display the beginning marker
         auto t = marker.at(markerEndingState, note_offset);
         if (t) {
-            const float scale = square_size / t->get().getSize().x;
-            marker_sprite.setTexture(*t, true);
-            marker_sprite.setScale(scale, scale);
-            marker_sprite.setPosition(
+            const float x_scale = square_size / t->getTextureRect().width;
+            const float y_scale = square_size / t->getTextureRect().height;
+            t->setScale(x_scale, y_scale);
+            t->setPosition(
                 note.get_position().get_x() * square_size,
                 note.get_position().get_y() * square_size
             );
-            marker_layer.draw(marker_sprite);
+            marker_layer.draw(*t);
         }
 
     } else {
         const auto tail_end_offset = playback_position - tail_end;
         auto t = marker.at(markerEndingState, tail_end_offset);
         if (t) {
-            const float scale = square_size / t->get().getSize().x;
-            marker_sprite.setTexture(*t, true);
-            marker_sprite.setScale(scale, scale);
-            marker_sprite.setPosition(
+            const float x_scale = square_size / t->getTextureRect().width;
+            const float y_scale = square_size / t->getTextureRect().height;
+            t->setScale(x_scale, y_scale);
+            t->setPosition(
                 note.get_position().get_x() * square_size,
                 note.get_position().get_y() * square_size
             );
-            marker_layer.draw(marker_sprite);
+            marker_layer.draw(*t);
         }
     }
 }

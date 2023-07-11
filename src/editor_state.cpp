@@ -427,7 +427,7 @@ Fraction EditorState::get_snap_step() const {
     return Fraction{1, snap};
 };
 
-void EditorState::display_playfield(OldMarker& marker, Judgement markerEndingState) {
+void EditorState::display_playfield(const Marker& marker, Judgement markerEndingState) {
     ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),
@@ -467,7 +467,7 @@ void EditorState::display_playfield(OldMarker& marker, Judgement markerEndingSta
             auto display = VariantVisitor {
                 [&, this](const better::TapNote& tap_note){
                     auto note_offset = (this->current_time() - this->time_at(tap_note.get_time()));
-                    auto t = marker.at(markerEndingState, note_offset);
+                    const auto t = marker.at(markerEndingState, note_offset);
                     if (t) {
                         ImGui::SetCursorPos({
                             tap_note.get_position().get_x() * squareSize,
@@ -478,6 +478,7 @@ void EditorState::display_playfield(OldMarker& marker, Judgement markerEndingSta
                         ImGui::PopID();
                         ++ImGuiIndex;
                     }
+                    
                 },
                 [&, this](const better::LongNote& long_note){
                     this->playfield.draw_long_note(
