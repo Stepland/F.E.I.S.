@@ -79,8 +79,6 @@ public:
     std::future<std::vector<TempoCandidate>> tempo_candidates_loader;
     std::optional<std::vector<TempoCandidate>> tempo_candidates;
 
-    
-
     int get_volume() const;
     void set_volume(int newMusicVolume);
     void volume_up();
@@ -118,13 +116,9 @@ public:
     bool has_any_audio() const;
     void toggle_playback();
     void toggle_note_claps();
-    bool note_claps_are_on() const {return audio.contains_stream(note_clap_stream);};
     void toggle_clap_on_long_note_ends();
-    bool get_clap_on_long_note_ends() const {return clap_on_long_note_ends;};
     void toggle_distinct_chord_claps();
-    bool get_distinct_chord_claps() const {return distinct_chord_clap;};
     void toggle_beat_ticks();
-    bool beat_ticks_are_on() const {return audio.contains_stream(beat_tick_stream);};
     void play();
     void pause();
     void stop();
@@ -253,11 +247,11 @@ public:
 
 private:
 
-    int volume = 10;  // 0 -> 10
     int speed = 10;  // 1 -> 20
 
-    bool clap_on_long_note_ends = false;
-    bool distinct_chord_clap = false;
+    bool note_clap_stream_is_on() const;
+    bool beat_tick_stream_is_on() const;
+
 
     // Playback status used when there is no actual audio being played
     sf::SoundSource::Status status = sf::SoundSource::Stopped;

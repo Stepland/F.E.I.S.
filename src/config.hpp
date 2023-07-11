@@ -43,6 +43,19 @@ namespace config {
         void dump_as_v1_0_0(toml::table& tbl);
     };
 
+    struct Sound {
+        int music_volume = 10;
+        bool beat_tick = false;
+        int beat_tick_volume = 10;
+        bool note_clap = false;
+        int note_clap_volume = 10;
+        bool clap_on_long_note_ends = false;
+        bool distinct_chord_clap = false;
+
+        void load_from_v1_0_0_table(const toml::table& tbl);
+        void dump_as_v1_0_0(toml::table& tbl);
+    };
+
     /* RAII-style class that holds settings we wish to save on disk and saves
     them upon being destroyed */
     class Config {
@@ -55,6 +68,7 @@ namespace config {
         Marker marker;
         LinearView linear_view;
         Editor editor;
+        Sound sound;
 
     private:
         void load_from_v1_0_0_table(const toml::table& tbl);

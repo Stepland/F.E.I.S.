@@ -1,11 +1,11 @@
 # v2.0.0
 *(+ 2.0.0-rc.1)*
 ## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
-- BPM Changes
+- BPM Autodetect
 - Waveform mode for the Linear View
 - memon 1.0 + 0.3 + 0.2 support
+- BPM Changes
 - MP3 support
-- BPM Autodetect
 
 ## 🍒 Small improvements 🍒
 - Claps and Beats ticks should now be perfectly synced !
@@ -35,6 +35,7 @@
 - Support for negative time playback (lead in before the song starts)
 - The editable time range of a chart now grows in a way that should interfere less with editing
 - Support for the jujube marker format
+- Sound parameters are saved
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable

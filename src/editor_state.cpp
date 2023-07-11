@@ -111,22 +111,22 @@ waveform::Status EditorState::waveform_status() {
 }
 
 int EditorState::get_volume() const {
-    return volume;
+    return config.sound.music_volume;
 }
 
 void EditorState::set_volume(int volume_) {
     if (music.has_value()) {
         (**music).set_volume(volume_);
-        volume = (**music).get_volume();
+        config.sound.music_volume = (**music).get_volume();
     }
 }
 
 void EditorState::volume_up() {
-    set_volume(volume + 1);
+    set_volume(get_volume() + 1);
 }
 
 void EditorState::volume_down() {
-    set_volume(volume - 1);
+    set_volume(get_volume() - 1);
 }
 
 int EditorState::get_speed() const {
@@ -240,19 +240,16 @@ void EditorState::toggle_playback() {
 }
 
 void EditorState::toggle_note_claps() {
-    if (
-        audio.contains_stream(note_clap_stream)
-        or audio.contains_stream(chord_clap_stream)
-    ) {
+    if (note_clap_stream_is_on()) {
         audio.update_streams({}, {note_clap_stream, chord_clap_stream});
     } else {
         note_claps = note_claps->with_params(
             get_pitch(),
-            not distinct_chord_clap,
-            clap_on_long_note_ends
+            not config.sound.distinct_chord_clap,
+            config.sound.clap_on_long_note_ends
         );
         std::map<std::string, NewStream> streams = {{note_clap_stream, {note_claps, true}}};
-        if (distinct_chord_clap) {
+        if (config.sound.distinct_chord_clap) {
             chord_claps = chord_claps->with_pitch(get_pitch());
             streams[chord_clap_stream] = {chord_claps, true};
         }
@@ -261,23 +258,21 @@ void EditorState::toggle_note_claps() {
 }
 
 void EditorState::toggle_clap_on_long_note_ends() {
-    clap_on_long_note_ends = not clap_on_long_note_ends;
     note_claps = note_claps->with_params(
         get_pitch(),
-        not distinct_chord_clap,
-        clap_on_long_note_ends
+        not config.sound.distinct_chord_clap,
+        config.sound.clap_on_long_note_ends
     );
     audio.update_streams({{note_clap_stream, {note_claps, true}}});
 }
 
 void EditorState::toggle_distinct_chord_claps() {
-    distinct_chord_clap = not distinct_chord_clap;
     note_claps = note_claps->with_params(
         get_pitch(),
-        not distinct_chord_clap,
-        clap_on_long_note_ends
+        not config.sound.distinct_chord_clap,
+        config.sound.clap_on_long_note_ends
     );
-    if (distinct_chord_clap) {
+    if (config.sound.distinct_chord_clap) {
         chord_claps = chord_claps->with_pitch(get_pitch());
         audio.update_streams(
             {
@@ -294,7 +289,7 @@ void EditorState::toggle_distinct_chord_claps() {
 }
 
 void EditorState::toggle_beat_ticks() {
-    if (audio.contains_stream(beat_tick_stream)) {
+    if (beat_tick_stream_is_on()) {
         audio.remove_stream(beat_tick_stream);
     } else {
         beat_ticks = beat_ticks->with_pitch(get_pitch());
@@ -1028,56 +1023,56 @@ void EditorState::display_linear_view() {
 void EditorState::display_sound_settings() {
     if (ImGui::Begin("Sound Settings", &show_sound_settings)) {
         if (ImGui::TreeNodeEx("Music", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::BeginDisabled(not music.has_value());
-            {
-                auto volume = get_volume();
-                if (ImGui::SliderInt("Volume##Music", &volume, 0, 10)) {
-                    set_volume(volume);
-                }
+            const auto music_exists = music.has_value();
+            if (not music_exists) {
+                ImGui::BeginDisabled();
             }
-            ImGui::EndDisabled();
+            if (ImGui::SliderInt("Volume##Music", &config.sound.music_volume, 0, 10)) {
+                set_volume(config.sound.music_volume);
+            }
+            if (not music_exists) {
+                ImGui::EndDisabled();
+            }
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Beat Tick", ImGuiTreeNodeFlags_DefaultOpen)) {
-            bool beat_tick = beat_ticks_are_on();
-            if (ImGui::Checkbox("On/Off##Beat Tick", &beat_tick)) {
+            if (ImGui::Checkbox("On/Off##Beat Tick", &config.sound.beat_tick)) {
                 toggle_beat_ticks();
             }
-            ImGui::BeginDisabled(not beat_tick);
-            {
-                auto volume = beat_ticks->get_volume();
-                if (ImGui::SliderInt("Volume##Beat Tick", &volume, 0, 10)) {
-                    beat_ticks->set_volume(volume);
-                }
+            if (not config.sound.beat_tick) {
+                ImGui::BeginDisabled();
             }
-            ImGui::EndDisabled();
+            if (ImGui::SliderInt("Volume##Beat Tick", &config.sound.beat_tick_volume, 0, 10)) {
+                beat_ticks->set_volume(config.sound.beat_tick_volume);
+            }
+            if (not config.sound.beat_tick) {
+                ImGui::EndDisabled();
+            }
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Note Clap", ImGuiTreeNodeFlags_DefaultOpen)) {
-            bool note_clap = note_claps_are_on();
-            if (ImGui::Checkbox("On/Off##Note Clap", &note_clap)) {
+            if (ImGui::Checkbox("On/Off##Note Clap", &config.sound.note_clap)) {
                 toggle_note_claps();
             }
-            ImGui::BeginDisabled(not note_clap);
-            {
-                auto volume = note_claps->get_volume();
-                if (ImGui::SliderInt("Volume##Note Clap", &volume, 0, 10)) {
-                    note_claps->set_volume(volume);
-                    chord_claps->set_volume(volume);
-                }
-                if (ImGui::TreeNode("Advanced##Note Clap")) {
-                    bool long_end = get_clap_on_long_note_ends();
-                    if (ImGui::Checkbox("Clap on long note ends", &long_end)) {
-                        toggle_clap_on_long_note_ends();
-                    }
-                    bool chord_clap = get_distinct_chord_claps();
-                    if (ImGui::Checkbox("Distinct chord clap", &chord_clap)) {
-                        toggle_distinct_chord_claps();
-                    }
-                    ImGui::TreePop();
-                }
+            if (not config.sound.note_clap) {
+                ImGui::BeginDisabled();
             }
-            ImGui::EndDisabled();
+            if (ImGui::SliderInt("Volume##Note Clap", &config.sound.note_clap_volume, 0, 10)) {
+                note_claps->set_volume(config.sound.note_clap_volume);
+                chord_claps->set_volume(config.sound.note_clap_volume);
+            }
+            if (ImGui::TreeNode("Advanced##Note Clap")) {
+                if (ImGui::Checkbox("Clap on long note ends", &config.sound.clap_on_long_note_ends)) {
+                    toggle_clap_on_long_note_ends();
+                }
+                if (ImGui::Checkbox("Distinct chord clap", &config.sound.distinct_chord_clap)) {
+                    toggle_distinct_chord_claps();
+                }
+                ImGui::TreePop();
+            }
+            if (not config.sound.note_clap) {
+                ImGui::EndDisabled();
+            }
             ImGui::TreePop();
         }
     }
@@ -1535,6 +1530,15 @@ void EditorState::replace_applicable_timing_with(const better::Timing& new_timin
     }
 }
 
+bool EditorState::note_clap_stream_is_on() const {
+    return audio.contains_stream(note_clap_stream) or audio.contains_stream(chord_clap_stream);
+}
+
+bool EditorState::beat_tick_stream_is_on() const {
+    return audio.contains_stream(beat_tick_stream);
+}
+
+
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
     // In all cases, allow editing from beat zero (which might be at a negative
@@ -1599,6 +1603,7 @@ std::optional<std::filesystem::path> EditorState::full_audio_path() {
  * Reloads music from what's indicated in the "music path" field of the song
  * Resets the music state in case anything fails
  * Updates playbackPosition and preview_end as well
+ * Sets claps and ticks according to config
  */
 void EditorState::reload_music() {
     const auto status_before = get_status();
@@ -1619,6 +1624,22 @@ void EditorState::reload_music() {
     audio.remove_stream(music_stream);
     if (music.has_value()) {
         audio.add_stream(music_stream, {*music, false});
+    }
+    set_volume(config.sound.music_volume);
+    if (config.sound.beat_tick != beat_tick_stream_is_on()) {
+        toggle_beat_ticks();
+    }
+    beat_ticks->set_volume(config.sound.beat_tick_volume);
+    if (config.sound.note_clap != note_clap_stream_is_on()) {
+        toggle_note_claps();
+    }
+    note_claps->set_volume(config.sound.note_clap_volume);
+    chord_claps->set_volume(config.sound.note_clap_volume);
+    if (config.sound.clap_on_long_note_ends != note_claps->does_play_long_note_ends()) {
+        toggle_clap_on_long_note_ends();
+    }
+    if (config.sound.distinct_chord_clap != not note_claps->does_play_chords()) {
+        toggle_distinct_chord_claps();
     }
     pause();
     set_playback_position(current_time());

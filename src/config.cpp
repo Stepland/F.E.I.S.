@@ -94,6 +94,48 @@ void config::Editor::dump_as_v1_0_0(toml::table& tbl) {
     });
 }
 
+void config::Sound::load_from_v1_0_0_table(const toml::table& tbl) {
+    if (not tbl["sound"].is_table()) {
+        return;
+    }
+    const auto sound_table = tbl["sound"].ref<toml::table>();
+    if (sound_table["music_volume"].is_integer()) {
+        const auto val = sound_table["music_volume"].value<int>();
+        music_volume = std::clamp(*val, 0, 10);
+    }
+    if (sound_table["beat_tick"].is_boolean()) {
+        beat_tick = *sound_table["beat_tick"].value<bool>();
+    }
+    if (sound_table["beat_tick_volume"].is_integer()) {
+        const auto val = sound_table["beat_tick_volume"].value<int>();
+        beat_tick_volume = std::clamp(*val, 0, 10);
+    }
+    if (sound_table["note_clap"].is_boolean()) {
+        note_clap = *sound_table["note_clap"].value<bool>();
+    }
+    if (sound_table["note_clap_volume"].is_integer()) {
+        const auto val = sound_table["note_clap_volume"].value<int>();
+        note_clap_volume = std::clamp(*val, 0, 10);
+    }
+    if (sound_table["clap_on_long_note_ends"].is_boolean()) {
+        clap_on_long_note_ends = *sound_table["clap_on_long_note_ends"].value<bool>();
+    }
+    if (sound_table["distinct_chord_clap"].is_boolean()) {
+        distinct_chord_clap = *sound_table["distinct_chord_clap"].value<bool>();
+    }
+}
+
+void config::Sound::dump_as_v1_0_0(toml::table& tbl) {
+    tbl.insert_or_assign("sound", toml::table{
+        {"music_volume", music_volume},
+        {"beat_tick", beat_tick},
+        {"beat_tick_volume", beat_tick_volume},
+        {"note_clap", note_clap},
+        {"note_clap_volume", note_clap_volume},
+        {"clap_on_long_note_ends", clap_on_long_note_ends},
+        {"distinct_chord_clap", distinct_chord_clap}
+    });
+}
 
 config::Config::Config(const std::filesystem::path& settings) :
     config_path(settings / "config.toml")
@@ -132,6 +174,7 @@ toml::table config::Config::dump_as_v1_0_0() {
     marker.dump_as_v1_0_0(tbl);
     linear_view.dump_as_v1_0_0(tbl);
     editor.dump_as_v1_0_0(tbl);
+    sound.dump_as_v1_0_0(tbl);
     return tbl;
 }
 
@@ -151,4 +194,5 @@ void config::Config::load_from_v1_0_0_table(const toml::table& tbl) {
     marker.load_from_v1_0_0_table(tbl);
     linear_view.load_from_v1_0_0_table(tbl);
     editor.load_from_v1_0_0_table(tbl);
+    sound.load_from_v1_0_0_table(tbl);
 }
