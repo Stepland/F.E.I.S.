@@ -473,7 +473,7 @@ int main() {
             if (editor_state->show_history) {
                 editor_state->display_history();
             }
-            if (editor_state->show_playfield) {
+            if (editor_state->chart_state and editor_state->show_playfield) {
                 editor_state->display_playfield(*marker, markerEndingState);
             }
             if (editor_state->show_linear_view) {
