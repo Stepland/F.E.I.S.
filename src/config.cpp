@@ -19,7 +19,7 @@ void config::Marker::load_from_v1_0_0_table(const toml::table &tbl) {
     const auto marker_node = tbl["marker"];
     const auto folder_node = marker_node["folder"];
     if (folder_node.is_string()) {
-        folder = std::filesystem::path{*folder_node.value<std::string>()};
+        folder = utf8_encoded_string_to_path(*folder_node.value<std::string>());
     }
     const auto ending_state_node = marker_node["ending_state"];
     if (ending_state_node.is_string()) {
@@ -34,7 +34,7 @@ void config::Marker::load_from_v1_0_0_table(const toml::table &tbl) {
 void config::Marker::dump_as_v1_0_0(toml::table &tbl) {
     toml::table marker_table;
     if (folder) {
-        marker_table.emplace("folder", folder->string());
+        marker_table.emplace("folder", path_to_utf8_encoded_string(*folder));
     }
     if (ending_state) {
         marker_table.emplace("ending_state", judgement_to_name.at(*ending_state));

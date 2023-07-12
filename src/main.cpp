@@ -36,9 +36,10 @@ int main() {
     // extend SFML to be able to read mp3's
     sf::SoundFileFactory::registerReader<sf::priv::SoundFileReaderMp3>();
 
-    auto executable_folder = to_path(whereami::executable_dir());
-    auto assets_folder = executable_folder / "assets";
-    auto settings_folder = executable_folder / "settings";
+    const auto executable_folder = utf8_encoded_string_to_path(whereami::executable_dir());
+    const auto assets_folder = executable_folder / "assets";
+    const auto settings_folder = executable_folder / "settings";
+    const auto markers_folder = assets_folder / "textures" / "markers";
 
     config::Config config {settings_folder};
 
@@ -74,11 +75,13 @@ int main() {
 
     // Loading markers preview
     std::map<std::filesystem::path, std::shared_ptr<Marker>> markers;
+
     for (const auto& folder :
-         std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
+         std::filesystem::directory_iterator(markers_folder)) {
         try {
             const auto marker = load_marker_from(folder);
-            markers.emplace(folder, marker);
+            const auto relative_folder = std::filesystem::relative(folder, markers_folder);
+            markers.emplace(relative_folder, marker);
         } catch (const std::exception& e) {
         }
     }
@@ -91,16 +94,18 @@ int main() {
     auto marker = markers.begin()->second;
     if (config.marker.folder) {
         const auto folder = *config.marker.folder;
-        const auto it = markers.find(folder);
-        if (it != markers.end()) {
-            marker = it->second;
-        } else {
-            try {
-                const auto new_marker = load_marker_from(folder);
-                auto [it, _] = markers.emplace(folder, new_marker);
+        if (folder.is_relative()) {
+            const auto it = markers.find(folder);
+            if (it != markers.end()) {
                 marker = it->second;
-            } catch (const std::exception& e) {
-                fmt::print("Failed to load marker from preferences");
+            } else {
+                try {
+                    const auto new_marker = load_marker_from(markers_folder / folder);
+                    auto [it, _] = markers.emplace(folder, new_marker);
+                    marker = it->second;
+                } catch (const std::exception& e) {
+                    fmt::print("Failed to load marker from preferences");
+                }
             }
         }
     }

@@ -75,7 +75,7 @@ SpriteSheet SpriteSheet::load_from_json(
     const nlohmann::json& obj,
     const std::filesystem::path& parent_folder
 ) {
-    auto texture_path = to_path(obj.at("sprite_sheet").get<std::string>());
+    auto texture_path = utf8_encoded_string_to_path(obj.at("sprite_sheet").get<std::string>());
     if (texture_path.is_relative()) {
         texture_path = parent_folder / texture_path;
     }

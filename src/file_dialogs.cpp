@@ -32,7 +32,7 @@ namespace feis {
             return {};
         } else {
             const std::string utf8_string{utf8_path, utf8_path+std::strlen(utf8_path)};
-            return to_path(utf8_string);
+            return utf8_encoded_string_to_path(utf8_string);
         }
     }
 }
