@@ -48,6 +48,7 @@
 ## 🗿 Bugfixes 🗿
 - Playfield
     - Fixed the unwanted long note dummy appearing when right clicking outside the playfield *then* hovering over a button, (Fixes #10)
+    - Don't display the Playfield window if no chart is loaded
 - Linear View
     - Fixed jerky motion when scrolling down (that one was *hard* to track down)
 - Density Graph
