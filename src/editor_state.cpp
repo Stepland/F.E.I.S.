@@ -434,7 +434,7 @@ Fraction EditorState::get_snap_step() const {
     return Fraction{1, snap};
 };
 
-void EditorState::display_playfield(const Marker& marker, Judgement markerEndingState) {
+void EditorState::display_playfield(const std::optional<std::shared_ptr<Marker>>& opt_marker, Judgement markerEndingState) {
     ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),
@@ -457,7 +457,8 @@ void EditorState::display_playfield(const Marker& marker, Judgement markerEnding
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
         int ImGuiIndex = 0;
 
-        if (chart_state) {
+        if (chart_state and opt_marker) {
+            const auto& marker = **opt_marker;
             playfield.resize(static_cast<unsigned int>(ImGui::GetWindowSize().x));
             if (chart_state->long_note_being_created) {
                 playfield.draw_tail_and_receptor(
@@ -547,6 +548,11 @@ void EditorState::display_playfield(const Marker& marker, Judgement markerEnding
                 ImGui::PopStyleColor(3);
                 ImGui::PopID();
             }
+        }
+
+        if (not opt_marker) {
+            ImGui::SetCursorPos({0.5f * squareSize, 0.5f * squareSize});
+            ImGui::TextUnformatted("Loading marker ...");
         }
 
         if (chart_state) {

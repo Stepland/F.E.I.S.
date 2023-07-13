@@ -1,18 +1,23 @@
 #include <SFML/Audio/SoundFileFactory.hpp>
 #include <SFML/Audio/SoundSource.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Time.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <chrono>
 #include <exception>
 #include <filesystem>
 #include <fmt/core.h>
+#include <future>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <limits>
 #include <memory>
+#include <queue>
 #include <string>
 #include <tinyfiledialogs.h>
+#include <tuple>
 #include <variant>
 #include <whereami++.hpp>
 
@@ -74,41 +79,47 @@ int main() {
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
 
     // Loading markers preview
-    std::map<std::filesystem::path, std::shared_ptr<Marker>> markers;
-
-    for (const auto& folder :
-         std::filesystem::directory_iterator(markers_folder)) {
-        try {
-            const auto marker = load_marker_from(folder);
-            const auto relative_folder = std::filesystem::relative(folder, markers_folder);
-            markers.emplace(relative_folder, marker);
-        } catch (const std::exception& e) {
-        }
-    }
-
-    if (markers.size() == 0) {
-        fmt::print("Couldn't load any markers, aborting");
-        return -1;
-    }
-
-    auto marker = markers.begin()->second;
-    if (config.marker.folder) {
-        const auto folder = *config.marker.folder;
-        if (folder.is_relative()) {
-            const auto it = markers.find(folder);
-            if (it != markers.end()) {
-                marker = it->second;
-            } else {
-                try {
-                    const auto new_marker = load_marker_from(markers_folder / folder);
-                    auto [it, _] = markers.emplace(folder, new_marker);
-                    marker = it->second;
-                } catch (const std::exception& e) {
-                    fmt::print("Failed to load marker from preferences");
+    std::map<std::filesystem::path, std::future<std::optional<feis::Texture>>> marker_previews_loaders;
+    std::map<std::filesystem::path, std::optional<feis::Texture>> marker_previews;
+    for (const auto& dir_entry : std::filesystem::directory_iterator(markers_folder)) {
+        const auto folder = std::filesystem::relative(dir_entry, markers_folder);
+        marker_previews_loaders[folder] = std::async(
+            std::launch::async,
+            [](const std::filesystem::path& folder) -> std::optional<feis::Texture> {
+                for (const auto& file : {"preview.png", "ma15.png"}) {
+                    const auto preview_path = folder / file;
+                    if (std::filesystem::exists(preview_path)) {
+                        feis::Texture preview;
+                        if (preview.load_from_path(preview_path)) {
+                            return preview;
+                        }
+                    }
                 }
+                return {};
+            },
+            dir_entry.path()
+        );
+    }
+
+    using MarkerTuple = std::tuple<std::filesystem::path, std::optional<std::shared_ptr<Marker>>>;
+    std::future<MarkerTuple> marker_loader;
+    const auto load_marker_async = [&](const std::filesystem::path& folder) -> MarkerTuple {
+        try {
+            return {folder, load_marker_from(markers_folder / folder)};
+        } catch (const std::exception& e) {
+            return {folder, {}};
+        }
+    };
+    std::shared_ptr<Marker> marker = [&](const std::optional<std::filesystem::path>& folder){
+        if (folder and folder->is_relative()) {
+            try {
+                return load_marker_from(markers_folder / *folder);
+            } catch (const std::exception& e) {
+                fmt::print("Failed to load marker from preferences");
             }
         }
-    }
+        return first_available_marker_in(markers_folder);
+    }(config.marker.folder);
 
     if (not config.marker.ending_state) {
         config.marker.ending_state = Judgement::Perfect;
@@ -479,7 +490,7 @@ int main() {
                 editor_state->display_history();
             }
             if (editor_state->chart_state and editor_state->show_playfield) {
-                editor_state->display_playfield(*marker, markerEndingState);
+                editor_state->display_playfield(marker, markerEndingState);
             }
             if (editor_state->show_linear_view) {
                 editor_state->display_linear_view();
@@ -770,13 +781,17 @@ int main() {
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;
-                    for (const auto& [path, marker_ptr] : markers) {
+                    for (const auto& [path, opt_preview] : marker_previews) {
                         ImGui::PushID(path.c_str());
-                        const auto preview = marker_ptr->approach_preview();
-                        if (ImGui::ImageButton(preview, {100, 100})) {
-                            marker = marker_ptr;
-                            config.marker.folder = path;
+                        if (opt_preview) {
+                            if (ImGui::ImageButton(*opt_preview, {100, 100})) {
+                                
+                                marker_loader = std::async
+                                marker = marker_ptr;
+                                config.marker.folder = path;
+                            }
                         }
+                        
                         ImGui::PopID();
                         i++;
                         if (i % 4 != 0) {
@@ -812,6 +827,16 @@ int main() {
 
         ImGui::SFML::Render(window);
         window.display();
+
+        for (auto& [path, future] : marker_previews_loaders) {
+            if (future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                marker_previews[path] = future.get();
+            }
+        }
+        for (auto& future : )
+        if (marker_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            marker = marker_loader.get();
+        }
     }
 
     ImGui::SFML::Shutdown();

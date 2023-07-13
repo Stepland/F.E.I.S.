@@ -142,7 +142,7 @@ public:
     Fraction get_snap_step() const;
 
     bool show_playfield = true;
-    void display_playfield(const Marker& marker, Judgement markerEndingState);
+    void display_playfield(const std::optional<std::shared_ptr<Marker>>& marker, Judgement markerEndingState);
 
     bool show_file_properties = false;
     void display_file_properties();
