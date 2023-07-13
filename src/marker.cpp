@@ -196,8 +196,8 @@ std::shared_ptr<Marker> load_marker_from(const std::filesystem::path& folder) {
     return std::make_shared<JujubeMarker>(std::move(JujubeMarker::load_from_folder(folder)));
 }
 
-std::shared_ptr<Marker> first_available_marker_in(const std::filesystem::path& assets_folder) {
-    for (auto& folder : std::filesystem::directory_iterator(assets_folder / "textures" / "markers")) {
+std::shared_ptr<Marker> first_available_marker_in(const std::filesystem::path& markers_folder) {
+    for (auto& folder : std::filesystem::directory_iterator(markers_folder)) {
         try {
             return load_marker_from(folder);
         } catch (const std::exception&) {}

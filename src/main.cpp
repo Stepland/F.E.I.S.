@@ -4,6 +4,7 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Time.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -28,6 +29,7 @@
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
 #include "marker.hpp"
+#include "markers.hpp"
 #include "mp3_reader.hpp"
 #include "notifications_queue.hpp"
 #include "src/custom_sfml_audio/synced_sound_streams.hpp"
@@ -36,8 +38,6 @@
 #include "widgets/blank_screen.hpp"
 
 int main() {
-    // TODO : Make the playfield not appear when there's no chart selected
-
     // extend SFML to be able to read mp3's
     sf::SoundFileFactory::registerReader<sf::priv::SoundFileReaderMp3>();
 
@@ -46,7 +46,7 @@ int main() {
     const auto settings_folder = executable_folder / "settings";
     const auto markers_folder = assets_folder / "textures" / "markers";
 
-    config::Config config {settings_folder};
+    config::Config config{settings_folder};
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
     window.setVerticalSyncEnabled(true);
@@ -78,49 +78,7 @@ int main() {
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    // Loading markers preview
-    std::map<std::filesystem::path, std::future<std::optional<feis::Texture>>> marker_previews_loaders;
-    std::map<std::filesystem::path, std::optional<feis::Texture>> marker_previews;
-    for (const auto& dir_entry : std::filesystem::directory_iterator(markers_folder)) {
-        const auto folder = std::filesystem::relative(dir_entry, markers_folder);
-        marker_previews_loaders[folder] = std::async(
-            std::launch::async,
-            [](const std::filesystem::path& folder) -> std::optional<feis::Texture> {
-                for (const auto& file : {"preview.png", "ma15.png"}) {
-                    const auto preview_path = folder / file;
-                    if (std::filesystem::exists(preview_path)) {
-                        feis::Texture preview;
-                        if (preview.load_from_path(preview_path)) {
-                            return preview;
-                        }
-                    }
-                }
-                return {};
-            },
-            dir_entry.path()
-        );
-    }
-
-    using MarkerTuple = std::tuple<std::filesystem::path, std::optional<std::shared_ptr<Marker>>>;
-    std::future<MarkerTuple> marker_loader;
-    const auto load_marker_async = [&](const std::filesystem::path& folder) -> MarkerTuple {
-        try {
-            return {folder, load_marker_from(markers_folder / folder)};
-        } catch (const std::exception& e) {
-            return {folder, {}};
-        }
-    };
-    std::shared_ptr<Marker> marker = [&](const std::optional<std::filesystem::path>& folder){
-        if (folder and folder->is_relative()) {
-            try {
-                return load_marker_from(markers_folder / *folder);
-            } catch (const std::exception& e) {
-                fmt::print("Failed to load marker from preferences");
-            }
-        }
-        return first_available_marker_in(markers_folder);
-    }(config.marker.folder);
-
+    Markers markers{markers_folder, config};
     if (not config.marker.ending_state) {
         config.marker.ending_state = Judgement::Perfect;
     }
@@ -490,7 +448,7 @@ int main() {
                 editor_state->display_history();
             }
             if (editor_state->chart_state and editor_state->show_playfield) {
-                editor_state->display_playfield(marker, markerEndingState);
+                editor_state->display_playfield(markers.get_chosen_marker(), markerEndingState);
             }
             if (editor_state->show_linear_view) {
                 editor_state->display_linear_view();
@@ -781,33 +739,44 @@ int main() {
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;
-                    for (const auto& [path, opt_preview] : marker_previews) {
-                        ImGui::PushID(path.c_str());
-                        if (opt_preview) {
-                            if (ImGui::ImageButton(*opt_preview, {100, 100})) {
-                                
-                                marker_loader = std::async
-                                marker = marker_ptr;
-                                config.marker.folder = path;
+                    std::for_each(
+                        markers.cbegin(),
+                        markers.cend(),
+                        [&](const auto& it){
+                            const auto& [path, opt_preview] = it;
+                            ImGui::PushID(path.c_str());
+                            bool clicked = false;
+                            if (opt_preview) {
+                                clicked = ImGui::ImageButton(*opt_preview, {100, 100});
+                            } else {
+                                clicked = ImGui::Button(path_to_utf8_encoded_string(path).c_str(), {100, 100});
+                            }
+                            if (clicked) {
+                                markers.load_marker(path);
+                            }
+                            ImGui::PopID();
+                            i++;
+                            if (i % 4 != 0) {
+                                ImGui::SameLine();
                             }
                         }
-                        
-                        ImGui::PopID();
-                        i++;
-                        if (i % 4 != 0) {
-                            ImGui::SameLine();
-                        }
-                    }
+                    );
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Marker Ending State")) {
                     for (const auto& [judgement, name] : judgement_to_name) {
-                        const auto preview = marker->judgement_preview(judgement);
-                        if (ImGui::ImageButton(preview, {100, 100})) {
-                            markerEndingState = judgement;
+                        if (const auto& marker = markers.get_chosen_marker()) {
+                            const auto preview = (*marker)->judgement_preview(judgement);
+                            if (ImGui::ImageButton(preview, {100, 100})) {
+                                markerEndingState = judgement;
+                            }
+                            ImGui::SameLine();
+                            ImGui::TextUnformatted(name.c_str());
+                        } else {
+                            if (ImGui::Button((name+"##Marker Ending State").c_str())) {
+                                markerEndingState = judgement;
+                            }
                         }
-                        ImGui::SameLine();
-                        ImGui::TextUnformatted(name.c_str());
                     }
                     ImGui::EndMenu();
                 }
@@ -824,19 +793,9 @@ int main() {
             }
         }
         ImGui::EndMainMenuBar();
-
         ImGui::SFML::Render(window);
         window.display();
-
-        for (auto& [path, future] : marker_previews_loaders) {
-            if (future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                marker_previews[path] = future.get();
-            }
-        }
-        for (auto& future : )
-        if (marker_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            marker = marker_loader.get();
-        }
+        markers.update();
     }
 
     ImGui::SFML::Shutdown();

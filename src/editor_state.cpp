@@ -24,8 +24,12 @@
 #include <SFML/System/Vector2.hpp>
 #include <tinyfiledialogs.h>
 
+#include "custom_sfml_audio/synced_sound_streams.hpp"
+#include "widgets/linear_view.hpp"
+#include "better_metadata.hpp"
 #include "better_note.hpp"
 #include "better_song.hpp"
+#include "better_timing.hpp"
 #include "chart_state.hpp"
 #include "compile_time_info.hpp"
 #include "file_dialogs.hpp"
@@ -36,14 +40,10 @@
 #include "long_note_dummy.hpp"
 #include "notifications_queue.hpp"
 #include "special_numeric_types.hpp"
-#include "better_metadata.hpp"
-#include "better_timing.hpp"
-#include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "utf8_sfml_redefinitions.hpp"
-#include "variant_visitor.hpp"
 #include "utf8_strings.hpp"
+#include "variant_visitor.hpp"
 #include "waveform.hpp"
-#include "widgets/linear_view.hpp"
 
 EditorState::EditorState(const std::filesystem::path& assets_, config::Config& config_) :
     config(config_),
@@ -434,7 +434,7 @@ Fraction EditorState::get_snap_step() const {
     return Fraction{1, snap};
 };
 
-void EditorState::display_playfield(const std::optional<std::shared_ptr<Marker>>& opt_marker, Judgement markerEndingState) {
+void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judgement markerEndingState) {
     ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),

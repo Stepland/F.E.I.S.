@@ -36,6 +36,7 @@
 - The editable time range of a chart now grows in a way that should interfere less with editing
 - Support for the jujube marker format
 - Sound parameters are saved
+- Markers and Marker previews are loaded in the background, which should avoid long boot up times + UI freezes
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable

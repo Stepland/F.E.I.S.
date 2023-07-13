@@ -28,6 +28,7 @@
 #include "generic_interval.hpp"
 #include "history.hpp"
 #include "marker.hpp"
+#include "markers.hpp"
 #include "clipboard.hpp"
 #include "notifications_queue.hpp"
 #include "playfield.hpp"
@@ -142,7 +143,7 @@ public:
     Fraction get_snap_step() const;
 
     bool show_playfield = true;
-    void display_playfield(const std::optional<std::shared_ptr<Marker>>& marker, Judgement markerEndingState);
+    void display_playfield(const Markers::marker_type& marker, Judgement markerEndingState);
 
     bool show_file_properties = false;
     void display_file_properties();
