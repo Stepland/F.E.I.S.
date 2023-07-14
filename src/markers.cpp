@@ -1,5 +1,6 @@
 #include "markers.hpp"
 
+#include <filesystem>
 #include <future>
 #include <ranges>
 
@@ -70,7 +71,7 @@ void Markers::update() {
                 const auto loaded_marker = future.get();
                 if (loaded_marker) {
                     chosen_marker = loaded_marker;
-                    config.marker.folder = path;
+                    config.marker.folder = std::filesystem::relative((*chosen_marker)->get_folder(), markers_folder);
                 } else {
                     previews.erase(path);
                 }
