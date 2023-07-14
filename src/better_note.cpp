@@ -8,14 +8,6 @@
 #include "special_numeric_types.hpp"
 
 namespace better {
-    Position::Position(std::uint64_t index) : x(index % 4), y (index / 4) {
-        if (index > 15) {
-            std::stringstream ss;
-            ss << "Attempted to create Position from invalid index : " << index; 
-            throw std::invalid_argument(ss.str());
-        }
-    };
-
     Position::Position(std::uint64_t x, std::uint64_t y) : x(x), y(y) {
         if (x > 3 or y > 3) {
             std::stringstream ss;
@@ -24,6 +16,16 @@ namespace better {
             throw std::invalid_argument(ss.str()); 
         }
     };
+
+
+    Position Position::from_index(std::uint64_t index) {
+        if (index > 15) {
+            std::stringstream ss;
+            ss << "Attempted to create Position from invalid index : " << index; 
+            throw std::invalid_argument(ss.str());
+        }
+        return Position{index % 4, index / 4};
+    }
 
     std::uint64_t Position::index() const {
         return x + y*4;
@@ -350,7 +352,7 @@ namespace better {
     }
 
     Note Note::load_from_memon_1_0_0(const nlohmann::json& json, std::uint64_t resolution) {
-        const auto position = Position{json["n"].get<std::uint64_t>()};
+        const auto position = Position::from_index(json["n"].get<std::uint64_t>());
         const auto time = load_memon_1_0_0_beat(json["t"], resolution);
         if (not json.contains("l")) {
             return TapNote{time, position};
@@ -367,7 +369,7 @@ namespace better {
     }
 
     Note Note::load_from_memon_legacy(const nlohmann::json& json, std::uint64_t resolution) {
-        const auto position = Position{json["n"].get<std::uint64_t>()};
+        const auto position = Position::from_index(json["n"].get<std::uint64_t>());
         const auto time = Fraction{
             json["t"].get<std::uint64_t>(),
             resolution,

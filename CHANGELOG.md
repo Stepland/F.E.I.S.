@@ -12,6 +12,7 @@
 - Playfield
     - Pressing `F` displays free buttons (highlights buttons where a new note would create a collision in red)
 - Linear View
+    - notes can be selected by dragging a rectangle with the mouse
     - new settings
         - lane order
         - color notes according to quantization, colors are customizable and saved

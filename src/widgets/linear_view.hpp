@@ -19,6 +19,7 @@
 #include "../linear_view_colors.hpp"
 #include "../utf8_sfml.hpp"
 #include "../quantization_colors.hpp"
+#include "better_note.hpp"
 #include "lane_order.hpp"
 #include "../waveform.hpp"
 
@@ -194,7 +195,8 @@ private:
 
     linear_view::LaneOrder& lane_order;
     std::string lane_order_name() const;
-    std::optional<unsigned int> button_to_lane(const better::Position& button);
+    std::optional<unsigned int> button_to_lane(const better::Position& button) const;
+    std::optional<better::Position> lane_to_button(unsigned int lane) const;
 };
 
 void draw_rectangle(

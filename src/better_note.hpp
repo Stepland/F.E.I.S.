@@ -25,8 +25,8 @@ namespace better {
     */
     class Position {
     public:
-        explicit Position(std::uint64_t index);
         Position(std::uint64_t x, std::uint64_t y);
+        static Position from_index(std::uint64_t index);
 
         std::uint64_t index() const;
         std::uint64_t get_x() const;

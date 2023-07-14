@@ -85,7 +85,7 @@ linear_view::ComputedSizes linear_view::compute_sizes(
     result.collizion_zone_width = result.note_width - 2.f;
     result.long_note_rect_width = result.note_width * 0.75f;
 
-    // Pre-size & center the shapes that can be // ??
+    // Pre-size & center the shapes that can be (what ??)
     result.note_size = {result.note_width, 6.f};
     result.selected_note_size = {result.note_width + 2.f, 8.f};
 
@@ -722,11 +722,11 @@ void LinearView::handle_mouse_selection(
                 std::max(selection_rectangle.start.y, selection_rectangle.end.y),
             };
             const ImRect full_selection = {upper_left, lower_right};
+            const auto first_selected_beat = absolute_pixels_to_beats(full_selection.Min.y - origin.y);
+            const auto last_selected_beat = absolute_pixels_to_beats(full_selection.Max.y - origin.y);
             ImRect bpm_zone = {origin.x + computed_sizes.bpm_events_left, -INFINITY, INFINITY, INFINITY};
             bpm_zone.ClipWith(current_window->InnerRect);
             if (full_selection.Overlaps(bpm_zone)) {
-                const auto first_selected_beat = absolute_pixels_to_beats(full_selection.Min.y - origin.y);
-                const auto last_selected_beat = absolute_pixels_to_beats(full_selection.Max.y - origin.y);
                 timing.for_each_event_between(
                     first_selected_beat,
                     last_selected_beat,
@@ -734,6 +734,36 @@ void LinearView::handle_mouse_selection(
                         chart_state.selected_stuff.bpm_events.insert(
                             {event.get_bpm(), event.get_beats()}
                         );
+                    }
+                );
+            }
+            ImRect notes_zone = {origin.x + computed_sizes.timeline_left, -INFINITY, origin.x + computed_sizes.timeline_right, INFINITY};
+            notes_zone.ClipWith(current_window->InnerRect);
+            if (full_selection.Overlaps(notes_zone)) {
+                const unsigned int first_selected_lane = std::clamp<int>(
+                    std::ceil((full_selection.Min.x - notes_zone.Min.x) / computed_sizes.note_width),
+                    0,
+                    15
+                );
+                const unsigned int last_selected_lane = std::clamp<int>(
+                    std::floor((full_selection.Max.x - notes_zone.Min.x) / computed_sizes.note_width) - 1,
+                    0,
+                    15
+                );
+                std::set<better::Position> buttons_selected;
+                for (unsigned int lane = first_selected_lane; lane <= last_selected_lane; lane++) {
+                    const auto button = lane_to_button(lane);
+                    if (button) {
+                        buttons_selected.insert(*button);
+                    }
+                }
+                chart_state.chart.notes->in(
+                    first_selected_beat,
+                    last_selected_beat,
+                    [&](const better::Notes::iterator& it){
+                        if (buttons_selected.contains(it->second.get_position())) {
+                            chart_state.selected_stuff.notes.insert(it->second);
+                        }
                     }
                 );
             }
@@ -896,7 +926,7 @@ std::string LinearView::lane_order_name() const {
     return std::visit(name, lane_order);
 }
 
-std::optional<unsigned int> LinearView::button_to_lane(const better::Position& button) {
+std::optional<unsigned int> LinearView::button_to_lane(const better::Position& button) const {
     const auto _button_to_lane = VariantVisitor {
         [button](const linear_view::lane_order::Default&){
             return static_cast<std::optional<unsigned int>>(button.index());
@@ -914,6 +944,29 @@ std::optional<unsigned int> LinearView::button_to_lane(const better::Position& b
         },
     };
     return std::visit(_button_to_lane, lane_order);
+}
+
+std::optional<better::Position> LinearView::lane_to_button(unsigned int lane) const {
+    if (lane > 15) {
+        return {};
+    }
+    const auto _lane_to_button = VariantVisitor {
+        [lane](const linear_view::lane_order::Default&) -> std::optional<better::Position> {
+            return better::Position::from_index(lane);
+        },
+        [lane](const linear_view::lane_order::Vertical&) -> std::optional<better::Position> {
+            return better::Position{lane / 4, lane % 4};
+        },
+        [lane](const linear_view::lane_order::Custom& c) -> std::optional<better::Position> {
+            const auto index = c.lane_to_button.at(lane);
+            if (not index) {
+                return {};
+            } else {
+                return better::Position::from_index(*index);
+            }
+        },
+    };
+    return std::visit(_lane_to_button, lane_order); 
 }
 
 void draw_rectangle(
