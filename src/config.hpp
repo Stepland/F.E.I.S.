@@ -56,6 +56,26 @@ namespace config {
         void dump_as_v1_0_0(toml::table& tbl);
     };
 
+    struct Windows {
+        bool show_playfield = true;
+        bool show_file_properties = false;
+        bool show_status = false;
+        bool show_playback_status = true;
+        bool show_timeline = true;
+        bool show_chart_list = false;
+        bool show_linear_view = false;
+        bool show_sound_settings = false;
+        bool show_editor_settings = false;
+        bool show_history = false;
+        bool show_new_chart_dialog = false;
+        bool show_chart_properties = false;
+        bool show_sync_menu = false;
+        bool show_bpm_change_menu = false;
+
+        void load_from_v1_0_0_table(const toml::table& tbl);
+        void dump_as_v1_0_0(toml::table& tbl);
+    };
+
     /* RAII-style class that holds settings we wish to save on disk and saves
     them upon being destroyed */
     class Config {
@@ -69,6 +89,7 @@ namespace config {
         LinearView linear_view;
         Editor editor;
         Sound sound;
+        Windows windows;
 
     private:
         void load_from_v1_0_0_table(const toml::table& tbl);

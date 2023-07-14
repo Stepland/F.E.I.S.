@@ -52,6 +52,20 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
     linear_view(LinearView{assets_, config_}),
+    show_playfield(config_.windows.show_playfield),
+    show_file_properties(config_.windows.show_file_properties),
+    show_status(config_.windows.show_status),
+    show_playback_status(config_.windows.show_playback_status),
+    show_timeline(config_.windows.show_timeline),
+    show_chart_list(config_.windows.show_chart_list),
+    show_linear_view(config_.windows.show_linear_view),
+    show_sound_settings(config_.windows.show_sound_settings),
+    show_editor_settings(config_.windows.show_editor_settings),
+    show_history(config_.windows.show_history),
+    show_new_chart_dialog(config_.windows.show_new_chart_dialog),
+    show_chart_properties(config_.windows.show_chart_properties),
+    show_sync_menu(config_.windows.show_sync_menu),
+    show_bpm_change_menu(config_.windows.show_bpm_change_menu),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -73,6 +87,20 @@ EditorState::EditorState(
     beat_ticks(std::make_shared<BeatTicks>(nullptr, assets_, 1.f)),
     playfield(assets_),
     linear_view(LinearView{assets_, config_}),
+    show_playfield(config_.windows.show_playfield),
+    show_file_properties(config_.windows.show_file_properties),
+    show_status(config_.windows.show_status),
+    show_playback_status(config_.windows.show_playback_status),
+    show_timeline(config_.windows.show_timeline),
+    show_chart_list(config_.windows.show_chart_list),
+    show_linear_view(config_.windows.show_linear_view),
+    show_sound_settings(config_.windows.show_sound_settings),
+    show_editor_settings(config_.windows.show_editor_settings),
+    show_history(config_.windows.show_history),
+    show_new_chart_dialog(config_.windows.show_new_chart_dialog),
+    show_chart_properties(config_.windows.show_chart_properties),
+    show_sync_menu(config_.windows.show_sync_menu),
+    show_bpm_change_menu(config_.windows.show_bpm_change_menu),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -435,7 +463,7 @@ Fraction EditorState::get_snap_step() const {
 };
 
 void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judgement markerEndingState) {
-    ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(0, 0),
         ImVec2(FLT_MAX, FLT_MAX),
@@ -1004,7 +1032,7 @@ void EditorState::display_chart_list() {
 };
 
 void EditorState::display_linear_view() {
-    ImGui::SetNextWindowSize(ImVec2(304, 500), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(304, 500), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(304, 304), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));

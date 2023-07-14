@@ -142,43 +142,43 @@ public:
     sf::Time time_at(Fraction beat) const;
     Fraction get_snap_step() const;
 
-    bool show_playfield = true;
+    bool& show_playfield;
     void display_playfield(const Markers::marker_type& marker, Judgement markerEndingState);
 
-    bool show_file_properties = false;
+    bool& show_file_properties;
     void display_file_properties();
 
-    bool show_status = false;
+    bool& show_status;
     void display_status();
 
-    bool show_playback_status = true;
+    bool& show_playback_status;
     void display_playback_status();
 
-    bool show_timeline = true;
+    bool& show_timeline;
     void display_timeline();
 
-    bool show_chart_list = false;
+    bool& show_chart_list;
     void display_chart_list();
 
-    bool show_linear_view = false;
+    bool& show_linear_view;
     void display_linear_view();
 
-    bool show_sound_settings = false;
+    bool& show_sound_settings;
     void display_sound_settings();
 
-    bool show_editor_settings = false;
+    bool& show_editor_settings;
     void display_editor_settings();
 
-    bool show_history = false;
+    bool& show_history;
     void display_history();
 
-    bool show_new_chart_dialog = false;
-    bool show_chart_properties = false;
+    bool& show_new_chart_dialog;
+    bool& show_chart_properties;
     
-    bool show_sync_menu = false;
+    bool& show_sync_menu;
     void display_sync_menu();
 
-    bool show_bpm_change_menu = false;
+    bool& show_bpm_change_menu;
     void display_bpm_change_menu();
 
     enum class SaveOutcome {

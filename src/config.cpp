@@ -137,6 +137,75 @@ void config::Sound::dump_as_v1_0_0(toml::table& tbl) {
     });
 }
 
+void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
+    if (not tbl["windows"].is_table()) {
+        return;
+    }
+    const auto windows_table = tbl["windows"].ref<toml::table>();
+    if (auto val = windows_table["show_playfield"].value<bool>()) {
+        show_playfield = *val;
+    }
+    if (auto val = windows_table["show_file_properties"].value<bool>()) {
+        show_file_properties = *val;
+    }
+    if (auto val = windows_table["show_status"].value<bool>()) {
+        show_status = *val;
+    }
+    if (auto val = windows_table["show_playback_status"].value<bool>()) {
+        show_playback_status = *val;
+    }
+    if (auto val = windows_table["show_timeline"].value<bool>()) {
+        show_timeline = *val;
+    }
+    if (auto val = windows_table["show_chart_list"].value<bool>()) {
+        show_chart_list = *val;
+    }
+    if (auto val = windows_table["show_linear_view"].value<bool>()) {
+        show_linear_view = *val;
+    }
+    if (auto val = windows_table["show_sound_settings"].value<bool>()) {
+        show_sound_settings = *val;
+    }
+    if (auto val = windows_table["show_editor_settings"].value<bool>()) {
+        show_editor_settings = *val;
+    }
+    if (auto val = windows_table["show_history"].value<bool>()) {
+        show_history = *val;
+    }
+    if (auto val = windows_table["show_new_chart_dialog"].value<bool>()) {
+        show_new_chart_dialog = *val;
+    }
+    if (auto val = windows_table["show_chart_properties"].value<bool>()) {
+        show_chart_properties = *val;
+    }
+    if (auto val = windows_table["show_sync_menu"].value<bool>()) {
+        show_sync_menu = *val;
+    }
+    if (auto val = windows_table["show_bpm_change_menu"].value<bool>()) {
+        show_bpm_change_menu = *val;
+    }
+}
+
+void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
+    tbl.insert_or_assign("windows", toml::table{
+        {"show_playfield", show_playfield},
+        {"show_file_properties", show_file_properties},
+        {"show_status", show_status},
+        {"show_playback_status", show_playback_status},
+        {"show_timeline", show_timeline},
+        {"show_chart_list", show_chart_list},
+        {"show_linear_view", show_linear_view},
+        {"show_sound_settings", show_sound_settings},
+        {"show_editor_settings", show_editor_settings},
+        {"show_history", show_history},
+        {"show_new_chart_dialog", show_new_chart_dialog},
+        {"show_chart_properties", show_chart_properties},
+        {"show_sync_menu", show_sync_menu},
+        {"show_bpm_change_menu", show_bpm_change_menu}
+    });
+}
+
+
 config::Config::Config(const std::filesystem::path& settings) :
     config_path(settings / "config.toml")
 {
@@ -175,6 +244,7 @@ toml::table config::Config::dump_as_v1_0_0() {
     linear_view.dump_as_v1_0_0(tbl);
     editor.dump_as_v1_0_0(tbl);
     sound.dump_as_v1_0_0(tbl);
+    windows.dump_as_v1_0_0(tbl);
     return tbl;
 }
 
@@ -195,4 +265,5 @@ void config::Config::load_from_v1_0_0_table(const toml::table& tbl) {
     linear_view.load_from_v1_0_0_table(tbl);
     editor.load_from_v1_0_0_table(tbl);
     sound.load_from_v1_0_0_table(tbl);
+    windows.load_from_v1_0_0_table(tbl);
 }
