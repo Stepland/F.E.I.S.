@@ -1085,13 +1085,14 @@ void EditorState::display_sound_settings() {
             if (ImGui::Checkbox("On/Off##Beat Tick", &config.sound.beat_tick)) {
                 play_beat_ticks(config.sound.beat_tick);
             }
-            if (not config.sound.beat_tick) {
+            const bool beat_tick_was_off = not config.sound.beat_tick;
+            if (beat_tick_was_off) {
                 ImGui::BeginDisabled();
             }
             if (ImGui::SliderInt("Volume##Beat Tick", &config.sound.beat_tick_volume, 0, 10)) {
                 beat_ticks->set_volume(config.sound.beat_tick_volume);
             }
-            if (not config.sound.beat_tick) {
+            if (beat_tick_was_off) {
                 ImGui::EndDisabled();
             }
             ImGui::TreePop();
@@ -1100,7 +1101,8 @@ void EditorState::display_sound_settings() {
             if (ImGui::Checkbox("On/Off##Note Clap", &config.sound.note_clap)) {
                 play_note_claps(config.sound.note_clap);
             }
-            if (not config.sound.note_clap) {
+            const bool note_clap_was_off = not config.sound.note_clap;
+            if (note_clap_was_off) {
                 ImGui::BeginDisabled();
             }
             if (ImGui::SliderInt("Volume##Note Clap", &config.sound.note_clap_volume, 0, 10)) {
@@ -1116,7 +1118,7 @@ void EditorState::display_sound_settings() {
                 }
                 ImGui::TreePop();
             }
-            if (not config.sound.note_clap) {
+            if (note_clap_was_off) {
                 ImGui::EndDisabled();
             }
             ImGui::TreePop();
@@ -1235,7 +1237,8 @@ void EditorState::display_sync_menu() {
         }
         ImGui::Separator();
         feis::CenteredText("Automatic BPM Detection");
-        if (not music.has_value()) {
+        const bool no_music = not music.has_value();
+        if (no_music) {
             ImGui::BeginDisabled();
         }
         bool loading = tempo_candidates_loader.valid();
@@ -1313,7 +1316,7 @@ void EditorState::display_sync_menu() {
         if (not tempo_candidate_was_selected_before_pressing) {
             ImGui::EndDisabled();
         }
-        if (not music.has_value()) {
+        if (no_music) {
             ImGui::EndDisabled();
         }
     }
