@@ -292,12 +292,14 @@ void EditorState::toggle_note_claps() {
 
 void EditorState::play_clap_on_long_note_ends(bool on) {
     config.sound.clap_on_long_note_ends = on;
-    note_claps = note_claps->with_params(
-        get_pitch(),
-        not config.sound.distinct_chord_clap,
-        config.sound.clap_on_long_note_ends
-    );
-    audio.update_streams({{note_clap_stream, {note_claps, true}}});
+    if (config.sound.note_clap) {
+        note_claps = note_claps->with_params(
+            get_pitch(),
+            not config.sound.distinct_chord_clap,
+            config.sound.clap_on_long_note_ends
+        );
+        audio.update_streams({{note_clap_stream, {note_claps, true}}});
+    }
 }
 
 void EditorState::toggle_clap_on_long_note_ends() {
@@ -306,17 +308,25 @@ void EditorState::toggle_clap_on_long_note_ends() {
 
 void EditorState::play_chord_claps(bool on) {
     config.sound.distinct_chord_clap = on;
-    if (config.sound.distinct_chord_clap) {
-        chord_claps = chord_claps->with_pitch(get_pitch());
-        audio.update_streams(
-            {
-                {chord_clap_stream, {chord_claps, true}}
-            }
+    if (config.sound.note_clap) {
+        note_claps = note_claps->with_params(
+            get_pitch(),
+            not config.sound.distinct_chord_clap,
+            config.sound.clap_on_long_note_ends
         );
-    } else {
-        audio.remove_stream(chord_clap_stream);
+        if (config.sound.distinct_chord_clap) {
+            chord_claps = chord_claps->with_pitch(get_pitch());
+            audio.update_streams({
+                {chord_clap_stream, {chord_claps, true}},
+                {note_clap_stream, {note_claps, true}}
+            });
+        } else {
+            audio.update_streams(
+                {{note_clap_stream, {note_claps, true}}},
+                {chord_clap_stream}
+            );
+        }
     }
-    play_note_claps(on);
 }
 
 void EditorState::toggle_chord_claps() {

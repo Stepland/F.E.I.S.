@@ -287,7 +287,9 @@ int main() {
                         case sf::Keyboard::F4:
                             if (editor_state) {
                                 if (event.key.shift) {
-                                    editor_state->toggle_chord_claps();
+                                    const bool chord = not config.sound.note_clap;
+                                    editor_state->play_note_claps(chord);
+                                    editor_state->play_chord_claps(chord);
                                     notificationsQueue.push(
                                         std::make_shared<TextNotification>(
                                             fmt::format(
