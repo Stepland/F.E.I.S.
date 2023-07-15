@@ -1,5 +1,6 @@
 #include "editor_state.hpp"
 
+#include <SFML/Graphics/Color.hpp>
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -656,9 +657,7 @@ void EditorState::display_file_properties() {
         | ImGuiWindowFlags_AlwaysAutoResize
     )) {
         if (jacket) {
-            if (jacket) {
-                ImGui::Image(*jacket, sf::Vector2f(300, 300));
-            }
+            ImGui::Image(*jacket, sf::Vector2f(300, 300));
         } else {
             ImGui::BeginChild("Album Cover", ImVec2(300, 300), true, ImGuiWindowFlags_NoResize);
             ImGui::EndChild();
@@ -688,6 +687,28 @@ void EditorState::display_file_properties() {
             history.push(std::make_shared<ChangeAudio>(song.metadata.audio, edited_audio));
             song.metadata.audio = edited_audio;
             reload_music();
+        }
+        if (music.has_value()) {
+            if (full_audio_path()->extension() == ".mp3") {
+                ImGui::SameLine();
+                ImGui::TextColored(sf::Color{255,129,0,255},"/!\\");
+                if (ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 20.0f);
+                    ImGui::TextUnformatted(
+                        "Avoid MP3 for rhythm games. MP3 causes sync issues.\n\n"
+                        "Use OGG (or FLAC if you want lossless audio). \n\n"
+                        "(MP3 encoding introduces a bit of delay to the audio "
+                        "file and there's no reliable, agreed-upon way of "
+                        "compensating for it. This means different pieces of "
+                        "software that use different MP3 decoders can disagree "
+                        "on the precise start time of an MP3 file, making the "
+                        "sync unreliable.)"
+                    );
+                    ImGui::PopTextWrapPos();
+                    ImGui::EndTooltip();
+                }
+            }
         }
         auto edited_jacket = song.metadata.jacket;
         feis::InputTextColored(
