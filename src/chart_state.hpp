@@ -58,6 +58,7 @@ struct ChartState {
     Interval<Fraction> visible_beats(const sf::Time& playback_position, const better::Timing& timing);
     void update_visible_notes(const sf::Time& playback_position, const better::Timing& timing);
     better::Notes visible_notes;
+    std::set<Fraction> visible_chords;
 
     void toggle_note(
         const sf::Time& playback_position,

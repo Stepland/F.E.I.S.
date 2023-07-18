@@ -9,6 +9,7 @@
 
 #include "better_note.hpp"
 #include "better_timing.hpp"
+#include "config.hpp"
 #include "ln_marker.hpp"
 #include "marker.hpp"
 #include "utf8_sfml_redefinitions.hpp"
@@ -22,8 +23,8 @@ public:
     sf::Sprite note_selected;
     sf::Sprite note_collision;
 
-    sf::RenderTexture marker_layer;
-    sf::Sprite marker_sprite;
+    sf::RenderTexture long_note_marker_layer;
+    sf::RenderTexture chord_marker_layer;
 
     struct LongNote {
         template<typename ...Ts>
@@ -50,12 +51,32 @@ public:
 
     void draw_long_note(
         const better::LongNote& note,
+        const sf::Time& playback_position,
+        const better::Timing& timing,
+        const Marker& marker,
+        const Judgement& marker_ending_state,
+        const std::optional<config::Playfield>& config
+    );
+
+    void draw_chord_tap_note(
+        const better::TapNote& note,
         const sf::Time& playbackPosition,
         const better::Timing& timing,
         const Marker& marker,
-        const Judgement& markerEndingState
+        const Judgement& markerEndingState,
+        const config::Playfield& config
     );
 
 private:
+
+    void draw_chord_tap_note(
+        const sf::Time& offset,
+        const better::Position& position,
+        const Marker& marker,
+        const Judgement& marker_ending_state,
+        const config::Playfield& config
+    );
+
     const std::filesystem::path texture_path;
+    std::optional<feis::Shader> chord_tint_shader;
 };

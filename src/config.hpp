@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Time.hpp>
 #include <filesystem>
 
@@ -58,6 +59,7 @@ namespace config {
 
     struct Windows {
         bool show_playfield = true;
+        bool show_playfield_settings = false;
         bool show_file_properties = false;
         bool show_status = false;
         bool show_playback_status = true;
@@ -71,6 +73,15 @@ namespace config {
         bool show_chart_properties = false;
         bool show_sync_menu = false;
         bool show_bpm_change_menu = false;
+
+        void load_from_v1_0_0_table(const toml::table& tbl);
+        void dump_as_v1_0_0(toml::table& tbl);
+    };
+
+    struct Playfield {
+        bool color_chords = false;
+        sf::Color chord_color = sf::Color{110, 200, 250, 255};
+        float chord_color_mix_amount = 1.0f;
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);
@@ -90,6 +101,7 @@ namespace config {
         Editor editor;
         Sound sound;
         Windows windows;
+        Playfield playfield;
 
     private:
         void load_from_v1_0_0_table(const toml::table& tbl);

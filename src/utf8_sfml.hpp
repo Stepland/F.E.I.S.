@@ -19,12 +19,13 @@ namespace feis {
     template<class T>
     class UTF8Loader : public T {
     public:
-        bool load_from_path(const std::filesystem::path& file) {
+        template<typename... Ts>
+        bool load_from_path(const std::filesystem::path& file, const Ts&... args) {
             UTF8FileInputStream f;
             if (not f.open(file)) {
                 return false;
             }
-            return this->loadFromStream(f);
+            return this->loadFromStream(f, args...);
         }
     };
 

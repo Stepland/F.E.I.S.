@@ -68,6 +68,17 @@ namespace feis {
 
     bool SquareButton(const char* text);
     void ColorSquare(const sf::Color& color);
+
+    template<typename Callback>
+    void DisabledIf(const bool disabled, const Callback& cb) {
+        if (disabled) {
+            ImGui::BeginDisabled();
+        }
+        cb();
+        if (disabled) {
+            ImGui::EndDisabled();
+        }
+    }
 }
 
 namespace colors {

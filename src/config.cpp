@@ -1,5 +1,6 @@
 #include "config.hpp"
 
+#include <algorithm>
 #include <filesystem>
 
 #include <SFML/Config.hpp>
@@ -8,6 +9,7 @@
 #include <toml++/toml.h>
 #include <variant>
 
+#include "color.hpp"
 #include "linear_view_colors.hpp"
 #include "marker.hpp"
 #include "nowide/fstream.hpp"
@@ -145,6 +147,9 @@ void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
     if (auto val = windows_table["show_playfield"].value<bool>()) {
         show_playfield = *val;
     }
+    if (auto val = windows_table["show_playfield_settings"].value<bool>()) {
+        show_playfield_settings = *val;
+    }
     if (auto val = windows_table["show_file_properties"].value<bool>()) {
         show_file_properties = *val;
     }
@@ -189,6 +194,7 @@ void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
 void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
     tbl.insert_or_assign("windows", toml::table{
         {"show_playfield", show_playfield},
+        {"show_playfield_settings", show_playfield_settings},
         {"show_file_properties", show_file_properties},
         {"show_status", show_status},
         {"show_playback_status", show_playback_status},
@@ -205,6 +211,25 @@ void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
     });
 }
 
+
+void config::Playfield::load_from_v1_0_0_table(const toml::table& tbl) {
+    const auto playfield_table = tbl["playfield"];
+    if (auto val = playfield_table["color_chords"].value<bool>()) {
+        color_chords = *val;
+    }
+    load_color(playfield_table["chord_color"], chord_color);
+    if (auto val = playfield_table["chord_color_mix_amount"].value<float>()) {
+        chord_color_mix_amount = std::clamp(*val, 0.0f, 1.0f);
+    }
+}
+
+void config::Playfield::dump_as_v1_0_0(toml::table& tbl) {
+    tbl.insert_or_assign("playfield", toml::table{
+        {"color_chords", color_chords},
+        {"chord_color", dump_color(chord_color)},
+        {"chord_color_mix_amount", chord_color_mix_amount},
+    });
+}
 
 config::Config::Config(const std::filesystem::path& settings) :
     config_path(settings / "config.toml")
@@ -245,6 +270,7 @@ toml::table config::Config::dump_as_v1_0_0() {
     editor.dump_as_v1_0_0(tbl);
     sound.dump_as_v1_0_0(tbl);
     windows.dump_as_v1_0_0(tbl);
+    playfield.dump_as_v1_0_0(tbl);
     return tbl;
 }
 
@@ -266,4 +292,5 @@ void config::Config::load_from_v1_0_0_table(const toml::table& tbl) {
     editor.load_from_v1_0_0_table(tbl);
     sound.load_from_v1_0_0_table(tbl);
     windows.load_from_v1_0_0_table(tbl);
+    playfield.load_from_v1_0_0_table(tbl);
 }

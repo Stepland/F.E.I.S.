@@ -285,6 +285,24 @@ Interval<Fraction> ChartState::visible_beats(const sf::Time& playback_position, 
 void ChartState::update_visible_notes(const sf::Time& playback_position, const better::Timing& timing) {
     const auto bounds = visible_beats(playback_position, timing);
     visible_notes = chart.notes->between(bounds);
+    std::map<Fraction, unsigned int> counts;
+    std::for_each(
+        visible_notes.cbegin(),
+        visible_notes.cend(),
+        [&](const auto& it){
+            counts[it.second.get_time()] += 1;
+        }
+    );
+    visible_chords.clear();
+    std::for_each(
+        counts.begin(),
+        counts.end(),
+        [&](const auto& it){
+            if (it.second > 1) {
+                visible_chords.insert(it.first);
+            }
+        }
+    );
 };
 
 void ChartState::toggle_note(

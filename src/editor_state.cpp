@@ -25,6 +25,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <tinyfiledialogs.h>
 
+#include "config.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/linear_view.hpp"
 #include "better_metadata.hpp"
@@ -54,6 +55,7 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     playfield(assets_),
     linear_view(LinearView{assets_, config_}),
     show_playfield(config_.windows.show_playfield),
+    show_playfield_settings(config_.windows.show_playfield_settings),
     show_file_properties(config_.windows.show_file_properties),
     show_status(config_.windows.show_status),
     show_playback_status(config_.windows.show_playback_status),
@@ -89,6 +91,7 @@ EditorState::EditorState(
     playfield(assets_),
     linear_view(LinearView{assets_, config_}),
     show_playfield(config_.windows.show_playfield),
+    show_playfield_settings(config_.windows.show_playfield_settings),
     show_file_properties(config_.windows.show_file_properties),
     show_status(config_.windows.show_status),
     show_playback_status(config_.windows.show_playback_status),
@@ -494,7 +497,6 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
 
         float squareSize = ImGui::GetWindowSize().x / 4.f;
         float TitlebarHeight = ImGui::GetWindowSize().y - ImGui::GetWindowSize().x;
-        int ImGuiIndex = 0;
 
         if (chart_state and opt_marker) {
             const auto& marker = **opt_marker;
@@ -514,26 +516,39 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
             auto display = VariantVisitor {
                 [&, this](const better::TapNote& tap_note){
                     auto note_offset = (this->current_time() - this->time_at(tap_note.get_time()));
-                    const auto t = marker.at(markerEndingState, note_offset);
+                    auto t = marker.at(markerEndingState, note_offset);
                     if (t) {
-                        ImGui::SetCursorPos({
-                            tap_note.get_position().get_x() * squareSize,
-                            TitlebarHeight + tap_note.get_position().get_y() * squareSize
-                        });
-                        ImGui::PushID(ImGuiIndex);
-                        ImGui::Image(*t, {squareSize, squareSize});
-                        ImGui::PopID();
-                        ++ImGuiIndex;
+                        if (config.playfield.color_chords and chart_state->visible_chords.contains(tap_note.get_time())) {
+                            playfield.draw_chord_tap_note(
+                                tap_note,
+                                current_time(),
+                                *applicable_timing,
+                                marker,
+                                markerEndingState,
+                                config.playfield
+                            );
+                        } else {
+                            ImGui::SetCursorPos({
+                                tap_note.get_position().get_x() * squareSize,
+                                TitlebarHeight + tap_note.get_position().get_y() * squareSize
+                            });
+                            ImGui::Image(*t, {squareSize, squareSize});
+                        }
                     }
                     
                 },
                 [&, this](const better::LongNote& long_note){
+                    std::optional<config::Playfield> chord_config;
+                    if (config.playfield.color_chords and chart_state->visible_chords.contains(long_note.get_time())) {
+                        chord_config = config.playfield;
+                    }
                     this->playfield.draw_long_note(
                         long_note,
                         current_time(),
                         *applicable_timing,
                         marker,
-                        markerEndingState
+                        markerEndingState,
+                        chord_config
                     );
                 },
             };
@@ -545,7 +560,9 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
             ImGui::SetCursorPos({0, TitlebarHeight});
             ImGui::Image(playfield.long_note.layer);
             ImGui::SetCursorPos({0, TitlebarHeight});
-            ImGui::Image(playfield.marker_layer);
+            ImGui::Image(playfield.long_note_marker_layer);
+            ImGui::SetCursorPos({0, TitlebarHeight});
+            ImGui::Image(playfield.chord_marker_layer);
         }
 
         // Display button grid
@@ -621,10 +638,7 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                     int x = i % 4;
                     int y = i / 4;
                     ImGui::SetCursorPos({x * squareSize, TitlebarHeight + y * squareSize});
-                    ImGui::PushID(ImGuiIndex);
                     ImGui::Image(playfield.note_collision, {squareSize, squareSize});
-                    ImGui::PopID();
-                    ++ImGuiIndex;
                 }
             }
 
@@ -635,10 +649,7 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                         note.get_position().get_x() * squareSize,
                         TitlebarHeight + note.get_position().get_y() * squareSize
                     });
-                    ImGui::PushID(ImGuiIndex);
                     ImGui::Image(playfield.note_selected, {squareSize, squareSize});
-                    ImGui::PopID();
-                    ++ImGuiIndex;
                 }
             }
         }
@@ -646,9 +657,18 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
     ImGui::End();
 };
 
-/*
-Display all metadata in an editable form
-*/
+void EditorState::display_playfield_settings() {
+    if (ImGui::Begin("Playfield Settings", &show_playfield_settings, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Checkbox("Color Chords", &config.playfield.color_chords);
+        feis::DisabledIf(not config.playfield.color_chords, [&](){
+            feis::ColorEdit4("Chord Color", config.playfield.chord_color);
+            ImGui::SliderFloat("Chord Color Mix Amount", &config.playfield.chord_color_mix_amount, 0.0f, 1.0f);
+        });
+    }
+    ImGui::End();
+}
+
+// Display all metadata in an editable form
 void EditorState::display_file_properties() {
     if (ImGui::Begin(
         "File Properties",
@@ -1100,16 +1120,11 @@ void EditorState::display_linear_view() {
 void EditorState::display_sound_settings() {
     if (ImGui::Begin("Sound Settings", &show_sound_settings)) {
         if (ImGui::TreeNodeEx("Music", ImGuiTreeNodeFlags_DefaultOpen)) {
-            const auto music_exists = music.has_value();
-            if (not music_exists) {
-                ImGui::BeginDisabled();
-            }
-            if (ImGui::SliderInt("Volume##Music", &config.sound.music_volume, 0, 10)) {
-                set_volume(config.sound.music_volume);
-            }
-            if (not music_exists) {
-                ImGui::EndDisabled();
-            }
+            feis::DisabledIf(not music.has_value(), [&](){
+                if (ImGui::SliderInt("Volume##Music", &config.sound.music_volume, 0, 10)) {
+                    set_volume(config.sound.music_volume);
+                }
+            });
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Beat Tick", ImGuiTreeNodeFlags_DefaultOpen)) {

@@ -1,5 +1,10 @@
 #include "playfield.hpp"
+#include <filesystem>
+#include <stdexcept>
+#include <variant>
 
+#include "better_note.hpp"
+#include "config.hpp"
 #include "toolbox.hpp"
 #include "utf8_strings.hpp"
 
@@ -8,8 +13,19 @@ const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.t
 Playfield::Playfield(std::filesystem::path assets_folder) :
     long_note(assets_folder / "textures" / "long"),
     texture_path(assets_folder / texture_file)
-{
-    if (!base_texture.load_from_path(texture_path)) {
+{   
+    if (sf::Shader::isAvailable()) {
+        chord_tint_shader.emplace();
+        const auto shader_path = assets_folder / "shaders" / "chord_tint.frag";
+        if (not std::filesystem::is_regular_file(shader_path)) {
+            throw std::runtime_error(fmt::format("File {} does not exist", path_to_utf8_encoded_string(shader_path)));
+        }
+        if (not chord_tint_shader->load_from_path(assets_folder / "shaders" / "chord_tint.frag", sf::Shader::Fragment)) {
+            throw std::runtime_error(fmt::format("Could not open fragment shader {}", path_to_utf8_encoded_string(shader_path)));
+        };
+        chord_tint_shader->setUniform("texture", sf::Shader::CurrentTexture);
+    }
+    if (not base_texture.load_from_path(texture_path)) {
         std::cerr << "Unable to load texture " << texture_path;
         throw std::runtime_error("Unable to load texture " + path_to_utf8_encoded_string(texture_path));
     }
@@ -27,48 +43,36 @@ Playfield::Playfield(std::filesystem::path assets_folder) :
     note_collision.setTexture(base_texture);
     note_collision.setTextureRect({576, 0, 192, 192});
 
-    if (!marker_layer.create(400, 400)) {
-        std::cerr << "Unable to create Playfield's markerLayer";
-        throw std::runtime_error("Unable to create Playfield's markerLayer");
+    if (not long_note_marker_layer.create(400, 400)) {
+        throw std::runtime_error("Unable to create Playfield's long_note_marker_layer");
     }
-    marker_layer.setSmooth(true);
+    long_note_marker_layer.setSmooth(true);
 
-    if (!long_note.layer.create(400, 400)) {
-        std::cerr << "Unable to create Playfield's longNoteLayer";
-        throw std::runtime_error("Unable to create Playfield's longNoteLayer");
+    if (not long_note.layer.create(400, 400)) {
+        throw std::runtime_error("Unable to create Playfield's long_note.laye");
     }
     long_note.layer.setSmooth(true);
 
-    // why do we do this here ?
-    long_note.backgroud.setTexture(*long_note.marker.background_at(sf::Time::Zero));
-    long_note.outline.setTexture(*long_note.marker.outline_at(sf::Time::Zero));
-    long_note.highlight.setTexture(*long_note.marker.highlight_at(sf::Time::Zero));
-    long_note.tail.setTexture(*long_note.marker.tail_at(sf::Time::Zero));
-    long_note.triangle.setTexture(*long_note.marker.triangle_at(sf::Time::Zero));
+    if (not chord_marker_layer.create(400, 400)) {
+        throw std::runtime_error("Unable to create Playfield's chord_marker_layer");
+    }
+    chord_marker_layer.setSmooth(true);
 }
 
 void Playfield::resize(unsigned int width) {
-    if (long_note.layer.getSize() != sf::Vector2u(width, width)) {
-        if (!long_note.layer.create(width, width)) {
-            std::cerr << "Unable to resize Playfield's longNoteLayer";
-            throw std::runtime_error(
-                "Unable to resize Playfield's longNoteLayer");
+    const auto _resize = [](auto& tex, unsigned int width){
+        if (tex.getSize() != sf::Vector2u(width, width)) {
+            if (not tex.create(width, width)) {
+                throw std::runtime_error("Unable to resize Playfield texture");
+            }
+            tex.setSmooth(true);
         }
-        long_note.layer.setSmooth(true);
-    }
+        tex.clear(sf::Color::Transparent);
+    };
 
-    long_note.layer.clear(sf::Color::Transparent);
-
-    if (marker_layer.getSize() != sf::Vector2u(width, width)) {
-        if (!marker_layer.create(width, width)) {
-            std::cerr << "Unable to resize Playfield's markerLayer";
-            throw std::runtime_error(
-                "Unable to resize Playfield's markerLayer");
-        }
-        marker_layer.setSmooth(true);
-    }
-
-    marker_layer.clear(sf::Color::Transparent);
+    _resize(long_note.layer, width);
+    _resize(long_note_marker_layer, width);
+    _resize(chord_marker_layer, width);
 }
 
 void Playfield::draw_tail_and_receptor(
@@ -196,33 +200,31 @@ void Playfield::draw_long_note(
     const sf::Time& playback_position,
     const better::Timing& timing,
     const Marker& marker,
-    const Judgement& markerEndingState
+    const Judgement& marker_ending_state,
+    const std::optional<config::Playfield>& chord_config
 ) {
     draw_tail_and_receptor(note, playback_position, timing);
 
     const float square_size = static_cast<float>(long_note.layer.getSize().x) / 4;
     const auto note_time = timing.time_at(note.get_time());
-    const auto note_offset = playback_position - note_time;
-
     const auto tail_end = timing.time_at(note.get_end());
-    if (playback_position < tail_end) {
-        // Before or During the long note
-        // Display the beginning marker
-        auto t = marker.at(markerEndingState, note_offset);
-        if (t) {
-            const float x_scale = square_size / t->getTextureRect().width;
-            const float y_scale = square_size / t->getTextureRect().height;
-            t->setScale(x_scale, y_scale);
-            t->setPosition(
-                note.get_position().get_x() * square_size,
-                note.get_position().get_y() * square_size
-            );
-            marker_layer.draw(*t);
+    const auto offset = [&](){
+        if (playback_position < tail_end) {
+            return playback_position - note_time;
+        } else {
+            return playback_position - tail_end;
         }
-
+    }();
+    if (chord_config.has_value()) {
+        draw_chord_tap_note(
+            offset,
+            note.get_position(),
+            marker,
+            marker_ending_state,
+            *chord_config
+        );
     } else {
-        const auto tail_end_offset = playback_position - tail_end;
-        auto t = marker.at(markerEndingState, tail_end_offset);
+        auto t = marker.at(marker_ending_state, offset);
         if (t) {
             const float x_scale = square_size / t->getTextureRect().width;
             const float y_scale = square_size / t->getTextureRect().height;
@@ -231,7 +233,54 @@ void Playfield::draw_long_note(
                 note.get_position().get_x() * square_size,
                 note.get_position().get_y() * square_size
             );
-            marker_layer.draw(*t);
+            long_note_marker_layer.draw(*t);
+        }
+    }
+}
+
+void Playfield::draw_chord_tap_note(
+    const better::TapNote& note,
+    const sf::Time& playback_position,
+    const better::Timing& timing,
+    const Marker& marker,
+    const Judgement& marker_ending_state,
+    const config::Playfield& chord_config
+) {
+    const auto note_time = timing.time_at(note.get_time());
+    const auto note_offset = playback_position - note_time;
+    draw_chord_tap_note(
+        note_offset,
+        note.get_position(),
+        marker,
+        marker_ending_state,
+        chord_config
+    );
+}
+
+void Playfield::draw_chord_tap_note(
+    const sf::Time& offset,
+    const better::Position& position,
+    const Marker& marker,
+    const Judgement& marker_ending_state,
+    const config::Playfield& chord_config
+) {
+    const float square_size = static_cast<float>(chord_marker_layer.getSize().x) / 4;
+    auto t = marker.at(marker_ending_state, offset);
+    if (t) {
+        const float x_scale = square_size / t->getTextureRect().width;
+        const float y_scale = square_size / t->getTextureRect().height;
+        t->setScale(x_scale, y_scale);
+        t->setPosition(
+            position.get_x() * square_size,
+            position.get_y() * square_size
+        );
+        if (chord_tint_shader) {
+            chord_tint_shader->setUniform("tint", sf::Glsl::Vec4(chord_config.chord_color));
+            chord_tint_shader->setUniform("mix_amount", chord_config.chord_color_mix_amount);
+            chord_marker_layer.draw(*t, &chord_tint_shader.value());
+        } else {
+            t->setColor(chord_config.chord_color);
+            chord_marker_layer.draw(*t);
         }
     }
 }

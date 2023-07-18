@@ -145,6 +145,9 @@ public:
     bool& show_playfield;
     void display_playfield(const Markers::marker_type& marker, Judgement markerEndingState);
 
+    bool& show_playfield_settings;
+    void display_playfield_settings();
+
     bool& show_file_properties;
     void display_file_properties();
 

@@ -11,6 +11,7 @@
 - Claps and Beats ticks should now be perfectly synced !
 - Playfield
     - Pressing `F` displays free buttons (highlights buttons where a new note would create a collision in red)
+    - Chords can now be displayed with a customizable color (Go to `Settings > Playfield`)
 - Linear View
     - notes can be selected by dragging a rectangle with the mouse
     - new settings

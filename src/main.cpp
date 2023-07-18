@@ -452,6 +452,9 @@ int main() {
             if (editor_state->chart_state and editor_state->show_playfield) {
                 editor_state->display_playfield(markers.get_chosen_marker(), markerEndingState);
             }
+            if (editor_state->show_playfield_settings) {
+                editor_state->display_playfield_settings();
+            }
             if (editor_state->show_linear_view) {
                 editor_state->display_linear_view();
             }
@@ -730,6 +733,9 @@ int main() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Settings", editor_state.has_value())) {
+                if (ImGui::MenuItem("Playfield##Settings")) {
+                    editor_state->show_playfield_settings = true;
+                }
                 if (ImGui::MenuItem("Sound")) {
                     editor_state->show_sound_settings = true;
                 }
