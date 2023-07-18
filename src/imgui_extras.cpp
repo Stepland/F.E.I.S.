@@ -48,7 +48,7 @@ Imgui::InputText that gets colored red or green depending on isValid.
 hoverTextHelp gets displayed when hovering over invalid input.
 Displays InputText without any style change if the input is empty;
 */
-bool feis::InputTextColored(
+bool feis::InputTextWithErrorTooltip(
     const char* label,
     std::string* str,
     bool isValid,
@@ -59,24 +59,34 @@ bool feis::InputTextColored(
     if (str->empty()) {
         return ImGui::InputText(label, str, flags);
     } else {
+        
         if (not isValid) {
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, colors::red.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors::hovered_red.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors::active_red.Value);
+            return_value = InputTextColored(label, str, colors::red, flags);
         } else {
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, colors::green.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors::hovered_green.Value);
-            ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors::active_green.Value);
+            return_value = InputTextColored(label, str, colors::green, flags);
         }
-        return_value = ImGui::InputText(label, str);
         if (ImGui::IsItemHovered() and (not isValid)) {
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(hoverHelpText.c_str());
             ImGui::EndTooltip();
         }
-        ImGui::PopStyleColor(3);
         return return_value;
     }
+}
+
+bool feis::InputTextColored(
+    const char* label,
+    std::string* str,
+    const colors::InputBoxColor& colors_,
+    const ImGuiInputTextFlags flags
+) {
+    bool return_value;
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, colors_.normal);
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, colors_.hovered);
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, colors_.active);
+    return_value = ImGui::InputText(label, str, flags);
+    ImGui::PopStyleColor(3);
+    return return_value;
 }
 
 void feis::HelpMarker(const char* desc) {

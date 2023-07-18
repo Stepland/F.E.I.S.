@@ -10,6 +10,7 @@
 #include <future>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <variant>
 
 #include <fmt/core.h>
@@ -695,29 +696,21 @@ void EditorState::display_file_properties() {
             history.push(std::make_shared<ChangeArtist>(song.metadata.artist, edited_artist));
             song.metadata.artist = edited_artist;
         }
-
-        auto edited_audio = song.metadata.audio;
-        feis::InputTextColored(
-            "Audio",
-            &edited_audio,
-            music.has_value(),
-            "Invalid Audio Path"
-        );
-        if (ImGui::IsItemDeactivatedAfterEdit()) {
-            history.push(std::make_shared<ChangeAudio>(song.metadata.audio, edited_audio));
-            song.metadata.audio = edited_audio;
-            reload_music();
-        }
-        if (music.has_value()) {
-            if (full_audio_path()->extension() == ".mp3") {
-                ImGui::SameLine();
-                ImGui::TextColored(sf::Color{255,129,0,255},"/!\\");
-                if (ImGui::IsItemHovered()) {
-                    ImGui::BeginTooltip();
-                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 20.0f);
-                    ImGui::TextUnformatted(
-                        "Avoid MP3 for rhythm games. MP3 causes sync issues.\n\n"
-                        "Use OGG (or FLAC if you want lossless audio). \n\n"
+        {
+            auto edited_audio = song.metadata.audio;
+            std::optional<colors::InputBoxColor> input_colors;
+            std::optional<std::string> message;
+            if (not edited_audio.empty()) {
+                if (not music.has_value()) {
+                    input_colors = colors::red;
+                    message = "Invalid Audio Path";
+                } else if (full_audio_path()->extension() == ".mp3") {
+                    input_colors = colors::orange;
+                    message = (
+                        "Avoid MP3 for rhythm games. MP3 causes sync issues.\n"
+                        "\n"
+                        "Use OGG (or FLAC if you want lossless audio). \n"
+                        "\n"
                         "(MP3 encoding introduces a bit of delay to the audio "
                         "file and there's no reliable, agreed-upon way of "
                         "compensating for it. This means different pieces of "
@@ -725,13 +718,32 @@ void EditorState::display_file_properties() {
                         "on the precise start time of an MP3 file, making the "
                         "sync unreliable.)"
                     );
+                } else {
+                    input_colors = colors::green;
+                }
+            }
+            if (input_colors.has_value()) {
+                feis::InputTextColored("Audio", &edited_audio, *input_colors);
+            } else {
+                ImGui::InputText("Audio", &edited_audio);
+            }
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                history.push(std::make_shared<ChangeAudio>(song.metadata.audio, edited_audio));
+                song.metadata.audio = edited_audio;
+                reload_music();
+            }
+            if (message) {
+                if (ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 20.0f);
+                    ImGui::TextUnformatted(message->c_str());
                     ImGui::PopTextWrapPos();
                     ImGui::EndTooltip();
                 }
             }
         }
         auto edited_jacket = song.metadata.jacket;
-        feis::InputTextColored(
+        feis::InputTextWithErrorTooltip(
             "Jacket",
             &edited_jacket,
             jacket.has_value(),
@@ -756,7 +768,7 @@ void EditorState::display_file_properties() {
         };
         if (song.metadata.use_preview_file) {
             auto edited_preview_file = song.metadata.preview_file;
-            feis::InputTextColored(
+            feis::InputTextWithErrorTooltip(
                 "File",
                 &edited_preview_file,
                 preview_audio.has_value(),
@@ -1329,8 +1341,8 @@ void EditorState::display_sync_menu() {
                     ImGui::EndTable();
                 }
             }
-            ImGui::EndChild();
         }
+        ImGui::EndChild();
         if (loading) {
             ImGui::BeginDisabled();
         }
@@ -1991,7 +2003,7 @@ std::optional<std::pair<std::string, better::Chart>> feis::NewChartDialog::displ
             ImGui::EndCombo();
         }
         if (show_custom_dif_name) {
-            feis::InputTextColored(
+            feis::InputTextWithErrorTooltip(
                 "Difficulty Name",
                 &difficulty,
                 not editorState.song.charts.contains(difficulty),
@@ -2070,7 +2082,7 @@ void feis::ChartPropertiesDialog::display(EditorState& editor_state) {
             ImGui::EndCombo();
         }
         if (show_custom_dif_name) {
-            feis::InputTextColored(
+            feis::InputTextWithErrorTooltip(
                 "Difficulty Name",
                 &difficulty_name,
                 not difficulty_names_in_use.contains(difficulty_name),

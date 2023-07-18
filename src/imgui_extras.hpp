@@ -10,6 +10,29 @@
 
 #include "special_numeric_types.hpp"
 
+namespace colors {
+    struct InputBoxColor {
+        sf::Color normal;
+        sf::Color hovered;
+        sf::Color active;
+    };
+    const InputBoxColor green = {
+        {42, 122, 41, 138},
+        {67, 250, 67, 102},
+        {67, 250, 67, 171},
+    };
+    const InputBoxColor orange = {
+        {190, 130, 16, 138},
+        {250, 164, 67, 102},
+        {250, 164, 67, 171},
+    };
+    const InputBoxColor red = {
+        {123, 41, 41, 138},
+        {250, 67, 67, 102},
+        {250, 67, 67, 172}
+    };
+};
+
 namespace feis {
     bool ColorEdit4(
         const char* label,
@@ -21,11 +44,17 @@ namespace feis {
         Decimal* value,
         const ImGuiInputTextFlags flags = ImGuiInputTextFlags_None
     );
-    bool InputTextColored(
+    bool InputTextWithErrorTooltip(
         const char* label,
         std::string* str,
         bool isValid,
         const std::string& hoverHelpText,
+        const ImGuiInputTextFlags flags = ImGuiInputTextFlags_None
+    );
+    bool InputTextColored(
+        const char* label,
+        std::string* str,
+        const colors::InputBoxColor& colors,
         const ImGuiInputTextFlags flags = ImGuiInputTextFlags_None
     );
     void HelpMarker(const char* desc);
@@ -81,11 +110,4 @@ namespace feis {
     }
 }
 
-namespace colors {
-    const ImColor green = {0.163f, 0.480f, 0.160f, 0.540f};
-    const ImColor hovered_green = {0.261f, 0.980f, 0.261f, 0.400f};
-    const ImColor active_green = {0.261f, 0.980f, 0.261f, 0.671f};
-    const ImColor red = {0.480f, 0.160f, 0.160f, 0.540f};
-    const ImColor hovered_red = {0.980f, 0.261f, 0.261f, 0.400f};
-    const ImColor active_red = {0.980f, 0.261f, 0.261f, 0.671f};
-};
+
