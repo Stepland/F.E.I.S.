@@ -1,5 +1,4 @@
 # v2.0.0
-*(+ 2.0.0-rc.1)*
 ## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
 - BPM Autodetect
 - Waveform mode for the Linear View
@@ -40,6 +39,7 @@
 - Support for the jujube marker format
 - Sound parameters are saved
 - Markers and Marker previews are loaded in the background, which should avoid long boot up times + UI freezes
+- The window size is saved and restored when restarting F.E.I.S.
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable
@@ -61,6 +61,7 @@
         - cutting/pasting/deleting notes with the keyboard shortcuts or the menu item
         - the audio file changes or is unloaded (because of an invalid path for example) (or more generally when the end point of the chart changes without the notes changing)
         - BPMs are inserted
+- Fix background logo disappearing if the window is smaller than the logo
 
 # v1.1.0
 ## 🍓 New Stuff 🍓

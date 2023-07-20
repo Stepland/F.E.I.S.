@@ -3,7 +3,10 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Time.hpp>
+#include <SFML/Window/ContextSettings.hpp>
+#include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <SFML/Window/VideoMode.hpp>
 #include <algorithm>
 #include <chrono>
 #include <exception>
@@ -47,11 +50,12 @@ int main() {
     const auto markers_folder = assets_folder / "textures" / "markers";
 
     config::Config config{settings_folder};
-
-    sf::RenderWindow window(sf::VideoMode(800, 600), "FEIS");
+    const auto video_mode = sf::VideoMode{config.windows.main_window_size.x, config.windows.main_window_size.y};
+    sf::RenderWindow window;
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(60);
     window.setKeyRepeatEnabled(false);
+    window.create(video_mode, "F.E.I.S");
 
     ImGui::SFML::Init(window, false);
 
@@ -114,6 +118,7 @@ int main() {
                 case sf::Event::Resized:
                     window.setView(sf::View(
                         sf::FloatRect(0, 0, event.size.width, event.size.height)));
+                    config.windows.main_window_size = window.getSize();
                     break;
                 case sf::Event::MouseButtonPressed:
                     switch (event.mouseButton.button) {

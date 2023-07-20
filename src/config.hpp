@@ -1,7 +1,9 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Time.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <filesystem>
 
 #include <toml++/toml.h>
@@ -58,6 +60,7 @@ namespace config {
     };
 
     struct Windows {
+        sf::Vector2u main_window_size = {800, 600};
         bool show_playfield = true;
         bool show_playfield_settings = false;
         bool show_file_properties = false;
@@ -77,6 +80,33 @@ namespace config {
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);
     };
+
+    template<class T, class toml_node>
+    std::optional<sf::Vector2<T>> parse_vector2(const toml_node& node) {
+        const auto array = node.as_array();
+        if (array == nullptr or array->size() != 2) {
+            return {};
+        }
+        const auto a = array->at(0).template value<T>();
+        const auto b = array->at(1).template value<T>();
+        if (not (a and b)) {
+            return {};
+        }
+        return sf::Vector2<T>{*a, *b};
+    }
+
+    template<class T>
+    toml::array dump_vector2(const sf::Vector2<T>& vec) {
+        return toml::array{vec.x, vec.y};
+    }
+
+    template<class T, class toml_node>
+    void load_vector2(const toml_node& node, sf::Vector2<T>& vec) {
+        const auto parsed = parse_vector2<T>(node);
+        if (parsed) {
+            vec = *parsed;
+        }
+    }
 
     struct Playfield {
         bool show_free_buttons = false;

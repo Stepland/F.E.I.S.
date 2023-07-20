@@ -11,7 +11,7 @@ public:
     void render(sf::RenderWindow& window);
 
 private:
-    sf::Color gris_de_fond;
+    sf::Color background_grey;
     feis::Texture tex_FEIS_logo;
     sf::Sprite FEIS_logo;
 };

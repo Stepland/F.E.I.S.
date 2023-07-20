@@ -140,6 +140,7 @@ void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
         return;
     }
     const auto windows_table = tbl["windows"].ref<toml::table>();
+    load_vector2(windows_table["main_window_size"], main_window_size);
     if (auto val = windows_table["show_playfield"].value<bool>()) {
         show_playfield = *val;
     }
@@ -188,7 +189,8 @@ void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
 }
 
 void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
-    tbl.insert_or_assign("windows", toml::table{
+    auto window_table = toml::table{
+        {"main_window_size", dump_vector2(main_window_size)},
         {"show_playfield", show_playfield},
         {"show_playfield_settings", show_playfield_settings},
         {"show_file_properties", show_file_properties},
@@ -204,7 +206,8 @@ void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
         {"show_chart_properties", show_chart_properties},
         {"show_sync_menu", show_sync_menu},
         {"show_bpm_change_menu", show_bpm_change_menu}
-    });
+    };
+    tbl.insert_or_assign("windows", window_table);
 }
 
 
