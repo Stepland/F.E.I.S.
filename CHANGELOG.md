@@ -18,6 +18,9 @@
         - lane order
         - color notes according to quantization, colors are customizable and saved
         - cursor height
+- Status Bar
+    - Snap color is now shown next to the value
+    - Don't show distinct music file offset and engine time
 - Frendlier error message when the UI font is not found in the assets folder
 - Playback position is kept instead of being reset to zero when you change charts or reload the audio file
 - New menu `Settings > Editor`, allows setting

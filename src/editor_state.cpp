@@ -1022,13 +1022,7 @@ void EditorState::display_playback_status() {
         ImGui::SameLine();
         ImGui::TextUnformatted(fmt::format("{:.3f}", static_cast<double>(current_exact_beats())).c_str());
         ImGui::SameLine();
-        if (music.has_value()) {
-            ImGui::TextDisabled("Music File Offset :");
-            ImGui::SameLine();
-            ImGui::TextUnformatted(Toolbox::to_string(audio.getPlayingOffset()).c_str());
-            ImGui::SameLine();
-        }
-        ImGui::TextDisabled("Timeline Position :");
+        ImGui::TextDisabled("Time :");
         ImGui::SameLine();
         ImGui::TextUnformatted(Toolbox::to_string(current_time()).c_str());
     }
