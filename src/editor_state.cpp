@@ -639,7 +639,7 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                     collisions[note.get_position().index()] = true;
                 }
             }
-            if (config.editor.show_free_buttons) {
+            if (config.playfield.show_free_buttons) {
                 for (unsigned int i = 0; i < 16; i++) {
                     unsigned int x = i % 4;
                     unsigned int y = i / 4;
@@ -678,6 +678,8 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
 
 void EditorState::display_playfield_settings() {
     if (ImGui::Begin("Playfield Settings", &show_playfield_settings, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Checkbox("Show Free Buttons", &config.playfield.show_free_buttons);
+        ImGui::Separator();
         ImGui::Checkbox("Colored Chords", &config.playfield.color_chords);
         feis::DisabledIf(not config.playfield.color_chords, [&](){
             feis::ColorEdit4("Color##Color Chords", config.playfield.chord_color);
@@ -1272,7 +1274,6 @@ void EditorState::display_editor_settings() {
             }
             ImGui::EndCombo();
         }
-        ImGui::Checkbox("Show Free Buttons", &config.editor.show_free_buttons);
     }
     ImGui::End();
 }

@@ -347,8 +347,7 @@ int main() {
                             break;
                         case sf::Keyboard::F:
                             if (editor_state) {
-                                config.editor.show_free_buttons =
-                                    not config.editor.show_free_buttons;
+                                config.playfield.show_free_buttons = not config.playfield.show_free_buttons;
                             }
                         case sf::Keyboard::O:
                             if (event.key.control) {
@@ -407,8 +406,7 @@ int main() {
                     switch (event.key.code) {
                         case sf::Keyboard::F:
                             if (editor_state) {
-                                config.editor.show_free_buttons =
-                                    not config.editor.show_free_buttons;
+                                config.playfield.show_free_buttons = not config.playfield.show_free_buttons;
                             }
                         default:
                             break;
