@@ -97,6 +97,7 @@ namespace feis {
 
     bool SquareButton(const char* text);
     void ColorSquare(const sf::Color& color);
+    void ColorDot(const sf::Color& color);
 
     template<typename Callback>
     void DisabledIf(const bool disabled, const Callback& cb) {

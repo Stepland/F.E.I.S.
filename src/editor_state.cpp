@@ -1011,6 +1011,13 @@ void EditorState::display_playback_status() {
         ImGui::SameLine();
         ImGui::Text("%s", Toolbox::toOrdinal(snap * 4).c_str());
         ImGui::SameLine();
+        const auto it = config.linear_view.quantization_colors.palette.find(snap);
+        if (it != config.linear_view.quantization_colors.palette.end()) {
+            feis::ColorDot(it->second);
+        } else {
+            feis::ColorDot(config.linear_view.quantization_colors.default_);
+        }
+        ImGui::SameLine();
         ImGui::TextDisabled("Beats :");
         ImGui::SameLine();
         ImGui::TextUnformatted(fmt::format("{:.3f}", static_cast<double>(current_exact_beats())).c_str());

@@ -88,7 +88,7 @@ int main() {
     }
     Judgement& markerEndingState = *config.marker.ending_state;
 
-    BlankScreen bg {assets_folder};
+    BlankScreen bg{assets_folder};
     std::optional<EditorState> editor_state;
     NotificationsQueue notificationsQueue;
     feis::NewChartDialog newChartDialog;
@@ -684,7 +684,7 @@ int main() {
                     }
                     for (const auto& [snap, color] :
                          config.linear_view.quantization_colors.palette) {
-                        feis::ColorSquare(color);
+                        feis::ColorDot(color);
                         ImGui::SameLine();
                         if (ImGui::MenuItem(
                                 fmt::format("To {}##Notes Quantize", Toolbox::toOrdinal(4 * snap))

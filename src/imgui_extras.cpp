@@ -131,3 +131,10 @@ void feis::ColorSquare(const sf::Color& color) {
     ImGui::GetWindowDrawList()->AddRectFilled(p, ImVec2(p.x + sz, p.y + sz), ImColor(color));
     ImGui::Dummy(ImVec2(sz, sz));
 }
+
+void feis::ColorDot(const sf::Color& color) {
+    ImVec2 p = ImGui::GetCursorScreenPos();
+    const float sz = ImGui::GetTextLineHeight();
+    ImGui::GetWindowDrawList()->AddCircleFilled({p.x + sz / 2.0f, p.y + sz/2.0f}, sz / 2.0f, ImColor(color));
+    ImGui::Dummy(ImVec2(sz, sz));
+}
