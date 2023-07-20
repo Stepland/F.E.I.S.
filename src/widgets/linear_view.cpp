@@ -307,7 +307,7 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
     const auto frac_chunk_at_cursor = static_cast<std::int64_t>(std::floor(
         static_cast<double>(sample_at_cursor) / waveform.channel_count / chunk_sizes.fractional
     ));
-    const std::int64_t first_chunk = frac_chunk_at_cursor - static_cast<std::int64_t>(sizes.cursor_height);
+    const std::int64_t first_chunk = frac_chunk_at_cursor - static_cast<std::int64_t>(computed_sizes.cursor_y);
     const std::int64_t end_chunk = first_chunk + static_cast<std::int64_t>(work_rect.GetHeight());
     const AffineTransform<float> seconds_to_pixels_proportional {
         0,
@@ -319,20 +319,19 @@ void LinearView::draw_in_waveform_mode(LinearView::DrawArgs& args) {
         const auto& data_points = channels[channel_index];
         const auto waveform_x_center = channel_index * waveform_bounding_width + waveform_bounding_width / 2;
         for (std::int64_t data_point_index = first_chunk; data_point_index < end_chunk; data_point_index++) {
-            if (data_point_index < 0 or static_cast<std::size_t>(data_point_index) >= data_points.size()) {
+            const float float_reference_chunk = data_point_index * chunk_sizes.frac_to_ref_ratio;
+            const auto reference_chunk_before = static_cast<std::int64_t>(
+                std::floor(float_reference_chunk)
+            );
+            if (reference_chunk_before < 0 or reference_chunk_before >= static_cast<std::int64_t>(data_points.size())) {
                 continue;
             }
-            const float float_reference_chunk = data_point_index * chunk_sizes.frac_to_ref_ratio;
-            const auto reference_chunk_before = std::clamp<std::int64_t>(
-                std::floor(float_reference_chunk),
-                0,
-                data_points.size()
+            const auto reference_chunk_after = static_cast<std::int64_t>(
+                std::ceil(float_reference_chunk)
             );
-            const auto reference_chunk_after = std::clamp<std::int64_t>(
-                std::ceil(float_reference_chunk),
-                0,
-                data_points.size()
-            );
+            if (reference_chunk_after < 0 or reference_chunk_after >= static_cast<std::int64_t>(data_points.size())) {
+                continue;
+            }
             const float lerp_t = std::clamp<float>(float_reference_chunk - reference_chunk_before, 0, 1);
             const auto& data_point_before = data_points[reference_chunk_before];
             const auto& data_point_after = data_points[reference_chunk_after];
