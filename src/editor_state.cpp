@@ -11,6 +11,7 @@
 #include <initializer_list>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <variant>
 
 #include <fmt/core.h>
@@ -558,12 +559,29 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                 note.visit(display);
             }
 
+            if (config.playfield.show_note_numbers) {
+                for (const auto& [_, note] : chart_state->visible_notes) {
+                    this->playfield.draw_note_number(
+                        note,
+                        current_time(), 
+                        *applicable_timing, 
+                        chart_state->note_numbers,
+                        config.playfield
+                    );
+                }
+            }
+
             ImGui::SetCursorPos({0, TitlebarHeight});
             ImGui::Image(playfield.long_note.layer);
             ImGui::SetCursorPos({0, TitlebarHeight});
             ImGui::Image(playfield.long_note_marker_layer);
             ImGui::SetCursorPos({0, TitlebarHeight});
             ImGui::Image(playfield.chord_marker_layer);
+
+            if (config.playfield.show_note_numbers) {
+                ImGui::SetCursorPos({0, TitlebarHeight});
+                ImGui::Image(playfield.note_numbers_layer);
+            }
         }
 
         // Display button grid
@@ -660,10 +678,29 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
 
 void EditorState::display_playfield_settings() {
     if (ImGui::Begin("Playfield Settings", &show_playfield_settings, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Checkbox("Color Chords", &config.playfield.color_chords);
+        ImGui::Checkbox("Colored Chords", &config.playfield.color_chords);
         feis::DisabledIf(not config.playfield.color_chords, [&](){
-            feis::ColorEdit4("Chord Color", config.playfield.chord_color);
-            ImGui::SliderFloat("Chord Color Mix Amount", &config.playfield.chord_color_mix_amount, 0.0f, 1.0f);
+            feis::ColorEdit4("Color##Color Chords", config.playfield.chord_color);
+            ImGui::SliderFloat("Color Mix Amount##Color Chords", &config.playfield.chord_color_mix_amount, 0.0f, 1.0f);
+        });
+        ImGui::Separator();
+        ImGui::Checkbox("Note Numbers", &config.playfield.show_note_numbers);
+        feis::DisabledIf(not config.playfield.show_note_numbers, [&](){
+            ImGui::SliderFloat("Size##Note Numbers", &config.playfield.note_number_size, 0.0f, 1.0f);
+            feis::ColorEdit4("Color##Note Numbers", config.playfield.note_number_color);
+            ImGui::SliderFloat("Stroke Width##Note Numbers", &config.playfield.note_number_stroke_width, 0.0f, 1.0f);
+            feis::ColorEdit4("Stroke Color##Note Numbers", config.playfield.note_number_stroke_color);
+            if (
+                ImGui::DragIntRange2(
+                    "Visibility Time Span##Note Numbers",
+                    &config.playfield.note_number_visibility_time_span.start,
+                    &config.playfield.note_number_visibility_time_span.end,
+                    1.0f, -1000, 1000, "%dms"
+                )
+            ) {
+                // rebuild in case start and end get swapped
+                config.playfield.note_number_visibility_time_span = {config.playfield.note_number_visibility_time_span.start, config.playfield.note_number_visibility_time_span.end};
+            }
         });
     }
     ImGui::End();

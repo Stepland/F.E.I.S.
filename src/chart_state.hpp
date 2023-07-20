@@ -59,6 +59,8 @@ struct ChartState {
     void update_visible_notes(const sf::Time& playback_position, const better::Timing& timing);
     better::Notes visible_notes;
     std::set<Fraction> visible_chords;
+    Interval<Fraction> visible_bars;
+    std::map<Fraction, unsigned int> note_numbers;
 
     void toggle_note(
         const sf::Time& playback_position,

@@ -7,6 +7,7 @@
 
 #include "better_note.hpp"
 #include "better_notes.hpp"
+#include "generic_interval.hpp"
 #include "history_item.hpp"
 #include "special_numeric_types.hpp"
 
@@ -303,6 +304,28 @@ void ChartState::update_visible_notes(const sf::Time& playback_position, const b
             }
         }
     );
+    const auto new_bars = Interval{bounds.start - bounds.start % 4, bounds.end - (bounds.end % 4) + 1};
+    if (new_bars != visible_bars) {
+        note_numbers.clear();
+        for (auto bar = new_bars.start; bar < new_bars.end; bar += 4) {
+            std::set<Fraction> times_of_notes_in_bar;
+            chart.notes->in(bar, bar + 4, [&](const better::Notes::const_iterator& it){
+                /* rule out
+                - long notes that have started outside the bar
+                - notes that happen right at the beginning of the next bar */
+                const auto time = it->second.get_time();
+                if (time >= bar and time < bar + 4) {
+                    times_of_notes_in_bar.insert(time);
+                }
+            });
+            
+            unsigned int i = 1;
+            auto it = times_of_notes_in_bar.begin();
+            for (; it != times_of_notes_in_bar.end(); i++, ++it) {
+                note_numbers[*it] = i;
+            }
+        }
+    }
 };
 
 void ChartState::toggle_note(

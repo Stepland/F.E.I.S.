@@ -72,6 +72,7 @@ std::uint64_t convert_to_u64(const mpz_class& z);
 
 Fraction floor_fraction(const Fraction& f);
 Fraction round_fraction(const Fraction& f);
+Fraction ceil_fraction(const Fraction& f);
 Fraction convert_to_fraction(const Decimal& d);
 
 // Rounds a given beat to the nearest given division (defaults to nearest 1/240th)

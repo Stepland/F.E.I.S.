@@ -6,6 +6,7 @@
 
 #include <toml++/toml.h>
 
+#include "generic_interval.hpp"
 #include "quantization_colors.hpp"
 #include "linear_view_colors.hpp"
 #include "linear_view_mode.hpp"
@@ -82,6 +83,12 @@ namespace config {
         bool color_chords = false;
         sf::Color chord_color = sf::Color{110, 200, 250, 255};
         float chord_color_mix_amount = 1.0f;
+        bool show_note_numbers = false;
+        float note_number_size = 0.6f;
+        sf::Color note_number_color = sf::Color::White;
+        float note_number_stroke_width = 0.5f;
+        sf::Color note_number_stroke_color = sf::Color::Black;
+        Interval<int> note_number_visibility_time_span = {0, 500};
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);

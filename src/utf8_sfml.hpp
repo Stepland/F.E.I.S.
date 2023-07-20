@@ -52,4 +52,18 @@ namespace feis {
             return this->openFromStream(file_stream);
         }
     };
+
+    /* UTF8-aware wrapper around SFML resource classes that stream file contents
+    continously during their lifetime files but somehow still use loadFrom*
+    methods instead of openFrom* */
+    template<class T>
+    class UTF8StreamerUsingLoadFrom : public HoldsFileStream, public T {
+    public:
+        bool load_from_path(const std::filesystem::path& file) {
+            if (not file_stream.open(file)) {
+                return false;
+            };
+            return this->loadFromStream(file_stream);
+        }
+    };
 }

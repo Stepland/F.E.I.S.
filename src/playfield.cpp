@@ -1,4 +1,6 @@
 #include "playfield.hpp"
+#include <SFML/Graphics/Text.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <filesystem>
 #include <stdexcept>
 #include <variant>
@@ -57,6 +59,17 @@ Playfield::Playfield(std::filesystem::path assets_folder) :
         throw std::runtime_error("Unable to create Playfield's chord_marker_layer");
     }
     chord_marker_layer.setSmooth(true);
+
+    if (not note_numbers_layer.create(400, 400)) {
+        throw std::runtime_error("Unable to create Playfield's chord_marker_layer");
+    }
+    note_numbers_layer.setSmooth(true);
+
+    const auto font_path = assets_folder / "fonts" / "NotoSans-Bold.ttf";
+    if (not note_numbers_font.load_from_path(font_path)) {
+        throw std::runtime_error(fmt::format("Couldn't load font file {}", path_to_utf8_encoded_string(font_path)));
+    }
+
 }
 
 void Playfield::resize(unsigned int width) {
@@ -73,6 +86,7 @@ void Playfield::resize(unsigned int width) {
     _resize(long_note.layer, width);
     _resize(long_note_marker_layer, width);
     _resize(chord_marker_layer, width);
+    _resize(note_numbers_layer, width);
 }
 
 void Playfield::draw_tail_and_receptor(
@@ -255,6 +269,33 @@ void Playfield::draw_chord_tap_note(
         marker_ending_state,
         chord_config
     );
+}
+
+void Playfield::draw_note_number(
+    const better::Note& note,
+    const sf::Time& playback_position,
+    const better::Timing& timing,
+    const std::map<Fraction, unsigned int>& note_numbers,
+    const config::Playfield& config
+) {
+    const auto note_time = timing.time_at(note.get_time());
+    const auto note_offset = playback_position - note_time;
+    if (
+        note_offset >= sf::milliseconds(config.note_number_visibility_time_span.start)
+        and note_offset < sf::milliseconds(config.note_number_visibility_time_span.end)
+    ) {
+        note_number.setFont(note_numbers_font);
+        note_number.setString(fmt::format("{}", note_numbers.at(note.get_time())));
+        const float square_size = chord_marker_layer.getSize().x / 4.0f;
+        note_number.setCharacterSize(square_size * config.note_number_size);
+        note_number.setFillColor(config.note_number_color);
+        note_number.setOutlineThickness(note_number.getCharacterSize() * config.note_number_stroke_width / 5.f);
+        note_number.setOutlineColor(config.note_number_stroke_color);
+        Toolbox::center(note_number);
+        const auto pos = note.get_position();
+        note_number.setPosition(sf::Vector2f{pos.get_x() + 0.5f, pos.get_y() + 0.5f} * square_size);
+        note_numbers_layer.draw(note_number);
+    }
 }
 
 void Playfield::draw_chord_tap_note(

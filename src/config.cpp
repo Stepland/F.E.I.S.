@@ -221,6 +221,28 @@ void config::Playfield::load_from_v1_0_0_table(const toml::table& tbl) {
     if (auto val = playfield_table["chord_color_mix_amount"].value<float>()) {
         chord_color_mix_amount = std::clamp(*val, 0.0f, 1.0f);
     }
+    if (auto val = playfield_table["show_note_numbers"].value<bool>()) {
+        show_note_numbers = *val;
+    }
+    if (auto val = playfield_table["note_number_size"].value<float>()) {
+        note_number_size = std::clamp(*val, 0.0f, 1.0f);
+    }
+    load_color(playfield_table["note_number_color"], note_number_color);
+    if (auto val = playfield_table["note_number_stroke_width"].value<float>()) {
+        note_number_stroke_width = std::clamp(*val, 0.0f, 1.0f);
+    }
+    load_color(playfield_table["note_number_stroke_color"], note_number_stroke_color);
+    const auto& visibility = playfield_table["note_number_visibility_time_span"];
+    if (visibility.is_array()) {
+        const auto array = visibility.ref<toml::array>();
+        if (array.size() == 2) {
+            const auto start = array[0].value<int>();
+            const auto end = array[1].value<int>();
+            if (start and end) {
+                note_number_visibility_time_span = {*start, *end};
+            }
+        }
+    }
 }
 
 void config::Playfield::dump_as_v1_0_0(toml::table& tbl) {
@@ -228,6 +250,12 @@ void config::Playfield::dump_as_v1_0_0(toml::table& tbl) {
         {"color_chords", color_chords},
         {"chord_color", dump_color(chord_color)},
         {"chord_color_mix_amount", chord_color_mix_amount},
+        {"show_note_numbers", show_note_numbers},
+        {"note_number_size", note_number_size},
+        {"note_number_color", dump_color(note_number_color)},
+        {"note_number_stroke_width", note_number_stroke_width},
+        {"note_number_stroke_color", dump_color(note_number_stroke_color)},
+        {"note_number_visibility_time_span", toml::array{note_number_visibility_time_span.start, note_number_visibility_time_span.end}}
     });
 }
 

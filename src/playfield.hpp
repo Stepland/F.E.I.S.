@@ -25,6 +25,7 @@ public:
 
     sf::RenderTexture long_note_marker_layer;
     sf::RenderTexture chord_marker_layer;
+    sf::RenderTexture note_numbers_layer;
 
     struct LongNote {
         template<typename ...Ts>
@@ -67,6 +68,14 @@ public:
         const config::Playfield& config
     );
 
+    void draw_note_number(
+        const better::Note& note,
+        const sf::Time& playbackPosition,
+        const better::Timing& timing,
+        const std::map<Fraction, unsigned int>& note_numbers,
+        const config::Playfield& config
+    );
+
 private:
 
     void draw_chord_tap_note(
@@ -79,4 +88,7 @@ private:
 
     const std::filesystem::path texture_path;
     std::optional<feis::Shader> chord_tint_shader;
+
+    feis::Font note_numbers_font;
+    sf::Text note_number;
 };

@@ -224,6 +224,10 @@ Fraction round_fraction(const Fraction& f) {
     }
 };
 
+Fraction ceil_fraction(const Fraction& f) {
+    return floor_fraction(f) + 1;
+}
+
 Fraction convert_to_fraction(const Decimal& d) {
     const auto reduced = d.reduce();
     const auto sign = reduced.sign();
