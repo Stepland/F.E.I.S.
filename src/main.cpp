@@ -31,6 +31,7 @@
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
+#include "imgui_internal.h"
 #include "marker.hpp"
 #include "markers.hpp"
 #include "mp3_reader.hpp"
@@ -145,6 +146,12 @@ int main() {
                 case sf::Event::MouseWheelScrolled:
                     switch (event.mouseWheelScroll.wheel) {
                         case sf::Mouse::Wheel::VerticalWheel: {
+                            if (ImGui::GetIO().WantCaptureMouse) {
+                                const auto window = ImGui::GetCurrentContext()->HoveredWindow;
+                                if (window and not(window->Flags & ImGuiWindowFlags_NoScrollWithMouse)) {
+                                    break;
+                                }
+                            }
                             if (editor_state) {
                                 auto delta = static_cast<int>(
                                     std::floor(event.mouseWheelScroll.delta));
@@ -164,6 +171,9 @@ int main() {
                     }
                     break;
                 case sf::Event::KeyPressed:
+                    if (ImGui::GetIO().WantCaptureKeyboard) {
+                        break;
+                    }
                     switch (event.key.code) {
                         /*
                          * Selection related stuff
