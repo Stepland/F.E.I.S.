@@ -660,22 +660,28 @@ void LinearView::draw_time_selection(
             beats_to_absolute_pixels(chart_state.time_selection->end)
         };
         if (pixel_interval.intersects({0, static_cast<float>(computed_sizes.y)})) {
-            const sf::Vector2f selection_size = {
-                selection_width,
-                static_cast<float>(pixel_interval.width())
-            };
             const sf::Vector2f selection_pos = {
                 computed_sizes.timeline_left,
                 static_cast<float>(pixel_interval.start)
             };
-            draw_rectangle(
-                draw_list,
-                origin + selection_pos,
-                selection_size,
-                {0, 0},
-                colors.tab_selection.fill,
-                colors.tab_selection.border
-            );
+            if (chart_state.time_selection->start == chart_state.time_selection->end) {
+                const sf::Vector2f line_start = origin + selection_pos;
+                const sf::Vector2f line_end = {line_start.x + selection_width, line_start.y};
+                draw_list->AddLine(line_start, line_end, ImColor(colors.tab_selection.border));
+            } else {
+                const sf::Vector2f selection_size = {
+                    selection_width,
+                    static_cast<float>(pixel_interval.width())
+                };
+                draw_rectangle(
+                    draw_list,
+                    origin + selection_pos,
+                    selection_size,
+                    {0, 0},
+                    colors.tab_selection.fill,
+                    colors.tab_selection.border
+                );
+            }
         }
     }
 }
