@@ -1725,7 +1725,7 @@ void EditorState::reload_jacket() {
     }
 
     jacket.emplace();
-    auto jacket_path = song_path->parent_path() / song.metadata.jacket;
+    auto jacket_path = song_path->parent_path() / utf8_encoded_string_to_path(song.metadata.jacket);
 
     if (
         not std::filesystem::exists(jacket_path)
