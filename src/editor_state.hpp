@@ -151,8 +151,8 @@ public:
     bool& show_file_properties;
     void display_file_properties();
 
-    bool& show_status;
-    void display_status();
+    bool& show_debug;
+    void display_debug();
 
     bool& show_playback_status;
     void display_playback_status();

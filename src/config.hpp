@@ -64,7 +64,7 @@ namespace config {
         bool show_playfield = true;
         bool show_playfield_settings = false;
         bool show_file_properties = false;
-        bool show_status = false;
+        bool show_debug = false;
         bool show_playback_status = true;
         bool show_timeline = true;
         bool show_chart_list = false;

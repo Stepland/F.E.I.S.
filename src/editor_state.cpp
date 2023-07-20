@@ -59,7 +59,7 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     show_playfield(config_.windows.show_playfield),
     show_playfield_settings(config_.windows.show_playfield_settings),
     show_file_properties(config_.windows.show_file_properties),
-    show_status(config_.windows.show_status),
+    show_debug(config_.windows.show_debug),
     show_playback_status(config_.windows.show_playback_status),
     show_timeline(config_.windows.show_timeline),
     show_chart_list(config_.windows.show_chart_list),
@@ -95,7 +95,7 @@ EditorState::EditorState(
     show_playfield(config_.windows.show_playfield),
     show_playfield_settings(config_.windows.show_playfield_settings),
     show_file_properties(config_.windows.show_file_properties),
-    show_status(config_.windows.show_status),
+    show_debug(config_.windows.show_debug),
     show_playback_status(config_.windows.show_playback_status),
     show_timeline(config_.windows.show_timeline),
     show_chart_list(config_.windows.show_chart_list),
@@ -947,8 +947,8 @@ void EditorState::display_file_properties() {
 Display any information that would be useful for the user to troubleshoot the
 status of the editor. Will appear in the "Editor Status" window
 */
-void EditorState::display_status() {
-    ImGui::Begin("Status", &show_status, ImGuiWindowFlags_AlwaysAutoResize);
+void EditorState::display_debug() {
+    ImGui::Begin("Debug", &show_debug, ImGuiWindowFlags_AlwaysAutoResize);
     {
         if (not music.has_value()) {
             if (not song.metadata.audio.empty()) {
@@ -1741,7 +1741,7 @@ std::optional<std::filesystem::path> EditorState::full_audio_path() {
     if (not song_path.has_value() or song.metadata.audio.empty()) {
         return {};
     } else {
-        return song_path->parent_path() / song.metadata.audio;
+        return song_path->parent_path() / utf8_encoded_string_to_path(song.metadata.audio);
     }     
 }
 

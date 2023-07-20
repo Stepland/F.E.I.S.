@@ -150,8 +150,8 @@ void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
     if (auto val = windows_table["show_file_properties"].value<bool>()) {
         show_file_properties = *val;
     }
-    if (auto val = windows_table["show_status"].value<bool>()) {
-        show_status = *val;
+    if (auto val = windows_table["show_debug"].value<bool>()) {
+        show_debug = *val;
     }
     if (auto val = windows_table["show_playback_status"].value<bool>()) {
         show_playback_status = *val;
@@ -194,7 +194,7 @@ void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
         {"show_playfield", show_playfield},
         {"show_playfield_settings", show_playfield_settings},
         {"show_file_properties", show_file_properties},
-        {"show_status", show_status},
+        {"show_status", show_debug},
         {"show_playback_status", show_playback_status},
         {"show_timeline", show_timeline},
         {"show_chart_list", show_chart_list},

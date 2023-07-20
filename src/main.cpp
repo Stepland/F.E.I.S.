@@ -467,8 +467,8 @@ int main() {
             if (editor_state->show_file_properties) {
                 editor_state->display_file_properties();
             }
-            if (editor_state->show_status) {
-                editor_state->display_status();
+            if (editor_state->show_debug) {
+                editor_state->display_debug();
             }
             if (editor_state->show_playback_status) {
                 editor_state->display_playback_status();
@@ -727,8 +727,8 @@ int main() {
                 if (ImGui::MenuItem("Timeline", nullptr, editor_state->show_timeline)) {
                     editor_state->show_timeline = not editor_state->show_timeline;
                 }
-                if (ImGui::MenuItem("Editor Status", nullptr, editor_state->show_status)) {
-                    editor_state->show_status = not editor_state->show_status;
+                if (ImGui::MenuItem("Debug", nullptr, editor_state->show_debug)) {
+                    editor_state->show_debug = not editor_state->show_debug;
                 }
                 if (ImGui::MenuItem("History", nullptr, editor_state->show_history)) {
                     editor_state->show_history = not editor_state->show_history;
