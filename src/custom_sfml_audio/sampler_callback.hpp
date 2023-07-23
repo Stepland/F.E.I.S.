@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <span>
 
@@ -10,6 +11,22 @@
 #include <SFML/Config.hpp>
 
 #include "fake_pitched_sound_stream.hpp"
+#include "fmt/core.h"
+
+struct Slice {
+    std::int64_t start_in_sample;
+    std::int64_t size;
+    std::int64_t start_in_buffer;
+    bool ends_in_this_buffer;
+};
+
+std::optional<Slice> compute_sample_slice(
+    const std::int64_t buffer_start,
+    const std::int64_t buffer_size,
+    const std::int64_t sample_start,
+    const std::int64_t sample_size,
+    const std::optional<std::int64_t> next_sample_start
+);
 
 void copy_sample_at_points(
     const std::shared_ptr<FakePitchedSoundStream::sound_buffer_type>& sample,
@@ -23,56 +40,42 @@ void copy_sample_at_points(
     const std::shared_ptr<FakePitchedSoundStream::sound_buffer_type>& sample,
     std::span<sf::Int16> output_buffer,
     std::map<std::int64_t, T>& starting_points,
-    std::int64_t absolute_buffer_start
+    std::int64_t buffer_start
 ) {
     std::ranges::fill(output_buffer, 0);
     for (auto it = starting_points.begin(); it != starting_points.end();) {
-        const auto absolute_sample_start = it->first;
-        const auto absolute_buffer_end = absolute_buffer_start + static_cast<std::int64_t>(output_buffer.size());
-        const auto absolute_sample_end = absolute_sample_start + static_cast<std::int64_t>(sample->getSampleCount());
-        const auto absolute_sample_deoverlapped_end = std::min(
-            absolute_sample_end,
-            [&](const auto& it){
-                const auto next = std::next(it);
-                if (next != starting_points.end()) {
-                    return next->first;
-                } else {
-                    return INT64_MAX;
-                }
-            }(it)
+        const auto next_sample_start = [&]() -> std::optional<std::int64_t> {
+            const auto next = std::next(it);
+            if (next == starting_points.end()) {
+                return {};
+            } else {
+                return next->first;
+            }
+        }();
+        const auto slice = compute_sample_slice(
+            buffer_start,
+            static_cast<std::int64_t>(output_buffer.size()),
+            it->first,
+            static_cast<std::int64_t>(sample->getSampleCount()),
+            next_sample_start
         );
-        const auto absolute_sample_slice_start = std::max(
-            absolute_sample_start,
-            absolute_buffer_start
-        );
-        const auto absolute_sample_slice_end = std::min(
-            absolute_sample_deoverlapped_end,
-            absolute_buffer_end
-        );
-        const auto slice_size = absolute_sample_slice_end - absolute_sample_slice_start;
-        const auto slice_start_relative_to_sample_start = absolute_sample_slice_start - absolute_sample_start;
-        const auto slice_start_relative_to_buffer_start = absolute_sample_slice_start - absolute_buffer_start;
-        
-        // Exit early in all the possible error cases I could think of
-        if (
-            absolute_sample_deoverlapped_end <= absolute_buffer_start
-            or absolute_sample_start >= absolute_buffer_end
-            or slice_size <= 0
-        ) {
+
+        // bounds checking failed somehow
+        if (not slice) {
             it = starting_points.erase(it);
             continue;
         }
         
-        const auto input_start = sample->getSamples() + slice_start_relative_to_sample_start;
-        const auto input_end = input_start + slice_size;
-        const auto output_start = output_buffer.begin() + slice_start_relative_to_buffer_start;
+        const auto input_start = sample->getSamples() + slice->start_in_sample;
+        const auto input_end = input_start + slice->size;
+        const auto output_start = output_buffer.begin() + slice->start_in_buffer;
         std::copy(
             input_start,
             input_end,
             output_start
         );
         // has this sample been fully played in this buffer ?
-        if (absolute_sample_deoverlapped_end <= absolute_buffer_end) {
+        if (slice->ends_in_this_buffer) {
             it = starting_points.erase(it);
         } else {
             ++it;
