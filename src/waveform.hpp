@@ -10,7 +10,6 @@
 
 #include <SFML/Audio/InputSoundFile.hpp>
 
-#include "cache.hpp"
 #include "utf8_sfml_redefinitions.hpp"
 #include "variant_visitor.hpp"
 

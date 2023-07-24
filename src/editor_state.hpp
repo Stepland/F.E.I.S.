@@ -9,8 +9,6 @@
 #include <SFML/Graphics.hpp>
 #include <type_traits>
 
-
-#include "cache.hpp"
 #include "config.hpp"
 #include "custom_sfml_audio/beat_ticks.hpp"
 #include "custom_sfml_audio/chord_claps.hpp"
