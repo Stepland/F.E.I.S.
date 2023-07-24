@@ -812,12 +812,6 @@ int main() {
             }
         }
         ImGui::EndMainMenuBar();
-
-        if (ImGui::Begin("Debug")) {
-            ImGui::TextUnformatted(fmt::format("frame time : {}ms", delta.asMilliseconds()).c_str());
-            ImGui::TextUnformatted(fmt::format("{:.0f} fps", 1.0f / delta.asSeconds()).c_str());
-        }
-        ImGui::End();
         ImGui::SFML::Render(window);
         window.display();
         markers.update();
