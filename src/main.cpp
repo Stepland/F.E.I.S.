@@ -52,11 +52,9 @@ int main() {
 
     config::Config config{settings_folder};
     const auto video_mode = sf::VideoMode{config.windows.main_window_size.x, config.windows.main_window_size.y};
-    sf::RenderWindow window;
+    sf::RenderWindow window{video_mode, "F.E.I.S"};
     window.setVerticalSyncEnabled(true);
-    window.setFramerateLimit(60);
     window.setKeyRepeatEnabled(false);
-    window.create(video_mode, "F.E.I.S");
 
     ImGui::SFML::Init(window, false);
 
@@ -814,6 +812,12 @@ int main() {
             }
         }
         ImGui::EndMainMenuBar();
+
+        if (ImGui::Begin("Debug")) {
+            ImGui::TextUnformatted(fmt::format("frame time : {}ms", delta.asMilliseconds()).c_str());
+            ImGui::TextUnformatted(fmt::format("{:.0f} fps", 1.0f / delta.asSeconds()).c_str());
+        }
+        ImGui::End();
         ImGui::SFML::Render(window);
         window.display();
         markers.update();
