@@ -246,6 +246,7 @@ public:
     void reload_sounds_that_depend_on_timing();
     void reload_all_sounds();
     void reload_editable_range();
+    void reload_colliding_notes();
 
     void frame_hook();
 

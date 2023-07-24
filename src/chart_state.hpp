@@ -62,6 +62,12 @@ struct ChartState {
     Interval<Fraction> visible_bars;
     std::map<Fraction, unsigned int> note_numbers;
 
+    void update_colliding_notes(
+        const better::Timing &timing,
+        const sf::Time &collision_zone
+    );
+    better::Notes colliding_notes;
+
     void toggle_note(
         const sf::Time& playback_position,
         std::uint64_t snap,

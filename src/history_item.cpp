@@ -46,6 +46,7 @@ void AddNotes::do_action(EditorState& ed) const {
         }
         ed.chart_state->density_graph.should_recompute = true;
         ed.chart_state->selected_stuff.notes = notes;
+        ed.reload_colliding_notes();
     }
 }
 
@@ -60,6 +61,7 @@ void AddNotes::undo_action(EditorState& ed) const {
         }
         ed.chart_state->density_graph.should_recompute = true;
         ed.chart_state->selected_stuff.notes.clear();
+        ed.reload_colliding_notes();
     }
 }
 
@@ -128,6 +130,7 @@ void RemoveThenAddNotes::do_action(EditorState& ed) const {
         }
         ed.chart_state->density_graph.should_recompute = true;
         ed.chart_state->selected_stuff.notes = added;
+        ed.reload_colliding_notes();
     }
 }
 
@@ -145,6 +148,7 @@ void RemoveThenAddNotes::undo_action(EditorState& ed) const {
         }
         ed.chart_state->density_graph.should_recompute = true;
         ed.chart_state->selected_stuff.notes = removed;
+        ed.reload_colliding_notes();
     }
 }
 
@@ -379,6 +383,7 @@ void ChangeTiming::set_value(EditorState& ed, const better::Timing& value) const
     std::visit(set_value_, origin);
     ed.reload_applicable_timing();
     ed.reload_sounds_that_depend_on_timing();
+    ed.reload_colliding_notes();
     if (ed.chart_state) {
         ed.chart_state->density_graph.should_recompute = true;
     }

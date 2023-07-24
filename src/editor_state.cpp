@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <algorithm>
 #include <cfloat>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -606,6 +607,7 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                         );
                         reload_sounds_that_depend_on_notes();
                         reload_editable_range();
+                        reload_colliding_notes();
                     }
                 }
                 // Deal with long note creation stuff
@@ -635,7 +637,7 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
             // then display them
             std::array<bool, 16> collisions = {};
             for (const auto& [_, note] : chart_state->visible_notes) {
-                if (chart_state->chart.notes->is_colliding(note, *applicable_timing, config.editor.collision_zone)) {
+                if (chart_state->colliding_notes.contains(note)) {
                     collisions[note.get_position().index()] = true;
                 }
             }
@@ -1250,6 +1252,7 @@ void EditorState::display_editor_settings() {
             config.editor.collision_zone = sf::milliseconds(collision_zone_ms);
             if (chart_state) {
                 chart_state->density_graph.should_recompute = true;
+                reload_colliding_notes();
             }
         }
         ImGui::SameLine();
@@ -1270,6 +1273,7 @@ void EditorState::display_editor_settings() {
                     config.editor.collision_zone = value;
                     if (chart_state) {
                         chart_state->density_graph.should_recompute = true;
+                        reload_colliding_notes();
                     }
                 }
             }
@@ -1515,6 +1519,7 @@ void EditorState::insert_long_note_just_created() {
     chart_state->insert_long_note_just_created(snap);
     reload_sounds_that_depend_on_notes();
     reload_editable_range();
+    reload_colliding_notes();
 }
 
 void EditorState::move_backwards_in_time() {
@@ -1553,12 +1558,14 @@ void EditorState::cut(NotificationsQueue& nq) {
     if (chart_state) {
         chart_state->cut(nq, *applicable_timing, timing_origin());
         reload_all_sounds();
+        reload_colliding_notes();
     }
 }
 
 void EditorState::copy(NotificationsQueue& nq) {
     if (chart_state) {
         chart_state->copy(nq);
+        reload_colliding_notes();
     }
 }
 
@@ -1570,12 +1577,14 @@ void EditorState::paste(NotificationsQueue& nq) {
             *applicable_timing,
             timing_origin()
         );
+        reload_colliding_notes();
     }
 }
 
 void EditorState::delete_(NotificationsQueue& nq) {
     if (chart_state) {
         chart_state->delete_(nq, *applicable_timing, timing_origin());
+        reload_colliding_notes();
     }
 }
 
@@ -1631,6 +1640,7 @@ void EditorState::open_chart(const std::string& name) {
     reload_editable_range();
     reload_applicable_timing();
     reload_all_sounds();
+    reload_colliding_notes();
 };
 
 void EditorState::close_chart() {
@@ -1655,6 +1665,12 @@ void EditorState::reload_editable_range() {
     }
 };
 
+void EditorState::reload_colliding_notes() {
+    if (chart_state) {
+        chart_state->update_colliding_notes(*applicable_timing, config.editor.collision_zone);
+    }
+}
+
 void EditorState::frame_hook() {
     if (tempo_candidates_loader.valid()) {
         if (tempo_candidates_loader.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -1674,6 +1690,7 @@ void EditorState::replace_applicable_timing_with(const better::Timing& new_timin
     if (chart_state) {
         chart_state->density_graph.should_recompute = true;
     }
+    reload_colliding_notes();
 }
 
 bool EditorState::note_clap_stream_is_on() const {
@@ -1890,6 +1907,7 @@ void EditorState::reload_applicable_timing() {
     } else {
         applicable_timing = song.timing;
     }
+    reload_colliding_notes();
 };
 
 TimingOrigin EditorState::timing_origin() {

@@ -518,8 +518,9 @@ void LinearView::draw_tap_note(
         computed_sizes.collizion_zone_width,
         collision_zone_height
     };
+    const auto collides = args.chart_state.colliding_notes.contains(tap_note);
     const auto collision_zone_color = [&](){
-        if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
+        if (collides) {
             return colors.conflicting_collision_zone;
         } else {    
             return colors.normal_collision_zone;
@@ -528,7 +529,7 @@ void LinearView::draw_tap_note(
     const auto tap_note_color = [&](){
         if (use_quantization_colors) {
             return quantization_colors.color_at_beat(tap_note.get_time());
-        } else if (args.chart_state.chart.notes->is_colliding(tap_note, args.timing, collision_zone)) {
+        } else if (collides) {
             return colors.conflicting_tap_note;
         } else {
             return colors.normal_tap_note;
@@ -587,7 +588,7 @@ void LinearView::draw_long_note(
         }
     }();
     auto long_note_color = colors.normal_long_note;
-    if (args.chart_state.chart.notes->is_colliding(long_note, args.timing, collision_zone)) {
+    if (args.chart_state.colliding_notes.contains(long_note)) {
         collision_zone_color = colors.conflicting_collision_zone;
         if (not use_quantization_colors) {
             tap_note_color = colors.conflicting_tap_note;

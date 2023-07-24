@@ -328,6 +328,18 @@ void ChartState::update_visible_notes(const sf::Time& playback_position, const b
     }
 };
 
+void ChartState::update_colliding_notes(
+    const better::Timing &timing,
+    const sf::Time &collision_zone
+) {
+    colliding_notes.clear();
+    for (const auto& [_, note] : *chart.notes) {
+        if (chart.notes->is_colliding(note, timing, collision_zone)) {
+            colliding_notes.insert(note);
+        }
+    }
+}
+
 void ChartState::toggle_note(
     const sf::Time& playback_position,
     std::uint64_t snap,

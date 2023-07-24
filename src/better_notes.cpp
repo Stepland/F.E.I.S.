@@ -82,8 +82,6 @@ namespace better {
         Old comment dating back to a time when "collision_zone" was set to a
         fixed value of 1000ms :
 
-        ---
-
         Two notes collide if they are within ~one second of each other :
         Approach and burst animations of original jubeat markers last 16 frames
         at (supposedly) 30 fps, which means a note needs (a bit more than) half
