@@ -1,0 +1,41 @@
+{
+    "name": "triangles",
+    "size": 600,
+    "fps": 60,
+    "approach": {
+        "sprite_sheet": "approach.png",
+        "count": 32,
+        "columns": 4,
+        "rows": 8
+    },
+    "miss": {
+        "sprite_sheet": "miss.png",
+        "count": 16,
+        "columns": 4,
+        "rows": 4
+    },
+    "poor": {
+        "sprite_sheet": "poor.png",
+        "count": 32,
+        "columns": 4,
+        "rows": 8
+    },
+    "good": {
+        "sprite_sheet": "good.png",
+        "count": 32,
+        "columns": 4,
+        "rows": 8
+    },
+    "great": {
+        "sprite_sheet": "great.png",
+        "count": 32,
+        "columns": 4,
+        "rows": 8
+    },
+    "perfect": {
+        "sprite_sheet": "perfect.png",
+        "count": 32,
+        "columns": 4,
+        "rows": 8
+    }
+}

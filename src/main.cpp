@@ -765,6 +765,9 @@ int main() {
                 }
                 if (ImGui::BeginMenu("Marker")) {
                     int i = 0;
+                    const auto& style = ImGui::GetStyle();
+                    const auto size_x = 100 + style.FramePadding.x * 2;
+                    const auto size_y = 100 + style.FramePadding.y * 2;
                     std::for_each(
                         markers.cbegin(),
                         markers.cend(),
@@ -775,7 +778,7 @@ int main() {
                             if (opt_preview) {
                                 clicked = ImGui::ImageButton(*opt_preview, {100, 100});
                             } else {
-                                clicked = ImGui::Button(path_to_utf8_encoded_string(path).c_str(), {100, 100});
+                                clicked = ImGui::Button(path_to_utf8_encoded_string(path).c_str(), {size_x, size_y});
                             }
                             if (clicked) {
                                 markers.load_marker(path);

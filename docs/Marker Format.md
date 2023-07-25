@@ -6,7 +6,9 @@ one directory = one marker
 
 let's call that directory `folder/`
 
-`folder/preview.png` will be used as preview if present
+The first existing + valid image in this list is used as a preview icon : 
+- `folder/preview.png`
+- `folder/ma15.png`
 
 ## Old Format
 
@@ -71,6 +73,7 @@ Markers in the old format run at 30 fps.
 
 | Key | Meaning |
 |-|-|
+| `name` | self-explanatory |
 | `size` | side length of each frame, in pixels |
 | `fps` | number of frames per seconds of this marker |
 | `*.count` | how many frames are used in a given sprite sheet |
@@ -86,8 +89,10 @@ Sprites in a sheet are ordrered left to right, top to bottom :
 7 8 9
 ```
 
-`count` can be <= `columns` * `rows`. It means the last few frames in
-the sheet are unused. For instance in a 3 * 3 sprite sheet with `count` = 7 :
+`count` can be less than `columns` * `rows`. It means the last few frames in
+the sheet are unused.
+
+For instance in a 3 * 3 sprite sheet with `count` = 7 :
 
 ```none
 1 2 3  
