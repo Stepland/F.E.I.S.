@@ -250,7 +250,10 @@ public:
 
     void frame_hook();
 
-    void replace_applicable_timing_with(const better::Timing& new_timing);
+    TimingOrigin timing_origin();
+    void switch_to_chart_timing();
+    void discard_chart_timing();
+    void overwrite_global_with_chart_timing();
 
 private:
 
@@ -273,7 +276,7 @@ private:
     void clear_music();
 
     std::shared_ptr<better::Timing> applicable_timing;
-    TimingOrigin timing_origin();
+    void replace_applicable_timing_with(const better::Timing& new_timing);
 
     std::filesystem::path assets;
 

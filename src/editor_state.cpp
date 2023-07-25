@@ -1679,19 +1679,37 @@ void EditorState::frame_hook() {
     }
 }
 
-void EditorState::replace_applicable_timing_with(const better::Timing& new_timing) {
-    const auto before = *applicable_timing;
-    applicable_timing = std::make_shared<better::Timing>(new_timing);
-    if (*applicable_timing != before) {
-        reload_sounds_that_depend_on_timing();
-        reload_editable_range();
-        history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
+TimingOrigin EditorState::timing_origin() {
+    if (chart_state and chart_state->chart.timing) {
+        return chart_state->difficulty_name;
+    } else {
+        return GlobalTimingObject{};
     }
-    if (chart_state) {
-        chart_state->density_graph.should_recompute = true;
-    }
-    reload_colliding_notes();
 }
+
+void EditorState::switch_to_chart_timing() {
+    if (chart_state and not chart_state->chart.timing) {
+        better::Timing copy = *song.timing;
+        chart_state->chart.timing = std::make_shared<better::Timing>(copy);
+        open_chart(chart_state->difficulty_name);
+    }
+}
+
+void EditorState::discard_chart_timing() {
+    if (chart_state and chart_state->chart.timing) {
+        chart_state->chart.timing.reset();
+        open_chart(chart_state->difficulty_name);
+    }
+}
+
+void EditorState::overwrite_global_with_chart_timing() {
+    if (chart_state and chart_state->chart.timing) {
+        song.timing = *chart_state->chart.timing;
+        chart_state->chart.timing.reset();
+        open_chart(chart_state->difficulty_name);
+    }
+}
+
 
 bool EditorState::note_clap_stream_is_on() const {
     return audio.contains_stream(note_clap_stream) or audio.contains_stream(chord_clap_stream);
@@ -1816,6 +1834,20 @@ void EditorState::clear_music() {
     music.reset();
 }
 
+void EditorState::replace_applicable_timing_with(const better::Timing& new_timing) {
+    const auto before = *applicable_timing;
+    *applicable_timing = new_timing;
+    if (*applicable_timing != before) {
+        reload_sounds_that_depend_on_timing();
+        reload_editable_range();
+        history.push(std::make_shared<ChangeTiming>(before, *applicable_timing, timing_origin()));
+    }
+    if (chart_state) {
+        chart_state->density_graph.should_recompute = true;
+    }
+    reload_colliding_notes();
+}
+
 void EditorState::reload_preview_audio() {
     if (not song_path.has_value() or song.metadata.preview_file.empty()) {
         preview_audio.reset();
@@ -1909,14 +1941,6 @@ void EditorState::reload_applicable_timing() {
     }
     reload_colliding_notes();
 };
-
-TimingOrigin EditorState::timing_origin() {
-    if (chart_state and chart_state->chart.timing) {
-        return chart_state->difficulty_name;
-    } else {
-        return GlobalTimingObject{};
-    }
-}
 
 void EditorState::save(const std::filesystem::path& path) {
     const auto memon = song.dump_to_memon_1_0_0();
