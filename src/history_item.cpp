@@ -1,6 +1,7 @@
 #include "history_item.hpp"
 
 #include <functional>
+#include <memory>
 #include <sstream>
 #include <tuple>
 
@@ -260,6 +261,61 @@ void RenameChart::undo_action(EditorState& ed) const {
     }
 }
 
+SwitchToChartTiming::SwitchToChartTiming(const std::string& name_) : name(name_) {
+    message = fmt::format("Switch to chart timing for {}", name);
+}
+
+void SwitchToChartTiming::do_action(EditorState& ed) const {
+    ed.open_chart(name);
+    ed.switch_to_chart_timing();
+}
+
+void SwitchToChartTiming::undo_action(EditorState& ed) const {
+    ed.open_chart(name);
+    ed.discard_chart_timing();
+}
+
+DiscardChartTiming::DiscardChartTiming(
+    const std::string& name_,
+    const better::Timing& chart_timing_
+) :
+    name(name_),
+    chart_timing(chart_timing_)
+{
+    message = fmt::format("Discard chart timing of {}", name);
+}
+
+void DiscardChartTiming::do_action(EditorState& ed) const {
+    ed.open_chart(name);
+    ed.discard_chart_timing();
+}
+
+void DiscardChartTiming::undo_action(EditorState& ed) const {
+    ed.song.charts.at(name).timing = std::make_shared<better::Timing>(chart_timing);
+    ed.open_chart(name);
+}
+
+OverwriteSongWithChartTiming::OverwriteSongWithChartTiming(
+    const std::string& name_,
+    const better::Timing& old_song_timing_
+) :
+    name(name_),
+    old_song_timing(old_song_timing_)
+{
+    message = fmt::format("Overwrite song timing with chart timing of {}", name);
+}
+
+void OverwriteSongWithChartTiming::do_action(EditorState& ed) const {
+    ed.open_chart(name);
+    ed.overwrite_song_with_chart_timing();
+}
+
+void OverwriteSongWithChartTiming::undo_action(EditorState& ed) const {
+    ed.song.charts.at(name).timing = std::make_shared<better::Timing>(*ed.song.timing);
+    ed.song.timing = std::make_shared<better::Timing>(old_song_timing);
+    ed.open_chart(name);
+}
+
 ChangeTitle::ChangeTitle(
     const std::string& old_value,
     const std::string& new_value
@@ -373,7 +429,7 @@ ChangeTiming::ChangeTiming(
 
 void ChangeTiming::set_value(EditorState& ed, const better::Timing& value) const {
     const auto set_value_ = VariantVisitor {
-        [&](const GlobalTimingObject& g) {
+        [&](const SongTimingObject& g) {
             ed.song.timing = std::make_shared<better::Timing>(value);
         },
         [&](const std::string& chart) {

@@ -76,6 +76,7 @@ namespace config {
         bool show_chart_properties = false;
         bool show_sync_menu = false;
         bool show_bpm_change_menu = false;
+        bool show_timing_kind_menu = false;
 
         void load_from_v1_0_0_table(const toml::table& tbl);
         void dump_as_v1_0_0(toml::table& tbl);

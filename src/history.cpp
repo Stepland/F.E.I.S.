@@ -1,6 +1,7 @@
 #include "history.hpp"
 
 #include <imgui/imgui.h>
+#include "colors.hpp"
 
 
 std::optional<History::item> History::pop_previous() {
@@ -39,7 +40,7 @@ void History::display(bool& show) {
             if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
                 if (std::get<item>(*last_saved_action) == it) {
                     ImGui::SameLine();
-                    ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+                    ImGui::TextColored(colors::green, "saved");
                 }
             }
         }
@@ -47,23 +48,23 @@ void History::display(bool& show) {
             ImGui::TextUnformatted(it->get_message().c_str());
             if (it == *previous_actions.cbegin()) {
                 ImGui::SameLine();
-                ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
+                ImGui::TextColored(colors::cyan, "current");
             }
             if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
                 if (std::get<item>(*last_saved_action) == it) {
                     ImGui::SameLine();
-                    ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+                    ImGui::TextColored(colors::green, "saved");
                 }
             }
         }
         ImGui::TextUnformatted("(initial state)");
         if (previous_actions.empty()) {
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.4, 0.8, 1, 1), "current");
+            ImGui::TextColored(colors::cyan, "current");
         }
         if (last_saved_action and std::holds_alternative<InitialStateSaved>(*last_saved_action)) {
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.3, 0.84,0.08,1), "saved");
+            ImGui::TextColored(colors::green, "saved");
         }
     }
     ImGui::End();

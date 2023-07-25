@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <future>
 #include <initializer_list>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -28,6 +29,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <tinyfiledialogs.h>
 
+#include "colors.hpp"
 #include "config.hpp"
 #include "custom_sfml_audio/synced_sound_streams.hpp"
 #include "widgets/linear_view.hpp"
@@ -72,6 +74,7 @@ EditorState::EditorState(const std::filesystem::path& assets_, config::Config& c
     show_chart_properties(config_.windows.show_chart_properties),
     show_sync_menu(config_.windows.show_sync_menu),
     show_bpm_change_menu(config_.windows.show_bpm_change_menu),
+    show_timing_kind_menu(config_.windows.show_timing_kind_menu),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -108,6 +111,7 @@ EditorState::EditorState(
     show_chart_properties(config_.windows.show_chart_properties),
     show_sync_menu(config_.windows.show_sync_menu),
     show_bpm_change_menu(config_.windows.show_bpm_change_menu),
+    show_timing_kind_menu(config_.windows.show_timing_kind_menu),
     applicable_timing(song.timing),
     assets(assets_)
 {
@@ -739,14 +743,14 @@ void EditorState::display_file_properties() {
         }
         {
             auto edited_audio = song.metadata.audio;
-            std::optional<colors::InputBoxColor> input_colors;
+            std::optional<input_colors::InputBoxColor> input_colors;
             std::optional<std::string> message;
             if (not edited_audio.empty()) {
                 if (not music.has_value()) {
-                    input_colors = colors::red;
+                    input_colors = input_colors::red;
                     message = "Invalid Audio Path";
                 } else if (full_audio_path()->extension() == ".mp3") {
-                    input_colors = colors::orange;
+                    input_colors = input_colors::orange;
                     message = (
                         "Avoid MP3 for rhythm games. MP3 causes sync issues.\n"
                         "\n"
@@ -760,7 +764,7 @@ void EditorState::display_file_properties() {
                         "sync unreliable.)"
                     );
                 } else {
-                    input_colors = colors::green;
+                    input_colors = input_colors::green;
                 }
             }
             if (input_colors.has_value()) {
@@ -1442,6 +1446,73 @@ void EditorState::display_bpm_change_menu() {
     ImGui::End();
 }
 
+void EditorState::display_timing_kind_menu() {
+    const bool uses_song_timing = chart_state.has_value() and std::holds_alternative<SongTimingObject>(timing_origin());
+    if (ImGui::Begin("Timing Kind", &show_timing_kind_menu, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::BeginTable("timing kind table", 3)) {
+            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 170);
+            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 100);
+            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 170);
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            if (uses_song_timing) {
+                feis::ColorDot(colors::green);
+                ImGui::SameLine();
+                ImGui::TextUnformatted("Song");
+            } else {
+                feis::ColorDot(colors::grey);
+                ImGui::SameLine();
+                ImGui::TextDisabled("Song");
+            }
+            ImGui::TableSetColumnIndex(2);
+            if (not uses_song_timing) {
+                feis::ColorDot(colors::green);
+                ImGui::SameLine();
+                ImGui::TextUnformatted("Chart");
+            } else {
+                feis::ColorDot(colors::grey);
+                ImGui::SameLine();
+                ImGui::TextDisabled("Chart");
+            }
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            if (ImGui::BeginChild("Song Timing", {0, 200}, true, ImGuiWindowFlags_NoScrollbar)) {
+                feis::DisabledIf(not uses_song_timing, [&](){
+                    song.timing->display_as_imgui_table("Song Timing");
+                });
+            }
+            ImGui::EndChild();
+            ImGui::TableNextColumn();
+            feis::DisabledIf(not uses_song_timing, [&](){
+                if (ImGui::Button(">> Copy >>", {-std::numeric_limits<float>::min(), 0})) {
+                    switch_to_chart_timing_and_push_history();
+                }
+            });
+            feis::DisabledIf(uses_song_timing, [&](){
+                if (ImGui::Button("<< Replace <<", {-std::numeric_limits<float>::min(), 0})) {
+                    overwrite_song_with_chart_timing_and_push_history();
+                }
+            });
+            ImGui::TableNextColumn();
+            if (ImGui::BeginChild("Chart Timing", {0, 200}, true, ImGuiWindowFlags_NoScrollbar)) {
+                if (chart_state and chart_state->chart.timing) {
+                    (**chart_state->chart.timing).display_as_imgui_table("Chart Timing");
+                }
+            }
+            ImGui::EndChild();
+            ImGui::TableNextColumn();
+            ImGui::TableSetColumnIndex(2);
+            feis::DisabledIf(uses_song_timing, [&](){
+                if (ImGui::Button("Discard")) {
+                    discard_chart_timing_and_push_history();
+                }
+            });
+            ImGui::EndTable();
+        }
+    }
+    ImGui::End();
+}
+
 bool EditorState::needs_to_save() const {
     return not history.current_state_is_saved();
 };
@@ -1683,7 +1754,7 @@ TimingOrigin EditorState::timing_origin() {
     if (chart_state and chart_state->chart.timing) {
         return chart_state->difficulty_name;
     } else {
-        return GlobalTimingObject{};
+        return SongTimingObject{};
     }
 }
 
@@ -1691,22 +1762,49 @@ void EditorState::switch_to_chart_timing() {
     if (chart_state and not chart_state->chart.timing) {
         better::Timing copy = *song.timing;
         chart_state->chart.timing = std::make_shared<better::Timing>(copy);
-        open_chart(chart_state->difficulty_name);
+        reload_applicable_timing();
+        reload_all_sounds();
+        reload_colliding_notes();
+    }
+}
+
+void EditorState::switch_to_chart_timing_and_push_history() {
+    if (chart_state and not chart_state->chart.timing) {
+        history.push(std::make_shared<SwitchToChartTiming>(chart_state->difficulty_name));
+        switch_to_chart_timing();
     }
 }
 
 void EditorState::discard_chart_timing() {
     if (chart_state and chart_state->chart.timing) {
         chart_state->chart.timing.reset();
-        open_chart(chart_state->difficulty_name);
+        reload_applicable_timing();
+        reload_all_sounds();
+        reload_colliding_notes();
     }
 }
 
-void EditorState::overwrite_global_with_chart_timing() {
+void EditorState::discard_chart_timing_and_push_history() {
+    if (chart_state and chart_state->chart.timing) {
+        history.push(std::make_shared<DiscardChartTiming>(chart_state->difficulty_name, **chart_state->chart.timing));
+        discard_chart_timing();
+    }
+}
+
+void EditorState::overwrite_song_with_chart_timing() {
     if (chart_state and chart_state->chart.timing) {
         song.timing = *chart_state->chart.timing;
         chart_state->chart.timing.reset();
-        open_chart(chart_state->difficulty_name);
+        reload_applicable_timing();
+        reload_all_sounds();
+        reload_colliding_notes();
+    }
+}
+
+void EditorState::overwrite_song_with_chart_timing_and_push_history() {
+    if (chart_state and chart_state->chart.timing) {
+        history.push(std::make_shared<OverwriteSongWithChartTiming>(chart_state->difficulty_name, *song.timing));
+        overwrite_song_with_chart_timing();
     }
 }
 

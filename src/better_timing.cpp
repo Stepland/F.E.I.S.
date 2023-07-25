@@ -10,6 +10,7 @@
 #include <json.hpp>
 
 #include "better_beats.hpp"
+#include "imgui.h"
 #include "json_decimal_handling.hpp"
 #include "toolbox.hpp"
 
@@ -79,6 +80,33 @@ namespace better {
     */
     Timing::Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset_) {
         reconstruct(events, offset_);
+    }
+
+    void Timing::display_as_imgui_table(const std::string& name) {
+        if(
+            ImGui::BeginTable(
+                name.c_str(),
+                2,
+                ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit
+            )
+        ) {
+            ImGui::TableSetupColumn("Key");
+            ImGui::TableSetupColumn("Value");
+            ImGui::TableHeadersRow();
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted("offset");
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(offset.format(".3f").c_str());
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted("bpm");
+            ImGui::TableNextColumn();
+            for (const auto& bpm : events_by_beats) {
+                ImGui::TextUnformatted(fmt::format("{} @ {:.3f}", bpm.get_bpm().format(".3f"), static_cast<double>(bpm.get_beats())).c_str());
+            }
+            ImGui::EndTable();
+        }
     }
 
     /*

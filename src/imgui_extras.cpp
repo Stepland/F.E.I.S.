@@ -61,9 +61,9 @@ bool feis::InputTextWithErrorTooltip(
     } else {
         
         if (not isValid) {
-            return_value = InputTextColored(label, str, colors::red, flags);
+            return_value = InputTextColored(label, str, input_colors::red, flags);
         } else {
-            return_value = InputTextColored(label, str, colors::green, flags);
+            return_value = InputTextColored(label, str, input_colors::green, flags);
         }
         if (ImGui::IsItemHovered() and (not isValid)) {
             ImGui::BeginTooltip();
@@ -77,7 +77,7 @@ bool feis::InputTextWithErrorTooltip(
 bool feis::InputTextColored(
     const char* label,
     std::string* str,
-    const colors::InputBoxColor& colors_,
+    const input_colors::InputBoxColor& colors_,
     const ImGuiInputTextFlags flags
 ) {
     bool return_value;

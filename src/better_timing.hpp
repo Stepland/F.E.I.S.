@@ -68,6 +68,8 @@ namespace better {
         Timing();
         Timing(const std::vector<BPMAtBeat>& events, const Decimal& offset);
 
+        void display_as_imgui_table(const std::string& name);
+
         double seconds_at(Fraction beats) const;
     private:
         double seconds_without_offset_at(Fraction beats) const;

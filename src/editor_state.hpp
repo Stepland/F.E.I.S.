@@ -182,6 +182,9 @@ public:
     bool& show_bpm_change_menu;
     void display_bpm_change_menu();
 
+    bool& show_timing_kind_menu;
+    void display_timing_kind_menu();
+
     enum class SaveOutcome {
         UserSaved,
         UserDeclindedSaving,
@@ -252,8 +255,11 @@ public:
 
     TimingOrigin timing_origin();
     void switch_to_chart_timing();
+    void switch_to_chart_timing_and_push_history();
     void discard_chart_timing();
-    void overwrite_global_with_chart_timing();
+    void discard_chart_timing_and_push_history();
+    void overwrite_song_with_chart_timing();
+    void overwrite_song_with_chart_timing_and_push_history();
 
 private:
 

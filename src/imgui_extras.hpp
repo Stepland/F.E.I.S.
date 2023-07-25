@@ -10,7 +10,7 @@
 
 #include "special_numeric_types.hpp"
 
-namespace colors {
+namespace input_colors {
     struct InputBoxColor {
         sf::Color normal;
         sf::Color hovered;
@@ -54,7 +54,7 @@ namespace feis {
     bool InputTextColored(
         const char* label,
         std::string* str,
-        const colors::InputBoxColor& colors,
+        const input_colors::InputBoxColor& colors,
         const ImGuiInputTextFlags flags = ImGuiInputTextFlags_None
     );
     void HelpMarker(const char* desc);

@@ -131,6 +131,38 @@ protected:
     std::string new_name;
 };
 
+class SwitchToChartTiming : public HistoryItem {
+public:
+    SwitchToChartTiming(const std::string& name);
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+protected:
+    std::string name;
+};
+
+class DiscardChartTiming : public HistoryItem {
+public:
+    DiscardChartTiming(const std::string& name, const better::Timing& chart_timing);
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+protected:
+    std::string name;
+    better::Timing chart_timing;
+};
+
+class OverwriteSongWithChartTiming : public HistoryItem {
+public:
+    OverwriteSongWithChartTiming(const std::string& name, const better::Timing& old_song_timing);
+
+    void do_action(EditorState& ed) const override;
+    void undo_action(EditorState& ed) const override;
+protected:
+    std::string name;
+    better::Timing old_song_timing;
+};
+
 template<class T>
 class ChangeValue : public HistoryItem {
 public:
@@ -210,9 +242,9 @@ protected:
     void set_value(EditorState& ed, const PreviewState& value) const override;
 };
 
-struct GlobalTimingObject {};
+struct SongTimingObject {};
 
-using TimingOrigin = std::variant<GlobalTimingObject, std::string>;
+using TimingOrigin = std::variant<SongTimingObject, std::string>;
 
 class ChangeTiming : public ChangeValue<better::Timing> {
 public:

@@ -514,6 +514,9 @@ int main() {
             if (editor_state->show_bpm_change_menu) {
                 editor_state->display_bpm_change_menu();
             }
+            if (editor_state->show_timing_kind_menu) {
+                editor_state->display_timing_kind_menu();
+            }
         } else {
             bg.render(window);
         }
@@ -645,29 +648,8 @@ int main() {
                     editor_state->show_bpm_change_menu = true;
                 }
                 ImGui::Separator();
-                ImGui::TextUnformatted("Timing :");
-                ImGui::SameLine();
-                const bool global_timing = editor_state->chart_state.has_value() and std::holds_alternative<GlobalTimingObject>(editor_state->timing_origin());
-                static sf::Color global_color = sf::Color{116, 207, 255, 255};
-                const sf::Color chart_color = sf::Color{133, 236, 71, 255};
-                if (global_timing) {
-                    ImGui::TextColored(global_color, "Global");
-                } else {
-                    ImGui::TextColored(chart_color, "Chart");
-                }
-                ImGui::SameLine();
-                feis::HelpMarker(
-                    "Global: this chart uses the file's common timing\n"
-                    "Chart: this chart uses its own timing"
-                );
-                if (ImGui::MenuItem("Switch to Chart Timing", nullptr, false, global_timing)) {
-                    editor_state->switch_to_chart_timing();
-                }
-                if (ImGui::MenuItem("Discard Chart Timing", nullptr, false, not global_timing)) {
-                    editor_state->discard_chart_timing();
-                }
-                if (ImGui::MenuItem("Overwrite Global Timing with this Chart's Timing", nullptr, false, not global_timing)) {
-                    editor_state->overwrite_global_with_chart_timing();
+                if (ImGui::MenuItem("Timing Kind")) {
+                    editor_state->show_timing_kind_menu = true;
                 }
                 ImGui::EndMenu();
             }

@@ -186,6 +186,9 @@ void config::Windows::load_from_v1_0_0_table(const toml::table& tbl) {
     if (auto val = windows_table["show_bpm_change_menu"].value<bool>()) {
         show_bpm_change_menu = *val;
     }
+    if (auto val = windows_table["show_timing_kind_menu"].value<bool>()) {
+        show_timing_kind_menu = *val;
+    }
 }
 
 void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
@@ -205,7 +208,8 @@ void config::Windows::dump_as_v1_0_0(toml::table& tbl) {
         {"show_new_chart_dialog", show_new_chart_dialog},
         {"show_chart_properties", show_chart_properties},
         {"show_sync_menu", show_sync_menu},
-        {"show_bpm_change_menu", show_bpm_change_menu}
+        {"show_bpm_change_menu", show_bpm_change_menu},
+        {"show_timing_kind_menu", show_timing_kind_menu}
     };
     tbl.insert_or_assign("windows", window_table);
 }
