@@ -1,6 +1,6 @@
 <div align=center>
 
-![F.E.I.S logo](images/feis_logo_black.svg)
+![F.E.I.S logo](images/feis%20logo%20black.svg)
 
 </div>
 
