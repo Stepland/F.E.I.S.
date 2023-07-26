@@ -1,8 +1,6 @@
 <div align=center>
-    
-# F.E.I.S
 
-*Fumen Edit Integration System*
+![F.E.I.S logo](images/feis_logo_black.svg)
 
 </div>
 
