@@ -1,10 +1,8 @@
 <div align=center>
-
-![F.E.I.S logo](images/feis%20logo%20black.svg)
-
+    <img src="images/feis logo black.svg" alt="drawing" style="width:600px;"/>
 </div>
 
-![FEIS glamshot](https://i.imgur.com/Z4araqI.png)
+![FEIS glamshot](https://i.ibb.co/pWrrmDT/image.png)
 
 Jubeat chart editor.
 
