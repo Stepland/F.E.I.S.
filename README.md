@@ -1,5 +1,5 @@
 <div align=center>
-    <img src="images/feis logo black.svg" alt="drawing" style="width:600px;"/>
+    <img src="images/feis logo black.svg" alt="drawing" width=600px/>
 </div>
 
 ![FEIS glamshot](https://i.ibb.co/pWrrmDT/image.png)
