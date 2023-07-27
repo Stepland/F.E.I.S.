@@ -1176,7 +1176,7 @@ void EditorState::display_linear_view() {
 };
 
 void EditorState::display_sound_settings() {
-    if (ImGui::Begin("Sound Settings", &show_sound_settings)) {
+    if (ImGui::Begin("Sound Settings", &show_sound_settings, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::TreeNodeEx("Music", ImGuiTreeNodeFlags_DefaultOpen)) {
             feis::DisabledIf(not music.has_value(), [&](){
                 if (ImGui::SliderInt("Volume##Music", &config.sound.music_volume, 0, 10)) {
@@ -1429,7 +1429,7 @@ void EditorState::display_sync_menu() {
 }
 
 void EditorState::display_bpm_change_menu() {
-    if (ImGui::Begin("Insert BPM Change", &show_bpm_change_menu)) {
+    if (ImGui::Begin("Insert BPM Change", &show_bpm_change_menu, ImGuiWindowFlags_AlwaysAutoResize)) {
         auto bpm = std::visit(
             [&](const auto& pos){return applicable_timing->bpm_at(pos);},
             playback_position
