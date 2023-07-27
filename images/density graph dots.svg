@@ -8,7 +8,7 @@
    version="1.1"
    id="svg5"
    inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
-   sodipodi:docname="linear view dots.svg"
+   sodipodi:docname="density graph dots.svg"
    inkscape:export-filename="/home/symeon/Projets/feis/assets/textures/linear view/dots.png"
    inkscape:export-xdpi="24"
    inkscape:export-ydpi="24"
@@ -29,8 +29,8 @@
      units="px"
      width="10px"
      inkscape:zoom="11.313708"
-     inkscape:cx="31.333669"
-     inkscape:cy="7.9549513"
+     inkscape:cx="31.333671"
+     inkscape:cy="7.9549516"
      inkscape:window-width="1920"
      inkscape:window-height="1012"
      inkscape:window-x="0"
@@ -51,21 +51,21 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#dadada;fill-opacity:1;stroke-width:0.8;stroke-linejoin:round;paint-order:markers stroke fill"
+       style="fill:#bcbcbc;fill-opacity:1;stroke-width:0.8;stroke-linejoin:round;paint-order:markers stroke fill"
        id="rect1422"
        width="4.2333331"
        height="4.2333331"
        x="1.0583332"
        y="1.0583333" />
     <rect
-       style="fill:#a5a5a5;fill-opacity:1;stroke-width:0.2;stroke-linejoin:round;paint-order:markers stroke fill"
+       style="fill:#8f8f8f;fill-opacity:1;stroke-width:0.2;stroke-linejoin:round;paint-order:markers stroke fill"
        id="rect1902"
        width="2.1166666"
        height="2.1166666"
        x="2.1166666"
        y="2.1166668" />
     <rect
-       style="fill:#d70034;fill-opacity:1;stroke-width:2.11666667;stroke-linejoin:bevel;paint-order:stroke fill markers;stroke-miterlimit:4;stroke-dasharray:none;stroke:#aa002a;stroke-opacity:1"
+       style="fill:#d70034;fill-opacity:1;stroke:#aa002a;stroke-width:2.11667;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect3864"
        width="4.2333331"
        height="4.2333331"
