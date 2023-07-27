@@ -14,6 +14,7 @@ sources += files(
     'color.cpp',
     'config.cpp',
     'editor_state.cpp',
+    'error_messages.cpp',
     'file_dialogs.cpp',
     'guess_tempo.cpp',
     'history.cpp',

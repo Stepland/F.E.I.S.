@@ -28,6 +28,7 @@
 #include "chart_state.hpp"
 #include "config.hpp"
 #include "editor_state.hpp"
+#include "error_messages.hpp"
 #include "file_dialogs.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
@@ -61,22 +62,25 @@ int main() {
     auto& style = ImGui::GetStyle();
     style.WindowRounding = 5.f;
 
-    auto font_path = assets_folder / "fonts" / "NotoSans-Medium.ttf";
-    if (not std::filesystem::exists(font_path)) {
-        tinyfd_messageBox(
-            "Error",
-            ("Could not open " + path_to_utf8_encoded_string(font_path)).c_str(),
-            "ok",
-            "error",
-            1);
-        return -1;
-    }
+    const auto default_font = assets_folder / "fonts" / "NotoSans-Medium.ttf";
+    crash_if_missing(default_font);
+    const auto japanese_font = assets_folder / "fonts" / "NotoSansJP-Medium.ttf";
+    crash_if_missing(japanese_font);
     ImGuiIO& IO = ImGui::GetIO();
     IO.Fonts->Clear();
     IO.Fonts->AddFontFromFileTTF(
-        path_to_utf8_encoded_string(assets_folder / "fonts" / "NotoSans-Medium.ttf")
-            .c_str(),
-        16.f);
+        path_to_utf8_encoded_string(default_font).c_str(),
+        16.f
+    );
+    ImFontConfig font_config;
+    font_config.MergeMode = true;
+    IO.Fonts->AddFontFromFileTTF(
+        path_to_utf8_encoded_string(japanese_font).c_str(),
+        16.0f,
+        &font_config,
+        IO.Fonts->GetGlyphRangesJapanese()
+    );
+    IO.Fonts->Build();
     ImGui::SFML::UpdateFontTexture();
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
