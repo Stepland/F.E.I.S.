@@ -1,15 +1,13 @@
 #include "density_graph.hpp"
 
-#include <algorithm>
+#include <filesystem>
 
 #include "utf8_strings.hpp"
 
-const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
-
 DensityGraph::DensityGraph(std::filesystem::path assets, const config::Config& config) :
-    texture_path(assets / texture_file),
     collision_zone(config.editor.collision_zone)
 {
+    const std::filesystem::path texture_path = assets / "textures" / "density graph" / "dots.png";
     if (!base_texture.load_from_path(texture_path)) {
         std::cerr << "Unable to load texture " << texture_path;
         throw std::runtime_error("Unable to load texture " + path_to_utf8_encoded_string(texture_path));
@@ -17,10 +15,10 @@ DensityGraph::DensityGraph(std::filesystem::path assets, const config::Config& c
     base_texture.setSmooth(true);
 
     normal_square.setTexture(base_texture);
-    normal_square.setTextureRect({456, 270, 6, 6});
+    normal_square.setTextureRect({0, 0, 6, 6});
 
     collision_square.setTexture(base_texture);
-    collision_square.setTextureRect({496, 270, 6, 6});
+    collision_square.setTextureRect({6, 0, 6, 6});
 }
 
 void DensityGraph::update(

@@ -39,7 +39,6 @@ public:
     );
 
 private:
-    const std::filesystem::path texture_path;
     const sf::Time& collision_zone;
 
     void compute_densities(

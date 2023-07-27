@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="200"
+   height="200"
+   viewBox="0 0 52.916665 52.916668"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="selected.svg"
+   inkscape:export-filename="/home/symeon/Projets/feis/assets/textures/playfield/selected.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#000000"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="false"
+     inkscape:document-units="mm"
+     showgrid="true"
+     units="px"
+     width="200px"
+     inkscape:zoom="2.1064798"
+     inkscape:cx="96.606671"
+     inkscape:cy="123.42867"
+     inkscape:window-width="1920"
+     inkscape:window-height="1012"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     inkscape:snap-global="true"
+     inkscape:object-paths="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid824"
+       spacingx="2.6458333"
+       spacingy="2.6458333"
+       empspacing="10" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter11162"
+       x="-0.2015748"
+       y="-0.2015748"
+       width="1.4031496"
+       height="1.4031496">
+      <feFlood
+         flood-opacity="1"
+         flood-color="rgb(255,249,0)"
+         result="flood"
+         id="feFlood11152" />
+      <feComposite
+         in="flood"
+         in2="SourceGraphic"
+         operator="out"
+         result="composite1"
+         id="feComposite11154" />
+      <feGaussianBlur
+         in="composite1"
+         stdDeviation="4"
+         result="blur"
+         id="feGaussianBlur11156" />
+      <feOffset
+         dx="0"
+         dy="0"
+         result="offset"
+         id="feOffset11158" />
+      <feComposite
+         in="offset"
+         in2="SourceGraphic"
+         operator="in"
+         result="composite2"
+         id="feComposite11160" />
+    </filter>
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter11626"
+       x="-0.050393701"
+       y="-0.050393701"
+       width="1.1007874"
+       height="1.1007874">
+      <feFlood
+         flood-opacity="1"
+         flood-color="rgb(255,249,0)"
+         result="flood"
+         id="feFlood11616" />
+      <feComposite
+         in="flood"
+         in2="SourceGraphic"
+         operator="in"
+         result="composite1"
+         id="feComposite11618" />
+      <feGaussianBlur
+         in="composite1"
+         stdDeviation="1"
+         result="blur"
+         id="feGaussianBlur11620" />
+      <feOffset
+         dx="0"
+         dy="0"
+         result="offset"
+         id="feOffset11622" />
+      <feComposite
+         in="offset"
+         in2="SourceGraphic"
+         operator="out"
+         result="composite2"
+         id="feComposite11624" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="display:inline;fill:#fff700;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill;filter:url(#filter11162)"
+       id="rect10946"
+       width="47.625"
+       height="47.625"
+       x="2.6458333"
+       y="2.6458333"
+       ry="2.6458333" />
+    <rect
+       style="display:inline;fill:#fff700;fill-opacity:1;stroke:none;stroke-width:0.2;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill;filter:url(#filter11626)"
+       id="rect11366"
+       width="47.625"
+       height="47.625"
+       x="2.6458333"
+       y="2.6458333"
+       ry="2.6458333" />
+    <use
+       x="0"
+       y="0"
+       xlink:href="#rect10946"
+       id="use3180"
+       width="100%"
+       height="100%" />
+  </g>
+</svg>

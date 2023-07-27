@@ -17,9 +17,10 @@
 class Playfield {
 public:
     Playfield(std::filesystem::path assets_folder);
-    feis::Texture base_texture;
+    feis::Texture button_texture;
+    feis::Texture note_selected_texture;
+    feis::Texture note_collision_texture;
     sf::Sprite button;
-    sf::Sprite button_pressed;
     sf::Sprite note_selected;
     sf::Sprite note_collision;
 
@@ -86,7 +87,6 @@ private:
         const config::Playfield& config
     );
 
-    const std::filesystem::path texture_path;
     std::optional<feis::Shader> chord_tint_shader;
 
     feis::Font note_numbers_font;

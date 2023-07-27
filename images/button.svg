@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="200"
+   height="200"
+   viewBox="0 0 52.916665 52.916668"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="button.svg"
+   inkscape:export-filename="/home/symeon/Projets/feis/assets/textures/playfield/button.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#808080"
+     bordercolor="#cccccc"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="true"
+     units="px"
+     width="200px"
+     inkscape:zoom="2.1064798"
+     inkscape:cx="97.556122"
+     inkscape:cy="58.865981"
+     inkscape:window-width="1920"
+     inkscape:window-height="1012"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid824"
+       spacingx="2.6458333"
+       spacingy="2.6458333"
+       empspacing="10" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter2632"
+       x="-0.136063"
+       y="-0.136063"
+       width="1.272126"
+       height="1.272126">
+      <feFlood
+         flood-opacity="1"
+         flood-color="rgb(0,0,0)"
+         result="flood"
+         id="feFlood2622" />
+      <feComposite
+         in="flood"
+         in2="SourceGraphic"
+         operator="out"
+         result="composite1"
+         id="feComposite2624" />
+      <feGaussianBlur
+         in="composite1"
+         stdDeviation="3"
+         result="blur"
+         id="feGaussianBlur2626" />
+      <feOffset
+         dx="0"
+         dy="0"
+         result="offset"
+         id="feOffset2628" />
+      <feComposite
+         in="offset"
+         in2="SourceGraphic"
+         operator="in"
+         result="composite2"
+         id="feComposite2630" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect1000"
+       style="display:inline;fill:#ffffff;fill-opacity:0.260019;stroke-width:16.252;stroke-linejoin:round;stroke-opacity:0.335246;paint-order:markers stroke fill"
+       d="M 0,0 V 200 H 200 V 0 Z M 28.888672,20 H 171.11133 C 176.03577,20 180,23.964228 180,28.888672 V 171.11133 C 180,176.03577 176.03577,180 171.11133,180 H 28.888672 C 23.964228,180 20,176.03577 20,171.11133 V 28.888672 C 20,23.964228 23.964228,20 28.888672,20 Z"
+       transform="scale(0.26458333)"
+       inkscape:export-filename="/home/symeon/Projets/feis/assets/textures/edit_textures/button.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <path
+       id="rect848"
+       style="fill:#000000;fill-opacity:0.817194;stroke-width:16.252;stroke-linejoin:round;stroke-opacity:0.335246;paint-order:markers stroke fill"
+       d="M 0,0 V 200 H 200 V 0 Z m 20,10 h 160 c 5.54,0 10,4.46 10,10 v 160 c 0,5.54 -4.46,10 -10,10 H 20 c -5.54,0 -10,-4.46 -10,-10 V 20 c 0,-5.54 4.46,-10 10,-10 z"
+       transform="scale(0.26458333)" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke-width:4.30001;stroke-linejoin:round;stroke-opacity:0.335246;paint-order:markers stroke fill;filter:url(#filter2632)"
+       id="rect2092"
+       width="52.916664"
+       height="52.916664"
+       x="0"
+       y="0"
+       ry="0" />
+  </g>
+</svg>

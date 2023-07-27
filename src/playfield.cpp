@@ -1,4 +1,5 @@
 #include "playfield.hpp"
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <filesystem>
@@ -8,62 +9,50 @@
 #include "better_note.hpp"
 #include "config.hpp"
 #include "toolbox.hpp"
+#include "utf8_sfml_redefinitions.hpp"
 #include "utf8_strings.hpp"
 
 const std::string texture_file = "textures/edit_textures/game_front_edit_tex_1.tex.png";
 
 Playfield::Playfield(std::filesystem::path assets_folder) :
-    long_note(assets_folder / "textures" / "long"),
-    texture_path(assets_folder / texture_file)
-{   
+    long_note(assets_folder / "textures" / "long")
+{
     if (sf::Shader::isAvailable()) {
         chord_tint_shader.emplace();
         const auto shader_path = assets_folder / "shaders" / "chord_tint.frag";
         if (not std::filesystem::is_regular_file(shader_path)) {
             throw std::runtime_error(fmt::format("File {} does not exist", path_to_utf8_encoded_string(shader_path)));
         }
-        if (not chord_tint_shader->load_from_path(assets_folder / "shaders" / "chord_tint.frag", sf::Shader::Fragment)) {
+        if (not chord_tint_shader->load_from_path(shader_path, sf::Shader::Fragment)) {
             throw std::runtime_error(fmt::format("Could not open fragment shader {}", path_to_utf8_encoded_string(shader_path)));
         };
         chord_tint_shader->setUniform("texture", sf::Shader::CurrentTexture);
     }
-    if (not base_texture.load_from_path(texture_path)) {
-        std::cerr << "Unable to load texture " << texture_path;
-        throw std::runtime_error("Unable to load texture " + path_to_utf8_encoded_string(texture_path));
-    }
-    base_texture.setSmooth(true);
+    const std::filesystem::path folder = assets_folder / "textures" / "playfield";
+    const auto load_texture_and_sprite = [&](const std::string& file, feis::Texture& tex, sf::Sprite& sprite){
+        const auto path = folder / file;
+        if (not tex.load_from_path(path)) {
+            throw std::runtime_error(fmt::format(
+                "Unable to load texture {}",
+                path_to_utf8_encoded_string(path)
+            ));
+        }
+        tex.setSmooth(true);
+        sprite.setTexture(tex);
+    };
+    load_texture_and_sprite("button.png", button_texture, button);
+    load_texture_and_sprite("selected.png", note_selected_texture, note_selected);
+    load_texture_and_sprite("collision.png", note_collision_texture, note_collision);
 
-    button.setTexture(base_texture);
-    button.setTextureRect({0, 0, 192, 192});
-
-    button_pressed.setTexture(base_texture);
-    button_pressed.setTextureRect({192, 0, 192, 192});
-
-    note_selected.setTexture(base_texture);
-    note_selected.setTextureRect({384, 0, 192, 192});
-
-    note_collision.setTexture(base_texture);
-    note_collision.setTextureRect({576, 0, 192, 192});
-
-    if (not long_note_marker_layer.create(400, 400)) {
-        throw std::runtime_error("Unable to create Playfield's long_note_marker_layer");
-    }
-    long_note_marker_layer.setSmooth(true);
-
-    if (not long_note.layer.create(400, 400)) {
-        throw std::runtime_error("Unable to create Playfield's long_note.laye");
-    }
-    long_note.layer.setSmooth(true);
-
-    if (not chord_marker_layer.create(400, 400)) {
-        throw std::runtime_error("Unable to create Playfield's chord_marker_layer");
-    }
-    chord_marker_layer.setSmooth(true);
-
-    if (not note_numbers_layer.create(400, 400)) {
-        throw std::runtime_error("Unable to create Playfield's chord_marker_layer");
-    }
-    note_numbers_layer.setSmooth(true);
+    const auto create_layer = [](sf::RenderTexture& tex, const std::string& name){
+        if (not tex.create(400, 400)) {
+            throw std::runtime_error("Unable to create " + name);
+        }
+        tex.setSmooth(true);
+    };
+    create_layer(long_note.layer, "long note layer");
+    create_layer(chord_marker_layer, "chord marker layer");
+    create_layer(note_numbers_layer, "note numbers layer");
 
     const auto font_path = assets_folder / "fonts" / "NotoSans-Bold.ttf";
     if (not note_numbers_font.load_from_path(font_path)) {
