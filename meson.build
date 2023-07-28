@@ -52,10 +52,6 @@ foreach lib, lib_sources : include_sources
     sources += lib_sources
 endforeach
 
-if target_machine.system() == 'windows'
-    add_project_arguments('-mwindows', language : 'cpp')
-endif
-
 executable(
     'FEIS',
     sources: sources,
@@ -64,4 +60,5 @@ executable(
         inc,
         configuration_inc,
     ],
+	win_subsystem: 'windows'  # mark as GUI app when compiling for windows, hides the console amongst other things
 )
