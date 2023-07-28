@@ -785,7 +785,7 @@ void LinearView::set_zoom(int newZoom) {
 }
 
 void LinearView::display_settings() {
-    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings)) {
+    if (ImGui::Begin("Linear View Settings", &shouldDisplaySettings, ImGuiWindowFlags_AlwaysAutoResize)) {
         if (ImGui::SliderInt("Zoom##Linear View Settings", &zoom, -10, 10, "%d")) {
             set_zoom(zoom);
         }
