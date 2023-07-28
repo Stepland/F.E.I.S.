@@ -3,7 +3,7 @@
 ## Windows (MSYS2)
 
 0. Pull the latest version of the code
-0. Follow the [compilation instructions](Compiling.md)
+0. Follow the [compilation instructions](docs/Compiling.md)
 0. Open an MSYS2 x64 terminal
 0. `cd` into FEIS's source code root
 0. Use the release making script
