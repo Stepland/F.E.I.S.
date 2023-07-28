@@ -52,6 +52,24 @@ foreach lib, lib_sources : include_sources
     sources += lib_sources
 endforeach
 
+if target_machine.system() == 'windows'
+    imagemagick = find_program('convert')
+    custom_target(
+        'icon',
+        output : 'images/feis icon.svg',
+        input : 'images/feis icon.ico',
+        command : [
+            imagemagick,
+            '-density', '300',
+            '-define', 'icon:auto-resize=256,128,96,64,48,32,16',
+            '-background', 'none'
+            '@INPUT@', '@OUTPUT@'
+        ],
+    )
+    windows = import('windows')
+    sources += windows.compile_resources('src/feis.rc')
+endif
+
 executable(
     'FEIS',
     sources: sources,
