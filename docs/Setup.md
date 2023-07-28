@@ -67,7 +67,8 @@ $ pacman -S \
     mingw-w64-ucrt-x86_64-ntldd-git \
 	mingw-w64-ucrt-x86_64-aubio \
 	mingw-w64-ucrt-x86_64-eigen3 \
-	mingw-w64-ucrt-x86_64-fftw
+	mingw-w64-ucrt-x86_64-fftw \
+	mingw-w64-ucrt-x86_64-mpdecimal
 ```
 
 Once this is done, open a new `MSYS2 MinGW x64` terminal and follow the
