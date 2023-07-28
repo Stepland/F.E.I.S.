@@ -28,7 +28,7 @@ def ldd(files):
 	# split output into lines
 	ldd_lines = ldd_output.split(os.linesep)
 	# parse lines that match this format : <file name> ==> <file path> (<memory address>)
-	file_pattern = cygpath("/") + "mingw(32|64)/bin/.*"
+	file_pattern = cygpath("/") + "(ucrt64|(mingw(32|64)))/bin/.*"
 	print(file_pattern)
 	pattern = "(.*) => (" + file_pattern + r") \((.*)\)"
 	regex = re.compile(pattern)
