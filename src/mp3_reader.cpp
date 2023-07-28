@@ -52,6 +52,7 @@
 #include <SFML/System/Err.hpp>
 #include <algorithm>
 #include <cstring>
+#include <cstdint>
 
 #include "mp3_reader.hpp"
 

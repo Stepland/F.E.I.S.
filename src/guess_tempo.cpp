@@ -387,9 +387,13 @@ std::vector<TempoCandidate> estimate_offset(const std::vector<BPMFitness>& bpm_c
         const Fraction off_beat_offset_estimate = on_beat_offset_estimate + interval_in_seconds / 2;
         float average_onbeat_amplitude = 0;
         float average_offbeat_amplitude = 0;
-        for (std::size_t i = 0; (off_beat_offset_estimate + i * interval_in_seconds) * sample_rate < mono_sample_count; i++) {
-            const auto on_beat_sample = static_cast<std::size_t>((on_beat_offset_estimate + i * interval_in_seconds) * sample_rate);
-            const auto off_beat_sample = static_cast<std::size_t>((on_beat_offset_estimate + i * interval_in_seconds) * sample_rate);
+        for (
+			std::size_t i = 0;
+			(off_beat_offset_estimate + Fraction{i} * interval_in_seconds) * sample_rate < Fraction{mono_sample_count};
+			i++
+		) {
+            const auto on_beat_sample = static_cast<std::size_t>((on_beat_offset_estimate + Fraction{i} * interval_in_seconds) * sample_rate);
+            const auto off_beat_sample = static_cast<std::size_t>((on_beat_offset_estimate + Fraction{i} * interval_in_seconds) * sample_rate);
             average_onbeat_amplitude += slope.at(on_beat_sample);
             average_offbeat_amplitude += slope.at(off_beat_sample);
         }
