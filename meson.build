@@ -1,9 +1,10 @@
 project(
-    'F.E.I.S',
-    'cpp', 'c',
-    meson_version : '>=0.62.0',
-    version : '2.0.0-alpha',
-    default_options : ['cpp_std=c++20'],
+  'F.E.I.S',
+  'cpp',
+  'c',
+  meson_version : '>=0.62.0',
+  version : '2.0.0',
+  default_options : ['cpp_std=c++20']
 )
 
 deps = []
