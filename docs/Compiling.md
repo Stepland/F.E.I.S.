@@ -15,6 +15,8 @@ In other words, how to create a new F.E.I.S. executable from the source code.
     ```console
     $ meson setup build
     ```
+	
+   If you are compiling for a release and not a debug build, use `--buildtype=release`
 
    If you want to compile the unit tests as well, pass in `-D tests=true`.
    You can also set this option later by doing :

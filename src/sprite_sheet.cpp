@@ -16,7 +16,7 @@ SpriteSheet::SpriteSheet(
     columns(columns),
     rows(rows)
 {
-    if (not tex.loadFromFile(texture_path)) {
+    if (not tex.load_from_path(texture_path)) {
         throw std::runtime_error(
             "Cannot open file "
             +texture_path.string()

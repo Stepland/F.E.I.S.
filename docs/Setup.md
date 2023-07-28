@@ -61,11 +61,13 @@ Once you're done `pacman -Syu`ing and `pacman -Su`ing your system, open a new
 
 ```console
 $ pacman -S \
-    mingw-w64-x86_64-meson \
-    mingw-w64-x86_64-cmake \
-    mingw-w64-x86_64-sfml \
-    mingw-w64-x86_64-boost \
-    mingw-w64-x86_64-ntldd-git
+    mingw-w64-ucrt-x86_64-meson \
+    mingw-w64-ucrt-x86_64-cmake \
+    mingw-w64-ucrt-x86_64-sfml \
+    mingw-w64-ucrt-x86_64-ntldd-git \
+	mingw-w64-ucrt-x86_64-aubio \
+	mingw-w64-ucrt-x86_64-eigen3 \
+	mingw-w64-ucrt-x86_64-fftw
 ```
 
 Once this is done, open a new `MSYS2 MinGW x64` terminal and follow the

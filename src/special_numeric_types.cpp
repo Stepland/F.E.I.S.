@@ -242,13 +242,13 @@ Fraction convert_to_fraction(const Decimal& d) {
 
 Fraction round_beats(const Fraction& beats, const std::uint64_t denominator) {
     const auto actual_denominator = std::max<std::uint64_t>(denominator, 1);
-    const auto nearest = round_fraction(beats * actual_denominator);
+    const auto nearest = round_fraction(beats * Fraction{actual_denominator});
     return nearest / Fraction{actual_denominator};
 };
 
 Fraction floor_beats(const Fraction& beats, const std::uint64_t denominator) {
     const auto actual_denominator = std::max<std::uint64_t>(denominator, 1);
-    const auto nearest = floor_fraction(beats * actual_denominator);
+    const auto nearest = floor_fraction(beats * Fraction{actual_denominator});
     return nearest / Fraction{actual_denominator};
 };
 
