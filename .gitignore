@@ -7,5 +7,3 @@ cmake-default
 
 build/**
 imgui.ini
-
-images/*.ico
