@@ -43,6 +43,8 @@
 - Sound parameters are saved
 - Markers and Marker previews are loaded in the background, which should avoid long boot up times + UI freezes
 - The window size is saved and restored when restarting F.E.I.S.
+- Add a japanese font to be able to display japanese text
+- New menu `Timing > Timing Kind` allows switching between song and chart timing
 
 ## 🚧 Changes 🚧
 - Force using the asset folder next to the executable
@@ -51,6 +53,7 @@
 - The history window changed looks and now displays "current" and "saved" next to the correct history item
 - Saving with `File > Save` or `Ctrl+S` now forces saving to disk even if no changes were made
 - File Properties Dialog has been reconstructed from scratch
+- New default marker
 
 ## 🗿 Bugfixes 🗿
 - Playfield
