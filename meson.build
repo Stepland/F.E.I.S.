@@ -54,7 +54,7 @@ endforeach
 
 if target_machine.system() == 'windows'
     imagemagick = find_program('convert')
-    custom_target(
+    icon = custom_target(
         'icon',
         output : 'images/feis icon.svg',
         input : 'images/feis icon.ico',
@@ -67,7 +67,10 @@ if target_machine.system() == 'windows'
         ],
     )
     windows = import('windows')
-    sources += windows.compile_resources('src/feis.rc')
+    sources += windows.compile_resources(
+        'src/feis.rc',
+        depend_files: icon
+    )
 endif
 
 executable(
