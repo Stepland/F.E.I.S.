@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# update icons
+/bin/touch --no-create /usr/share/icons/hicolor &>/dev/null || true
+/usr/bin/gtk-update-icon-cache /usr/share/icons/* &>/dev/null || true
+
+# remove extracted assets not tracked by the .deb package
+rm -rf /opt/f.e.i.s/bin/assets

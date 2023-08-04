@@ -1,0 +1,18 @@
+Package: f.e.i.s
+Version: 2.0.0
+Section: misc
+Priority: optional
+Homepage: https://gitlab.com/square-game-liberation-front/F.E.I.S
+Standards-Version: 3.9.2
+Maintainer: Stepland <Stepland@hotmail.fr>
+Depends: libsfml-system2.5 (>= 2.5.1), libsfml-window2.5 (>= 2.5.1), libsfml-graphics2.5 (>= 2.5.1), libsfml-audio2.5 (>= 2.5.1), libopenal1, libgmp10, libaubio5
+Architecture: amd64
+Description: jubeat chart editor
+ F.E.I.S is a GUI chart editor for jubeat and its simulators, inspired by ArrowVortex
+Links: /opt/f.e.i.s/bin/f.e.i.s /usr/bin/f.e.i.s
+Files: f.e.i.s /opt/f.e.i.s/bin
+ assets.tar.gz /opt/f.e.i.s/bin
+ f.e.i.s.desktop /usr/share/applications
+ f.e.i.s.svg /usr/share/icons/hicolor/scalable/apps
+Postinst: postinst
+Postrm: postrm

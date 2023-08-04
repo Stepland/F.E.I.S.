@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# update icons
+/bin/touch --no-create /usr/share/icons/hicolor &>/dev/null || true
+/usr/bin/gtk-update-icon-cache /usr/share/icons/* &>/dev/null || true
+
+# extract assets
+tar \
+    --extract \
+    --gzip \
+    --directory /opt/f.e.i.s/bin \
+    --file /opt/f.e.i.s/bin/assets.tar.gz
+rm -f /opt/f.e.i.s/bin/assets.tar.gz
+
+mkdir -p /opt/f.e.i.s/bin/settings
+chmod 777 /opt/f.e.i.s/bin/settings
