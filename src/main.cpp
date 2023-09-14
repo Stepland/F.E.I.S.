@@ -80,7 +80,6 @@ int main() {
         &font_config,
         IO.Fonts->GetGlyphRangesJapanese()
     );
-    IO.Fonts->Build();
     ImGui::SFML::UpdateFontTexture();
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
