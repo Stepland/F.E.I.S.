@@ -1,6 +1,6 @@
 {
     "name": "triangles",
-    "size": 600,
+    "size": 200,
     "fps": 60,
     "approach": {
         "sprite_sheet": "approach.png",
