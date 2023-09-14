@@ -72,6 +72,7 @@ int main() {
         path_to_utf8_encoded_string(default_font).c_str(),
         16.f
     );
+    /*
     ImFontConfig font_config;
     font_config.MergeMode = true;
     IO.Fonts->AddFontFromFileTTF(
@@ -80,6 +81,8 @@ int main() {
         &font_config,
         IO.Fonts->GetGlyphRangesJapanese()
     );
+    IO.Fonts->Build();
+    */
     ImGui::SFML::UpdateFontTexture();
 
     IO.ConfigWindowsMoveFromTitleBarOnly = true;
