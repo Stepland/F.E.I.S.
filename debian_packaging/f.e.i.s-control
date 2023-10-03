@@ -9,9 +9,8 @@ Depends: libsfml-system2.5 (>= 2.5.1), libsfml-window2.5 (>= 2.5.1), libsfml-gra
 Architecture: amd64
 Description: jubeat chart editor
  F.E.I.S is a GUI chart editor for jubeat and its simulators, inspired by ArrowVortex
-Links: /opt/f.e.i.s/bin/f.e.i.s /usr/bin/f.e.i.s
-Files: f.e.i.s /opt/f.e.i.s/bin
- assets.tar.gz /opt/f.e.i.s/bin
+Files: f.e.i.s /usr/bin
+ assets.tar.gz /tmp/f.e.i.s
  f.e.i.s.desktop /usr/share/applications
  f.e.i.s.svg /usr/share/icons/hicolor/scalable/apps
 Postinst: postinst

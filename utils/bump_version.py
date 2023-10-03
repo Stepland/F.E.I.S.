@@ -2,6 +2,7 @@ import argparse
 import re
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 
 @dataclass
 class Version:
@@ -24,11 +25,25 @@ def parse_version(text: str) -> Version:
     else:
         raise ValueError(f"Couldn't parse {text} as a version number")
 
+def rewrite_debian_control_file():
+    path = Path(__file__).parents[1] / "debian_packaging/f.e.i.s-control"
+    with path.open(mode="r+") as f:
+        debian_control_lines = f.readlines()
+        for i in range(len(debian_control_lines)):
+            line = debian_control_lines[i]
+            if line.startswith("Version:"):
+                debian_control_lines[i] = f"Version: {args.version}\n"
+        
+        f.truncate(0)
+        f.seek(0)
+        f.writelines(debian_control_lines)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("version", type=parse_version)
 args = parser.parse_args()
 
+rewrite_debian_control_file()
 subprocess.check_call(["meson", "rewrite", "kwargs", "set", "project", "/", "version", str(args.version)])
 subprocess.check_call(["git", "add", "meson.build"])
 subprocess.check_call(["git", "commit", "-m", f"bump to v{args.version}"])

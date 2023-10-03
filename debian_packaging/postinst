@@ -5,12 +5,11 @@
 /usr/bin/gtk-update-icon-cache /usr/share/icons/* &>/dev/null || true
 
 # extract assets
+mkdir -p /usr/share/f.e.i.s
 tar \
     --extract \
     --gzip \
-    --directory /opt/f.e.i.s/bin \
-    --file /opt/f.e.i.s/bin/assets.tar.gz
-rm -f /opt/f.e.i.s/bin/assets.tar.gz
-
-mkdir -p /opt/f.e.i.s/bin/settings
-chmod 777 /opt/f.e.i.s/bin/settings
+    --directory /usr/share/f.e.i.s \
+    --strip-components=1 \
+    --file /tmp/f.e.i.s/assets.tar.gz
+rm -f /tmp/f.e.i.s/assets.tar.gz
