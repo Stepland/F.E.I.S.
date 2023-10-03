@@ -16,6 +16,7 @@ sources += files(
     'editor_state.cpp',
     'error_messages.cpp',
     'file_dialogs.cpp',
+    'folders.cpp',
     'guess_tempo.cpp',
     'history.cpp',
     'history_item.cpp',
@@ -46,6 +47,7 @@ conf_data = configuration_data()
 
 conf_data.set('name', meson.project_name())
 conf_data.set('version', meson.project_version())
+conf_data.set('data_folder_name', meson.project_name().to_lower())
 
 configure_file(
     input: 'compile_time_info.hpp.in',

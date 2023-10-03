@@ -36,6 +36,8 @@ fftw3_dep = dependency('fftw3')
 deps += [fftw3_dep]
 eigen_dep = dependency('eigen3')
 deps += [eigen_dep]
+platform_folders_dep = dependency('platform_folders', static: true)
+deps += [platform_folders_dep]
 
 # I chose to put the .cpp files of the libs I vendor directly in include/
 # I store the files in a (lib name -> files) dict so that tests can

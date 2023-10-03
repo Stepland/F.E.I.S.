@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/sago007/PlatformFolders
+revision = 4.2.0
+# Overlays subproject/packagefiles/platform_folders over the fresh git
+# clone of PlatformFolders
+patch_directory = platform_folders

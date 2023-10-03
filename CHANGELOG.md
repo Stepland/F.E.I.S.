@@ -1,3 +1,9 @@
+# v2.0.1
+
+## 🚧 Changes 🚧
+- On Linux, if the `assets` and `settings` folders aren't found next to the executable,
+  use fallbacks of `/usr/share/f.e.i.s/` and `~/.config/f.e.i.s/` respectively
+
 # v2.0.0
 ## 🥝🍇🍓🍊🍏 New Stuff 🍏🍊🍓🍇🥝
 - BPM Autodetect

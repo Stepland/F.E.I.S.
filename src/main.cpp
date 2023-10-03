@@ -30,6 +30,7 @@
 #include "editor_state.hpp"
 #include "error_messages.hpp"
 #include "file_dialogs.hpp"
+#include "folders.hpp"
 #include "history_item.hpp"
 #include "imgui_extras.hpp"
 #include "imgui_internal.h"
@@ -46,9 +47,8 @@ int main() {
     // extend SFML to be able to read mp3's
     sf::SoundFileFactory::registerReader<sf::priv::SoundFileReaderMp3>();
 
-    const auto executable_folder = utf8_encoded_string_to_path(whereami::executable_dir());
-    const auto assets_folder = executable_folder / "assets";
-    const auto settings_folder = executable_folder / "settings";
+    const auto assets_folder = choose_assets_folder();
+    const auto settings_folder = choose_settings_folder();
     const auto markers_folder = assets_folder / "textures" / "markers";
 
     config::Config config{settings_folder};

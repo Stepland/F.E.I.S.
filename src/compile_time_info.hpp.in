@@ -2,3 +2,4 @@
 
 #define FEIS_NAME "@name@"
 #define FEIS_VERSION "@version@"
+#define FEIS_DATA_FOLDER_NAME "@data_folder_name@"
