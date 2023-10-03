@@ -41,10 +41,12 @@ def rewrite_debian_control_file():
 
 parser = argparse.ArgumentParser()
 parser.add_argument("version", type=parse_version)
+parser.add_argument("--dry-run", action="store_true")
 args = parser.parse_args()
 
 rewrite_debian_control_file()
 subprocess.check_call(["meson", "rewrite", "kwargs", "set", "project", "/", "version", str(args.version)])
-subprocess.check_call(["git", "add", "meson.build"])
-subprocess.check_call(["git", "commit", "-m", f"bump to v{args.version}"])
-subprocess.check_call(["git", "tag", f"v{args.version}"])
+if not args.dry_run:
+    subprocess.check_call(["git", "add", "meson.build", "debian_packaging/f.e.i.s-control"])
+    subprocess.check_call(["git", "commit", "-m", f"bump to v{args.version}"])
+    subprocess.check_call(["git", "tag", f"v{args.version}"])
