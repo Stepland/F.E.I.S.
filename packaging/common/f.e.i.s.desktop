@@ -1,8 +1,9 @@
 [Desktop Entry]
 Type=Application
-Encoding=UTF-8
 Name=F.E.I.S
 Comment=Jubeat chart editor
+Categories=Utility;
 Exec=f.e.i.s
 Icon=f.e.i.s
 Terminal=false
+Keywords=feis;

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+	<id>f.e.i.s</id>
+	<metadata_license>CC0-1.0</metadata_license>
+	<project_license>MIT</project_license>
+	<name>F.E.I.S</name>
+	<summary>Jubeat chart editor</summary>
+	<description>
+		<p>View, create or edit memon format jubeat charts in a GUI heavily inspired by ArrowVortex</p>
+	</description>
+	<launchable type="desktop-id">f.e.i.s.desktop</launchable>
+	<url type="homepage">https://gitlab.com/square-game-liberation-front/F.E.I.S</url>
+	<screenshots>
+		<screenshot type="default">
+			<image>https://user-content.gitlab-static.net/c387513b05a7c4e27edd6a5ad001f4f0da61df93/68747470733a2f2f692e6962622e636f2f35736a36735a522f666569732d676c616d73686f742e706e67</image>
+		</screenshot>
+	</screenshots>
+	<provides>
+		<id>f.e.i.s.desktop</id>
+	</provides>
+</component>
