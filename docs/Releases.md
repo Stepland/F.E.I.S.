@@ -20,13 +20,13 @@
     For a regular semver release
 
     ```console
-    python utils/make_windows.release.py 2.x.x
+    python utils/make_windows_release.py --release-version 2.x.x
     ```
 
     For preview builds
 
     ```console
-    python utils/make_windows.release.py 2.x.x-alpha --timestamp
+    python utils/make_windows.release.py --release-version 2.x.x-alpha --timestamp
     ```
 1. Distribute the generated `.zip` file
 
