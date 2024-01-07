@@ -1,3 +1,8 @@
+# v2.0.3
+
+## 🗿 Bugfixes 🗿
+- Draw long note tails behind markers
+
 # v2.0.2
 
 ## 🗿 Bugfixes 🗿

@@ -520,6 +520,9 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                 );
             }
 
+            ImGui::SetCursorPos({0, TitlebarHeight});
+            ImGui::Image(playfield.long_note.layer);
+
             auto display = VariantVisitor {
                 [&, this](const better::TapNote& tap_note){
                     auto note_offset = (this->current_time() - this->time_at(tap_note.get_time()));
@@ -576,8 +579,6 @@ void EditorState::display_playfield(const Markers::marker_type& opt_marker, Judg
                 }
             }
 
-            ImGui::SetCursorPos({0, TitlebarHeight});
-            ImGui::Image(playfield.long_note.layer);
             ImGui::SetCursorPos({0, TitlebarHeight});
             ImGui::Image(playfield.long_note_marker_layer);
             ImGui::SetCursorPos({0, TitlebarHeight});
