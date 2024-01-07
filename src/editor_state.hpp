@@ -268,6 +268,8 @@ private:
     bool note_clap_stream_is_on() const;
     bool beat_tick_stream_is_on() const;
 
+    void set_volumes_from_config();
+
 
     // Playback status used when there is no actual audio being played
     sf::SoundSource::Status status = sf::SoundSource::Stopped;

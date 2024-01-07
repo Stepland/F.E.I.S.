@@ -2,6 +2,7 @@
 
 ## 🗿 Bugfixes 🗿
 - Fix "Insert BPM Change" dialog being forcefully stupid tiny
+- Fix volume of note claps and beat ticks internally resetting itself to max after editing the chart (Fixes #26)
 
 # v2.0.1
 

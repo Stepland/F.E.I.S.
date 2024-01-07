@@ -1817,6 +1817,13 @@ bool EditorState::beat_tick_stream_is_on() const {
     return audio.contains_stream(beat_tick_stream);
 }
 
+void EditorState::set_volumes_from_config() {
+    set_volume(config.sound.music_volume);
+    beat_ticks->set_volume(config.sound.beat_tick_volume);
+    note_claps->set_volume(config.sound.note_clap_volume);
+    chord_claps->set_volume(config.sound.note_clap_volume);
+}
+
 
 Interval<sf::Time> EditorState::choose_editable_range() {
     Interval<sf::Time> new_range{sf::Time::Zero, sf::Time::Zero};
@@ -1904,14 +1911,11 @@ void EditorState::reload_music() {
     if (music.has_value()) {
         audio.add_stream(music_stream, {*music, false});
     }
-    set_volume(config.sound.music_volume);
     play_beat_ticks(config.sound.beat_tick);
-    beat_ticks->set_volume(config.sound.beat_tick_volume);
     play_note_claps(config.sound.note_clap);
-    note_claps->set_volume(config.sound.note_clap_volume);
-    chord_claps->set_volume(config.sound.note_clap_volume);
     play_clap_on_long_note_ends(config.sound.clap_on_long_note_ends);
     play_chord_claps(config.sound.distinct_chord_clap);
+    set_volumes_from_config();
     pause();
     set_playback_position(current_time());
     switch (status_before) {
@@ -1986,6 +1990,7 @@ void EditorState::reload_sounds_that_depend_on_notes() {
         update[chord_clap_stream] = {chord_claps, true};
     }
     audio.update_streams(update, {}, pitch);
+    set_volumes_from_config();
 }
 
 void EditorState::reload_sounds_that_depend_on_timing() {
@@ -2024,6 +2029,7 @@ void EditorState::reload_sounds_that_depend_on_timing() {
         update[chord_clap_stream] = {chord_claps, true};
     }
     audio.update_streams(update, {}, pitch);
+    set_volumes_from_config();
 }
 
 void EditorState::reload_all_sounds() {
