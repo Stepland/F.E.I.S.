@@ -1,3 +1,8 @@
+# v2.0.2
+
+## 🗿 Bugfixes 🗿
+- Fix "Insert BPM Change" dialog being forcefully stupid tiny
+
 # v2.0.1
 
 ## 🚧 Changes 🚧

@@ -1434,7 +1434,7 @@ void EditorState::display_bpm_change_menu() {
             [&](const auto& pos){return applicable_timing->bpm_at(pos);},
             playback_position
         );
-        ImGui::PushItemWidth(-70.0f);
+        ImGui::PushItemWidth(120.0f);
         if (feis::InputDecimal("BPM", &bpm, ImGuiInputTextFlags_EnterReturnsTrue)) {
             if (bpm > 0) {
                 auto new_timing = *applicable_timing;
