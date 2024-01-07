@@ -1,12 +1,21 @@
 # How to make releases
 
-## Windows (MSYS2)
+## Git
 
-0. Pull the latest version of the code
-0. Follow the [compilation instructions](docs/Compiling.md)
-0. Open an MSYS2 x64 terminal
-0. `cd` into FEIS's source code root
-0. Use the release making script
+1. Add everything you want in the release to the `main` branch
+1. Use the `utils/bump_version.py` script to bump the version
+    - `$ python utils/bump_version.py {version}`
+1. Push the commit and the tag
+
+## Release archives
+
+### Windows (MSYS2)
+
+1. Pull the latest version of the code
+1. Follow the [compilation instructions](docs/Compiling.md)
+1. Open an MSYS2 x64 terminal
+1. `cd` into FEIS's source code root
+1. Use the release making script
 
     For a regular semver release
 
@@ -19,4 +28,7 @@
     ```console
     python utils/make_windows.release.py 2.x.x-alpha --timestamp
     ```
-0. Distribute the generated `.zip` file
+1. Distribute the generated `.zip` file
+
+### Debian
+
