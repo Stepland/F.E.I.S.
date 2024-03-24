@@ -1,3 +1,13 @@
+# v2.0.3
+
+## 🚧 Changes 🚧
+- Use a table to display history
+- Disable "Save" menu item when the file path has not yet been chosen
+
+## 🗿 Bugfixes 🗿
+- Fix density graph not updating hen inserting a long note
+- Fix some misslabled keys in the Shortcuts window
+
 # v2.0.2
 
 ## 🗿 Bugfixes 🗿
