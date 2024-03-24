@@ -1591,6 +1591,7 @@ void EditorState::insert_long_note_just_created() {
     reload_sounds_that_depend_on_notes();
     reload_editable_range();
     reload_colliding_notes();
+    chart_state->density_graph.should_recompute = true;
 }
 
 void EditorState::move_backwards_in_time() {
