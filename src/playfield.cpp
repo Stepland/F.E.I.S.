@@ -153,6 +153,8 @@ void Playfield::draw_tail_and_receptor(
                 long_note.tail.setTextureRect(rect);
                 long_note.tail.setOrigin(rect.width / 2.f, -rect.width / 2.f);
                 long_note.tail.setRotation(note.get_tail_angle() + 180);
+                const float scale = square_size / rect.width;
+                long_note.tail.setScale(scale, scale);
             }
             {
                 auto rect = long_note.triangle.getTextureRect();
@@ -166,29 +168,29 @@ void Playfield::draw_tail_and_receptor(
                     )
                 );
                 long_note.triangle.setRotation(note.get_tail_angle());
+                const float scale = square_size / rect.width;
+                long_note.triangle.setScale(scale, scale);
             }
             {
                 auto rect = long_note.background.getTextureRect();
                 long_note.background.setOrigin(rect.width / 2.f, rect.height / 2.f);
                 long_note.background.setRotation(note.get_tail_angle());
+                const float scale = square_size / rect.width;
+                long_note.background.setScale(scale, scale);
             }
             {
                 auto rect = long_note.outline.getTextureRect();
                 long_note.outline.setOrigin(rect.width / 2.f, rect.height / 2.f);
                 long_note.outline.setRotation(note.get_tail_angle());
+                const float scale = square_size / rect.width;
+                long_note.outline.setScale(scale, scale);
             }
             {
                 auto rect = long_note.highlight.getTextureRect();
                 long_note.highlight.setOrigin(rect.width / 2.f, rect.height / 2.f);
+                const float scale = square_size / rect.width;
+                long_note.highlight.setScale(scale, scale);
             }
-
-            auto rect = long_note.highlight.getTextureRect();
-            const float scale = square_size / rect.width;
-            long_note.tail.setScale(scale, scale);
-            long_note.triangle.setScale(scale, scale);
-            long_note.background.setScale(scale, scale);
-            long_note.outline.setScale(scale, scale);
-            long_note.highlight.setScale(scale, scale);
 
             long_note.tail.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);
             long_note.triangle.setPosition((x + 0.5f) * square_size, (y + 0.5f) * square_size);

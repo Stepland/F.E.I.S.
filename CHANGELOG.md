@@ -1,11 +1,12 @@
 # v2.0.3
 
 ## 🚧 Changes 🚧
-- Use a table to display history
+- Use a table to display data in the History window
 - Disable "Save" menu item when the file path has not yet been chosen
 
 ## 🗿 Bugfixes 🗿
-- Fix density graph not updating hen inserting a long note
+- The first time a chart was viewed, the very first long note tail would not display before playback got past the hit frame, not anymore !
+- Density graph now updates when inserting a long note
 - Fix some misslabled keys in the Shortcuts window
 
 # v2.0.2
