@@ -34,7 +34,7 @@ public:
 
         LNMarker marker;
         sf::RenderTexture layer;
-        sf::Sprite backgroud;
+        sf::Sprite background;
         sf::Sprite outline;
         sf::Sprite highlight;
         sf::Sprite tail;
