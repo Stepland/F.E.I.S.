@@ -2347,8 +2347,8 @@ void feis::display_shortcuts_help(bool& show) {
         ) {
             table_header();
             table_shortcut("Play / Pause", "Space");
-            table_shortcut("Move Backwards In Time", "Down");
-            table_shortcut("Move Forwards In Time", "Up");
+            table_shortcut("Move Backwards In Time", "Up");
+            table_shortcut("Move Forwards In Time", "Down");
             table_shortcut("Decrease Snap", "Left");
             table_shortcut("Increase Snap", "Right");
             ImGui::EndTable();
