@@ -11,8 +11,8 @@
 
 ### Windows (MSYS2)
 
-1. Pull the latest version of the code
-1. Follow the [compilation instructions](docs/Compiling.md)
+1. Pull the release tag
+1. Follow the [compilation instructions](Compiling.md)
 1. Open an MSYS2 x64 terminal
 1. `cd` into FEIS's source code root
 1. Use the release making script
@@ -20,15 +20,36 @@
     For a regular semver release
 
     ```console
-    python utils/make_windows_release.py --release-version 2.x.x
+    $ python utils/make_windows.release.py --release-version 2.x.x
     ```
 
     For preview builds
 
     ```console
-    python utils/make_windows.release.py --release-version 2.x.x-alpha --timestamp
+    $ python utils/make_windows.release.py --release-version 2.x.x-alpha --timestamp
     ```
 1. Distribute the generated `.zip` file
 
 ### Debian
 
+1. Pull the release tag
+1. Follow the [compilation instructions](Compiling.md)
+1. `cd` into the `packaging/debian` folder
+1. Run `./build_deb.sh` :
+
+    ```console
+    $ ./build_deb.sh (executable) (assets) (icon)
+    ```
+
+    `executable`: Path to the FEIS executable you just build, probably named 'FEIS'
+    
+    `assets`: Path to the assets folder to ship with this release
+
+    `icon`: Path to the app icon
+
+    a typical, fully specified command looks like this :
+
+    ```console
+    $ ./build_deb.sh ../../build_release/FEIS ../../assets/ ../../images/feis\ icon.svg
+    ```
+1. Distribute the generated `.deb` file, found in the `packaging/debian/package` folder

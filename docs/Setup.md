@@ -33,7 +33,7 @@ Install dependencies
 sudo apt install libsfml-dev libopenal-dev libgmp-dev libaubio-dev libfftw3-dev
 ```
 
-Then checkout [this page](docs/Compiling.md) for instructions on how to compile
+Then checkout [this page](Compiling.md) for instructions on how to compile
 
 ### I also want to contribute some code
 

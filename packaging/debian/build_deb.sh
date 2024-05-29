@@ -15,7 +15,7 @@ PACKAGE_DIR="${SCRIPT_DIR}/package"
 
 rm -rf "${PACKAGE_DIR}"
 mkdir -p "${PACKAGE_DIR}"
-cp "${SCRIPT_DIR}/f.e.i.s-control" "${SCRIPT_DIR}../common/f.e.i.s.desktop" "${SCRIPT_DIR}/postinst" "${SCRIPT_DIR}/postrm" "${PACKAGE_DIR}"
+cp "${SCRIPT_DIR}/f.e.i.s-control" "${SCRIPT_DIR}/../common/f.e.i.s.desktop" "${SCRIPT_DIR}/postinst" "${SCRIPT_DIR}/postrm" "${PACKAGE_DIR}"
 cp "${EXECUTABLE}" "${PACKAGE_DIR}/f.e.i.s"
 cp "${ICON}" "${PACKAGE_DIR}/f.e.i.s.svg"
 tar --create --gzip --owner root --group root --mode="u=rwX,g=rwX,o=rX" --file "${PACKAGE_DIR}/assets.tar.gz" "${ASSETS}"
