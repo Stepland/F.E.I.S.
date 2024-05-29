@@ -1,8 +1,9 @@
 #include "history.hpp"
 
 #include <imgui/imgui.h>
-#include "colors.hpp"
 
+#include "colors.hpp"
+#include "imgui_extras.hpp"
 
 std::optional<History::item> History::pop_previous() {
     if (previous_actions.empty()) {
@@ -34,37 +35,61 @@ void History::push(const History::item& elt) {
 }
 
 void History::display(bool& show) {
+    const auto dot_columns_width = 60.f;
+    const auto centered_dot = [&](const sf::Color& c){
+        const auto sz = ImGui::GetTextLineHeight();
+        const auto pos = ImGui::GetCursorPosX();
+        ImGui::SetCursorPosX(pos +  (dot_columns_width / 2.f) - (sz / 2.f));
+        feis::ColorDot(c);
+    };
     if (ImGui::Begin("History", &show)) {
-        for (const auto& it : next_actions | std::views::reverse) {
-            ImGui::TextUnformatted(it->get_message().c_str());
-            if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
-                if (std::get<item>(*last_saved_action) == it) {
-                    ImGui::SameLine();
-                    ImGui::TextColored(colors::green, "saved");
+        if (ImGui::BeginTable("History", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Current", ImGuiTableColumnFlags_WidthFixed, 60.f);
+            ImGui::TableSetupColumn("Saved", ImGuiTableColumnFlags_WidthFixed, 60.f);
+            ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableHeadersRow();
+
+            for (const auto& it : next_actions | std::views::reverse) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(2);
+                ImGui::TextUnformatted(it->get_message().c_str());
+                if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
+                    if (std::get<item>(*last_saved_action) == it) {
+                        ImGui::TableSetColumnIndex(1);
+                        centered_dot(colors::green);
+                    }
                 }
             }
-        }
-        for (const auto& it : previous_actions) {
-            ImGui::TextUnformatted(it->get_message().c_str());
-            if (it == *previous_actions.cbegin()) {
-                ImGui::SameLine();
-                ImGui::TextColored(colors::cyan, "current");
-            }
-            if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
-                if (std::get<item>(*last_saved_action) == it) {
-                    ImGui::SameLine();
-                    ImGui::TextColored(colors::green, "saved");
+
+            for (const auto& it : previous_actions) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(2);
+                ImGui::TextUnformatted(it->get_message().c_str());
+                if (it == *previous_actions.cbegin()) {
+                    ImGui::TableSetColumnIndex(0);
+                    centered_dot(colors::cyan);
+                }
+                if (last_saved_action and std::holds_alternative<item>(*last_saved_action)) {
+                    if (std::get<item>(*last_saved_action) == it) {
+                        ImGui::TableSetColumnIndex(1);
+                        centered_dot(colors::green);
+                    }
                 }
             }
-        }
-        ImGui::TextUnformatted("(initial state)");
-        if (previous_actions.empty()) {
-            ImGui::SameLine();
-            ImGui::TextColored(colors::cyan, "current");
-        }
-        if (last_saved_action and std::holds_alternative<InitialStateSaved>(*last_saved_action)) {
-            ImGui::SameLine();
-            ImGui::TextColored(colors::green, "saved");
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(2);
+            ImGui::TextUnformatted("(initial state)");
+            if (previous_actions.empty()) {
+                ImGui::TableSetColumnIndex(0);
+                centered_dot(colors::cyan);
+            }
+            if (last_saved_action
+                and std::holds_alternative<InitialStateSaved>(*last_saved_action)) {
+                ImGui::TableSetColumnIndex(1);
+                centered_dot(colors::green);
+            }
+            ImGui::EndTable();
         }
     }
     ImGui::End();
@@ -74,7 +99,7 @@ void History::mark_as_saved() {
     if (not previous_actions.empty()) {
         last_saved_action = previous_actions.front();
     } else {
-        last_saved_action = InitialStateSaved{};
+        last_saved_action = InitialStateSaved {};
     }
 }
 
@@ -90,8 +115,7 @@ bool History::current_state_is_saved() const {
                 } else {
                     return false;
                 }
-            }
-        };
+            }};
         return std::visit(is_saved_, *last_saved_action);
     }
 }

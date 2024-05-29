@@ -568,7 +568,7 @@ int main() {
                     feis::save_close(editor_state);
                 }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Save", "Ctrl+S", false, editor_state.has_value())) {
+                if (ImGui::MenuItem("Save", "Ctrl+S", false, editor_state.has_value() && editor_state->song_path.has_value())) {
                     feis::force_save(editor_state, notificationsQueue);
                 }
                 if (ImGui::MenuItem("Save As", "", false, editor_state.has_value())) {

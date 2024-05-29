@@ -1592,6 +1592,7 @@ void EditorState::insert_long_note_just_created() {
     reload_sounds_that_depend_on_notes();
     reload_editable_range();
     reload_colliding_notes();
+    chart_state->density_graph.should_recompute = true;
 }
 
 void EditorState::move_backwards_in_time() {
@@ -2348,8 +2349,8 @@ void feis::display_shortcuts_help(bool& show) {
         ) {
             table_header();
             table_shortcut("Play / Pause", "Space");
-            table_shortcut("Move Backwards In Time", "Down");
-            table_shortcut("Move Forwards In Time", "Up");
+            table_shortcut("Move Backwards In Time", "Up");
+            table_shortcut("Move Forwards In Time", "Down");
             table_shortcut("Decrease Snap", "Left");
             table_shortcut("Increase Snap", "Right");
             ImGui::EndTable();
