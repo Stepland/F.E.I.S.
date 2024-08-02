@@ -13,16 +13,19 @@ In other words, how to create a new F.E.I.S. executable from the source code.
 0. Setup a build directory called `build`
 
     ```console
-    $ meson setup build
+    $ meson setup build (options)
     ```
-	
-   If you are compiling for a release and not a debug build, use `--buildtype=release`
+   
+   Options include :
+   
+   `--buildtype=release` If you are compiling for a release and not a debug build
 
-   If you want to compile the unit tests as well, pass in `-D tests=true`.
-   You can also set this option later by doing :
+   `-D tests=true` If you want to compile the unit tests
+   
+   You can also set options later by doing :
 
    ```console
-   $ meson configure build -D tests=true
+   $ meson configure build (options)
    ```
 
 0. Compile in that directory

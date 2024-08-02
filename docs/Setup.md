@@ -57,7 +57,7 @@ at build systems and would be delighted to learn from an expert)
 Installing MSYS2 is pretty simple. [Follow their instructions](https://www.msys2.org/)
 
 Once you're done `pacman -Syu`ing and `pacman -Su`ing your system, open a new
-`MSYS2 MSYS` terminal and install the required packages :
+`MSYS2 UCRT64` terminal and install the required packages :
 
 ```console
 $ pacman -S \
@@ -71,5 +71,5 @@ $ pacman -S \
 	mingw-w64-ucrt-x86_64-mpdecimal
 ```
 
-Once this is done, open a new `MSYS2 MinGW x64` terminal and follow the
+Once this is done, open a new `MSYS2 UCRT64` terminal and follow the
 [compilation instructions](Compiling.md)

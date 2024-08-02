@@ -13,20 +13,20 @@
 
 1. Pull the release tag
 1. Follow the [compilation instructions](Compiling.md)
-1. Open an MSYS2 x64 terminal
+1. Open an MSYS2 UCRT64 terminal
 1. `cd` into FEIS's source code root
 1. Use the release making script
 
     For a regular semver release
 
     ```console
-    $ python utils/make_windows.release.py --release-version 2.x.x
+    $ python utils/make_windows_release.py
     ```
 
     For preview builds
 
     ```console
-    $ python utils/make_windows.release.py --release-version 2.x.x-alpha --timestamp
+    $ python utils/make_windows_release.py --timestamp
     ```
 1. Distribute the generated `.zip` file
 
